@@ -14,8 +14,11 @@ FROM nginx:alpine
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
+
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-EXPOSE 80
+EXPOSE $PORT
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["/start.sh"]
