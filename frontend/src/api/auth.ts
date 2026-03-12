@@ -1,0 +1,38 @@
+import apiClient from './client'
+import type { User, Token } from '@/types'
+
+export const authApi = {
+  login: async (username: string, password: string): Promise<Token> => {
+    const formData = new FormData()
+    formData.append('username', username)
+    formData.append('password', password)
+    const response = await apiClient.post('/auth/login', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    return response.data
+  },
+
+  register: async (data: { username: string; email: string; password: string }): Promise<User> => {
+    const response = await apiClient.post('/auth/register', data)
+    return response.data
+  },
+
+  getMe: async (): Promise<User> => {
+    const response = await apiClient.get('/auth/me')
+    return response.data
+  },
+
+  verifyEmail: async (token: string): Promise<{ message: string }> => {
+    const response = await apiClient.post('/auth/verify-email', null, {
+      params: { token }
+    })
+    return response.data
+  },
+
+  resendVerification: async (email: string): Promise<{ message: string }> => {
+    const response = await apiClient.post('/auth/resend-verification', null, {
+      params: { email }
+    })
+    return response.data
+  }
+}

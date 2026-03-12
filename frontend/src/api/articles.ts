@@ -1,0 +1,35 @@
+import apiClient from './client'
+import type { Article, ArticleListItem, PaginatedResponse } from '@/types'
+
+export const articleApi = {
+  getArticles: async (params: {
+    page?: number
+    page_size?: number
+    category_id?: number
+    tag_id?: number
+    is_featured?: boolean
+    search?: string
+  }): Promise<PaginatedResponse<ArticleListItem>> => {
+    const response = await apiClient.get('/articles', { params })
+    return response.data
+  },
+
+  getArticle: async (slug: string): Promise<Article> => {
+    const response = await apiClient.get(`/articles/${slug}`)
+    return response.data
+  },
+
+  createArticle: async (data: Partial<Article>): Promise<Article> => {
+    const response = await apiClient.post('/articles', data)
+    return response.data
+  },
+
+  updateArticle: async (id: number, data: Partial<Article>): Promise<Article> => {
+    const response = await apiClient.put(`/articles/${id}`, data)
+    return response.data
+  },
+
+  deleteArticle: async (id: number): Promise<void> => {
+    await apiClient.delete(`/articles/${id}`)
+  }
+}

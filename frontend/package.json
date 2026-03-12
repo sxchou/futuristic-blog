@@ -1,0 +1,46 @@
+{
+  "name": "futuristic-blog-frontend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",
+    "format": "prettier --write src/"
+  },
+  "dependencies": {
+    "@vueuse/core": "^10.7.2",
+    "@vueuse/head": "^2.0.0",
+    "axios": "^1.6.5",
+    "dompurify": "^3.0.8",
+    "echarts": "^6.0.0",
+    "highlight.js": "^11.9.0",
+    "marked": "^11.1.1",
+    "nprogress": "^0.2.0",
+    "particles.js": "^2.0.0",
+    "pinia": "^2.1.7",
+    "vue": "^3.4.15",
+    "vue-echarts": "^8.0.1",
+    "vue-router": "^4.2.5"
+  },
+  "devDependencies": {
+    "@types/dompurify": "^3.0.5",
+    "@types/node": "^20.11.5",
+    "@types/nprogress": "^0.2.3",
+    "@typescript-eslint/eslint-plugin": "^6.19.1",
+    "@typescript-eslint/parser": "^6.19.1",
+    "@vitejs/plugin-vue": "^5.0.3",
+    "autoprefixer": "^10.4.17",
+    "eslint": "^8.56.0",
+    "eslint-plugin-vue": "^9.20.1",
+    "postcss": "^8.4.33",
+    "prettier": "^3.2.4",
+    "prettier-plugin-tailwindcss": "^0.5.11",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.11",
+    "vue-tsc": "^3.2.5"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "settings": {
+    "primaryService": "backend"
+  },
+  "services": [
+    {
+      "name": "backend",
+      "source": "./backend",
+      "variables": {
+        "PORT": "8000"
+      }
+    },
+    {
+      "name": "frontend",
+      "source": "./frontend",
+      "variables": {
+        "PORT": "80"
+      }
+    }
+  ]
+}

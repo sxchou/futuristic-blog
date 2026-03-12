@@ -1,0 +1,228 @@
+<template>
+  <div id="comments" class="comments-section mt-12">
+    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+      </svg>
+      评论 ({{ totalComments }})
+    </h3>
+
+    <div v-if="!authStore.isAuthenticated" class="bg-gray-100 dark:bg-dark-100/50 border border-gray-200 dark:border-white/10 rounded-lg p-6 text-center">
+      <p class="text-gray-500 dark:text-gray-400 mb-4">登录后才能发表评论</p>
+      <router-link to="/login" class="btn-primary">
+        立即登录
+      </router-link>
+    </div>
+
+    <div v-else class="comment-form mb-8">
+      <div class="bg-gray-100 dark:bg-dark-100/50 border border-gray-200 dark:border-white/10 rounded-lg p-4">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs text-gray-500">支持 Markdown 格式</span>
+          <div class="flex items-center gap-3">
+            <EmojiPicker @select="insertEmoji" />
+            <a 
+              href="https://markdown.com.cn/basic-syntax/" 
+              target="_blank" 
+              class="text-xs text-primary hover:text-primary/80 transition-colors"
+            >
+              Markdown 语法帮助
+            </a>
+          </div>
+        </div>
+        <textarea
+          ref="commentTextarea"
+          v-model="newComment"
+          placeholder="写下你的想法...&#10;&#10;支持 **粗体**、*斜体*、`代码`、[链接](url) 等 Markdown 语法"
+          class="w-full bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 resize-none"
+          rows="4"
+          :disabled="submitting"
+        />
+        <div class="flex justify-end mt-3">
+          <button
+            @click="submitComment"
+            :disabled="!newComment.trim() || submitting"
+            class="btn-primary text-sm px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {{ submitting ? '发送中...' : '发表评论' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="loading" class="flex justify-center py-8">
+      <div class="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+    </div>
+
+    <div v-else-if="comments.length === 0" class="text-center py-8 text-gray-500">
+      暂无评论，快来发表第一条评论吧！
+    </div>
+
+    <div v-else class="comments-list space-y-4">
+      <CommentItem
+        v-for="comment in comments"
+        :key="comment.id"
+        :comment="comment"
+        :article-id="articleId"
+        @reply="handleReply"
+        @delete="handleDelete"
+      />
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, computed } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import { commentApi } from '@/api'
+import type { Comment } from '@/types'
+import CommentItem from './CommentItem.vue'
+import EmojiPicker from '@/components/common/EmojiPicker.vue'
+
+const props = defineProps<{
+  articleId: number
+}>()
+
+const authStore = useAuthStore()
+const comments = ref<Comment[]>([])
+const loading = ref(true)
+const newComment = ref('')
+const submitting = ref(false)
+const commentTextarea = ref<HTMLTextAreaElement | null>(null)
+
+const totalComments = computed(() => {
+  let count = 0
+  const countReplies = (commentList: Comment[]) => {
+    for (const comment of commentList) {
+      count++
+      if (comment.replies && comment.replies.length > 0) {
+        countReplies(comment.replies)
+      }
+    }
+  }
+  countReplies(comments.value)
+  return count
+})
+
+const insertEmoji = (emoji: string) => {
+  if (!commentTextarea.value) return
+  
+  const textarea = commentTextarea.value
+  const start = textarea.selectionStart
+  const end = textarea.selectionEnd
+  
+  newComment.value = 
+    newComment.value.substring(0, start) + 
+    emoji + 
+    newComment.value.substring(end)
+  
+  setTimeout(() => {
+    textarea.focus()
+    textarea.selectionStart = textarea.selectionEnd = start + emoji.length
+  }, 0)
+}
+
+const fetchComments = async () => {
+  try {
+    comments.value = await commentApi.getArticleComments(props.articleId)
+  } catch (error) {
+    console.error('Failed to fetch comments:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const submitComment = async () => {
+  if (!newComment.value.trim() || submitting.value) return
+  
+  submitting.value = true
+  try {
+    const comment = await commentApi.create({
+      content: newComment.value.trim(),
+      article_id: props.articleId
+    })
+    
+    if (comment.status === 'approved') {
+      comments.value.unshift(comment)
+    } else if (comment.status === 'pending') {
+      alert('评论已提交，等待审核通过后将显示')
+    }
+    
+    newComment.value = ''
+  } catch (error) {
+    console.error('Failed to submit comment:', error)
+    alert('评论发送失败，请重试')
+  } finally {
+    submitting.value = false
+  }
+}
+
+const findCommentById = (commentList: Comment[], id: number): Comment | null => {
+  for (const comment of commentList) {
+    if (comment.id === id) {
+      return comment
+    }
+    if (comment.replies && comment.replies.length > 0) {
+      const found = findCommentById(comment.replies, id)
+      if (found) return found
+    }
+  }
+  return null
+}
+
+const handleReply = async (data: { content: string; parentId: number; replyToUserId?: number }) => {
+  try {
+    const comment = await commentApi.create({
+      content: data.content,
+      article_id: props.articleId,
+      parent_id: data.parentId
+    })
+    
+    if (comment.status === 'approved') {
+      const parentComment = findCommentById(comments.value, data.parentId)
+      if (parentComment) {
+        if (!parentComment.replies) {
+          parentComment.replies = []
+        }
+        parentComment.replies.push(comment)
+      }
+    } else if (comment.status === 'pending') {
+      alert('回复已提交，等待审核通过后将显示')
+    }
+  } catch (error) {
+    console.error('Failed to reply:', error)
+    alert('回复发送失败，请重试')
+  }
+}
+
+const markCommentAsDeleted = (commentList: Comment[], commentId: number): boolean => {
+  for (const comment of commentList) {
+    if (comment.id === commentId) {
+      comment.is_deleted = true
+      comment.content = '此评论已删除'
+      return true
+    }
+    if (comment.replies && comment.replies.length > 0) {
+      if (markCommentAsDeleted(comment.replies, commentId)) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
+const handleDelete = async (commentId: number) => {
+  if (!confirm('确定要删除这条评论吗？')) return
+  
+  try {
+    await commentApi.delete(commentId)
+    markCommentAsDeleted(comments.value, commentId)
+  } catch (error) {
+    console.error('Failed to delete comment:', error)
+    alert('删除失败，请重试')
+  }
+}
+
+onMounted(() => {
+  fetchComments()
+})
+</script>
