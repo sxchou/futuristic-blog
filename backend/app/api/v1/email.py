@@ -93,9 +93,9 @@ def send_email_with_config(
         for port in ports_to_try:
             try:
                 if port == 465:
-                    server = smtplib.SMTP_SSL(host, port, timeout=30)
+                    server = smtplib.SMTP_SSL(host, port, timeout=10)
                 else:
-                    server = smtplib.SMTP(host, port, timeout=30)
+                    server = smtplib.SMTP(host, port, timeout=10)
                     server.starttls()
                 
                 server.login(config.smtp_user, config.smtp_password)
