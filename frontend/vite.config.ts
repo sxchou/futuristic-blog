@@ -26,25 +26,13 @@ export default defineConfig({
     }
   },
   build: {
-    target: 'es2015',
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true
-      }
-    },
     rollupOptions: {
       output: {
         manualChunks: {
           'vendor': ['vue', 'vue-router', 'pinia'],
-          'markdown': ['marked', 'highlight.js'],
-          'echarts': ['echarts', 'vue-echarts'],
-          'utils': ['axios', 'dompurify', 'nprogress']
+          'markdown': ['marked', 'highlight.js']
         }
       }
-    },
-    chunkSizeWarningLimit: 1000,
-    cssCodeSplit: true
+    }
   }
 })

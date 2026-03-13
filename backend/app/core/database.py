@@ -8,8 +8,8 @@ database_url = settings.get_database_url
 connect_args = {}
 if "sqlite" in database_url:
     connect_args = {"check_same_thread": False}
-elif "postgresql" in database_url:
-    connect_args = {}
+elif "planetscale.com" in database_url or "mysql" in database_url:
+    connect_args = {"ssl": {"ssl_verify_cert": True}}
 
 engine = create_engine(
     database_url,
