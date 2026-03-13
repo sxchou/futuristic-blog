@@ -22,8 +22,8 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_FROM_EMAIL: str = ""
     SMTP_FROM_NAME: str = "Futuristic Blog"
-    FRONTEND_URL: str = "http://localhost:3000"
     
+    FRONTEND_URL: str = "http://localhost:3000"
     TIMEZONE: str = "Asia/Shanghai"
     
     @property

@@ -452,3 +452,112 @@ async def mark_email_verified(
     )
     
     return {"message": "已标记为已验证"}
+
+
+@router.get("/diagnose")
+async def diagnose_network():
+    import subprocess
+    import platform
+    
+    results = {
+        "timestamp": get_now().isoformat(),
+        "platform": platform.platform(),
+        "python_version": platform.python_version(),
+        "tests": {}
+    }
+    
+    smtp_hosts = [
+        {"name": "QQ邮箱", "host": "smtp.qq.com", "ports": [587, 465]},
+        {"name": "Gmail", "host": "smtp.gmail.com", "ports": [587, 465]},
+        {"name": "163邮箱", "host": "smtp.163.com", "ports": [465, 25]},
+    ]
+    
+    for smtp in smtp_hosts:
+        host = smtp["host"]
+        host_result = {
+            "dns_resolution": None,
+            "port_tests": {}
+        }
+        
+        try:
+            ip = socket.gethostbyname(host)
+            host_result["dns_resolution"] = {
+                "success": True,
+                "ip": ip
+            }
+        except socket.gaierror as e:
+            host_result["dns_resolution"] = {
+                "success": False,
+                "error": str(e)
+            }
+            results["tests"][smtp["name"]] = host_result
+            continue
+        except Exception as e:
+            host_result["dns_resolution"] = {
+                "success": False,
+                "error": f"Unexpected error: {str(e)}"
+            }
+            results["tests"][smtp["name"]] = host_result
+            continue
+        
+        for port in smtp["ports"]:
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(5)
+                result = sock.connect_ex((host, port))
+                sock.close()
+                
+                if result == 0:
+                    host_result["port_tests"][port] = {
+                        "success": True,
+                        "message": "Port is open"
+                    }
+                else:
+                    host_result["port_tests"][port] = {
+                        "success": False,
+                        "message": f"Connection refused (error code: {result})"
+                    }
+            except socket.timeout:
+                host_result["port_tests"][port] = {
+                    "success": False,
+                    "message": "Connection timeout"
+                }
+            except OSError as e:
+                host_result["port_tests"][port] = {
+                    "success": False,
+                    "message": f"OS Error: {str(e)} (errno: {e.errno if hasattr(e, 'errno') else 'unknown'})"
+                }
+            except Exception as e:
+                host_result["port_tests"][port] = {
+                    "success": False,
+                    "message": f"Error: {str(e)}"
+                }
+        
+        results["tests"][smtp["name"]] = host_result
+    
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(5)
+        result = sock.connect_ex(("8.8.8.8", 53))
+        sock.close()
+        results["internet_connection"] = {
+            "success": result == 0,
+            "message": "Google DNS (8.8.8.8:53)" + (" reachable" if result == 0 else " not reachable")
+        }
+    except Exception as e:
+        results["internet_connection"] = {
+            "success": False,
+            "message": f"Error: {str(e)}"
+        }
+    
+    env_config = {
+        "SMTP_HOST": settings.SMTP_HOST if settings.SMTP_HOST else "Not configured",
+        "SMTP_PORT": settings.SMTP_PORT if settings.SMTP_PORT else "Not configured",
+        "SMTP_USER": "***" if settings.SMTP_USER else "Not configured",
+        "SMTP_PASSWORD": "***" if settings.SMTP_PASSWORD else "Not configured",
+        "SMTP_FROM_EMAIL": settings.SMTP_FROM_EMAIL if settings.SMTP_FROM_EMAIL else "Not configured",
+        "is_email_configured": settings.is_email_configured
+    }
+    results["env_config"] = env_config
+    
+    return results
