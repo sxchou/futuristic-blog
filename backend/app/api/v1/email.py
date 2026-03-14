@@ -615,10 +615,12 @@ async def test_resend_email(
     )
     
     try:
+        from_email = settings.RESEND_FROM_EMAIL if settings.RESEND_FROM_EMAIL else None
         result = EmailService.send_via_resend(
             to_email=test_data.recipient_email,
             subject=subject,
-            html_content=html_content
+            html_content=html_content,
+            from_email=from_email
         )
         
         log.status = 'sent'

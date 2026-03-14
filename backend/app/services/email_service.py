@@ -91,7 +91,7 @@ class EmailService:
         if not settings.RESEND_API_KEY:
             raise ValueError("RESEND_API_KEY is not configured")
         
-        sender_email = from_email or "onboarding@resend.dev"
+        sender_email = from_email or settings.RESEND_FROM_EMAIL or "onboarding@resend.dev"
         sender_name = from_name or settings.SMTP_FROM_NAME or "Futuristic Blog"
         
         payload = {
@@ -205,7 +205,7 @@ class EmailService:
             
             if provider == 'resend' and settings.RESEND_API_KEY:
                 try:
-                    from_email = config.from_email if config else None
+                    from_email = settings.RESEND_FROM_EMAIL or (config.from_email if config else None)
                     from_name = config.from_name if config else None
                     result = EmailService.send_via_resend(
                         to_email=to_email,

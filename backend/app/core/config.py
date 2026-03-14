@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     TIMEZONE: str = "Asia/Shanghai"
     
     RESEND_API_KEY: str = ""
+    RESEND_FROM_EMAIL: str = ""
     EMAIL_PROVIDER: str = "resend"
     
     @property
