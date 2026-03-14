@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { marked } from 'marked'
 import hljs from 'highlight.js'
 import DOMPurify from 'dompurify'
@@ -34,9 +34,10 @@ const renderer = new marked.Renderer()
 renderer.code = (code: string, language: string | undefined) => {
   const validLang = language && hljs.getLanguage(language) ? language : 'plaintext'
   const highlighted = hljs.highlight(code, { language: validLang }).value
+  const encodedCode = encodeURIComponent(code)
   return `<div class="code-block-wrapper relative group">
     <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-      <button onclick="navigator.clipboard.writeText(\`${code.replace(/`/g, '\\`')}\`)" class="px-2 py-1 bg-dark-200 rounded text-xs text-gray-400 hover:text-primary transition-colors">复制</button>
+      <button class="copy-code-btn px-2 py-1 bg-dark-200 rounded text-xs text-gray-400 hover:text-primary transition-colors" data-code="${encodedCode}">复制</button>
     </div>
     <pre><code class="hljs language-${validLang}">${highlighted}</code></pre>
   </div>`
@@ -152,6 +153,33 @@ onMounted(async () => {
       }
     }, 100)
   }
+})
+
+const handleCopyCode = (e: Event) => {
+  const target = e.target as HTMLElement
+  if (target.classList.contains('copy-code-btn')) {
+    const encodedCode = target.getAttribute('data-code')
+    if (encodedCode) {
+      const code = decodeURIComponent(encodedCode)
+      navigator.clipboard.writeText(code).then(() => {
+        const originalText = target.textContent
+        target.textContent = '已复制!'
+        target.classList.add('text-green-400')
+        setTimeout(() => {
+          target.textContent = originalText
+          target.classList.remove('text-green-400')
+        }, 2000)
+      })
+    }
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleCopyCode)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleCopyCode)
 })
 </script>
 
