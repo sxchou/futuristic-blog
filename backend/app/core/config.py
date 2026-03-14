@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     
     TIMEZONE: str = "Asia/Shanghai"
     
+    RESEND_API_KEY: str = ""
+    EMAIL_PROVIDER: str = "resend"
+    
     @property
     def tz(self) -> ZoneInfo:
         return ZoneInfo(self.TIMEZONE)

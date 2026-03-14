@@ -2,7 +2,7 @@ import apiClient from './client'
 
 export interface EmailConfig {
   id: number
-  provider: 'qq' | 'gmail'
+  provider: string
   smtp_host: string | null
   smtp_port: number
   smtp_user: string | null
@@ -48,9 +48,20 @@ export interface PaginatedResponse<T> {
 export interface EmailProvider {
   id: string
   name: string
-  host: string
-  port: number
+  host?: string
+  port?: number
   description: string
+  is_api?: boolean
+  doc_url?: string
+}
+
+export interface ProviderStatus {
+  current_provider: string
+  has_resend_api_key: boolean
+  has_smtp_config: boolean
+  db_provider: string | null
+  db_provider_configured: boolean
+  resend_api_key_preview: string | null
 }
 
 export const emailApi = {
@@ -70,7 +81,7 @@ export const emailApi = {
   },
 
   createConfig: async (data: {
-    provider: 'qq' | 'gmail'
+    provider: string
     smtp_user: string
     smtp_password: string
     from_email: string
@@ -81,7 +92,7 @@ export const emailApi = {
   },
 
   updateConfig: async (id: number, data: Partial<{
-    provider: 'qq' | 'gmail'
+    provider: string
     smtp_user: string
     smtp_password: string
     from_email: string
@@ -107,6 +118,11 @@ export const emailApi = {
     return response.data
   },
 
+  testResendEmail: async (recipientEmail: string): Promise<{ message: string; message_id?: string }> => {
+    const response = await apiClient.post('/email/test-resend', { recipient_email: recipientEmail })
+    return response.data
+  },
+
   getLogs: async (params: {
     page?: number
     page_size?: number
@@ -124,6 +140,16 @@ export const emailApi = {
 
   markVerified: async (logId: number): Promise<{ message: string }> => {
     const response = await apiClient.post(`/email/logs/${logId}/verify`)
+    return response.data
+  },
+
+  getProviderStatus: async (): Promise<ProviderStatus> => {
+    const response = await apiClient.get('/email/provider/status')
+    return response.data
+  },
+
+  switchProvider: async (provider: string): Promise<{ message: string; provider: string }> => {
+    const response = await apiClient.post('/email/provider/switch', { provider })
     return response.data
   }
 }

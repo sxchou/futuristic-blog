@@ -1,20 +1,23 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { emailApi, type EmailConfig, type EmailLog, type EmailStats, type EmailProvider } from '@/api/email'
+import { emailApi, type EmailConfig, type EmailLog, type EmailStats, type EmailProvider, type ProviderStatus } from '@/api/email'
 
 const activeTab = ref<'config' | 'logs'>('config')
 
 const configs = ref<EmailConfig[]>([])
 const activeConfig = ref<EmailConfig | null>(null)
 const providers = ref<EmailProvider[]>([])
+const providerStatus = ref<ProviderStatus | null>(null)
 const isLoading = ref(false)
 const isSaving = ref(false)
 const isTesting = ref(false)
+const isTestingResend = ref(false)
 const showAddForm = ref(false)
 const editingConfig = ref<EmailConfig | null>(null)
+const switchingProvider = ref(false)
 
 const configForm = ref({
-  provider: 'qq' as 'qq' | 'gmail',
+  provider: 'qq',
   smtp_user: '',
   smtp_password: '',
   from_email: '',
@@ -22,6 +25,7 @@ const configForm = ref({
 })
 
 const testEmail = ref('')
+const testResendEmail = ref('')
 
 const logs = ref<EmailLog[]>([])
 const logsPage = ref(1)
@@ -42,10 +46,17 @@ const stats = ref<EmailStats>({
 
 const totalPages = computed(() => Math.ceil(logsTotal.value / logsPageSize.value))
 
+const smtpProviders = computed(() => {
+  return providers.value.filter(p => !p.is_api)
+})
+
 const providerInfo = computed(() => {
-  const info: Record<string, { name: string; color: string }> = {
+  const info: Record<string, { name: string; color: string; isApi?: boolean }> = {
+    resend: { name: 'Resend', color: 'text-purple-400', isApi: true },
     qq: { name: 'QQ邮箱', color: 'text-blue-400' },
-    gmail: { name: 'Gmail', color: 'text-red-400' }
+    gmail: { name: 'Gmail', color: 'text-red-400' },
+    '163': { name: '163邮箱', color: 'text-green-400' },
+    outlook: { name: 'Outlook', color: 'text-blue-400' }
   }
   return info
 })
@@ -71,6 +82,7 @@ onMounted(async () => {
   await loadProviders()
   await loadConfigs()
   await loadStats()
+  await loadProviderStatus()
 })
 
 async function loadProviders() {
@@ -121,6 +133,14 @@ async function loadStats() {
     stats.value = await emailApi.getStats()
   } catch (error) {
     console.error('Failed to load stats:', error)
+  }
+}
+
+async function loadProviderStatus() {
+  try {
+    providerStatus.value = await emailApi.getProviderStatus()
+  } catch (error) {
+    console.error('Failed to load provider status:', error)
   }
 }
 
@@ -183,6 +203,7 @@ async function activateConfig(config: EmailConfig) {
     await emailApi.activateConfig(config.id)
     alert('激活成功！')
     await loadConfigs()
+    await loadProviderStatus()
   } catch (error: any) {
     alert(error.response?.data?.detail || '激活失败')
   }
@@ -198,6 +219,7 @@ async function deleteConfig(config: EmailConfig) {
       activeConfig.value = null
     }
     await loadConfigs()
+    await loadProviderStatus()
   } catch (error: any) {
     alert(error.response?.data?.detail || '删除失败')
   }
@@ -227,6 +249,42 @@ async function sendTestEmail() {
   }
 }
 
+async function sendResendTestEmail() {
+  if (!testResendEmail.value) {
+    alert('请输入测试邮箱地址')
+    return
+  }
+
+  isTestingResend.value = true
+  try {
+    const result = await emailApi.testResendEmail(testResendEmail.value)
+    alert(`Resend测试邮件发送成功！\n消息ID: ${result.message_id || 'N/A'}`)
+    testResendEmail.value = ''
+    await loadStats()
+  } catch (error: any) {
+    alert(error.response?.data?.detail || 'Resend发送失败')
+  } finally {
+    isTestingResend.value = false
+  }
+}
+
+async function switchProvider(provider: string) {
+  const confirmed = confirm(`确定要切换到 ${getProviderName(provider)} 吗？`)
+  if (!confirmed) return
+  
+  switchingProvider.value = true
+  try {
+    await emailApi.switchProvider(provider)
+    alert('切换成功！')
+    await loadProviderStatus()
+    await loadConfigs()
+  } catch (error: any) {
+    alert(error.response?.data?.detail || '切换失败')
+  } finally {
+    switchingProvider.value = false
+  }
+}
+
 function switchToLogs() {
   activeTab.value = 'logs'
   loadLogs()
@@ -248,6 +306,10 @@ function getProviderName(provider: string): string {
 
 function getProviderColor(provider: string): string {
   return providerInfo.value[provider]?.color || 'text-gray-400'
+}
+
+function isProviderActive(providerId: string): boolean {
+  return providerStatus.value?.current_provider === providerId
 }
 </script>
 
@@ -302,6 +364,106 @@ function getProviderColor(provider: string): string {
       </div>
 
       <div class="glass-card p-6">
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">邮件服务提供商</h2>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <div
+              v-for="provider in providers"
+              :key="provider.id"
+              :class="[
+                'p-4 rounded-lg border transition-all cursor-pointer',
+                isProviderActive(provider.id)
+                  ? 'border-primary bg-primary/5'
+                  : 'border-gray-200 dark:border-white/10 hover:border-primary/50'
+              ]"
+              @click="switchProvider(provider.id)"
+            >
+              <div class="flex items-center justify-between mb-2">
+                <span :class="['font-semibold', getProviderColor(provider.id)]">
+                  {{ provider.name }}
+                </span>
+                <span
+                  v-if="isProviderActive(provider.id)"
+                  class="px-2 py-0.5 text-xs rounded-full bg-green-500/20 text-green-400"
+                >
+                  当前使用
+                </span>
+              </div>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">{{ provider.description }}</p>
+              <div v-if="provider.is_api" class="flex items-center gap-2">
+                <span
+                  :class="[
+                    'px-2 py-0.5 text-xs rounded-full',
+                    providerStatus?.has_resend_api_key
+                      ? 'bg-green-500/20 text-green-400'
+                      : 'bg-red-500/20 text-red-400'
+                  ]"
+                >
+                  {{ providerStatus?.has_resend_api_key ? 'API密钥已配置' : 'API密钥未配置' }}
+                </span>
+                <span v-if="providerStatus?.resend_api_key_preview" class="text-xs text-gray-400">
+                  {{ providerStatus.resend_api_key_preview }}
+                </span>
+              </div>
+              <div v-else-if="provider.host" class="text-xs text-gray-400">
+                {{ provider.host }}:{{ provider.port }}
+              </div>
+              <a
+                v-if="provider.doc_url"
+                :href="provider.doc_url"
+                target="_blank"
+                class="text-xs text-primary hover:underline mt-2 inline-block"
+                @click.stop
+              >
+                查看文档 →
+              </a>
+            </div>
+          </div>
+
+          <div v-if="providerStatus?.current_provider === 'resend'" class="p-4 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+            <div class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-purple-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div class="flex-1">
+                <p class="text-sm text-purple-300 font-medium mb-1">Resend API 配置说明</p>
+                <ol class="text-sm text-purple-200 space-y-1 list-decimal list-inside">
+                  <li>访问 <a href="https://resend.com" target="_blank" class="underline">resend.com</a> 注册账号</li>
+                  <li>在 Dashboard 中创建 API Key</li>
+                  <li>在 Railway 环境变量中添加 <code class="bg-purple-500/20 px-1 rounded">RESEND_API_KEY</code></li>
+                  <li>验证域名（可选，用于自定义发件人邮箱）</li>
+                </ol>
+                <p class="text-xs text-purple-300 mt-2">
+                  默认发件人: onboarding@resend.dev (仅用于测试) | 验证域名后可使用自定义邮箱
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      <div v-if="providerStatus?.current_provider === 'resend' && providerStatus?.has_resend_api_key" class="glass-card p-6">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Resend 测试</h2>
+        <div class="flex gap-4">
+          <input
+            v-model="testResendEmail"
+            type="email"
+            placeholder="输入测试邮箱地址"
+            class="flex-1 px-4 py-3 bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:outline-none"
+          />
+          <button
+            @click="sendResendTestEmail"
+            :disabled="isTestingResend"
+            class="btn-primary whitespace-nowrap"
+          >
+            {{ isTestingResend ? '发送中...' : '发送 Resend 测试' }}
+          </button>
+        </div>
+        <p class="mt-2 text-sm text-gray-400">
+          通过 Resend API 发送测试邮件，用于验证配置是否正确
+        </p>
+      </div>
+
+      <div class="glass-card p-6">
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-lg font-semibold text-gray-900 dark:text-white">邮箱配置列表</h2>
           <button
@@ -341,12 +503,6 @@ function getProviderColor(provider: string): string {
                     {{ getProviderName(config.provider) }}
                   </span>
                   <span class="text-gray-700 dark:text-gray-300">{{ config.smtp_user }}</span>
-                  <span
-                    v-if="config.is_active"
-                    class="px-2 py-0.5 text-xs rounded-full bg-green-500/20 text-green-400"
-                  >
-                    当前使用
-                  </span>
                 </div>
                 <div class="text-sm text-gray-500 dark:text-gray-400 space-y-1">
                   <div>发件人: {{ config.from_name }} &lt;{{ config.from_email }}&gt;</div>
@@ -402,7 +558,7 @@ function getProviderColor(provider: string): string {
             </label>
             <div class="grid grid-cols-2 gap-4">
               <label
-                v-for="provider in providers"
+                v-for="provider in smtpProviders"
                 :key="provider.id"
                 :class="[
                   'flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-all',
@@ -420,7 +576,7 @@ function getProviderColor(provider: string): string {
                 />
                 <div>
                   <div :class="['font-medium', getProviderColor(provider.id)]">{{ provider.name }}</div>
-                  <div class="text-xs text-gray-500">{{ provider.host }}:{{ provider.port }}</div>
+                  <div v-if="provider.host" class="text-xs text-gray-500">{{ provider.host }}:{{ provider.port }}</div>
                 </div>
               </label>
             </div>
@@ -441,7 +597,15 @@ function getProviderColor(provider: string): string {
                     <li>按提示生成授权码（16位字符）</li>
                   </ol>
                 </div>
-                <div v-else class="space-y-1">
+                <div v-else-if="configForm.provider === '163'" class="space-y-1">
+                  <p class="font-medium">163邮箱授权码获取方式：</p>
+                  <ol class="list-decimal list-inside space-y-0.5 text-blue-200">
+                    <li>登录163邮箱 → 设置 → POP3/SMTP/IMAP</li>
+                    <li>开启"IMAP/SMTP服务"</li>
+                    <li>按提示获取授权密码</li>
+                  </ol>
+                </div>
+                <div v-else-if="configForm.provider === 'gmail'" class="space-y-1">
                   <p class="font-medium">Gmail应用密码获取方式：</p>
                   <ol class="list-decimal list-inside space-y-0.5 text-blue-200">
                     <li>登录Google账户 → 安全性</li>
@@ -449,6 +613,10 @@ function getProviderColor(provider: string): string {
                     <li>搜索"应用专用密码"或访问 myaccount.google.com/apppasswords</li>
                     <li>生成新的应用专用密码（16位字符）</li>
                   </ol>
+                </div>
+                <div v-else class="space-y-1">
+                  <p class="font-medium">SMTP配置说明：</p>
+                  <p class="text-blue-200">请填写您的邮箱服务商提供的SMTP账号和密码</p>
                 </div>
               </div>
             </div>
@@ -587,7 +755,7 @@ function getProviderColor(provider: string): string {
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">状态</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">已验证</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">发送时间</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">错误信息</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">发送信息</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 dark:divide-white/10">
@@ -635,8 +803,16 @@ function getProviderColor(provider: string): string {
                 <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                   {{ formatDate(log.sent_at) }}
                 </td>
-                <td class="px-4 py-3 text-sm text-red-400 max-w-xs truncate">
-                  {{ log.error_message || '-' }}
+                <td class="px-4 py-3 text-sm max-w-xs truncate">
+                  <span v-if="log.status === 'sent'" class="text-green-400">
+                    {{ log.error_message || '-' }}
+                  </span>
+                  <span v-else-if="log.status === 'failed'" class="text-red-400">
+                    {{ log.error_message || '-' }}
+                  </span>
+                  <span v-else class="text-gray-400">
+                    {{ log.error_message || '-' }}
+                  </span>
                 </td>
               </tr>
             </tbody>

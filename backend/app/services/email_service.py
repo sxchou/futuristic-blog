@@ -1,14 +1,19 @@
 import smtplib
+import httpx
+import json
+import logging
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
 import secrets
-from typing import Optional
+from typing import Optional, Dict, Any
 from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.models import EmailConfig, EmailLog, SiteConfig
 from app.utils.timezone import get_now
 
+
+logger = logging.getLogger(__name__)
 
 EMAIL_PROVIDERS = {
     'qq': {
@@ -18,8 +23,18 @@ EMAIL_PROVIDERS = {
     'gmail': {
         'host': 'smtp.gmail.com',
         'port': 587
+    },
+    '163': {
+        'host': 'smtp.163.com',
+        'port': 465
+    },
+    'outlook': {
+        'host': 'smtp-mail.outlook.com',
+        'port': 587
     }
 }
+
+RESEND_API_URL = "https://api.resend.com/emails"
 
 
 class EmailService:
@@ -49,7 +64,115 @@ class EmailService:
     @staticmethod
     def is_email_configured(db: Session) -> bool:
         config = EmailService.get_active_config(db)
-        return config is not None
+        if config:
+            return True
+        if settings.RESEND_API_KEY:
+            return True
+        if settings.is_email_configured:
+            return True
+        return False
+    
+    @staticmethod
+    def get_email_provider(db: Session) -> str:
+        config = EmailService.get_active_config(db)
+        if config and config.provider:
+            return config.provider
+        return settings.EMAIL_PROVIDER
+    
+    @staticmethod
+    def send_via_resend(
+        to_email: str,
+        subject: str,
+        html_content: str,
+        text_content: str = None,
+        from_email: str = None,
+        from_name: str = None
+    ) -> Dict[str, Any]:
+        if not settings.RESEND_API_KEY:
+            raise ValueError("RESEND_API_KEY is not configured")
+        
+        sender_email = from_email or "onboarding@resend.dev"
+        sender_name = from_name or settings.SMTP_FROM_NAME or "Futuristic Blog"
+        
+        payload = {
+            "from": f"{sender_name} <{sender_email}>",
+            "to": [to_email],
+            "subject": subject,
+            "html": html_content
+        }
+        
+        if text_content:
+            payload["text"] = text_content
+        
+        headers = {
+            "Authorization": f"Bearer {settings.RESEND_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        
+        logger.info(f"Sending email via Resend to {to_email}")
+        
+        with httpx.Client(timeout=30.0) as client:
+            response = client.post(
+                RESEND_API_URL,
+                headers=headers,
+                json=payload
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                logger.info(f"Resend email sent successfully: {result.get('id')}")
+                return {
+                    "success": True,
+                    "message_id": result.get("id"),
+                    "provider": "resend"
+                }
+            else:
+                error_detail = response.text
+                logger.error(f"Resend API error: {response.status_code} - {error_detail}")
+                raise Exception(f"Resend API error: {error_detail}")
+    
+    @staticmethod
+    def send_via_smtp(
+        to_email: str,
+        subject: str,
+        html_content: str,
+        text_content: str = None,
+        config: EmailConfig = None
+    ) -> Dict[str, Any]:
+        smtp_host = config.smtp_host if config else settings.SMTP_HOST
+        smtp_port = config.smtp_port if config else settings.SMTP_PORT
+        smtp_user = config.smtp_user if config else settings.SMTP_USER
+        smtp_password = config.smtp_password if config else settings.SMTP_PASSWORD
+        from_email = config.from_email if config else settings.SMTP_FROM_EMAIL
+        from_name = config.from_name if config else settings.SMTP_FROM_NAME
+        
+        if not all([smtp_host, smtp_user, smtp_password]):
+            raise ValueError("SMTP configuration is incomplete")
+        
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From'] = f"{from_name} <{from_email}>"
+        msg['To'] = to_email
+        
+        if text_content:
+            part1 = MIMEText(text_content, 'plain', 'utf-8')
+            msg.attach(part1)
+        
+        part2 = MIMEText(html_content, 'html', 'utf-8')
+        msg.attach(part2)
+        
+        logger.info(f"Sending email via SMTP to {to_email}")
+        
+        with smtplib.SMTP(smtp_host, smtp_port) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_password)
+            server.sendmail(from_email, to_email, msg.as_string())
+        
+        logger.info(f"SMTP email sent successfully to {to_email}")
+        return {
+            "success": True,
+            "provider": "smtp"
+        }
     
     @staticmethod
     def send_email(
@@ -64,16 +187,7 @@ class EmailService:
         verification_token: str = None
     ) -> bool:
         config = EmailService.get_active_config(db)
-        
-        if not config:
-            if not settings.is_email_configured:
-                print(f"[DEV MODE] No email config in database, using env settings")
-                print(f"[DEV MODE] Email to: {to_email}")
-                print(f"[DEV MODE] Subject: {subject}")
-                if verification_token:
-                    print(f"[DEV MODE] Verification URL: {settings.FRONTEND_URL}/verify-email?token={verification_token}")
-                return True
-            return False
+        provider = EmailService.get_email_provider(db)
         
         log = EmailLog(
             email_type=email_type,
@@ -86,35 +200,92 @@ class EmailService:
         )
         
         try:
-            provider_config = EMAIL_PROVIDERS.get(config.provider)
-            if not provider_config:
-                raise ValueError(f"Unknown email provider: {config.provider}")
+            result = None
+            provider_used = None
             
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = subject
-            msg['From'] = f"{config.from_name} <{config.from_email}>"
-            msg['To'] = to_email
+            if provider == 'resend' and settings.RESEND_API_KEY:
+                try:
+                    from_email = config.from_email if config else None
+                    from_name = config.from_name if config else None
+                    result = EmailService.send_via_resend(
+                        to_email=to_email,
+                        subject=subject,
+                        html_content=html_content,
+                        text_content=text_content,
+                        from_email=from_email,
+                        from_name=from_name
+                    )
+                    provider_used = 'resend'
+                except Exception as resend_error:
+                    logger.warning(f"Resend failed, falling back to SMTP: {resend_error}")
+                    if config or settings.is_email_configured:
+                        result = EmailService.send_via_smtp(
+                            to_email=to_email,
+                            subject=subject,
+                            html_content=html_content,
+                            text_content=text_content,
+                            config=config
+                        )
+                        provider_used = 'smtp'
+                    else:
+                        raise
             
-            if text_content:
-                part1 = MIMEText(text_content, 'plain', 'utf-8')
-                msg.attach(part1)
+            elif provider == 'smtp' or provider in EMAIL_PROVIDERS:
+                if config or settings.is_email_configured:
+                    result = EmailService.send_via_smtp(
+                        to_email=to_email,
+                        subject=subject,
+                        html_content=html_content,
+                        text_content=text_content,
+                        config=config
+                    )
+                    provider_used = 'smtp'
+                else:
+                    raise ValueError("No email configuration available")
             
-            part2 = MIMEText(html_content, 'html', 'utf-8')
-            msg.attach(part2)
+            else:
+                if settings.RESEND_API_KEY:
+                    result = EmailService.send_via_resend(
+                        to_email=to_email,
+                        subject=subject,
+                        html_content=html_content,
+                        text_content=text_content
+                    )
+                    provider_used = 'resend'
+                elif config or settings.is_email_configured:
+                    result = EmailService.send_via_smtp(
+                        to_email=to_email,
+                        subject=subject,
+                        html_content=html_content,
+                        text_content=text_content,
+                        config=config
+                    )
+                    provider_used = 'smtp'
+                else:
+                    logger.warning("No email provider configured, running in dev mode")
+                    print(f"[DEV MODE] Email to: {to_email}")
+                    print(f"[DEV MODE] Subject: {subject}")
+                    if verification_token:
+                        print(f"[DEV MODE] Verification URL: {settings.FRONTEND_URL}/verify-email?token={verification_token}")
+                    log.status = 'dev_mode'
+                    log.error_message = 'No email provider configured'
+                    db.add(log)
+                    db.commit()
+                    return True
             
-            with smtplib.SMTP(provider_config['host'], provider_config['port']) as server:
-                server.starttls()
-                server.login(config.smtp_user, config.smtp_password)
-                server.sendmail(config.from_email, to_email, msg.as_string())
-            
-            log.status = 'sent'
-            log.sent_at = get_now()
-            
-            return True
+            if result and result.get('success'):
+                log.status = 'sent'
+                log.sent_at = get_now()
+                log.error_message = f"Provider: {provider_used}"
+                logger.info(f"Email sent successfully via {provider_used} to {to_email}")
+                return True
+            else:
+                raise Exception("Failed to send email")
+                
         except Exception as e:
             log.status = 'failed'
             log.error_message = str(e)
-            print(f"Failed to send email: {e}")
+            logger.error(f"Failed to send email to {to_email}: {e}")
             return False
         finally:
             db.add(log)
@@ -128,26 +299,8 @@ class EmailService:
         token: str,
         user_id: int = None
     ) -> bool:
-        config = EmailService.get_active_config(db)
         site_name = EmailService.get_site_name(db)
         current_year = EmailService.get_current_year()
-        
-        if not config:
-            print(f"[DEV MODE] Verification token for {email}: {token}")
-            print(f"[DEV MODE] Verification URL: {settings.FRONTEND_URL}/verify-email?token={token}")
-            
-            log = EmailLog(
-                email_type='verification',
-                recipient_email=email,
-                recipient_name=username,
-                subject=f"验证您的邮箱 - {site_name}",
-                status='pending',
-                verification_token=token,
-                user_id=user_id
-            )
-            db.add(log)
-            db.commit()
-            return True
         
         verification_url = f"{settings.FRONTEND_URL}/verify-email?token={token}"
         
@@ -204,7 +357,7 @@ class EmailService:
         return EmailService.send_email(
             db=db,
             to_email=email,
-            subject=f"验证您的邮箱 - {config.from_name}",
+            subject=f"验证您的邮箱 - {site_name}",
             html_content=html_content,
             text_content=text_content,
             email_type='verification',
@@ -218,20 +371,9 @@ class EmailService:
         site_name = settings.SMTP_FROM_NAME if settings.SMTP_FROM_NAME else "Futuristic Blog"
         current_year = EmailService.get_current_year()
         
-        if not settings.is_email_configured:
-            print(f"[DEV MODE] Verification token for {email}: {token}")
-            print(f"[DEV MODE] Verification URL: {settings.FRONTEND_URL}/verify-email?token={token}")
-            return True
+        verification_url = f"{settings.FRONTEND_URL}/verify-email?token={token}"
         
-        try:
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = f"验证您的邮箱 - {site_name}"
-            msg['From'] = f"{site_name} <{settings.SMTP_FROM_EMAIL}>"
-            msg['To'] = email
-            
-            verification_url = f"{settings.FRONTEND_URL}/verify-email?token={token}"
-            
-            text_content = f"""
+        text_content = f"""
 您好 {username}，
 
 感谢您注册 {site_name}！
@@ -246,8 +388,8 @@ class EmailService:
 祝好，
 {site_name} 团队
 """
-            
-            html_content = f"""
+        
+        html_content = f"""
 <!DOCTYPE html>
 <html>
 <head>
@@ -280,21 +422,30 @@ class EmailService:
 </body>
 </html>
 """
-            
-            part1 = MIMEText(text_content, 'plain', 'utf-8')
-            part2 = MIMEText(html_content, 'html', 'utf-8')
-            
-            msg.attach(part1)
-            msg.attach(part2)
-            
-            with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-                server.starttls()
-                server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-                server.sendmail(settings.SMTP_FROM_EMAIL, email, msg.as_string())
-            
-            return True
+        
+        try:
+            if settings.RESEND_API_KEY:
+                result = EmailService.send_via_resend(
+                    to_email=email,
+                    subject=f"验证您的邮箱 - {site_name}",
+                    html_content=html_content,
+                    text_content=text_content
+                )
+                return result.get('success', False)
+            elif settings.is_email_configured:
+                result = EmailService.send_via_smtp(
+                    to_email=email,
+                    subject=f"验证您的邮箱 - {site_name}",
+                    html_content=html_content,
+                    text_content=text_content
+                )
+                return result.get('success', False)
+            else:
+                print(f"[DEV MODE] Verification token for {email}: {token}")
+                print(f"[DEV MODE] Verification URL: {verification_url}")
+                return True
         except Exception as e:
-            print(f"Failed to send email: {e}")
+            logger.error(f"Failed to send verification email: {e}")
             return False
     
     @staticmethod
@@ -313,7 +464,7 @@ class EmailService:
         admin_users = db.query(User).filter(User.is_admin == True).all()
         
         if not admin_users:
-            print("No admin users found to notify")
+            logger.warning("No admin users found to notify")
             return False
         
         success = True
@@ -555,9 +706,7 @@ class EmailService:
                 <span class="value">{liker_name}</span>
             </div>
         </div>
-        <a href="{article_url}" class="button">查看完整上下文</a>
-        <p>或复制以下链接到浏览器：</p>
-        <p class="link">{article_url}</p>
+        <a href="{article_url}" class="button">查看文章</a>
         <div class="footer">
             <p>此邮件为系统自动发送，请勿回复。</p>
             <p>© {current_year} {site_name}. All rights reserved.</p>
@@ -576,36 +725,21 @@ class EmailService:
         )
     
     @staticmethod
-    def send_reply_notification_db(
+    def test_email_provider(
         db: Session,
-        recipient_email: str,
-        recipient_name: str,
-        article_title: str,
-        article_slug: str,
-        reply_content: str,
-        commenter_name: str
-    ) -> bool:
+        provider: str = None,
+        test_email: str = None
+    ) -> Dict[str, Any]:
+        provider = provider or EmailService.get_email_provider(db)
+        test_email = test_email or settings.ADMIN_EMAIL
+        
+        if not test_email:
+            return {
+                "success": False,
+                "error": "No test email address provided"
+            }
+        
         site_name = EmailService.get_site_name(db)
-        current_year = EmailService.get_current_year()
-        
-        article_url = f"{settings.FRONTEND_URL}/article/{article_slug}#comments"
-        
-        truncated_content = reply_content[:200] + "..." if len(reply_content) > 200 else reply_content
-        
-        text_content = f"""
-您好 {recipient_name}，
-
-您在文章「{article_title}」下的评论收到了新回复：
-
-回复者: {commenter_name}
-
-回复内容:
-{truncated_content}
-
-查看完整上下文: {article_url}
-
-{site_name}
-"""
         
         html_content = f"""
 <!DOCTYPE html>
@@ -616,14 +750,8 @@ class EmailService:
         body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; color: #333333; padding: 20px; margin: 0; }}
         .container {{ max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; padding: 40px; border: 1px solid #e0e0e0; }}
         .logo {{ font-size: 24px; font-weight: bold; color: #0066cc; margin-bottom: 30px; }}
-        .title {{ font-size: 20px; margin-bottom: 20px; color: #0066cc; }}
-        .info-box {{ background-color: #f0f7ff; border-radius: 8px; padding: 20px; margin: 20px 0; }}
-        .reply-box {{ background-color: #f5f0ff; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #7c3aed; }}
-        .info-item {{ margin: 10px 0; }}
-        .label {{ color: #666666; font-size: 14px; }}
-        .value {{ color: #333333; font-size: 16px; font-weight: 500; }}
-        .button {{ display: inline-block; padding: 12px 32px; background-color: #0066cc; color: #ffffff; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: 500; }}
-        .link {{ word-break: break-all; color: #0066cc; }}
+        .title {{ font-size: 20px; margin-bottom: 20px; color: #333333; }}
+        .success {{ color: #10b981; font-size: 48px; }}
         .footer {{ margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 14px; color: #666666; }}
         p {{ line-height: 1.6; }}
     </style>
@@ -631,230 +759,31 @@ class EmailService:
 <body>
     <div class="container">
         <div class="logo">🚀 {site_name}</div>
-        <h1 class="title">您的评论收到了新回复</h1>
-        <p>您好 {recipient_name}，</p>
-        <p>您在文章「{article_title}」下的评论收到了新回复：</p>
-        <div class="info-box">
-            <div class="info-item">
-                <span class="label">回复者：</span>
-                <span class="value">{commenter_name}</span>
-            </div>
-        </div>
-        <div class="reply-box">
-            <p class="label">回复内容：</p>
-            <p class="value">{truncated_content}</p>
-        </div>
-        <a href="{article_url}" class="button">查看完整上下文</a>
-        <p>或复制以下链接到浏览器：</p>
-        <p class="link">{article_url}</p>
+        <h1 class="title">邮件服务测试成功！</h1>
+        <p class="success">✅</p>
+        <p>恭喜！您的邮件服务配置正确，可以正常发送邮件。</p>
+        <p>邮件服务商: <strong>{provider.upper()}</strong></p>
         <div class="footer">
-            <p>此邮件为系统自动发送，请勿回复。</p>
-            <p>© {current_year} {site_name}. All rights reserved.</p>
+            <p>此邮件为系统自动发送的测试邮件。</p>
+            <p>© {EmailService.get_current_year()} {site_name}. All rights reserved.</p>
         </div>
     </div>
 </body>
 </html>
 """
         
-        return EmailService.send_email(
-            db=db,
-            to_email=recipient_email,
-            subject=f"您的评论收到了新回复 - {article_title}",
-            html_content=html_content,
-            text_content=text_content,
-            email_type='reply_notification',
-            recipient_name=recipient_name
-        )
-
-    @staticmethod
-    def send_pending_comment_notification_db(
-        db: Session,
-        commenter_name: str,
-        article_title: str,
-        article_slug: str,
-        comment_content: str
-    ) -> bool:
-        site_name = EmailService.get_site_name(db)
-        current_year = EmailService.get_current_year()
-        
-        article_url = f"{settings.FRONTEND_URL}/article/{article_slug}#comments"
-        admin_url = f"{settings.FRONTEND_URL}/admin/comments?status=pending"
-        
-        truncated_content = comment_content[:200] + "..." if len(comment_content) > 200 else comment_content
-        
-        text_content = f"""
-待审核评论通知
-
-有新评论待审核：
-
-文章: {article_title}
-评论者: {commenter_name}
-
-评论内容:
-{truncated_content}
-
-查看文章: {article_url}
-审核管理: {admin_url}
-
-{site_name}
-"""
-        
-        html_content = f"""
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <style>
-        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; color: #333333; padding: 20px; margin: 0; }}
-        .container {{ max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; padding: 40px; border: 1px solid #e0e0e0; }}
-        .logo {{ font-size: 24px; font-weight: bold; color: #0066cc; margin-bottom: 30px; }}
-        .title {{ font-size: 20px; margin-bottom: 20px; color: #f59e0b; }}
-        .warning-badge {{ display: inline-block; background-color: #fef3c7; color: #92400e; padding: 4px 12px; border-radius: 4px; font-size: 14px; margin-bottom: 20px; }}
-        .info-box {{ background-color: #fffbeb; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #f59e0b; }}
-        .comment-box {{ background-color: #f5f5f5; border-radius: 8px; padding: 20px; margin: 20px 0; }}
-        .info-item {{ margin: 10px 0; }}
-        .label {{ color: #666666; font-size: 14px; }}
-        .value {{ color: #333333; font-size: 16px; font-weight: 500; }}
-        .button {{ display: inline-block; padding: 12px 32px; background-color: #f59e0b; color: #ffffff; text-decoration: none; border-radius: 6px; margin: 10px 10px 10px 0; font-weight: 500; }}
-        .button-secondary {{ background-color: #0066cc; }}
-        .link {{ word-break: break-all; color: #0066cc; }}
-        .footer {{ margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 14px; color: #666666; }}
-        p {{ line-height: 1.6; }}
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="logo">🚀 {site_name}</div>
-        <h1 class="title">⏳ 待审核评论通知</h1>
-        <span class="warning-badge">需要审核</span>
-        <p>有新评论提交并等待审核：</p>
-        <div class="info-box">
-            <div class="info-item">
-                <span class="label">文章：</span>
-                <span class="value">{article_title}</span>
-            </div>
-            <div class="info-item">
-                <span class="label">评论者：</span>
-                <span class="value">{commenter_name}</span>
-            </div>
-        </div>
-        <div class="comment-box">
-            <p class="label">评论内容：</p>
-            <p class="value">{truncated_content}</p>
-        </div>
-        <a href="{admin_url}" class="button">前往审核</a>
-        <a href="{article_url}" class="button button-secondary">查看文章</a>
-        <p>或复制以下链接到浏览器：</p>
-        <p class="link">审核管理: {admin_url}</p>
-        <p class="link">文章链接: {article_url}</p>
-        <div class="footer">
-            <p>此邮件为系统自动发送，请勿回复。</p>
-            <p>© {current_year} {site_name}. All rights reserved.</p>
-        </div>
-    </div>
-</body>
-</html>
-"""
-        
-        return EmailService.send_admin_notification_db(
-            db=db,
-            subject=f"[待审核] 新评论 - {article_title}",
-            html_content=html_content,
-            text_content=text_content,
-            notification_type="pending_comment"
-        )
-
-    @staticmethod
-    def send_comment_approved_notification_db(
-        db: Session,
-        recipient_email: str,
-        recipient_name: str,
-        article_title: str,
-        article_slug: str,
-        comment_content: str
-    ) -> bool:
-        site_name = EmailService.get_site_name(db)
-        current_year = EmailService.get_current_year()
-        
-        article_url = f"{settings.FRONTEND_URL}/article/{article_slug}#comments"
-        
-        truncated_content = comment_content[:200] + "..." if len(comment_content) > 200 else comment_content
-        
-        text_content = f"""
-您好 {recipient_name}，
-
-您的评论已通过审核！
-
-文章: {article_title}
-
-您的评论:
-{truncated_content}
-
-查看文章: {article_url}
-
-感谢您的参与！
-
-{site_name}
-"""
-        
-        html_content = f"""
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <style>
-        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; color: #333333; padding: 20px; margin: 0; }}
-        .container {{ max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; padding: 40px; border: 1px solid #e0e0e0; }}
-        .logo {{ font-size: 24px; font-weight: bold; color: #0066cc; margin-bottom: 30px; }}
-        .title {{ font-size: 20px; margin-bottom: 20px; color: #10b981; }}
-        .success-badge {{ display: inline-block; background-color: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 4px; font-size: 14px; margin-bottom: 20px; }}
-        .info-box {{ background-color: #ecfdf5; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #10b981; }}
-        .comment-box {{ background-color: #f5f5f5; border-radius: 8px; padding: 20px; margin: 20px 0; }}
-        .info-item {{ margin: 10px 0; }}
-        .label {{ color: #666666; font-size: 14px; }}
-        .value {{ color: #333333; font-size: 16px; font-weight: 500; }}
-        .button {{ display: inline-block; padding: 12px 32px; background-color: #10b981; color: #ffffff; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: 500; }}
-        .link {{ word-break: break-all; color: #10b981; }}
-        .footer {{ margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 14px; color: #666666; }}
-        p {{ line-height: 1.6; }}
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="logo">🚀 {site_name}</div>
-        <h1 class="title">✅ 评论审核通过</h1>
-        <span class="success-badge">已通过</span>
-        <p>您好 {recipient_name}，</p>
-        <p>您在文章「{article_title}」下的评论已通过审核并已公开显示：</p>
-        <div class="info-box">
-            <div class="info-item">
-                <span class="label">文章：</span>
-                <span class="value">{article_title}</span>
-            </div>
-        </div>
-        <div class="comment-box">
-            <p class="label">您的评论：</p>
-            <p class="value">{truncated_content}</p>
-        </div>
-        <a href="{article_url}" class="button">查看评论</a>
-        <p>或复制以下链接到浏览器：</p>
-        <p class="link">{article_url}</p>
-        <p>感谢您的参与！</p>
-        <div class="footer">
-            <p>此邮件为系统自动发送，请勿回复。</p>
-            <p>© {current_year} {site_name}. All rights reserved.</p>
-        </div>
-    </div>
-</body>
-</html>
-"""
-        
-        return EmailService.send_email(
-            db=db,
-            to_email=recipient_email,
-            subject=f"您的评论已通过审核 - {article_title}",
-            html_content=html_content,
-            text_content=text_content,
-            email_type='comment_approved',
-            recipient_name=recipient_name
-        )
+        try:
+            return EmailService.send_email(
+                db=db,
+                to_email=test_email,
+                subject=f"邮件服务测试 - {site_name}",
+                html_content=html_content,
+                text_content="邮件服务测试成功！",
+                email_type='test',
+                recipient_name='Admin'
+            )
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e)
+            }
