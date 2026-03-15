@@ -4,12 +4,14 @@ from app.models import User, Category, Tag, Article, Resource, SiteConfig
 from app.utils import get_password_hash
 from app.utils.timezone import get_now
 from datetime import datetime
+from sqlalchemy import text
 import sqlite3
 
 
 def run_database_migrations():
     try:
         db_url = str(engine.url)
+        print(f"Running migrations for database: {db_url[:50]}...")
         
         if "sqlite" in db_url:
             db_path = db_url.replace("sqlite:///", "")
@@ -28,15 +30,20 @@ def run_database_migrations():
         elif "postgresql" in db_url:
             db = SessionLocal()
             try:
-                result = db.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'comments' AND column_name = 'deleted_by'")
+                result = db.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'comments' AND column_name = 'deleted_by'"))
                 if not result.fetchone():
-                    db.execute("ALTER TABLE comments ADD COLUMN deleted_by VARCHAR(20)")
+                    db.execute(text("ALTER TABLE comments ADD COLUMN deleted_by VARCHAR(20)"))
                     db.commit()
                     print("Migration: Added 'deleted_by' column to comments table")
+                else:
+                    print("Migration: 'deleted_by' column already exists")
             except Exception as e:
-                print(f"PostgreSQL migration warning: {e}")
+                print(f"PostgreSQL migration error: {e}")
+                db.rollback()
             finally:
                 db.close()
+        else:
+            print(f"Migration: Unknown database type, skipping migrations")
     except Exception as e:
         print(f"Migration warning: {e}")
 
