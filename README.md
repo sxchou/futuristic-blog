@@ -31,7 +31,7 @@
 - [功能特性](#功能特性)
 - [技术栈](#技术栈)
 - [本地开发](#本地开发)
-- [Railway 部署](#railway-部署)
+- [Railway 免费部署](#railway-部署)
 - [重要说明](#重要说明)
 - [许可证](#许可证)
 
@@ -472,7 +472,7 @@ Made with ❤️ by [sxchou](https://github.com/sxchou)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Local Development](#local-development)
-- [Railway Deployment](#railway-deployment-1)
+- [Railway free Deployment](#railway-deployment-1)
 - [Important Notes](#important-notes)
 - [License](#license)
 
