@@ -86,6 +86,62 @@ async def get_articles(
     )
 
 
+@router.get("/admin", response_model=PaginatedResponse)
+async def get_admin_articles(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_active_user)
+):
+    query = db.query(Article)
+    
+    total = query.count()
+    total_pages = (total + page_size - 1) // page_size
+    articles = query.order_by(Article.created_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
+    
+    comment_counts = {}
+    if articles:
+        article_ids = [a.id for a in articles]
+        comment_query = db.query(
+            Comment.article_id,
+            func.count(Comment.id).label('count')
+        ).filter(
+            Comment.article_id.in_(article_ids),
+            Comment.status == 'approved',
+            Comment.is_deleted == False
+        ).group_by(Comment.article_id).all()
+        
+        comment_counts = {c.article_id: c.count for c in comment_query}
+    
+    items = []
+    for article in articles:
+        items.append(ArticleListItem(
+            id=article.id,
+            title=article.title,
+            slug=article.slug,
+            summary=article.summary,
+            cover_image=article.cover_image,
+            is_published=article.is_published,
+            is_featured=article.is_featured,
+            view_count=article.view_count,
+            like_count=article.like_count or 0,
+            comment_count=comment_counts.get(article.id, 0),
+            reading_time=article.reading_time,
+            created_at=article.created_at,
+            published_at=article.published_at,
+            category=CategoryResponse.model_validate(article.category) if article.category else None,
+            tags=[TagResponse.model_validate(tag) for tag in article.tags]
+        ))
+    
+    return PaginatedResponse(
+        items=items,
+        total=total,
+        page=page,
+        page_size=page_size,
+        total_pages=total_pages
+    )
+
+
 @router.get("/archive/list")
 async def get_article_archive(db: Session = Depends(get_db)):
     articles = db.query(Article).filter(

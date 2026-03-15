@@ -41,7 +41,7 @@ const form = ref({
 const fetchArticles = async () => {
   isLoading.value = true
   try {
-    const response = await articleApi.getArticles({ page: 1, page_size: 100 })
+    const response = await articleApi.getAdminArticles({ page: 1, page_size: 100 })
     articles.value = response.items
   } catch (error) {
     console.error('Failed to fetch articles:', error)

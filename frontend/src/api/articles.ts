@@ -14,6 +14,14 @@ export const articleApi = {
     return response.data
   },
 
+  getAdminArticles: async (params: {
+    page?: number
+    page_size?: number
+  }): Promise<PaginatedResponse<ArticleListItem>> => {
+    const response = await apiClient.get('/articles/admin', { params })
+    return response.data
+  },
+
   getArticle: async (slug: string): Promise<Article> => {
     const response = await apiClient.get(`/articles/${slug}`)
     return response.data
