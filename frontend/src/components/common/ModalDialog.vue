@@ -22,18 +22,14 @@ watch(() => props.modelValue, (val) => {
   isVisible.value = val
 })
 
-watch(isVisible, (val) => {
-  emit('update:modelValue', val)
-})
-
 const handleConfirm = () => {
-  isVisible.value = false
   emit('confirm')
+  emit('update:modelValue', false)
 }
 
 const handleCancel = () => {
-  isVisible.value = false
   emit('cancel')
+  emit('update:modelValue', false)
 }
 
 const handleOverlayClick = () => {
@@ -84,7 +80,7 @@ onUnmounted(() => {
       leave-to-class="opacity-0"
     >
       <div
-        v-if="isVisible"
+        v-if="modelValue"
         class="fixed inset-0 z-[9999] flex items-center justify-center"
       >
         <div
@@ -100,7 +96,7 @@ onUnmounted(() => {
           leave-to-class="opacity-0 scale-95"
         >
           <div
-            v-if="isVisible"
+            v-if="modelValue"
             class="relative bg-gray-900 dark:bg-dark-50 border border-gray-700 dark:border-white/10 rounded-xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden"
           >
             <div class="p-6">
