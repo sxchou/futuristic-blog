@@ -17,6 +17,12 @@ interface ArticleFile {
   created_at: string
 }
 
+interface DialogOptions {
+  title?: string
+  message: string
+  type?: 'confirm' | 'alert' | 'success' | 'error'
+}
+
 const blogStore = useBlogStore()
 
 const articles = ref<ArticleListItem[]>([])
@@ -28,15 +34,13 @@ const isUploading = ref(false)
 const uploadProgress = ref(0)
 
 const dialogVisible = ref(false)
-const dialogOptions = ref({
-  title: '',
-  message: '',
-  type: 'alert' as 'confirm' | 'alert' | 'success' | 'error'
+const dialogOptions = ref<DialogOptions>({
+  message: ''
 })
 let dialogResolve: ((value: boolean) => void) | null = null
 
-const showDialog = (options: { title?: string; message: string; type?: 'confirm' | 'alert' | 'success' | 'error' }): Promise<boolean> => {
-  dialogOptions.value = { title: '', message: '', type: 'alert', ...options }
+const showDialog = (options: DialogOptions): Promise<boolean> => {
+  dialogOptions.value = { ...options }
   dialogVisible.value = true
   return new Promise((resolve) => {
     dialogResolve = resolve

@@ -26,20 +26,20 @@ export function useDialog() {
     })
   }
 
-  const showAlert = (options: DialogOptions): Promise<void> => {
+  const showAlert = (options: DialogOptions): Promise<boolean> => {
     dialogOptions.value = { ...options, type: 'alert' }
     isVisible.value = true
     
     return new Promise((resolve) => {
-      resolvePromise = () => resolve(true)
+      resolvePromise = resolve
     })
   }
 
-  const showSuccess = (message: string, title?: string): Promise<void> => {
+  const showSuccess = (message: string, title?: string): Promise<boolean> => {
     return showAlert({ message, title, type: 'success' })
   }
 
-  const showError = (message: string, title?: string): Promise<void> => {
+  const showError = (message: string, title?: string): Promise<boolean> => {
     return showAlert({ message, title, type: 'error' })
   }
 

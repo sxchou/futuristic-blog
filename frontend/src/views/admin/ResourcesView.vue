@@ -4,21 +4,25 @@ import { resourceApi } from '@/api'
 import type { Resource } from '@/types'
 import ModalDialog from '@/components/common/ModalDialog.vue'
 
+interface DialogOptions {
+  title?: string
+  message: string
+  type?: 'confirm' | 'alert' | 'success' | 'error'
+}
+
 const resources = ref<Resource[]>([])
 const isLoading = ref(false)
 const showEditor = ref(false)
 const editingResource = ref<Resource | null>(null)
 
 const dialogVisible = ref(false)
-const dialogOptions = ref({
-  title: '',
-  message: '',
-  type: 'alert' as 'confirm' | 'alert' | 'success' | 'error'
+const dialogOptions = ref<DialogOptions>({
+  message: ''
 })
 let dialogResolve: ((value: boolean) => void) | null = null
 
-const showDialog = (options: { title?: string; message: string; type?: 'confirm' | 'alert' | 'success' | 'error' }): Promise<boolean> => {
-  dialogOptions.value = { title: '', message: '', type: 'alert', ...options }
+const showDialog = (options: DialogOptions): Promise<boolean> => {
+  dialogOptions.value = { ...options }
   dialogVisible.value = true
   return new Promise((resolve) => {
     dialogResolve = resolve
