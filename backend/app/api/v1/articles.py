@@ -65,6 +65,7 @@ async def get_articles(
             slug=article.slug,
             summary=article.summary,
             cover_image=article.cover_image,
+            is_published=article.is_published,
             is_featured=article.is_featured,
             view_count=article.view_count,
             like_count=article.like_count or 0,
