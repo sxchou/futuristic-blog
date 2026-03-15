@@ -2,48 +2,14 @@
 import { ref, onMounted } from 'vue'
 import { resourceApi } from '@/api'
 import type { Resource } from '@/types'
-import ModalDialog from '@/components/common/ModalDialog.vue'
+import { useDialogStore } from '@/stores'
 
-interface DialogOptions {
-  title?: string
-  message: string
-  type?: 'confirm' | 'alert' | 'success' | 'error'
-}
+const dialog = useDialogStore()
 
 const resources = ref<Resource[]>([])
 const isLoading = ref(false)
 const showEditor = ref(false)
 const editingResource = ref<Resource | null>(null)
-
-const dialogVisible = ref(false)
-const dialogOptions = ref<DialogOptions>({
-  message: ''
-})
-let dialogResolve: ((value: boolean) => void) | null = null
-
-const showDialog = (options: DialogOptions): Promise<boolean> => {
-  dialogOptions.value = { ...options }
-  dialogVisible.value = true
-  return new Promise((resolve) => {
-    dialogResolve = resolve
-  })
-}
-
-const onDialogConfirm = () => {
-  dialogVisible.value = false
-  if (dialogResolve) {
-    dialogResolve(true)
-    dialogResolve = null
-  }
-}
-
-const onDialogCancel = () => {
-  dialogVisible.value = false
-  if (dialogResolve) {
-    dialogResolve(false)
-    dialogResolve = null
-  }
-}
 
 const form = ref({
   title: '',
@@ -89,29 +55,29 @@ const handleEdit = (resource: Resource) => {
 }
 
 const handleDelete = async (resource: Resource) => {
-  const confirmed = await showDialog({
+  const confirmed = await dialog.showConfirm({
     title: '确认删除',
-    message: `确定要删除资源"${resource.title}"吗？`,
-    type: 'confirm'
+    message: `确定要删除资源"${resource.title}"吗？`
   })
   if (!confirmed) return
   
   try {
     await resourceApi.deleteResource(resource.id)
     await fetchResources()
-    await showDialog({ title: '成功', message: '资源已删除', type: 'success' })
+    await dialog.showSuccess('资源已删除', '成功')
   } catch (error: any) {
     console.error('Failed to delete resource:', error)
     if (error.response?.status === 403) {
-      await showDialog({ title: '权限不足', message: '无权限删除此资源', type: 'error' })
+      await dialog.showError('您没有权限删除此资源，请联系管理员', '权限不足')
     } else {
-      await showDialog({ title: '错误', message: error.response?.data?.detail || '删除失败', type: 'error' })
+      await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
     }
   }
 }
 
 const handleSubmit = async () => {
   try {
+    const isEditing = !!editingResource.value
     if (editingResource.value) {
       await resourceApi.updateResource(editingResource.value.id, form.value)
     } else {
@@ -121,13 +87,13 @@ const handleSubmit = async () => {
     editingResource.value = null
     resetForm()
     await fetchResources()
-    await showDialog({ title: '成功', message: editingResource.value ? '资源已更新' : '资源已创建', type: 'success' })
+    await dialog.showSuccess(isEditing ? '资源已更新' : '资源已创建', '成功')
   } catch (error: any) {
     console.error('Failed to save resource:', error)
     if (error.response?.status === 403) {
-      await showDialog({ title: '权限不足', message: '无权限修改此资源', type: 'error' })
+      await dialog.showError('您没有权限修改此资源，请联系管理员', '权限不足')
     } else {
-      await showDialog({ title: '错误', message: error.response?.data?.detail || '保存失败', type: 'error' })
+      await dialog.showError(error.response?.data?.detail || '保存失败', '错误')
     }
   }
 }
@@ -339,14 +305,5 @@ onMounted(() => {
         </form>
       </div>
     </div>
-
-    <ModalDialog
-      v-model="dialogVisible"
-      :title="dialogOptions.title"
-      :message="dialogOptions.message"
-      :type="dialogOptions.type"
-      @confirm="onDialogConfirm"
-      @cancel="onDialogCancel"
-    />
   </div>
 </template>

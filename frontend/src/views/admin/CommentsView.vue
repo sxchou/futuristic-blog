@@ -2,13 +2,9 @@
 import { ref, onMounted, computed } from 'vue'
 import { commentApi } from '@/api'
 import type { AdminComment, CommentAuditLog, PaginatedResponse } from '@/types'
-import ModalDialog from '@/components/common/ModalDialog.vue'
+import { useDialogStore } from '@/stores'
 
-interface DialogOptions {
-  title?: string
-  message: string
-  type?: 'confirm' | 'alert' | 'success' | 'error'
-}
+const dialog = useDialogStore()
 
 const comments = ref<AdminComment[]>([])
 const loading = ref(false)
@@ -27,36 +23,6 @@ const auditLogs = ref<CommentAuditLog[]>([])
 const showBatchAuditModal = ref(false)
 const batchAuditStatus = ref<'pending' | 'approved' | 'rejected'>('approved')
 const batchAuditReason = ref('')
-
-const dialogVisible = ref(false)
-const dialogOptions = ref<DialogOptions>({
-  message: ''
-})
-let dialogResolve: ((value: boolean) => void) | null = null
-
-const showDialog = (options: DialogOptions): Promise<boolean> => {
-  dialogOptions.value = { ...options }
-  dialogVisible.value = true
-  return new Promise((resolve) => {
-    dialogResolve = resolve
-  })
-}
-
-const onDialogConfirm = () => {
-  dialogVisible.value = false
-  if (dialogResolve) {
-    dialogResolve(true)
-    dialogResolve = null
-  }
-}
-
-const onDialogCancel = () => {
-  dialogVisible.value = false
-  if (dialogResolve) {
-    dialogResolve(false)
-    dialogResolve = null
-  }
-}
 
 const statusOptions = [
   { value: '', label: '全部状态' },
@@ -144,9 +110,15 @@ const submitAudit = async () => {
       reason: auditReason.value || undefined
     })
     showAuditModal.value = false
+    await dialog.showSuccess('审核状态已更新', '成功')
     fetchComments()
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to audit comment:', error)
+    if (error.response?.status === 403) {
+      await dialog.showError('您没有权限审核此评论，请联系管理员', '权限不足')
+    } else {
+      await dialog.showError(error.response?.data?.detail || '审核失败', '错误')
+    }
   }
 }
 
@@ -176,26 +148,35 @@ const submitBatchAudit = async () => {
     })
     showBatchAuditModal.value = false
     selectedComments.value = []
+    await dialog.showSuccess(`已批量处理 ${selectedComments.value.length} 条评论`, '成功')
     fetchComments()
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to batch audit:', error)
+    if (error.response?.status === 403) {
+      await dialog.showError('您没有权限批量审核评论，请联系管理员', '权限不足')
+    } else {
+      await dialog.showError(error.response?.data?.detail || '批量审核失败', '错误')
+    }
   }
 }
 
 const deleteComment = async (comment: AdminComment) => {
-  const confirmed = await showDialog({
+  const confirmed = await dialog.showConfirm({
     title: '确认删除',
-    message: `确定要删除评论 #${comment.id} 吗？`,
-    type: 'confirm'
+    message: `确定要删除评论 #${comment.id} 吗？此操作不可恢复。`
   })
   if (!confirmed) return
   try {
     await commentApi.adminDelete(comment.id)
-    await showDialog({ title: '成功', message: '评论已删除', type: 'success' })
+    await dialog.showSuccess('评论已删除', '成功')
     fetchComments()
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to delete comment:', error)
-    await showDialog({ title: '错误', message: '删除评论失败', type: 'error' })
+    if (error.response?.status === 403) {
+      await dialog.showError('您没有权限删除此评论，请联系管理员', '权限不足')
+    } else {
+      await dialog.showError(error.response?.data?.detail || '删除评论失败', '错误')
+    }
   }
 }
 
@@ -479,7 +460,17 @@ onMounted(() => {
 
     <div v-if="showLogsModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div class="bg-white dark:bg-dark-200 rounded-xl p-6 w-full max-w-lg mx-4 max-h-[80vh] overflow-y-auto">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">审核日志</h3>
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">审核日志</h3>
+          <button
+            @click="showLogsModal = false"
+            class="text-gray-400 hover:text-gray-900 dark:hover:text-white"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
         <div v-if="auditLogs.length === 0" class="text-center text-gray-500 dark:text-gray-400 py-8">
           暂无审核记录
         </div>
@@ -517,21 +508,12 @@ onMounted(() => {
         <div class="flex justify-end mt-6">
           <button
             @click="showLogsModal = false"
-            class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-100 rounded-lg transition-colors"
+            class="px-4 py-2 text-sm bg-gray-100 dark:bg-dark-100 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-50 transition-colors"
           >
             关闭
           </button>
         </div>
       </div>
     </div>
-
-    <ModalDialog
-      v-model="dialogVisible"
-      :title="dialogOptions.title"
-      :message="dialogOptions.message"
-      :type="dialogOptions.type"
-      @confirm="onDialogConfirm"
-      @cancel="onDialogCancel"
-    />
   </div>
 </template>

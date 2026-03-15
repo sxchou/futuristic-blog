@@ -2,13 +2,9 @@
 import { ref, onMounted } from 'vue'
 import { userApi } from '@/api'
 import type { User } from '@/types'
-import ModalDialog from '@/components/common/ModalDialog.vue'
+import { useDialogStore } from '@/stores'
 
-interface DialogOptions {
-  title?: string
-  message: string
-  type?: 'confirm' | 'alert' | 'success' | 'error'
-}
+const dialog = useDialogStore()
 
 const users = ref<User[]>([])
 const isLoading = ref(false)
@@ -20,36 +16,6 @@ const showEditor = ref(false)
 const editingUser = ref<User | null>(null)
 const showPasswordModal = ref(false)
 const newPassword = ref('')
-
-const dialogVisible = ref(false)
-const dialogOptions = ref<DialogOptions>({
-  message: ''
-})
-let dialogResolve: ((value: boolean) => void) | null = null
-
-const showDialog = (options: DialogOptions): Promise<boolean> => {
-  dialogOptions.value = { ...options }
-  dialogVisible.value = true
-  return new Promise((resolve) => {
-    dialogResolve = resolve
-  })
-}
-
-const onDialogConfirm = () => {
-  dialogVisible.value = false
-  if (dialogResolve) {
-    dialogResolve(true)
-    dialogResolve = null
-  }
-}
-
-const onDialogCancel = () => {
-  dialogVisible.value = false
-  if (dialogResolve) {
-    dialogResolve(false)
-    dialogResolve = null
-  }
-}
 
 const form = ref({
   username: '',
@@ -83,20 +49,23 @@ const handleEdit = (user: User) => {
 }
 
 const handleDelete = async (user: User) => {
-  const confirmed = await showDialog({
+  const confirmed = await dialog.showConfirm({
     title: '确认删除',
-    message: `确定要删除用户"${user.username}"吗？`,
-    type: 'confirm'
+    message: `确定要删除用户"${user.username}"吗？此操作不可恢复。`
   })
   if (!confirmed) return
   
   try {
     await userApi.deleteUser(user.id)
     await fetchUsers()
-    await showDialog({ title: '成功', message: '用户已删除', type: 'success' })
+    await dialog.showSuccess('用户已删除', '成功')
   } catch (error: any) {
     console.error('Failed to delete user:', error)
-    await showDialog({ title: '错误', message: error.response?.data?.detail || '删除失败', type: 'error' })
+    if (error.response?.status === 403) {
+      await dialog.showError('您没有权限删除此用户，请联系管理员', '权限不足')
+    } else {
+      await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
+    }
   }
 }
 
@@ -108,10 +77,14 @@ const handleSubmit = async () => {
     showEditor.value = false
     editingUser.value = null
     await fetchUsers()
-    await showDialog({ title: '成功', message: '用户信息已更新', type: 'success' })
+    await dialog.showSuccess('用户信息已更新', '成功')
   } catch (error: any) {
     console.error('Failed to save user:', error)
-    await showDialog({ title: '错误', message: error.response?.data?.detail || '保存失败', type: 'error' })
+    if (error.response?.status === 403) {
+      await dialog.showError('您没有权限修改此用户信息，请联系管理员', '权限不足')
+    } else {
+      await dialog.showError(error.response?.data?.detail || '保存失败', '错误')
+    }
   }
 }
 
@@ -122,13 +95,13 @@ const handleResetPassword = async () => {
     await userApi.resetPassword(editingUser.value.id, newPassword.value)
     showPasswordModal.value = false
     newPassword.value = ''
-    await showDialog({ title: '成功', message: '密码重置成功', type: 'success' })
+    await dialog.showSuccess('密码重置成功', '成功')
   } catch (error: any) {
     console.error('Failed to reset password:', error)
     if (error.response?.status === 403) {
-      await showDialog({ title: '权限不足', message: '无权限重置密码', type: 'error' })
+      await dialog.showError('您没有权限重置此用户的密码，请联系管理员', '权限不足')
     } else {
-      await showDialog({ title: '错误', message: error.response?.data?.detail || '密码重置失败', type: 'error' })
+      await dialog.showError(error.response?.data?.detail || '密码重置失败', '错误')
     }
   }
 }
@@ -398,14 +371,5 @@ onMounted(fetchUsers)
         </form>
       </div>
     </div>
-
-    <ModalDialog
-      v-model="dialogVisible"
-      :title="dialogOptions.title"
-      :message="dialogOptions.message"
-      :type="dialogOptions.type"
-      @confirm="onDialogConfirm"
-      @cancel="onDialogCancel"
-    />
   </div>
 </template>

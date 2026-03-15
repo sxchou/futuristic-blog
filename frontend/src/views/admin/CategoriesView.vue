@@ -1,49 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useDialogStore } from '@/stores'
 import { categoryApi } from '@/api'
 import type { Category } from '@/types'
-import ModalDialog from '@/components/common/ModalDialog.vue'
 
-interface DialogOptions {
-  title?: string
-  message: string
-  type?: 'confirm' | 'alert' | 'success' | 'error'
-}
+const dialog = useDialogStore()
 
 const categories = ref<Category[]>([])
 const isLoading = ref(false)
 const showEditor = ref(false)
 const editingCategory = ref<Category | null>(null)
-
-const dialogVisible = ref(false)
-const dialogOptions = ref<DialogOptions>({
-  message: ''
-})
-let dialogResolve: ((value: boolean) => void) | null = null
-
-const showDialog = (options: DialogOptions): Promise<boolean> => {
-  dialogOptions.value = { ...options }
-  dialogVisible.value = true
-  return new Promise((resolve) => {
-    dialogResolve = resolve
-  })
-}
-
-const onDialogConfirm = () => {
-  dialogVisible.value = false
-  if (dialogResolve) {
-    dialogResolve(true)
-    dialogResolve = null
-  }
-}
-
-const onDialogCancel = () => {
-  dialogVisible.value = false
-  if (dialogResolve) {
-    dialogResolve(false)
-    dialogResolve = null
-  }
-}
 
 const form = ref({
   name: '',
@@ -79,23 +45,22 @@ const handleEdit = (category: Category) => {
 }
 
 const handleDelete = async (category: Category) => {
-  const confirmed = await showDialog({
+  const confirmed = await dialog.showConfirm({
     title: '确认删除',
-    message: `确定要删除分类"${category.name}"吗？`,
-    type: 'confirm'
+    message: `确定要删除分类"${category.name}"吗？`
   })
   if (!confirmed) return
   
   try {
     await categoryApi.deleteCategory(category.id)
     await fetchCategories()
-    await showDialog({ title: '成功', message: '分类已删除', type: 'success' })
+    await dialog.showSuccess('分类已删除', '成功')
   } catch (error: any) {
     console.error('Failed to delete category:', error)
     if (error.response?.status === 403) {
-      await showDialog({ title: '权限不足', message: '无权限删除此分类', type: 'error' })
+      await dialog.showError('无权限删除此分类', '权限不足')
     } else {
-      await showDialog({ title: '错误', message: error.response?.data?.detail || '删除失败', type: 'error' })
+      await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
     }
   }
 }
@@ -111,13 +76,13 @@ const handleSubmit = async () => {
     editingCategory.value = null
     resetForm()
     await fetchCategories()
-    await showDialog({ title: '成功', message: editingCategory.value ? '分类已更新' : '分类已创建', type: 'success' })
+    await dialog.showSuccess('分类已保存', '成功')
   } catch (error: any) {
     console.error('Failed to save category:', error)
     if (error.response?.status === 403) {
-      await showDialog({ title: '权限不足', message: '无权限修改此分类', type: 'error' })
+      await dialog.showError('无权限修改此分类', '权限不足')
     } else {
-      await showDialog({ title: '错误', message: error.response?.data?.detail || '保存失败', type: 'error' })
+      await dialog.showError(error.response?.data?.detail || '保存失败', '错误')
     }
   }
 }
@@ -282,14 +247,5 @@ onMounted(fetchCategories)
         </form>
       </div>
     </div>
-
-    <ModalDialog
-      v-model="dialogVisible"
-      :title="dialogOptions.title"
-      :message="dialogOptions.message"
-      :type="dialogOptions.type"
-      @confirm="onDialogConfirm"
-      @cancel="onDialogCancel"
-    />
   </div>
 </template>

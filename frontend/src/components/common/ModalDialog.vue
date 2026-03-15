@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onUnmounted } from 'vue'
 
 const props = defineProps<{
   modelValue: boolean
@@ -27,13 +27,19 @@ watch(isVisible, (val) => {
 })
 
 const handleConfirm = () => {
-  emit('confirm')
   isVisible.value = false
+  emit('confirm')
 }
 
 const handleCancel = () => {
-  emit('cancel')
   isVisible.value = false
+  emit('cancel')
+}
+
+const handleOverlayClick = () => {
+  if (props.type === 'alert' || props.type === 'success' || props.type === 'error') {
+    handleCancel()
+  }
 }
 
 const getIconClass = () => {
@@ -61,6 +67,10 @@ const getIconPath = () => {
       return 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
   }
 }
+
+onUnmounted(() => {
+  isVisible.value = false
+})
 </script>
 
 <template>
@@ -79,7 +89,7 @@ const getIconPath = () => {
       >
         <div
           class="absolute inset-0 bg-black/60 backdrop-blur-sm"
-          @click="type === 'alert' || type === 'success' || type === 'error' ? handleCancel : null"
+          @click="handleOverlayClick"
         />
         <Transition
           enter-active-class="transition ease-out duration-200"
