@@ -64,7 +64,7 @@ const handleEdit = async (article: ArticleListItem) => {
   editingArticle.value = article
   
   try {
-    const fullArticle = await articleApi.getArticle(article.slug)
+    const fullArticle = await articleApi.getAdminArticle(article.slug)
     form.value = {
       title: fullArticle.title,
       slug: fullArticle.slug,

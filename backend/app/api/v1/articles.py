@@ -192,6 +192,19 @@ async def get_article_archive(db: Session = Depends(get_db)):
     return result
 
 
+@router.get("/admin/{slug}", response_model=ArticleResponse)
+async def get_admin_article(
+    slug: str, 
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_active_user)
+):
+    article = db.query(Article).filter(Article.slug == slug).first()
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+    
+    return ArticleResponse.model_validate(article)
+
+
 @router.get("/{slug}", response_model=ArticleResponse)
 async def get_article(slug: str, db: Session = Depends(get_db)):
     article = db.query(Article).filter(Article.slug == slug, Article.is_published == True).first()

@@ -22,6 +22,11 @@ export const articleApi = {
     return response.data
   },
 
+  getAdminArticle: async (slug: string): Promise<Article> => {
+    const response = await apiClient.get(`/articles/admin/${slug}`)
+    return response.data
+  },
+
   getArticle: async (slug: string): Promise<Article> => {
     const response = await apiClient.get(`/articles/${slug}`)
     return response.data
