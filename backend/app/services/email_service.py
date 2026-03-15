@@ -787,3 +787,256 @@ class EmailService:
                 "success": False,
                 "error": str(e)
             }
+
+    @staticmethod
+    def send_reply_notification_db(
+        db: Session,
+        recipient_email: str,
+        recipient_name: str,
+        article_title: str,
+        article_slug: str,
+        reply_content: str,
+        commenter_name: str
+    ) -> bool:
+        site_name = EmailService.get_site_name(db)
+        current_year = EmailService.get_current_year()
+        
+        article_url = f"{settings.FRONTEND_URL}/article/{article_slug}"
+        
+        text_content = f"""
+评论回复通知
+
+您好，{recipient_name}！
+
+您在文章「{article_title}」中的评论收到了新回复：
+
+回复者：{commenter_name}
+回复内容：{reply_content}
+
+查看文章：{article_url}
+
+{site_name}
+"""
+        
+        html_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; color: #333333; padding: 20px; margin: 0; }}
+        .container {{ max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; padding: 40px; border: 1px solid #e0e0e0; }}
+        .logo {{ font-size: 24px; font-weight: bold; color: #0066cc; margin-bottom: 30px; }}
+        .title {{ font-size: 20px; margin-bottom: 20px; color: #10b981; }}
+        .info-box {{ background-color: #ecfdf5; border-radius: 8px; padding: 20px; margin: 20px 0; }}
+        .comment-box {{ background-color: #f0f7ff; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #10b981; }}
+        .info-item {{ margin: 10px 0; }}
+        .label {{ color: #666666; font-size: 14px; }}
+        .value {{ color: #333333; font-size: 16px; font-weight: 500; }}
+        .button {{ display: inline-block; padding: 12px 32px; background-color: #10b981; color: #ffffff; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: 500; }}
+        .link {{ word-break: break-all; color: #10b981; }}
+        .footer {{ margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 14px; color: #666666; }}
+        p {{ line-height: 1.6; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🚀 {site_name}</div>
+        <h1 class="title">💬 您的评论收到了新回复</h1>
+        <p>您好，{recipient_name}！</p>
+        <p>您在文章「<strong>{article_title}</strong>」中的评论收到了新回复：</p>
+        <div class="info-box">
+            <div class="info-item">
+                <span class="label">回复者：</span>
+                <span class="value">{commenter_name}</span>
+            </div>
+        </div>
+        <div class="comment-box">
+            <p style="margin: 0; white-space: pre-wrap;">{reply_content}</p>
+        </div>
+        <a href="{article_url}" class="button">查看文章</a>
+        <div class="footer">
+            <p>此邮件为系统自动发送，请勿回复。</p>
+            <p>© {current_year} {site_name}. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+        
+        try:
+            return EmailService.send_email(
+                db=db,
+                to_email=recipient_email,
+                subject=f"您的评论收到了新回复 - {article_title}",
+                html_content=html_content,
+                text_content=text_content,
+                email_type='reply_notification',
+                recipient_name=recipient_name
+            )
+        except Exception as e:
+            logger.error(f"Failed to send reply notification: {e}")
+            return False
+
+    @staticmethod
+    def send_comment_approved_notification_db(
+        db: Session,
+        recipient_email: str,
+        recipient_name: str,
+        article_title: str,
+        article_slug: str,
+        comment_content: str
+    ) -> bool:
+        site_name = EmailService.get_site_name(db)
+        current_year = EmailService.get_current_year()
+        
+        article_url = f"{settings.FRONTEND_URL}/article/{article_slug}"
+        
+        text_content = f"""
+评论审核通过通知
+
+您好，{recipient_name}！
+
+您在文章「{article_title}」中的评论已通过审核：
+
+评论内容：{comment_content}
+
+查看文章：{article_url}
+
+{site_name}
+"""
+        
+        html_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; color: #333333; padding: 20px; margin: 0; }}
+        .container {{ max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; padding: 40px; border: 1px solid #e0e0e0; }}
+        .logo {{ font-size: 24px; font-weight: bold; color: #0066cc; margin-bottom: 30px; }}
+        .title {{ font-size: 20px; margin-bottom: 20px; color: #10b981; }}
+        .success-icon {{ color: #10b981; font-size: 48px; text-align: center; }}
+        .comment-box {{ background-color: #f0f7ff; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #10b981; }}
+        .button {{ display: inline-block; padding: 12px 32px; background-color: #10b981; color: #ffffff; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: 500; }}
+        .footer {{ margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 14px; color: #666666; }}
+        p {{ line-height: 1.6; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🚀 {site_name}</div>
+        <h1 class="title">✅ 评论审核通过</h1>
+        <p class="success-icon">✅</p>
+        <p>您好，{recipient_name}！</p>
+        <p>您在文章「<strong>{article_title}</strong>」中的评论已通过审核：</p>
+        <div class="comment-box">
+            <p style="margin: 0; white-space: pre-wrap;">{comment_content}</p>
+        </div>
+        <a href="{article_url}" class="button">查看文章</a>
+        <div class="footer">
+            <p>此邮件为系统自动发送，请勿回复。</p>
+            <p>© {current_year} {site_name}. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+        
+        try:
+            return EmailService.send_email(
+                db=db,
+                to_email=recipient_email,
+                subject=f"您的评论已通过审核 - {article_title}",
+                html_content=html_content,
+                text_content=text_content,
+                email_type='comment_approved',
+                recipient_name=recipient_name
+            )
+        except Exception as e:
+            logger.error(f"Failed to send comment approved notification: {e}")
+            return False
+
+    @staticmethod
+    def send_pending_comment_notification_db(
+        db: Session,
+        commenter_name: str,
+        article_title: str,
+        article_slug: str,
+        comment_content: str
+    ) -> bool:
+        site_name = EmailService.get_site_name(db)
+        current_year = EmailService.get_current_year()
+        
+        article_url = f"{settings.FRONTEND_URL}/article/{article_slug}"
+        admin_url = f"{settings.FRONTEND_URL}/admin/comments"
+        
+        text_content = f"""
+待审核评论通知
+
+文章：{article_title}
+评论者：{commenter_name}
+评论内容：{comment_content}
+
+请登录管理后台审核：{admin_url}
+
+{site_name}
+"""
+        
+        html_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; color: #333333; padding: 20px; margin: 0; }}
+        .container {{ max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; padding: 40px; border: 1px solid #e0e0e0; }}
+        .logo {{ font-size: 24px; font-weight: bold; color: #0066cc; margin-bottom: 30px; }}
+        .title {{ font-size: 20px; margin-bottom: 20px; color: #f59e0b; }}
+        .warning-icon {{ color: #f59e0b; font-size: 48px; text-align: center; }}
+        .info-box {{ background-color: #fffbeb; border-radius: 8px; padding: 20px; margin: 20px 0; }}
+        .comment-box {{ background-color: #f5f5f5; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #f59e0b; }}
+        .info-item {{ margin: 10px 0; }}
+        .label {{ color: #666666; font-size: 14px; }}
+        .value {{ color: #333333; font-size: 16px; font-weight: 500; }}
+        .button {{ display: inline-block; padding: 12px 32px; background-color: #f59e0b; color: #ffffff; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: 500; }}
+        .footer {{ margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 14px; color: #666666; }}
+        p {{ line-height: 1.6; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🚀 {site_name}</div>
+        <h1 class="title">⏳ 新评论待审核</h1>
+        <p class="warning-icon">⏳</p>
+        <p>有一新评论等待审核：</p>
+        <div class="info-box">
+            <div class="info-item">
+                <span class="label">文章：</span>
+                <span class="value">{article_title}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">评论者：</span>
+                <span class="value">{commenter_name}</span>
+            </div>
+        </div>
+        <div class="comment-box">
+            <p style="margin: 0; white-space: pre-wrap;">{comment_content}</p>
+        </div>
+        <a href="{admin_url}" class="button">前往审核</a>
+        <div class="footer">
+            <p>此邮件为系统自动发送，请勿回复。</p>
+            <p>© {current_year} {site_name}. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+        
+        return EmailService.send_admin_notification_db(
+            db=db,
+            subject=f"待审核评论 - {article_title}",
+            html_content=html_content,
+            text_content=text_content,
+            notification_type="pending_comment"
+        )

@@ -2,11 +2,44 @@
 import { ref, onMounted } from 'vue'
 import { tagApi } from '@/api'
 import type { Tag } from '@/types'
+import ModalDialog from '@/components/common/ModalDialog.vue'
 
 const tags = ref<Tag[]>([])
 const isLoading = ref(false)
 const showEditor = ref(false)
 const editingTag = ref<Tag | null>(null)
+
+const dialogVisible = ref(false)
+const dialogOptions = ref({
+  title: '',
+  message: '',
+  type: 'alert' as 'confirm' | 'alert' | 'success' | 'error'
+})
+let dialogResolve: ((value: boolean) => void) | null = null
+
+const showDialog = (options: { title?: string; message: string; type?: 'confirm' | 'alert' | 'success' | 'error' }): Promise<boolean> => {
+  dialogOptions.value = { title: '', message: '', type: 'alert', ...options }
+  dialogVisible.value = true
+  return new Promise((resolve) => {
+    dialogResolve = resolve
+  })
+}
+
+const onDialogConfirm = () => {
+  dialogVisible.value = false
+  if (dialogResolve) {
+    dialogResolve(true)
+    dialogResolve = null
+  }
+}
+
+const onDialogCancel = () => {
+  dialogVisible.value = false
+  if (dialogResolve) {
+    dialogResolve(false)
+    dialogResolve = null
+  }
+}
 
 const form = ref({
   name: '',
@@ -36,17 +69,23 @@ const handleEdit = (tag: Tag) => {
 }
 
 const handleDelete = async (tag: Tag) => {
-  if (!confirm(`确定要删除标签"${tag.name}"吗？`)) return
+  const confirmed = await showDialog({
+    title: '确认删除',
+    message: `确定要删除标签"${tag.name}"吗？`,
+    type: 'confirm'
+  })
+  if (!confirmed) return
   
   try {
     await tagApi.deleteTag(tag.id)
     await fetchTags()
+    await showDialog({ title: '成功', message: '标签已删除', type: 'success' })
   } catch (error: any) {
     console.error('Failed to delete tag:', error)
     if (error.response?.status === 403) {
-      alert('无权限删除此标签')
+      await showDialog({ title: '权限不足', message: '无权限删除此标签', type: 'error' })
     } else {
-      alert(error.response?.data?.detail || '删除失败')
+      await showDialog({ title: '错误', message: error.response?.data?.detail || '删除失败', type: 'error' })
     }
   }
 }
@@ -62,12 +101,13 @@ const handleSubmit = async () => {
     editingTag.value = null
     resetForm()
     await fetchTags()
+    await showDialog({ title: '成功', message: editingTag.value ? '标签已更新' : '标签已创建', type: 'success' })
   } catch (error: any) {
     console.error('Failed to save tag:', error)
     if (error.response?.status === 403) {
-      alert('无权限修改此标签')
+      await showDialog({ title: '权限不足', message: '无权限修改此标签', type: 'error' })
     } else {
-      alert(error.response?.data?.detail || '保存失败')
+      await showDialog({ title: '错误', message: error.response?.data?.detail || '保存失败', type: 'error' })
     }
   }
 }
@@ -207,5 +247,14 @@ onMounted(fetchTags)
         </form>
       </div>
     </div>
+
+    <ModalDialog
+      v-model="dialogVisible"
+      :title="dialogOptions.title"
+      :message="dialogOptions.message"
+      :type="dialogOptions.type"
+      @confirm="onDialogConfirm"
+      @cancel="onDialogCancel"
+    />
   </div>
 </template>

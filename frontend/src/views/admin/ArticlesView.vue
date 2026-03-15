@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useBlogStore } from '@/stores'
 import { articleApi, fileApi } from '@/api'
 import type { ArticleListItem } from '@/types'
+import ModalDialog from '@/components/common/ModalDialog.vue'
 
 interface ArticleFile {
   id: number
@@ -25,6 +26,38 @@ const editingArticle = ref<ArticleListItem | null>(null)
 const articleFiles = ref<ArticleFile[]>([])
 const isUploading = ref(false)
 const uploadProgress = ref(0)
+
+const dialogVisible = ref(false)
+const dialogOptions = ref({
+  title: '',
+  message: '',
+  type: 'alert' as 'confirm' | 'alert' | 'success' | 'error'
+})
+let dialogResolve: ((value: boolean) => void) | null = null
+
+const showDialog = (options: { title?: string; message: string; type?: 'confirm' | 'alert' | 'success' | 'error' }): Promise<boolean> => {
+  dialogOptions.value = { title: '', message: '', type: 'alert', ...options }
+  dialogVisible.value = true
+  return new Promise((resolve) => {
+    dialogResolve = resolve
+  })
+}
+
+const onDialogConfirm = () => {
+  dialogVisible.value = false
+  if (dialogResolve) {
+    dialogResolve(true)
+    dialogResolve = null
+  }
+}
+
+const onDialogCancel = () => {
+  dialogVisible.value = false
+  if (dialogResolve) {
+    dialogResolve(false)
+    dialogResolve = null
+  }
+}
 
 const form = ref({
   title: '',
@@ -78,22 +111,28 @@ const handleEdit = async (article: ArticleListItem) => {
     showEditor.value = true
   } catch (error) {
     console.error('Failed to fetch article:', error)
-    alert('获取文章详情失败')
+    await showDialog({ title: '错误', message: '获取文章详情失败', type: 'error' })
   }
 }
 
 const handleDelete = async (article: ArticleListItem) => {
-  if (!confirm(`确定要删除文章"${article.title}"吗？`)) return
+  const confirmed = await showDialog({
+    title: '确认删除',
+    message: `确定要删除文章"${article.title}"吗？`,
+    type: 'confirm'
+  })
+  if (!confirmed) return
   
   try {
     await articleApi.deleteArticle(article.id)
     await fetchArticles()
+    await showDialog({ title: '成功', message: '文章已删除', type: 'success' })
   } catch (error: any) {
     console.error('Failed to delete article:', error)
     if (error.response?.status === 403) {
-      alert('无权限删除此文章')
+      await showDialog({ title: '权限不足', message: '无权限删除此文章', type: 'error' })
     } else {
-      alert(error.response?.data?.detail || '删除失败')
+      await showDialog({ title: '错误', message: error.response?.data?.detail || '删除失败', type: 'error' })
     }
   }
 }
@@ -213,16 +252,22 @@ const handleImageUpload = async (event: Event) => {
 }
 
 const handleDeleteFile = async (fileId: number) => {
-  if (!confirm('确定要删除此文件吗？')) return
+  const confirmed = await showDialog({
+    title: '确认删除',
+    message: '确定要删除此文件吗？',
+    type: 'confirm'
+  })
+  if (!confirmed) return
   
   try {
     await fileApi.deleteFile(fileId)
     if (editingArticle.value) {
       await fetchArticleFiles(editingArticle.value.id)
     }
+    await showDialog({ title: '成功', message: '文件已删除', type: 'success' })
   } catch (error: any) {
     console.error('Failed to delete file:', error)
-    alert(error.response?.data?.detail || '删除失败')
+    await showDialog({ title: '错误', message: error.response?.data?.detail || '删除失败', type: 'error' })
   }
 }
 
@@ -529,5 +574,14 @@ onMounted(() => {
         </form>
       </div>
     </div>
+
+    <ModalDialog
+      v-model="dialogVisible"
+      :title="dialogOptions.title"
+      :message="dialogOptions.message"
+      :type="dialogOptions.type"
+      @confirm="onDialogConfirm"
+      @cancel="onDialogCancel"
+    />
   </div>
 </template>

@@ -2,11 +2,44 @@
 import { ref, onMounted } from 'vue'
 import { resourceApi } from '@/api'
 import type { Resource } from '@/types'
+import ModalDialog from '@/components/common/ModalDialog.vue'
 
 const resources = ref<Resource[]>([])
 const isLoading = ref(false)
 const showEditor = ref(false)
 const editingResource = ref<Resource | null>(null)
+
+const dialogVisible = ref(false)
+const dialogOptions = ref({
+  title: '',
+  message: '',
+  type: 'alert' as 'confirm' | 'alert' | 'success' | 'error'
+})
+let dialogResolve: ((value: boolean) => void) | null = null
+
+const showDialog = (options: { title?: string; message: string; type?: 'confirm' | 'alert' | 'success' | 'error' }): Promise<boolean> => {
+  dialogOptions.value = { title: '', message: '', type: 'alert', ...options }
+  dialogVisible.value = true
+  return new Promise((resolve) => {
+    dialogResolve = resolve
+  })
+}
+
+const onDialogConfirm = () => {
+  dialogVisible.value = false
+  if (dialogResolve) {
+    dialogResolve(true)
+    dialogResolve = null
+  }
+}
+
+const onDialogCancel = () => {
+  dialogVisible.value = false
+  if (dialogResolve) {
+    dialogResolve(false)
+    dialogResolve = null
+  }
+}
 
 const form = ref({
   title: '',
@@ -52,17 +85,23 @@ const handleEdit = (resource: Resource) => {
 }
 
 const handleDelete = async (resource: Resource) => {
-  if (!confirm(`确定要删除资源"${resource.title}"吗？`)) return
+  const confirmed = await showDialog({
+    title: '确认删除',
+    message: `确定要删除资源"${resource.title}"吗？`,
+    type: 'confirm'
+  })
+  if (!confirmed) return
   
   try {
     await resourceApi.deleteResource(resource.id)
     await fetchResources()
+    await showDialog({ title: '成功', message: '资源已删除', type: 'success' })
   } catch (error: any) {
     console.error('Failed to delete resource:', error)
     if (error.response?.status === 403) {
-      alert('无权限删除此资源')
+      await showDialog({ title: '权限不足', message: '无权限删除此资源', type: 'error' })
     } else {
-      alert(error.response?.data?.detail || '删除失败')
+      await showDialog({ title: '错误', message: error.response?.data?.detail || '删除失败', type: 'error' })
     }
   }
 }
@@ -78,12 +117,13 @@ const handleSubmit = async () => {
     editingResource.value = null
     resetForm()
     await fetchResources()
+    await showDialog({ title: '成功', message: editingResource.value ? '资源已更新' : '资源已创建', type: 'success' })
   } catch (error: any) {
     console.error('Failed to save resource:', error)
     if (error.response?.status === 403) {
-      alert('无权限修改此资源')
+      await showDialog({ title: '权限不足', message: '无权限修改此资源', type: 'error' })
     } else {
-      alert(error.response?.data?.detail || '保存失败')
+      await showDialog({ title: '错误', message: error.response?.data?.detail || '保存失败', type: 'error' })
     }
   }
 }
@@ -192,7 +232,6 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Editor Modal -->
     <div v-if="showEditor" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div class="bg-white dark:bg-dark-100 rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div class="p-4 border-b border-gray-200 dark:border-white/10">
@@ -296,5 +335,14 @@ onMounted(() => {
         </form>
       </div>
     </div>
+
+    <ModalDialog
+      v-model="dialogVisible"
+      :title="dialogOptions.title"
+      :message="dialogOptions.message"
+      :type="dialogOptions.type"
+      @confirm="onDialogConfirm"
+      @cancel="onDialogCancel"
+    />
   </div>
 </template>

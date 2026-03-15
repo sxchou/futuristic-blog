@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { commentApi } from '@/api'
 import type { AdminComment, CommentAuditLog, PaginatedResponse } from '@/types'
+import ModalDialog from '@/components/common/ModalDialog.vue'
 
 const comments = ref<AdminComment[]>([])
 const loading = ref(false)
@@ -20,6 +21,38 @@ const auditLogs = ref<CommentAuditLog[]>([])
 const showBatchAuditModal = ref(false)
 const batchAuditStatus = ref<'pending' | 'approved' | 'rejected'>('approved')
 const batchAuditReason = ref('')
+
+const dialogVisible = ref(false)
+const dialogOptions = ref({
+  title: '',
+  message: '',
+  type: 'alert' as 'confirm' | 'alert' | 'success' | 'error'
+})
+let dialogResolve: ((value: boolean) => void) | null = null
+
+const showDialog = (options: { title?: string; message: string; type?: 'confirm' | 'alert' | 'success' | 'error' }): Promise<boolean> => {
+  dialogOptions.value = { title: '', message: '', type: 'alert', ...options }
+  dialogVisible.value = true
+  return new Promise((resolve) => {
+    dialogResolve = resolve
+  })
+}
+
+const onDialogConfirm = () => {
+  dialogVisible.value = false
+  if (dialogResolve) {
+    dialogResolve(true)
+    dialogResolve = null
+  }
+}
+
+const onDialogCancel = () => {
+  dialogVisible.value = false
+  if (dialogResolve) {
+    dialogResolve(false)
+    dialogResolve = null
+  }
+}
 
 const statusOptions = [
   { value: '', label: '全部状态' },
@@ -146,12 +179,19 @@ const submitBatchAudit = async () => {
 }
 
 const deleteComment = async (comment: AdminComment) => {
-  if (!confirm(`确定要删除评论 #${comment.id} 吗？`)) return
+  const confirmed = await showDialog({
+    title: '确认删除',
+    message: `确定要删除评论 #${comment.id} 吗？`,
+    type: 'confirm'
+  })
+  if (!confirmed) return
   try {
     await commentApi.adminDelete(comment.id)
+    await showDialog({ title: '成功', message: '评论已删除', type: 'success' })
     fetchComments()
   } catch (error) {
     console.error('Failed to delete comment:', error)
+    await showDialog({ title: '错误', message: '删除评论失败', type: 'error' })
   }
 }
 
@@ -480,5 +520,14 @@ onMounted(() => {
         </div>
       </div>
     </div>
+
+    <ModalDialog
+      v-model="dialogVisible"
+      :title="dialogOptions.title"
+      :message="dialogOptions.message"
+      :type="dialogOptions.type"
+      @confirm="onDialogConfirm"
+      @cancel="onDialogCancel"
+    />
   </div>
 </template>
