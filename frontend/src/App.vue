@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useBlogStore, useDialogStore } from '@/stores'
+import { useBlogStore } from '@/stores'
 import Navbar from '@/components/common/Navbar.vue'
 import Footer from '@/components/common/Footer.vue'
 import GlobalSearch from '@/components/common/GlobalSearch.vue'
@@ -10,16 +10,8 @@ import ModalDialog from '@/components/common/ModalDialog.vue'
 
 const route = useRoute()
 const blogStore = useBlogStore()
-const dialogStore = useDialogStore()
 
 const isAdminPage = computed(() => route.path.startsWith('/admin'))
-
-const dialogVisible = computed({
-  get: () => dialogStore.isVisible.value,
-  set: (val: boolean) => {
-    dialogStore.isVisible.value = val
-  }
-})
 
 onMounted(() => {
   blogStore.fetchCategories()
@@ -60,16 +52,7 @@ onUnmounted(() => {
     </main>
     <Footer v-if="!isAdminPage" />
     <GlobalSearch v-if="!isAdminPage" />
-    <ModalDialog
-      v-model="dialogVisible"
-      :title="dialogStore.dialogOptions.value.title"
-      :message="dialogStore.dialogOptions.value.message"
-      :type="dialogStore.dialogOptions.value.type"
-      :confirm-text="dialogStore.dialogOptions.value.confirmText"
-      :cancel-text="dialogStore.dialogOptions.value.cancelText"
-      @confirm="dialogStore.handleConfirm"
-      @cancel="dialogStore.handleCancel"
-    />
+    <ModalDialog />
   </div>
 </template>
 

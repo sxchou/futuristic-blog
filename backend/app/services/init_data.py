@@ -1,12 +1,49 @@
-from app.core.database import SessionLocal
+from app.core.database import SessionLocal, engine
 from app.core.config import settings
 from app.models import User, Category, Tag, Article, Resource, SiteConfig
 from app.utils import get_password_hash
 from app.utils.timezone import get_now
 from datetime import datetime
+import sqlite3
+
+
+def run_database_migrations():
+    try:
+        db_url = str(engine.url)
+        
+        if "sqlite" in db_url:
+            db_path = db_url.replace("sqlite:///", "")
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            
+            cursor.execute("PRAGMA table_info(comments)")
+            columns = [column[1] for column in cursor.fetchall()]
+            
+            if 'deleted_by' not in columns:
+                cursor.execute("ALTER TABLE comments ADD COLUMN deleted_by VARCHAR(20)")
+                conn.commit()
+                print("Migration: Added 'deleted_by' column to comments table")
+            
+            conn.close()
+        elif "postgresql" in db_url:
+            db = SessionLocal()
+            try:
+                result = db.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'comments' AND column_name = 'deleted_by'")
+                if not result.fetchone():
+                    db.execute("ALTER TABLE comments ADD COLUMN deleted_by VARCHAR(20)")
+                    db.commit()
+                    print("Migration: Added 'deleted_by' column to comments table")
+            except Exception as e:
+                print(f"PostgreSQL migration warning: {e}")
+            finally:
+                db.close()
+    except Exception as e:
+        print(f"Migration warning: {e}")
 
 
 def init_database():
+    run_database_migrations()
+    
     db = SessionLocal()
     try:
         admin = db.query(User).filter(User.username == settings.ADMIN_USERNAME).first()

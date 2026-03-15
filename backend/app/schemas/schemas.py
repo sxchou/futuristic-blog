@@ -245,6 +245,7 @@ class CommentResponse(CommentBase):
     author_url: Optional[str] = None
     status: str = 'approved'
     is_deleted: bool = False
+    deleted_by: Optional[str] = None
     reply_to_user_id: Optional[int] = None
     reply_to_user_name: Optional[str] = None
     created_at: datetime
@@ -290,6 +291,7 @@ class AdminCommentResponse(CommentBase):
     author_url: Optional[str] = None
     status: str = 'approved'
     is_deleted: bool = False
+    deleted_by: Optional[str] = None
     reply_to_user_id: Optional[int] = None
     reply_to_user_name: Optional[str] = None
     created_at: datetime

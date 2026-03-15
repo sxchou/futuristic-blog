@@ -23,8 +23,8 @@
           </span>
         </div>
         
-        <div v-if="comment.is_deleted" class="text-gray-400 dark:text-gray-500 text-sm italic mb-3">
-          此评论已删除
+        <div v-if="comment.is_deleted" class="text-gray-400 dark:text-gray-500 text-sm italic mb-3 line-through">
+          {{ comment.deleted_by === 'admin' ? '此评论已被管理员删除' : '此评论已被用户删除' }}
         </div>
         <div v-else-if="comment.status === 'pending'" class="text-yellow-600 dark:text-yellow-400 text-sm italic mb-3">
           评论待审核，审核通过后显示评论内容

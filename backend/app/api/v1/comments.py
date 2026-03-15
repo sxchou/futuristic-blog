@@ -38,6 +38,7 @@ def build_comment_tree(comments: List[Comment], db: Session) -> List[dict]:
             'author_url': comment.author_url,
             'status': comment.status,
             'is_deleted': comment.is_deleted,
+            'deleted_by': comment.deleted_by,
             'reply_to_user_id': comment.reply_to_user_id,
             'reply_to_user_name': reply_to_user_name,
             'created_at': comment.created_at,
@@ -154,8 +155,7 @@ async def get_article_comments(
         joinedload(Comment.reply_to_user)
     ).filter(
         Comment.article_id == article_id,
-        Comment.status == 'approved',
-        Comment.is_deleted == False
+        Comment.status == 'approved'
     ).order_by(Comment.created_at.desc()).all()
     
     return build_comment_tree(comments, db)
@@ -272,7 +272,8 @@ async def delete_comment(
         raise HTTPException(status_code=403, detail="Not authorized to delete this comment")
     
     comment.is_deleted = True
-    comment.content = "此评论已删除"
+    comment.deleted_by = 'user'
+    comment.content = "此评论已被用户删除"
     db.commit()
     
     return {"message": "Comment deleted successfully"}
@@ -476,6 +477,7 @@ async def get_comment_audit_logs(
 @router.delete("/admin/{comment_id}")
 async def admin_delete_comment(
     comment_id: int,
+    keep_record: bool = Query(True, description="True为保留记录(软删除), False为彻底删除"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_admin_user)
 ):
@@ -483,7 +485,14 @@ async def admin_delete_comment(
     if not comment:
         raise HTTPException(status_code=404, detail="Comment not found")
     
-    db.delete(comment)
-    db.commit()
-    
-    return {"message": "Comment deleted successfully"}
+    if keep_record:
+        comment.is_deleted = True
+        comment.deleted_by = 'admin'
+        comment.content = "此评论已被管理员删除"
+        db.commit()
+        return {"message": "Comment soft deleted successfully", "type": "soft"}
+    else:
+        db.query(CommentAuditLog).filter(CommentAuditLog.comment_id == comment_id).delete()
+        db.delete(comment)
+        db.commit()
+        return {"message": "Comment permanently deleted successfully", "type": "permanent"}

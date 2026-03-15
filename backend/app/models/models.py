@@ -143,6 +143,7 @@ class Comment(Base):
     parent_id = Column(Integer, ForeignKey('comments.id', ondelete='CASCADE'), nullable=True)
     is_approved = Column(Boolean, default=True)
     is_deleted = Column(Boolean, default=False)
+    deleted_by = Column(String(20), nullable=True)
     reply_to_user_id = Column(Integer, ForeignKey('users.id'), nullable=True)
     status = Column(String(20), default='approved', index=True)
     created_at = Column(DateTime, default=get_local_now)

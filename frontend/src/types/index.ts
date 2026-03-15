@@ -105,6 +105,7 @@ export interface Comment {
   parent_id?: number
   status: 'pending' | 'approved' | 'rejected'
   is_deleted?: boolean
+  deleted_by?: 'user' | 'admin'
   reply_to_user_id?: number
   reply_to_user_name?: string
   created_at: string
@@ -123,6 +124,7 @@ export interface AdminComment {
   parent_id?: number
   status: 'pending' | 'approved' | 'rejected'
   is_deleted?: boolean
+  deleted_by?: 'user' | 'admin'
   reply_to_user_id?: number
   reply_to_user_name?: string
   created_at: string

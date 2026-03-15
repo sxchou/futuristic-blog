@@ -41,7 +41,10 @@ export const commentApi = {
     return response.data
   },
 
-  adminDelete: async (commentId: number): Promise<void> => {
-    await apiClient.delete(`/comments/admin/${commentId}`)
+  adminDelete: async (commentId: number, keepRecord: boolean = true): Promise<{ message: string; type: string }> => {
+    const response = await apiClient.delete(`/comments/admin/${commentId}`, {
+      params: { keep_record: keepRecord }
+    })
+    return response.data
   }
 }

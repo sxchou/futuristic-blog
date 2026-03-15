@@ -160,15 +160,27 @@ const submitBatchAudit = async () => {
   }
 }
 
-const deleteComment = async (comment: AdminComment) => {
-  const confirmed = await dialog.showConfirm({
-    title: '确认删除',
-    message: `确定要删除评论 #${comment.id} 吗？此操作不可恢复。`
-  })
-  if (!confirmed) return
+const showDeleteModal = ref(false)
+const deleteTargetComment = ref<AdminComment | null>(null)
+const deleteType = ref<'soft' | 'permanent'>('soft')
+
+const openDeleteModal = (comment: AdminComment) => {
+  deleteTargetComment.value = comment
+  deleteType.value = 'soft'
+  showDeleteModal.value = true
+}
+
+const confirmDelete = async () => {
+  if (!deleteTargetComment.value) return
+  showDeleteModal.value = false
   try {
-    await commentApi.adminDelete(comment.id)
-    await dialog.showSuccess('评论已删除', '成功')
+    const keepRecord = deleteType.value === 'soft'
+    const result = await commentApi.adminDelete(deleteTargetComment.value.id, keepRecord)
+    if (result.type === 'soft') {
+      await dialog.showSuccess('评论已标记为删除，记录已保留', '成功')
+    } else {
+      await dialog.showSuccess('评论已彻底删除', '成功')
+    }
     fetchComments()
   } catch (error: any) {
     console.error('Failed to delete comment:', error)
@@ -333,7 +345,7 @@ onMounted(() => {
                     日志
                   </button>
                   <button
-                    @click="deleteComment(comment)"
+                    @click="openDeleteModal(comment)"
                     class="px-2 py-1 text-xs bg-gray-100 text-red-600 dark:bg-dark-100 dark:text-red-400 rounded hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
                   >
                     删除
@@ -511,6 +523,50 @@ onMounted(() => {
             class="px-4 py-2 text-sm bg-gray-100 dark:bg-dark-100 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-50 transition-colors"
           >
             关闭
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showDeleteModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div class="bg-white dark:bg-dark-200 rounded-xl p-6 w-full max-w-md mx-4">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">删除评论</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          请选择删除方式：
+        </p>
+        <div class="space-y-3 mb-6">
+          <label class="flex items-start gap-3 p-3 border border-gray-200 dark:border-white/10 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-100 transition-colors" :class="{ 'border-primary bg-primary/5 dark:bg-primary/10': deleteType === 'soft' }">
+            <input type="radio" v-model="deleteType" value="soft" class="mt-1" />
+            <div>
+              <div class="font-medium text-gray-900 dark:text-white">保留记录（推荐）</div>
+              <div class="text-sm text-gray-500 dark:text-gray-400">评论将显示为"此评论已被管理员删除"，保留嵌套结构和审核日志</div>
+            </div>
+          </label>
+          <label class="flex items-start gap-3 p-3 border border-gray-200 dark:border-white/10 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-100 transition-colors" :class="{ 'border-red-500 bg-red-50 dark:bg-red-900/20': deleteType === 'permanent' }">
+            <input type="radio" v-model="deleteType" value="permanent" class="mt-1" />
+            <div>
+              <div class="font-medium text-gray-900 dark:text-white">彻底删除</div>
+              <div class="text-sm text-gray-500 dark:text-gray-400">永久删除评论及所有相关记录，包括审核日志，此操作不可恢复</div>
+            </div>
+          </label>
+        </div>
+        <div class="flex justify-end gap-3">
+          <button
+            @click="showDeleteModal = false"
+            class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-100 rounded-lg transition-colors"
+          >
+            取消
+          </button>
+          <button
+            @click="confirmDelete"
+            :class="[
+              'px-4 py-2 text-sm text-white rounded-lg transition-colors',
+              deleteType === 'permanent' 
+                ? 'bg-red-500 hover:bg-red-600' 
+                : 'bg-primary hover:bg-primary/90'
+            ]"
+          >
+            {{ deleteType === 'permanent' ? '彻底删除' : '确认删除' }}
           </button>
         </div>
       </div>

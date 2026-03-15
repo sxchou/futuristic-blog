@@ -73,6 +73,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useDialogStore } from '@/stores'
 import { commentApi } from '@/api'
 import type { Comment } from '@/types'
 import CommentItem from './CommentItem.vue'
@@ -83,6 +84,7 @@ const props = defineProps<{
 }>()
 
 const authStore = useAuthStore()
+const dialog = useDialogStore()
 const comments = ref<Comment[]>([])
 const loading = ref(true)
 const newComment = ref('')
@@ -143,14 +145,19 @@ const submitComment = async () => {
     
     if (comment.status === 'approved') {
       comments.value.unshift(comment)
+      await dialog.showSuccess('评论发表成功', '成功')
     } else if (comment.status === 'pending') {
-      alert('评论已提交，等待审核通过后将显示')
+      await dialog.showAlert({
+        message: '评论已提交，等待审核通过后将显示',
+        title: '提示',
+        type: 'alert'
+      })
     }
     
     newComment.value = ''
   } catch (error) {
     console.error('Failed to submit comment:', error)
-    alert('评论发送失败，请重试')
+    await dialog.showError('评论发送失败，请重试', '错误')
   } finally {
     submitting.value = false
   }
@@ -184,13 +191,18 @@ const handleReply = async (data: { content: string; parentId: number; replyToUse
           parentComment.replies = []
         }
         parentComment.replies.push(comment)
+        await dialog.showSuccess('回复成功', '成功')
       }
     } else if (comment.status === 'pending') {
-      alert('回复已提交，等待审核通过后将显示')
+      await dialog.showAlert({
+        message: '回复已提交，等待审核通过后将显示',
+        title: '提示',
+        type: 'alert'
+      })
     }
   } catch (error) {
     console.error('Failed to reply:', error)
-    alert('回复发送失败，请重试')
+    await dialog.showError('回复发送失败，请重试', '错误')
   }
 }
 
@@ -198,7 +210,8 @@ const markCommentAsDeleted = (commentList: Comment[], commentId: number): boolea
   for (const comment of commentList) {
     if (comment.id === commentId) {
       comment.is_deleted = true
-      comment.content = '此评论已删除'
+      comment.deleted_by = 'user'
+      comment.content = '此评论已被用户删除'
       return true
     }
     if (comment.replies && comment.replies.length > 0) {
@@ -211,14 +224,19 @@ const markCommentAsDeleted = (commentList: Comment[], commentId: number): boolea
 }
 
 const handleDelete = async (commentId: number) => {
-  if (!confirm('确定要删除这条评论吗？')) return
+  const confirmed = await dialog.showConfirm({
+    title: '确认删除',
+    message: '确定要删除这条评论吗？'
+  })
+  if (!confirmed) return
   
   try {
     await commentApi.delete(commentId)
     markCommentAsDeleted(comments.value, commentId)
+    await dialog.showSuccess('评论已删除', '成功')
   } catch (error) {
     console.error('Failed to delete comment:', error)
-    alert('删除失败，请重试')
+    await dialog.showError('删除失败，请重试', '错误')
   }
 }
 

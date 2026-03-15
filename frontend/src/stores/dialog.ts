@@ -30,8 +30,9 @@ const closeDialog = (result: boolean) => {
   clearAutoCloseTimer()
   isVisible.value = false
   if (resolvePromise) {
-    resolvePromise(result)
+    const resolve = resolvePromise
     resolvePromise = null
+    resolve(result)
   }
 }
 
@@ -72,11 +73,11 @@ const showError = (message: string, title?: string, autoClose: boolean = true, d
   return showAlert({ message, title, type: 'error', autoClose, duration })
 }
 
-const handleConfirm = () => {
+const confirm = () => {
   closeDialog(true)
 }
 
-const handleCancel = () => {
+const cancel = () => {
   closeDialog(false)
 }
 
@@ -88,7 +89,7 @@ export function useDialogStore() {
     showAlert,
     showSuccess,
     showError,
-    handleConfirm,
-    handleCancel
+    confirm,
+    cancel
   }
 }
