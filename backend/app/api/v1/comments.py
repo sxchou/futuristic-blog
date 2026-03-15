@@ -317,6 +317,7 @@ async def get_admin_comments(
             content=comment.content,
             article_id=comment.article_id,
             article_title=comment.article.title if comment.article else None,
+            article_slug=comment.article.slug if comment.article else None,
             parent_id=comment.parent_id,
             user_id=comment.user_id,
             author_name=comment.author_name,

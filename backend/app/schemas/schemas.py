@@ -173,6 +173,7 @@ class ArticleListItem(BaseModel):
     slug: str
     summary: Optional[str] = None
     cover_image: Optional[str] = None
+    is_published: bool
     is_featured: bool
     view_count: int
     like_count: int
@@ -284,6 +285,7 @@ class AdminCommentResponse(CommentBase):
     id: int
     article_id: int
     article_title: Optional[str] = None
+    article_slug: Optional[str] = None
     parent_id: Optional[int] = None
     user_id: Optional[int] = None
     author_name: Optional[str] = None

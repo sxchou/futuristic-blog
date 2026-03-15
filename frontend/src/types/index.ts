@@ -64,6 +64,7 @@ export interface ArticleListItem {
   slug: string
   summary?: string
   cover_image?: string
+  is_published: boolean
   is_featured: boolean
   view_count: number
   like_count: number
@@ -121,6 +122,7 @@ export interface AdminComment {
   author_url?: string
   article_id: number
   article_title?: string
+  article_slug?: string
   parent_id?: number
   status: 'pending' | 'approved' | 'rejected'
   is_deleted?: boolean

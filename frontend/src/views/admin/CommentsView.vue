@@ -300,11 +300,15 @@ onMounted(() => {
               </td>
               <td class="px-4 py-3 text-sm">
                 <router-link
-                  :to="`/article/${comment.article_id}`"
+                  v-if="comment.article_slug"
+                  :to="`/article/${comment.article_slug}`"
                   class="text-primary hover:underline"
                 >
                   {{ comment.article_title || `文章 #${comment.article_id}` }}
                 </router-link>
+                <span v-else class="text-gray-500">
+                  {{ comment.article_title || `文章 #${comment.article_id}` }}
+                </span>
               </td>
               <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
                 {{ comment.author_name || '匿名用户' }}

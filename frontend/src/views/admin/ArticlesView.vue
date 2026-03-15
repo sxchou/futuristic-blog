@@ -296,7 +296,18 @@ onMounted(() => {
               <span v-else class="text-gray-500">未分类</span>
             </td>
             <td class="px-4 py-3">
-              <span class="px-1.5 py-0.5 text-xs rounded bg-green-500/20 text-green-400">已发布</span>
+              <span
+                v-if="article.is_published"
+                class="px-1.5 py-0.5 text-xs rounded bg-green-500/20 text-green-400"
+              >
+                已发布
+              </span>
+              <span
+                v-else
+                class="px-1.5 py-0.5 text-xs rounded bg-yellow-500/20 text-yellow-400"
+              >
+                未发布
+              </span>
             </td>
             <td class="px-4 py-3 text-gray-400">{{ article.view_count }}</td>
             <td class="px-4 py-3 text-gray-400">
