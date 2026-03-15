@@ -14,6 +14,13 @@ const dialogStore = useDialogStore()
 
 const isAdminPage = computed(() => route.path.startsWith('/admin'))
 
+const dialogVisible = computed({
+  get: () => dialogStore.isVisible.value,
+  set: (val: boolean) => {
+    dialogStore.isVisible.value = val
+  }
+})
+
 onMounted(() => {
   blogStore.fetchCategories()
   blogStore.fetchTags()
@@ -54,7 +61,7 @@ onUnmounted(() => {
     <Footer v-if="!isAdminPage" />
     <GlobalSearch v-if="!isAdminPage" />
     <ModalDialog
-      v-model="dialogStore.isVisible.value"
+      v-model="dialogVisible"
       :title="dialogStore.dialogOptions.value.title"
       :message="dialogStore.dialogOptions.value.message"
       :type="dialogStore.dialogOptions.value.type"

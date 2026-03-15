@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { ref, watch, onUnmounted } from 'vue'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   modelValue: boolean
   title?: string
-  message: string
+  message?: string
   type?: 'confirm' | 'alert' | 'success' | 'error'
   confirmText?: string
   cancelText?: string
-}>()
+}>(), {
+  message: '',
+  type: 'alert'
+})
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
@@ -80,7 +83,7 @@ onUnmounted(() => {
       leave-to-class="opacity-0"
     >
       <div
-        v-if="modelValue"
+        v-if="modelValue && message"
         class="fixed inset-0 z-[9999] flex items-center justify-center"
       >
         <div
@@ -96,7 +99,7 @@ onUnmounted(() => {
           leave-to-class="opacity-0 scale-95"
         >
           <div
-            v-if="modelValue"
+            v-if="modelValue && message"
             class="relative bg-gray-900 dark:bg-dark-50 border border-gray-700 dark:border-white/10 rounded-xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden"
           >
             <div class="p-6">
