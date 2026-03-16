@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 const emit = defineEmits<{
   (e: 'success'): void
@@ -9,16 +9,31 @@ const emit = defineEmits<{
 const isDragging = ref(false)
 const sliderPosition = ref(0)
 const startX = ref(0)
-const maxWidth = ref(280)
+const trackWidth = ref(0)
+const buttonWidth = 40
 const isVerified = ref(false)
+const trackRef = ref<HTMLElement | null>(null)
+
+const maxWidth = computed(() => trackWidth.value - buttonWidth)
 
 const sliderStyle = computed(() => ({
   transform: `translateX(${sliderPosition.value}px)`
 }))
 
 const progressStyle = computed(() => ({
-  width: `${sliderPosition.value + 40}px`
+  width: `${sliderPosition.value + buttonWidth}px`
 }))
+
+const updateTrackWidth = () => {
+  if (trackRef.value) {
+    trackWidth.value = trackRef.value.offsetWidth
+  }
+}
+
+onMounted(() => {
+  updateTrackWidth()
+  window.addEventListener('resize', updateTrackWidth)
+})
 
 const handleMouseDown = (e: MouseEvent) => {
   if (isVerified.value) return
@@ -45,7 +60,7 @@ const handleMouseUp = () => {
   document.removeEventListener('mousemove', handleMouseMove)
   document.removeEventListener('mouseup', handleMouseUp)
   
-  if (sliderPosition.value >= maxWidth.value - 10) {
+  if (sliderPosition.value >= maxWidth.value - 5) {
     isVerified.value = true
     sliderPosition.value = maxWidth.value
     emit('success')
@@ -75,7 +90,7 @@ const handleTouchEnd = () => {
   if (!isDragging.value) return
   isDragging.value = false
   
-  if (sliderPosition.value >= maxWidth.value - 10) {
+  if (sliderPosition.value >= maxWidth.value - 5) {
     isVerified.value = true
     sliderPosition.value = maxWidth.value
     emit('success')
@@ -93,112 +108,56 @@ const reset = () => {
 onUnmounted(() => {
   document.removeEventListener('mousemove', handleMouseMove)
   document.removeEventListener('mouseup', handleMouseUp)
+  window.removeEventListener('resize', updateTrackWidth)
 })
 
 defineExpose({ reset })
 </script>
 
 <template>
-  <div class="slider-captcha">
+  <div class="slider-captcha w-full select-none">
     <div 
-      class="slider-track"
-      :class="{ 'verified': isVerified }"
+      ref="trackRef"
+      class="slider-track relative h-10 rounded overflow-hidden bg-gray-200 dark:bg-dark-100 border border-gray-300 dark:border-white/10"
+      :class="{ 'border-green-500/50 dark:border-green-500/50': isVerified }"
     >
-      <div class="slider-progress" :style="progressStyle"></div>
       <div 
-        class="slider-button"
-        :class="{ 'verified': isVerified, 'dragging': isDragging }"
+        class="slider-progress absolute left-0 top-0 h-full bg-gradient-to-r from-primary/20 to-accent/20 transition-[width] duration-100"
+        :style="progressStyle"
+      ></div>
+      <div 
+        class="slider-button absolute left-0 top-0 w-10 h-10 cursor-pointer flex items-center justify-center transition-all duration-100 bg-white dark:bg-dark-200 border-r border-gray-300 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-dark-300"
+        :class="{ 
+          'border-primary dark:border-primary': isDragging,
+          '!bg-gradient-to-r !from-green-500 !to-green-600 !border-green-500 cursor-default': isVerified 
+        }"
         :style="sliderStyle"
         @mousedown="handleMouseDown"
         @touchstart="handleTouchStart"
         @touchmove="handleTouchMove"
         @touchend="handleTouchEnd"
       >
-        <svg v-if="!isVerified" class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg v-if="!isVerified" class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
         </svg>
         <svg v-else class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
         </svg>
       </div>
-      <span v-if="!isVerified" class="slider-text">向右滑动验证</span>
-      <span v-else class="slider-text verified-text">验证成功</span>
+      <span 
+        v-if="!isVerified" 
+        class="slider-text absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm text-gray-500 dark:text-gray-400 pointer-events-none z-[1]"
+      >向右滑动验证</span>
+      <span 
+        v-else 
+        class="slider-text absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm text-green-500 font-medium pointer-events-none z-[1]"
+      >验证成功</span>
     </div>
   </div>
 </template>
 
 <style scoped>
 .slider-captcha {
-  width: 100%;
   user-select: none;
-}
-
-.slider-track {
-  position: relative;
-  height: 40px;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  border: 1px solid rgba(0, 212, 255, 0.2);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.slider-track.verified {
-  border-color: rgba(34, 197, 94, 0.5);
-}
-
-.slider-progress {
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  background: linear-gradient(90deg, rgba(0, 212, 255, 0.2) 0%, rgba(124, 58, 237, 0.2) 100%);
-  transition: width 0.1s ease;
-}
-
-.slider-button {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, #2a2a4e 0%, #1a1a3e 100%);
-  border: 1px solid rgba(0, 212, 255, 0.3);
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.1s ease, background 0.3s ease, border-color 0.3s ease;
-  z-index: 2;
-}
-
-.slider-button:hover {
-  background: linear-gradient(135deg, #3a3a5e 0%, #2a2a4e 100%);
-}
-
-.slider-button.dragging {
-  border-color: rgba(0, 212, 255, 0.6);
-}
-
-.slider-button.verified {
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-  border-color: rgba(34, 197, 94, 0.6);
-  cursor: default;
-}
-
-.slider-text {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 14px;
-  color: #9ca3af;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.verified-text {
-  color: #22c55e;
-  font-weight: 500;
 }
 </style>

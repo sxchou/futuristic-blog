@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen pt-20 pb-16">
+  <div class="min-h-screen bg-white dark:bg-dark pt-20 pb-16">
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="text-center mb-8">
         <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -153,6 +153,6 @@ onMounted(() => {
 
 <style scoped>
 .glass-card {
-  @apply bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-2xl;
+  @apply bg-white/80 dark:bg-dark-100/80 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-2xl;
 }
 </style>

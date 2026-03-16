@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { siteConfigApi } from '@/api'
 import type { SiteConfig } from '@/types'
 
@@ -9,6 +9,10 @@ export const useSiteConfigStore = defineStore('siteConfig', () => {
   const siteDescription = ref('探索前沿技术，分享工程实践')
   const siteKeywords = ref('')
   const loading = ref(false)
+
+  const siteLogo = computed(() => {
+    return siteName.value.charAt(0).toUpperCase()
+  })
 
   const fetchConfigs = async () => {
     loading.value = true
@@ -81,6 +85,7 @@ export const useSiteConfigStore = defineStore('siteConfig', () => {
     siteName,
     siteDescription,
     siteKeywords,
+    siteLogo,
     loading,
     fetchConfigs,
     updateSiteName,

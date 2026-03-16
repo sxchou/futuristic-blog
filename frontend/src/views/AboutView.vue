@@ -39,7 +39,7 @@ onMounted(fetchProfile)
             <div class="flex flex-col md:flex-row items-center gap-8">
               <div class="relative">
                 <div class="w-32 h-32 md:w-40 md:h-40 rounded-full bg-gradient-to-br from-primary to-accent p-1">
-                  <div class="w-full h-full rounded-full bg-dark-100 flex items-center justify-center text-4xl md:text-5xl font-bold text-primary">
+                  <div class="w-full h-full rounded-full bg-gray-100 dark:bg-dark-100 flex items-center justify-center text-4xl md:text-5xl font-bold text-primary">
                     {{ profile.name?.charAt(0)?.toUpperCase() || 'T' }}{{ profile.name?.charAt(1)?.toUpperCase() || 'E' }}
                   </div>
                 </div>

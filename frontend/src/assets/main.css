@@ -19,14 +19,14 @@
   }
 
   .dark {
-    --bg-primary: #0a0e27;
-    --bg-secondary: #1a1f3a;
-    --bg-tertiary: #252b4a;
+    --bg-primary: #000000;
+    --bg-secondary: #0a0a0a;
+    --bg-tertiary: #141414;
     --text-primary: #f1f5f9;
     --text-secondary: #cbd5e1;
     --text-muted: #64748b;
     --border-color: rgba(255, 255, 255, 0.1);
-    --glass-bg: rgba(26, 31, 58, 0.8);
+    --glass-bg: rgba(10, 10, 10, 0.8);
   }
 
   body {

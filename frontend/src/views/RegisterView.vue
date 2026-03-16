@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores'
+import { useAuthStore, useSiteConfigStore } from '@/stores'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const siteConfigStore = useSiteConfigStore()
 
 const form = ref({
   username: '',
@@ -64,7 +65,7 @@ const goToLogin = () => {
         <div v-if="!showSuccess">
           <div class="text-center mb-6">
             <div class="w-12 h-12 mx-auto mb-3 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <span class="text-xl font-bold text-white">F</span>
+              <span class="text-xl font-bold text-white">{{ siteConfigStore.siteLogo }}</span>
             </div>
             <h1 class="text-xl font-bold gradient-text">创建账户</h1>
             <p class="text-gray-500 dark:text-gray-400 mt-1 text-sm">加入我们的技术社区</p>
