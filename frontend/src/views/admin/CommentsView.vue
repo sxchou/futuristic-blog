@@ -141,6 +141,8 @@ const openBatchAuditModal = (status: 'pending' | 'approved' | 'rejected') => {
 const submitBatchAudit = async () => {
   if (selectedComments.value.length === 0) return
   try {
+    const count = selectedComments.value.length
+    const statusText = batchAuditStatus.value === 'approved' ? '通过' : batchAuditStatus.value === 'rejected' ? '拒绝' : '处理'
     await commentApi.batchAudit({
       comment_ids: selectedComments.value,
       status: batchAuditStatus.value,
@@ -148,7 +150,7 @@ const submitBatchAudit = async () => {
     })
     showBatchAuditModal.value = false
     selectedComments.value = []
-    await dialog.showSuccess(`已批量处理 ${selectedComments.value.length} 条评论`, '成功')
+    await dialog.showSuccess(`已批量${statusText} ${count} 条评论`, '成功')
     fetchComments()
   } catch (error: any) {
     console.error('Failed to batch audit:', error)
