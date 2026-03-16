@@ -8,7 +8,7 @@ def get_now() -> datetime:
 
 
 def get_utc_now() -> datetime:
-    return datetime.utcnow()
+    return datetime.now(ZoneInfo("UTC"))
 
 
 def to_local(dt: datetime) -> datetime:

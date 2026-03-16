@@ -47,7 +47,7 @@ class EmailService:
     
     @staticmethod
     def get_current_year() -> int:
-        return datetime.now().year
+        return get_now().year
     
     @staticmethod
     def generate_verification_token() -> str:

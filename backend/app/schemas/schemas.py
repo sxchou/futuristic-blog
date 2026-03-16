@@ -1,7 +1,15 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 import re
+
+
+def serialize_datetime(dt: datetime) -> Optional[str]:
+    from app.utils.timezone import to_local
+    if dt is None:
+        return None
+    local_dt = to_local(dt)
+    return local_dt.isoformat()
 
 
 def validate_email(email: str) -> str:
@@ -45,7 +53,12 @@ class UserResponse(UserBase):
     bio: Optional[str] = None
     is_admin: bool = False
     is_verified: bool = False
-    created_at: datetime
+    created_at: Optional[str] = None
+    
+    @field_validator('created_at', mode='before')
+    @classmethod
+    def serialize_created_at(cls, v):
+        return serialize_datetime(v)
     
     class Config:
         from_attributes = True
@@ -59,7 +72,12 @@ class UserListItem(BaseModel):
     bio: Optional[str] = None
     is_admin: bool = False
     is_verified: bool = False
-    created_at: datetime
+    created_at: Optional[str] = None
+    
+    @field_validator('created_at', mode='before')
+    @classmethod
+    def serialize_created_at(cls, v):
+        return serialize_datetime(v)
     
     class Config:
         from_attributes = True
@@ -89,8 +107,13 @@ class CategoryUpdate(BaseModel):
 class CategoryResponse(CategoryBase):
     id: int
     order: int
-    created_at: datetime
+    created_at: Optional[str] = None
     article_count: Optional[int] = 0
+    
+    @field_validator('created_at', mode='before')
+    @classmethod
+    def serialize_created_at(cls, v):
+        return serialize_datetime(v)
     
     class Config:
         from_attributes = True
@@ -114,8 +137,13 @@ class TagUpdate(BaseModel):
 
 class TagResponse(TagBase):
     id: int
-    created_at: datetime
+    created_at: Optional[str] = None
     article_count: Optional[int] = 0
+    
+    @field_validator('created_at', mode='before')
+    @classmethod
+    def serialize_created_at(cls, v):
+        return serialize_datetime(v)
     
     class Config:
         from_attributes = True
@@ -154,14 +182,19 @@ class ArticleResponse(ArticleBase):
     like_count: int
     reading_time: int
     author_id: Optional[int] = None
-    created_at: datetime
-    updated_at: datetime
-    published_at: Optional[datetime] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+    published_at: Optional[str] = None
     category: Optional[CategoryResponse] = None
     tags: List[TagResponse] = []
     author: Optional[UserResponse] = None
     is_liked: bool = False
     files: List["ArticleFileResponse"] = []
+    
+    @field_validator('created_at', 'updated_at', 'published_at', mode='before')
+    @classmethod
+    def serialize_datetime_field(cls, v):
+        return serialize_datetime(v)
     
     class Config:
         from_attributes = True
@@ -179,11 +212,16 @@ class ArticleListItem(BaseModel):
     like_count: int
     comment_count: int = 0
     reading_time: int
-    created_at: datetime
-    published_at: Optional[datetime] = None
+    created_at: Optional[str] = None
+    published_at: Optional[str] = None
     category: Optional[CategoryResponse] = None
     tags: List[TagResponse] = []
     is_liked: bool = False
+    
+    @field_validator('created_at', 'published_at', mode='before')
+    @classmethod
+    def serialize_datetime_field(cls, v):
+        return serialize_datetime(v)
     
     class Config:
         from_attributes = True
@@ -221,7 +259,12 @@ class ResourceUpdate(BaseModel):
 
 class ResourceResponse(ResourceBase):
     id: int
-    created_at: datetime
+    created_at: Optional[str] = None
+    
+    @field_validator('created_at', mode='before')
+    @classmethod
+    def serialize_created_at(cls, v):
+        return serialize_datetime(v)
     
     class Config:
         from_attributes = True
@@ -249,8 +292,13 @@ class CommentResponse(CommentBase):
     deleted_by: Optional[str] = None
     reply_to_user_id: Optional[int] = None
     reply_to_user_name: Optional[str] = None
-    created_at: datetime
+    created_at: Optional[str] = None
     replies: List["CommentResponse"] = []
+    
+    @field_validator('created_at', mode='before')
+    @classmethod
+    def serialize_created_at(cls, v):
+        return serialize_datetime(v)
     
     class Config:
         from_attributes = True
@@ -275,7 +323,12 @@ class CommentAuditLogResponse(BaseModel):
     old_status: Optional[str] = None
     new_status: str
     reason: Optional[str] = None
-    created_at: datetime
+    created_at: Optional[str] = None
+    
+    @field_validator('created_at', mode='before')
+    @classmethod
+    def serialize_created_at(cls, v):
+        return serialize_datetime(v)
     
     class Config:
         from_attributes = True
@@ -296,7 +349,12 @@ class AdminCommentResponse(CommentBase):
     deleted_by: Optional[str] = None
     reply_to_user_id: Optional[int] = None
     reply_to_user_name: Optional[str] = None
-    created_at: datetime
+    created_at: Optional[str] = None
+    
+    @field_validator('created_at', mode='before')
+    @classmethod
+    def serialize_created_at(cls, v):
+        return serialize_datetime(v)
     
     class Config:
         from_attributes = True
@@ -335,7 +393,12 @@ class SiteConfigBase(BaseModel):
 
 class SiteConfigResponse(SiteConfigBase):
     id: int
-    updated_at: datetime
+    updated_at: Optional[str] = None
+    
+    @field_validator('updated_at', mode='before')
+    @classmethod
+    def serialize_updated_at(cls, v):
+        return serialize_datetime(v)
     
     class Config:
         from_attributes = True
@@ -375,7 +438,12 @@ class ProfileUpdate(BaseModel):
 
 class ProfileResponse(ProfileBase):
     id: int
-    updated_at: datetime
+    updated_at: Optional[str] = None
+    
+    @field_validator('updated_at', mode='before')
+    @classmethod
+    def serialize_updated_at(cls, v):
+        return serialize_datetime(v)
     
     class Config:
         from_attributes = True
@@ -394,7 +462,12 @@ class ArticleFileResponse(ArticleFileBase):
     id: int
     article_id: Optional[int] = None
     download_count: int
-    created_at: datetime
+    created_at: Optional[str] = None
+    
+    @field_validator('created_at', mode='before')
+    @classmethod
+    def serialize_created_at(cls, v):
+        return serialize_datetime(v)
     
     class Config:
         from_attributes = True
@@ -430,8 +503,13 @@ class EmailConfigResponse(BaseModel):
     from_email: Optional[str] = None
     from_name: str
     is_active: bool
-    created_at: datetime
-    updated_at: datetime
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+    
+    @field_validator('created_at', 'updated_at', mode='before')
+    @classmethod
+    def serialize_datetime_field(cls, v):
+        return serialize_datetime(v)
     
     class Config:
         from_attributes = True
@@ -447,10 +525,15 @@ class EmailLogResponse(BaseModel):
     error_message: Optional[str] = None
     verification_token: Optional[str] = None
     is_verified: bool
-    verified_at: Optional[datetime] = None
+    verified_at: Optional[str] = None
     user_id: Optional[int] = None
-    sent_at: Optional[datetime] = None
-    created_at: datetime
+    sent_at: Optional[str] = None
+    created_at: Optional[str] = None
+    
+    @field_validator('verified_at', 'sent_at', 'created_at', mode='before')
+    @classmethod
+    def serialize_datetime_field(cls, v):
+        return serialize_datetime(v)
     
     class Config:
         from_attributes = True
@@ -478,8 +561,13 @@ class NotificationSettingsUpdate(BaseModel):
 
 class NotificationSettingsResponse(NotificationSettingsBase):
     id: int
-    created_at: datetime
-    updated_at: datetime
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+    
+    @field_validator('created_at', 'updated_at', mode='before')
+    @classmethod
+    def serialize_datetime_field(cls, v):
+        return serialize_datetime(v)
     
     class Config:
         from_attributes = True

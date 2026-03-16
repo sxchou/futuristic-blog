@@ -144,6 +144,8 @@ async def get_admin_articles(
 
 @router.get("/archive/list")
 async def get_article_archive(db: Session = Depends(get_db)):
+    from app.utils.timezone import to_local
+    
     articles = db.query(Article).filter(
         Article.is_published == True
     ).order_by(Article.created_at.desc()).all()
@@ -151,8 +153,9 @@ async def get_article_archive(db: Session = Depends(get_db)):
     archive: Dict[str, Dict[str, List[Dict[str, Any]]]] = {}
     
     for article in articles:
-        year = article.created_at.year
-        month = article.created_at.month
+        local_created_at = to_local(article.created_at)
+        year = local_created_at.year
+        month = local_created_at.month
         
         year_str = str(year)
         month_str = f"{month:02d}"
@@ -167,7 +170,7 @@ async def get_article_archive(db: Session = Depends(get_db)):
             "id": article.id,
             "title": article.title,
             "slug": article.slug,
-            "created_at": article.created_at.isoformat(),
+            "created_at": local_created_at.isoformat(),
             "category": {
                 "id": article.category.id,
                 "name": article.category.name,

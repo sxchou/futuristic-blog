@@ -6,7 +6,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 from app.core.database import get_db
 from app.utils.auth import get_current_admin_user
-from app.utils.timezone import get_now, get_today_start
+from app.utils.timezone import get_now, get_today_start, to_local
 from app.models.models import (
     Article, User, Comment, ArticleLike, Category, Tag,
     LoginLog, OperationLog, AccessLog
@@ -111,7 +111,7 @@ async def get_views_trend(
         current_date += timedelta(days=1)
     
     for article in articles:
-        article_date = article.created_at.date()
+        article_date = to_local(article.created_at).date()
         if article_date >= start_date:
             date_str = article_date.isoformat()
             if date_str in daily_views:
@@ -140,7 +140,7 @@ async def get_articles_trend(
     ).all()
     
     for article in articles:
-        date_str = article.created_at.date().isoformat()
+        date_str = to_local(article.created_at).date().isoformat()
         if date_str in daily_articles:
             daily_articles[date_str] += 1
     
@@ -250,7 +250,7 @@ async def get_user_activity(
     ).all()
     
     for login in logins:
-        date_str = login.created_at.date().isoformat()
+        date_str = to_local(login.created_at).date().isoformat()
         if date_str in daily_data:
             daily_data[date_str]['logins'] += 1
     
@@ -259,7 +259,7 @@ async def get_user_activity(
     ).all()
     
     for user in registrations:
-        date_str = user.created_at.date().isoformat()
+        date_str = to_local(user.created_at).date().isoformat()
         if date_str in daily_data:
             daily_data[date_str]['registrations'] += 1
     
@@ -269,7 +269,7 @@ async def get_user_activity(
     ).all()
     
     for comment in comments:
-        date_str = comment.created_at.date().isoformat()
+        date_str = to_local(comment.created_at).date().isoformat()
         if date_str in daily_data:
             daily_data[date_str]['comments'] += 1
     
@@ -308,7 +308,7 @@ async def get_access_trend(
     ).all()
     
     for log in access_logs:
-        date_str = log.created_at.date().isoformat()
+        date_str = to_local(log.created_at).date().isoformat()
         if date_str in daily_data:
             daily_data[date_str]['page_views'] += 1
             if log.ip_address:
@@ -353,7 +353,7 @@ async def get_comment_trend(
     ).all()
     
     for comment in comments:
-        date_str = comment.created_at.date().isoformat()
+        date_str = to_local(comment.created_at).date().isoformat()
         if date_str in daily_comments:
             daily_comments[date_str] += 1
     

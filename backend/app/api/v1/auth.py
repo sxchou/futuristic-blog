@@ -182,8 +182,8 @@ async def verify_email(
             detail="无效的验证链接"
         )
     
-    from datetime import datetime
-    now = datetime.now()
+    from app.utils.timezone import get_now
+    now = get_now()
     if user.verification_token_expires and user.verification_token_expires < now:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -197,7 +197,7 @@ async def verify_email(
     email_log = db.query(EmailLog).filter(EmailLog.verification_token == token).first()
     if email_log:
         email_log.is_verified = True
-        email_log.verified_at = datetime.now()
+        email_log.verified_at = get_now()
     
     db.commit()
     

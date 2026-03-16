@@ -10,6 +10,7 @@ from app.core.database import get_db
 from app.models import ArticleFile
 from app.schemas import ArticleFileResponse
 from app.utils import get_current_active_user
+from app.utils.timezone import get_now
 
 
 router = APIRouter(prefix="/files", tags=["Files"])
@@ -82,7 +83,7 @@ async def upload_file(
     is_image = mime_type in ALLOWED_IMAGE_TYPES
     
     file_ext = os.path.splitext(file.filename)[1] if file.filename else ""
-    unique_filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:8]}{file_ext}"
+    unique_filename = f"{get_now().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:8]}{file_ext}"
     
     if is_image:
         file_path = os.path.join(UPLOAD_DIR, "images", unique_filename)
@@ -130,7 +131,7 @@ async def upload_image(
         raise HTTPException(status_code=400, detail=f"文件大小超过限制 (最大 {format_file_size(MAX_FILE_SIZE)})")
     
     file_ext = os.path.splitext(file.filename)[1] if file.filename else ".jpg"
-    unique_filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:8]}{file_ext}"
+    unique_filename = f"{get_now().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:8]}{file_ext}"
     
     file_path = os.path.join(UPLOAD_DIR, "images", unique_filename)
     
