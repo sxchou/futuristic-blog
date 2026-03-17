@@ -1,7 +1,8 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Table, UniqueConstraint, Float
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Table, UniqueConstraint, Float, Enum as SQLEnum, JSON
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+import enum
 
 
 def get_local_now():
@@ -324,3 +325,22 @@ class PasswordReset(Base):
     used_at = Column(DateTime, nullable=True)
     expires_at = Column(DateTime, nullable=False)
     created_at = Column(DateTime, default=get_local_now)
+
+
+class AvatarType(str, enum.Enum):
+    default = "default"
+    custom = "custom"
+
+
+class UserProfile(Base):
+    __tablename__ = "user_profiles"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), unique=True, nullable=False, index=True)
+    avatar_type = Column(SQLEnum(AvatarType), default=AvatarType.default, nullable=False)
+    avatar_url = Column(String(500), nullable=True)
+    default_avatar_gradient = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=get_local_now)
+    updated_at = Column(DateTime, default=get_local_now, onupdate=get_local_now)
+    
+    user = relationship("User", backref="profile", uselist=False)

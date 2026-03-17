@@ -1,8 +1,11 @@
 <template>
   <div class="comment-item bg-gray-100 dark:bg-dark-100/30 border border-gray-200 dark:border-white/5 rounded-lg p-4">
     <div class="flex gap-3">
-      <div class="avatar w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-        {{ avatarText }}
+      <div 
+        class="avatar w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0 overflow-hidden"
+        :style="avatarStyle"
+      >
+        <span v-if="showAvatarInitial">{{ avatarText }}</span>
       </div>
       
       <div class="flex-1 min-w-0">
@@ -138,6 +141,33 @@ const replyTextarea = ref<HTMLTextAreaElement | null>(null)
 const avatarText = computed(() => {
   const name = props.comment.author_name || '匿'
   return name.charAt(0).toUpperCase()
+})
+
+const showAvatarInitial = computed(() => {
+  return !props.comment.author_avatar_type || 
+         props.comment.author_avatar_type === 'default' || 
+         !props.comment.author_avatar_url
+})
+
+const avatarStyle = computed(() => {
+  if (props.comment.author_avatar_type === 'custom' && props.comment.author_avatar_url) {
+    return {
+      backgroundImage: `url(${props.comment.author_avatar_url})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }
+  }
+  
+  if (props.comment.author_avatar_gradient && props.comment.author_avatar_gradient.length >= 2) {
+    const colors = props.comment.author_avatar_gradient
+    return {
+      background: `linear-gradient(135deg, ${colors[0]}, ${colors[1]})`
+    }
+  }
+  
+  return {
+    background: 'linear-gradient(135deg, #667eea, #764ba2)'
+  }
 })
 
 const canDelete = computed(() => {

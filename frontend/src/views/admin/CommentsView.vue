@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { commentApi } from '@/api'
 import type { AdminComment, CommentAuditLog, PaginatedResponse } from '@/types'
-import { useDialogStore } from '@/stores'
+import { useDialogStore, useUserProfileStore } from '@/stores'
 
 const dialog = useDialogStore()
+const userProfileStore = useUserProfileStore()
 
 const comments = ref<AdminComment[]>([])
 const loading = ref(false)
@@ -208,6 +209,12 @@ const formatDate = (dateStr: string) => {
 
 onMounted(() => {
   fetchComments()
+})
+
+watch(() => userProfileStore.avatarUpdatedAt, () => {
+  if (!loading.value) {
+    fetchComments()
+  }
 })
 </script>
 

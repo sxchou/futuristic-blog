@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { userApi } from '@/api'
 import type { User } from '@/types'
-import { useDialogStore } from '@/stores'
+import { useDialogStore, useUserProfileStore } from '@/stores'
 
 const dialog = useDialogStore()
+const userProfileStore = useUserProfileStore()
 
 const users = ref<User[]>([])
 const isLoading = ref(false)
@@ -120,6 +121,26 @@ const formatDate = (date: string) => {
   })
 }
 
+const getUserAvatarStyle = (user: User) => {
+  if (user.avatar_type === 'custom' && user.avatar_url) {
+    return {
+      backgroundImage: `url(${user.avatar_url})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }
+  }
+  
+  if (user.avatar_gradient && user.avatar_gradient.length >= 2) {
+    return {
+      background: `linear-gradient(135deg, ${user.avatar_gradient[0]}, ${user.avatar_gradient[1]})`
+    }
+  }
+  
+  return {
+    background: 'linear-gradient(135deg, #667eea, #764ba2)'
+  }
+}
+
 const prevPage = () => {
   if (currentPage.value > 1) {
     currentPage.value--
@@ -135,6 +156,12 @@ const nextPage = () => {
 }
 
 onMounted(fetchUsers)
+
+watch(() => userProfileStore.avatarUpdatedAt, () => {
+  if (!isLoading.value) {
+    fetchUsers()
+  }
+})
 </script>
 
 <template>
@@ -164,9 +191,12 @@ onMounted(fetchUsers)
             <td class="px-4 py-3">
               <div class="flex items-center gap-3">
                 <div
-                  class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-medium"
+                  class="w-8 h-8 rounded-full flex items-center justify-center text-white font-medium overflow-hidden flex-shrink-0"
+                  :style="getUserAvatarStyle(user)"
                 >
-                  {{ user.username.charAt(0).toUpperCase() }}
+                  <span v-if="!user.avatar_type || user.avatar_type === 'default' || !user.avatar_url">
+                    {{ user.username.charAt(0).toUpperCase() }}
+                  </span>
                 </div>
                 <div>
                   <p class="text-gray-900 dark:text-white font-medium">{{ user.username }}</p>

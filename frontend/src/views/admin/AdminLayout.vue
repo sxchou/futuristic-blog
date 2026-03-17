@@ -22,7 +22,8 @@ const menuItems = [
   { name: '通知管理', path: '/admin/notifications', icon: 'notification' },
   { name: '日志管理', path: '/admin/logs', icon: 'logs' },
   { name: '网站设置', path: '/admin/settings', icon: 'settings' },
-  { name: '个人资料', path: '/admin/profile', icon: 'profile' },
+  { name: '我的资料', path: '/admin/my-profile', icon: 'profile' },
+  { name: '网站资料', path: '/admin/profile', icon: 'site-profile' },
 ]
 
 const isActive = (path: string) => {
@@ -105,6 +106,10 @@ onMounted(() => {
             </svg>
             <svg v-else-if="item.icon === 'profile'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            <svg v-else-if="item.icon === 'site-profile'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-18 0 9 9 0 0118 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
             </svg>
             <span>{{ item.name }}</span>
           </router-link>

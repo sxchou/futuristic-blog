@@ -71,8 +71,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useAuthStore } from '@/stores/auth'
+import { ref, onMounted, computed, watch } from 'vue'
+import { useAuthStore, useUserProfileStore } from '@/stores'
 import { useDialogStore } from '@/stores'
 import { commentApi } from '@/api'
 import type { Comment } from '@/types'
@@ -85,6 +85,7 @@ const props = defineProps<{
 
 const authStore = useAuthStore()
 const dialog = useDialogStore()
+const userProfileStore = useUserProfileStore()
 const comments = ref<Comment[]>([])
 const loading = ref(true)
 const newComment = ref('')
@@ -242,5 +243,11 @@ const handleDelete = async (commentId: number) => {
 
 onMounted(() => {
   fetchComments()
+})
+
+watch(() => userProfileStore.avatarUpdatedAt, () => {
+  if (!loading.value) {
+    fetchComments()
+  }
 })
 </script>

@@ -69,6 +69,9 @@ class UserListItem(BaseModel):
     username: str
     email: str
     avatar: Optional[str] = None
+    avatar_type: Optional[str] = None
+    avatar_url: Optional[str] = None
+    avatar_gradient: Optional[List[str]] = None
     bio: Optional[str] = None
     is_admin: bool = False
     is_verified: bool = False
@@ -287,11 +290,17 @@ class CommentResponse(CommentBase):
     author_name: Optional[str] = None
     author_email: Optional[str] = None
     author_url: Optional[str] = None
+    author_avatar_type: Optional[str] = None
+    author_avatar_url: Optional[str] = None
+    author_avatar_gradient: Optional[List[str]] = None
     status: str = 'approved'
     is_deleted: bool = False
     deleted_by: Optional[str] = None
     reply_to_user_id: Optional[int] = None
     reply_to_user_name: Optional[str] = None
+    reply_to_user_avatar_type: Optional[str] = None
+    reply_to_user_avatar_url: Optional[str] = None
+    reply_to_user_avatar_gradient: Optional[List[str]] = None
     created_at: Optional[str] = None
     replies: List["CommentResponse"] = []
     
@@ -344,11 +353,17 @@ class AdminCommentResponse(CommentBase):
     author_name: Optional[str] = None
     author_email: Optional[str] = None
     author_url: Optional[str] = None
+    author_avatar_type: Optional[str] = None
+    author_avatar_url: Optional[str] = None
+    author_avatar_gradient: Optional[List[str]] = None
     status: str = 'approved'
     is_deleted: bool = False
     deleted_by: Optional[str] = None
     reply_to_user_id: Optional[int] = None
     reply_to_user_name: Optional[str] = None
+    reply_to_user_avatar_type: Optional[str] = None
+    reply_to_user_avatar_url: Optional[str] = None
+    reply_to_user_avatar_gradient: Optional[List[str]] = None
     created_at: Optional[str] = None
     
     @field_validator('created_at', mode='before')
@@ -603,3 +618,26 @@ class PasswordResetVerify(BaseModel):
         if 'new_password' in info.data and v != info.data['new_password']:
             raise ValueError('两次输入的密码不一致')
         return v
+
+
+class UserProfileResponse(BaseModel):
+    id: int
+    user_id: int
+    username: str
+    avatar_type: str = "default"
+    avatar_url: Optional[str] = None
+    default_avatar_gradient: Optional[List[str]] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+    
+    @field_validator('created_at', 'updated_at', mode='before')
+    @classmethod
+    def serialize_datetime_field(cls, v):
+        return serialize_datetime(v)
+    
+    class Config:
+        from_attributes = True
+
+
+class UserProfileUpdate(BaseModel):
+    avatar_type: Optional[str] = Field(None, pattern='^(default|custom)$')

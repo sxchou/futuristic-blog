@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1 import auth, articles, categories, tags, resources, site_config, likes, comments, users, profile, files, email, notifications, logs, dashboard
+from app.api.v1 import auth, articles, categories, tags, resources, site_config, likes, comments, users, profile, files, email, notifications, logs, dashboard, user_profile
 
 router = APIRouter()
 
@@ -18,3 +18,4 @@ router.include_router(email.router)
 router.include_router(notifications.router)
 router.include_router(logs.router)
 router.include_router(dashboard.router)
+router.include_router(user_profile.router)

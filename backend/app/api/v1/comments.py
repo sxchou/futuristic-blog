@@ -1,8 +1,8 @@
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query
 from sqlalchemy.orm import Session, joinedload
 from app.core.database import get_db
-from app.models import Comment, Article, User, NotificationSettings, CommentAuditLog
+from app.models import Comment, Article, User, NotificationSettings, CommentAuditLog, UserProfile, AvatarType
 from app.schemas import (
     CommentCreate, CommentResponse, CommentAuditRequest, 
     BatchAuditRequest, CommentAuditLogResponse, AdminCommentResponse,
@@ -14,18 +14,63 @@ from app.services.email_service import EmailService
 router = APIRouter(prefix="/comments", tags=["Comments"])
 
 
+def get_user_avatar_info(db: Session, user_id: Optional[int]) -> Dict[str, Any]:
+    if not user_id:
+        return {
+            'avatar_type': None,
+            'avatar_url': None,
+            'avatar_gradient': None
+        }
+    
+    profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
+    if profile:
+        return {
+            'avatar_type': profile.avatar_type.value if profile.avatar_type else None,
+            'avatar_url': profile.avatar_url,
+            'avatar_gradient': profile.default_avatar_gradient
+        }
+    
+    return {
+        'avatar_type': 'default',
+        'avatar_url': None,
+        'avatar_gradient': None
+    }
+
+
 def build_comment_tree(comments: List[Comment], db: Session) -> List[dict]:
     comment_dict = {}
     root_comments = []
     
+    user_avatar_cache = {}
+    
     for comment in comments:
         reply_to_user_name = None
+        reply_to_user_avatar = {
+            'avatar_type': None,
+            'avatar_url': None,
+            'avatar_gradient': None
+        }
+        
         if comment.reply_to_user_id:
             if comment.reply_to_user:
                 reply_to_user_name = comment.reply_to_user.username
             else:
                 reply_to_user = db.query(User).filter(User.id == comment.reply_to_user_id).first()
                 reply_to_user_name = reply_to_user.username if reply_to_user else None
+            
+            if comment.reply_to_user_id not in user_avatar_cache:
+                user_avatar_cache[comment.reply_to_user_id] = get_user_avatar_info(db, comment.reply_to_user_id)
+            reply_to_user_avatar = user_avatar_cache[comment.reply_to_user_id]
+        
+        author_avatar = {
+            'avatar_type': None,
+            'avatar_url': None,
+            'avatar_gradient': None
+        }
+        if comment.user_id:
+            if comment.user_id not in user_avatar_cache:
+                user_avatar_cache[comment.user_id] = get_user_avatar_info(db, comment.user_id)
+            author_avatar = user_avatar_cache[comment.user_id]
         
         comment_data = {
             'id': comment.id,
@@ -36,11 +81,17 @@ def build_comment_tree(comments: List[Comment], db: Session) -> List[dict]:
             'author_name': comment.author_name,
             'author_email': comment.author_email,
             'author_url': comment.author_url,
+            'author_avatar_type': author_avatar['avatar_type'],
+            'author_avatar_url': author_avatar['avatar_url'],
+            'author_avatar_gradient': author_avatar['avatar_gradient'],
             'status': comment.status,
             'is_deleted': comment.is_deleted,
             'deleted_by': comment.deleted_by,
             'reply_to_user_id': comment.reply_to_user_id,
             'reply_to_user_name': reply_to_user_name,
+            'reply_to_user_avatar_type': reply_to_user_avatar['avatar_type'],
+            'reply_to_user_avatar_url': reply_to_user_avatar['avatar_url'],
+            'reply_to_user_avatar_gradient': reply_to_user_avatar['avatar_gradient'],
             'created_at': comment.created_at,
             'replies': []
         }
@@ -236,9 +287,13 @@ async def create_comment(
         )
     
     reply_to_user_name = None
+    reply_to_user_avatar = {'avatar_type': None, 'avatar_url': None, 'avatar_gradient': None}
     if new_comment.reply_to_user_id:
         reply_to_user = db.query(User).filter(User.id == new_comment.reply_to_user_id).first()
         reply_to_user_name = reply_to_user.username if reply_to_user else None
+        reply_to_user_avatar = get_user_avatar_info(db, new_comment.reply_to_user_id)
+    
+    author_avatar = get_user_avatar_info(db, current_user.id)
     
     return CommentResponse(
         id=new_comment.id,
@@ -249,10 +304,16 @@ async def create_comment(
         author_name=new_comment.author_name,
         author_email=new_comment.author_email,
         author_url=new_comment.author_url,
+        author_avatar_type=author_avatar['avatar_type'],
+        author_avatar_url=author_avatar['avatar_url'],
+        author_avatar_gradient=author_avatar['avatar_gradient'],
         status=new_comment.status,
         is_deleted=new_comment.is_deleted,
         reply_to_user_id=new_comment.reply_to_user_id,
         reply_to_user_name=reply_to_user_name,
+        reply_to_user_avatar_type=reply_to_user_avatar['avatar_type'],
+        reply_to_user_avatar_url=reply_to_user_avatar['avatar_url'],
+        reply_to_user_avatar_gradient=reply_to_user_avatar['avatar_gradient'],
         created_at=new_comment.created_at,
         replies=[]
     )
@@ -305,12 +366,24 @@ async def get_admin_comments(
     
     comments = query.order_by(Comment.created_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
     
+    user_avatar_cache = {}
+    
     items = []
     for comment in comments:
         reply_to_user_name = None
+        reply_to_user_avatar = {'avatar_type': None, 'avatar_url': None, 'avatar_gradient': None}
         if comment.reply_to_user_id:
             reply_to_user = db.query(User).filter(User.id == comment.reply_to_user_id).first()
             reply_to_user_name = reply_to_user.username if reply_to_user else None
+            if comment.reply_to_user_id not in user_avatar_cache:
+                user_avatar_cache[comment.reply_to_user_id] = get_user_avatar_info(db, comment.reply_to_user_id)
+            reply_to_user_avatar = user_avatar_cache[comment.reply_to_user_id]
+        
+        author_avatar = {'avatar_type': None, 'avatar_url': None, 'avatar_gradient': None}
+        if comment.user_id:
+            if comment.user_id not in user_avatar_cache:
+                user_avatar_cache[comment.user_id] = get_user_avatar_info(db, comment.user_id)
+            author_avatar = user_avatar_cache[comment.user_id]
         
         items.append(AdminCommentResponse(
             id=comment.id,
@@ -323,10 +396,16 @@ async def get_admin_comments(
             author_name=comment.author_name,
             author_email=comment.author_email,
             author_url=comment.author_url,
+            author_avatar_type=author_avatar['avatar_type'],
+            author_avatar_url=author_avatar['avatar_url'],
+            author_avatar_gradient=author_avatar['avatar_gradient'],
             status=comment.status,
             is_deleted=comment.is_deleted,
             reply_to_user_id=comment.reply_to_user_id,
             reply_to_user_name=reply_to_user_name,
+            reply_to_user_avatar_type=reply_to_user_avatar['avatar_type'],
+            reply_to_user_avatar_url=reply_to_user_avatar['avatar_url'],
+            reply_to_user_avatar_gradient=reply_to_user_avatar['avatar_gradient'],
             created_at=comment.created_at
         ))
     
@@ -382,9 +461,13 @@ async def audit_comment(
             )
     
     reply_to_user_name = None
+    reply_to_user_avatar = {'avatar_type': None, 'avatar_url': None, 'avatar_gradient': None}
     if comment.reply_to_user_id:
         reply_to_user = db.query(User).filter(User.id == comment.reply_to_user_id).first()
         reply_to_user_name = reply_to_user.username if reply_to_user else None
+        reply_to_user_avatar = get_user_avatar_info(db, comment.reply_to_user_id)
+    
+    author_avatar = get_user_avatar_info(db, comment.user_id)
     
     return AdminCommentResponse(
         id=comment.id,
@@ -396,10 +479,16 @@ async def audit_comment(
         author_name=comment.author_name,
         author_email=comment.author_email,
         author_url=comment.author_url,
+        author_avatar_type=author_avatar['avatar_type'],
+        author_avatar_url=author_avatar['avatar_url'],
+        author_avatar_gradient=author_avatar['avatar_gradient'],
         status=comment.status,
         is_deleted=comment.is_deleted,
         reply_to_user_id=comment.reply_to_user_id,
         reply_to_user_name=reply_to_user_name,
+        reply_to_user_avatar_type=reply_to_user_avatar['avatar_type'],
+        reply_to_user_avatar_url=reply_to_user_avatar['avatar_url'],
+        reply_to_user_avatar_gradient=reply_to_user_avatar['avatar_gradient'],
         created_at=comment.created_at
     )
 

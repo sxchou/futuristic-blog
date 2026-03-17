@@ -160,9 +160,15 @@ const routes: RouteRecordRaw[] = [
       },
       {
         path: 'profile',
-        name: 'AdminProfile',
+        name: 'AdminSiteProfile',
         component: () => import('@/views/admin/ProfileView.vue'),
-        meta: { title: '个人资料' }
+        meta: { title: '网站资料' }
+      },
+      {
+        path: 'my-profile',
+        name: 'AdminMyProfile',
+        component: () => import('@/views/admin/UserProfileView.vue'),
+        meta: { title: '我的资料' }
       }
     ]
   },

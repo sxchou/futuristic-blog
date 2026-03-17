@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useThemeStore, useAuthStore, useSiteConfigStore } from '@/stores'
+import { useThemeStore, useAuthStore, useSiteConfigStore, useUserProfileStore } from '@/stores'
+import UserAvatar from './UserAvatar.vue'
 
 const route = useRoute()
 const router = useRouter()
 const themeStore = useThemeStore()
 const authStore = useAuthStore()
 const siteConfigStore = useSiteConfigStore()
+const userProfileStore = useUserProfileStore()
 
 const isMenuOpen = ref(false)
 
@@ -26,6 +28,7 @@ const isActive = (path: string) => {
 
 const handleLogout = () => {
   authStore.logout()
+  userProfileStore.clearProfile()
   router.push('/')
 }
 
@@ -33,8 +36,27 @@ const openSearch = () => {
   window.dispatchEvent(new CustomEvent('open-search'))
 }
 
+const handleAvatarUpload = () => {
+  userProfileStore.refreshProfile()
+}
+
+const handleAvatarReset = () => {
+  userProfileStore.refreshProfile()
+}
+
+watch(() => authStore.isAuthenticated, (isAuthenticated) => {
+  if (isAuthenticated) {
+    userProfileStore.fetchProfile()
+  } else {
+    userProfileStore.clearProfile()
+  }
+})
+
 onMounted(() => {
   siteConfigStore.fetchConfigs()
+  if (authStore.isAuthenticated) {
+    userProfileStore.fetchProfile()
+  }
 })
 </script>
 
@@ -102,19 +124,14 @@ onMounted(() => {
             </router-link>
           </div>
 
-          <div v-else class="hidden sm:flex items-center gap-2">
-            <router-link
-              to="/admin"
-              class="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-primary transition-colors"
-            >
-              管理后台
-            </router-link>
-            <button
-              @click="handleLogout"
-              class="px-4 py-2 text-gray-400 hover:text-red-400 transition-colors"
-            >
-              退出
-            </button>
+          <div v-else class="hidden sm:flex items-center gap-3">
+            <UserAvatar 
+              :profile="userProfileStore.profile" 
+              :show-dropdown="true"
+              size="sm"
+              @upload="handleAvatarUpload"
+              @reset="handleAvatarReset"
+            />
           </div>
 
           <button
@@ -170,6 +187,30 @@ onMounted(() => {
                 </router-link>
               </template>
               <template v-else>
+                <div class="flex items-center gap-3 px-4 py-3 mb-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                  <UserAvatar 
+                    :profile="userProfileStore.profile" 
+                    :show-dropdown="false"
+                    size="sm"
+                    @upload="handleAvatarUpload"
+                    @reset="handleAvatarReset"
+                  />
+                  <div class="flex-1 min-w-0">
+                    <p class="font-medium text-gray-900 dark:text-white truncate">
+                      {{ userProfileStore.profile?.username || authStore.user?.username || '用户' }}
+                    </p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                      {{ authStore.user?.is_admin ? '管理员' : '用户' }}
+                    </p>
+                  </div>
+                </div>
+                <router-link
+                  to="/admin/my-profile"
+                  class="px-4 py-2 rounded-lg text-gray-600 dark:text-gray-300 hover:text-primary hover:bg-gray-100 dark:hover:bg-white/5 transition-colors block"
+                  @click="isMenuOpen = false"
+                >
+                  我的资料
+                </router-link>
                 <router-link
                   to="/admin"
                   class="px-4 py-2 rounded-lg text-gray-600 dark:text-gray-300 hover:text-primary hover:bg-gray-100 dark:hover:bg-white/5 transition-colors block"

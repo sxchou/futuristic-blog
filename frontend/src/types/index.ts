@@ -8,6 +8,9 @@ export interface User {
   username: string
   email: string
   avatar?: string
+  avatar_type?: string
+  avatar_url?: string
+  avatar_gradient?: string[]
   bio?: string
   is_admin: boolean
   is_verified: boolean
@@ -102,6 +105,9 @@ export interface Comment {
   author_name?: string
   author_email?: string
   author_url?: string
+  author_avatar_type?: string
+  author_avatar_url?: string
+  author_avatar_gradient?: string[]
   article_id: number
   parent_id?: number
   status: 'pending' | 'approved' | 'rejected'
@@ -109,6 +115,9 @@ export interface Comment {
   deleted_by?: 'user' | 'admin'
   reply_to_user_id?: number
   reply_to_user_name?: string
+  reply_to_user_avatar_type?: string
+  reply_to_user_avatar_url?: string
+  reply_to_user_avatar_gradient?: string[]
   created_at: string
   replies: Comment[]
 }
@@ -120,6 +129,9 @@ export interface AdminComment {
   author_name?: string
   author_email?: string
   author_url?: string
+  author_avatar_type?: string
+  author_avatar_url?: string
+  author_avatar_gradient?: string[]
   article_id: number
   article_title?: string
   article_slug?: string
@@ -129,6 +141,9 @@ export interface AdminComment {
   deleted_by?: 'user' | 'admin'
   reply_to_user_id?: number
   reply_to_user_name?: string
+  reply_to_user_avatar_type?: string
+  reply_to_user_avatar_url?: string
+  reply_to_user_avatar_gradient?: string[]
   created_at: string
 }
 

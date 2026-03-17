@@ -30,6 +30,8 @@ class Settings(BaseSettings):
     RESEND_FROM_EMAIL: str = ""
     EMAIL_PROVIDER: str = "resend"
     
+    UPLOAD_DIR: str = "uploads"
+    
     @property
     def tz(self) -> ZoneInfo:
         return ZoneInfo(self.TIMEZONE)
