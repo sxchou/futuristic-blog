@@ -27,6 +27,14 @@ const trendDays = ref(30)
 const rankSortBy = ref<'views' | 'likes' | 'comments'>('views')
 const rankLimit = ref(10)
 
+const loadingViewsTrend = ref(false)
+const loadingArticlesTrend = ref(false)
+const loadingCommentTrend = ref(false)
+const loadingCategoryStats = ref(false)
+const loadingTagStats = ref(false)
+const loadingArticleRank = ref(false)
+const loadingAccessTrend = ref(false)
+
 const accessTrendChartData = computed(() => {
   return accessTrend.value.map(item => ({
     name: item.date,
@@ -73,65 +81,86 @@ const fetchAllData = async () => {
 }
 
 const refreshViewsTrend = async () => {
+  loadingViewsTrend.value = true
   try {
     const res = await dashboardApi.getViewsTrend(trendDays.value)
     viewsTrend.value = res.data
   } catch (error) {
     console.error('Failed to refresh views trend:', error)
+  } finally {
+    loadingViewsTrend.value = false
   }
 }
 
 const refreshArticlesTrend = async () => {
+  loadingArticlesTrend.value = true
   try {
     const res = await dashboardApi.getArticlesTrend(trendDays.value)
     articlesTrend.value = res.data
   } catch (error) {
     console.error('Failed to refresh articles trend:', error)
+  } finally {
+    loadingArticlesTrend.value = false
   }
 }
 
 const refreshCommentTrend = async () => {
+  loadingCommentTrend.value = true
   try {
     const res = await dashboardApi.getCommentTrend(trendDays.value)
     commentTrend.value = res.data
   } catch (error) {
     console.error('Failed to refresh comment trend:', error)
+  } finally {
+    loadingCommentTrend.value = false
   }
 }
 
 const refreshCategoryStats = async () => {
+  loadingCategoryStats.value = true
   try {
     const res = await dashboardApi.getCategoryStats()
     categoryStats.value = res.data
   } catch (error) {
     console.error('Failed to refresh category stats:', error)
+  } finally {
+    loadingCategoryStats.value = false
   }
 }
 
 const refreshTagStats = async () => {
+  loadingTagStats.value = true
   try {
     const res = await dashboardApi.getTagStats(10)
     tagStats.value = res.data
   } catch (error) {
     console.error('Failed to refresh tag stats:', error)
+  } finally {
+    loadingTagStats.value = false
   }
 }
 
 const refreshArticleRank = async () => {
+  loadingArticleRank.value = true
   try {
     const res = await dashboardApi.getArticleRank(rankLimit.value, rankSortBy.value)
     articleRank.value = res.data
   } catch (error) {
     console.error('Failed to refresh article rank:', error)
+  } finally {
+    loadingArticleRank.value = false
   }
 }
 
 const refreshAccessTrend = async () => {
+  loadingAccessTrend.value = true
   try {
     const res = await dashboardApi.getAccessTrend(7)
     accessTrend.value = res.data
   } catch (error) {
     console.error('Failed to refresh access trend:', error)
+  } finally {
+    loadingAccessTrend.value = false
   }
 }
 
@@ -258,7 +287,7 @@ onMounted(() => {
           title="浏览量趋势"
           :data="viewsTrend"
           :height="280"
-          :loading="loading"
+          :loading="loadingViewsTrend"
           color="#00d4ff"
           @refresh="refreshViewsTrend"
         />
@@ -269,7 +298,7 @@ onMounted(() => {
           title="文章发布趋势"
           :data="articlesTrend"
           :height="280"
-          :loading="loading"
+          :loading="loadingArticlesTrend"
           color="#7c3aed"
           @refresh="refreshArticlesTrend"
         />
@@ -280,7 +309,7 @@ onMounted(() => {
           title="文章分类分布"
           :data="categoryStats"
           :height="280"
-          :loading="loading"
+          :loading="loadingCategoryStats"
           @refresh="refreshCategoryStats"
         />
       </div>
@@ -290,7 +319,7 @@ onMounted(() => {
           title="热门标签"
           :data="tagStats"
           :height="280"
-          :loading="loading"
+          :loading="loadingTagStats"
           :rose-type="true"
           @refresh="refreshTagStats"
         />
@@ -301,7 +330,7 @@ onMounted(() => {
           title="评论趋势"
           :data="commentTrend"
           :height="280"
-          :loading="loading"
+          :loading="loadingCommentTrend"
           color="#10b981"
           :area-style="true"
           @refresh="refreshCommentTrend"
@@ -313,7 +342,7 @@ onMounted(() => {
           title="访问量趋势"
           :data="accessTrendChartData"
           :height="280"
-          :loading="loading"
+          :loading="loadingAccessTrend"
           :colors="['#00d4ff', '#7c3aed']"
           @refresh="refreshAccessTrend"
         />
@@ -336,24 +365,30 @@ onMounted(() => {
           </div>
         </div>
         <div class="rank-list">
-          <div 
-            v-for="(article, index) in articleRank" 
-            :key="article.id"
-            class="rank-item"
-          >
-            <span class="rank-number" :class="{ top: index < 3 }">{{ index + 1 }}</span>
-            <div class="rank-content">
-              <span class="rank-name">{{ article.title }}</span>
-              <div class="rank-stats">
-                <span><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>{{ article.views }}</span>
-                <span><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>{{ article.likes }}</span>
-                <span><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>{{ article.comments }}</span>
+          <div v-if="loadingArticleRank" class="rank-loading">
+            <div class="loading-spinner"></div>
+            <span>加载中...</span>
+          </div>
+          <template v-else>
+            <div 
+              v-for="(article, index) in articleRank" 
+              :key="article.id"
+              class="rank-item"
+            >
+              <span class="rank-number" :class="{ top: index < 3 }">{{ index + 1 }}</span>
+              <div class="rank-content">
+                <span class="rank-name">{{ article.title }}</span>
+                <div class="rank-stats">
+                  <span><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>{{ article.views }}</span>
+                  <span><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>{{ article.likes }}</span>
+                  <span><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>{{ article.comments }}</span>
+                </div>
               </div>
             </div>
-          </div>
-          <div v-if="!loading && articleRank.length === 0" class="rank-empty">
-            暂无数据
-          </div>
+            <div v-if="articleRank.length === 0" class="rank-empty">
+              暂无数据
+            </div>
+          </template>
         </div>
       </div>
     </div>
@@ -691,6 +726,26 @@ onMounted(() => {
   padding: 24px;
   color: #9ca3af;
   font-size: 14px;
+}
+
+.rank-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  gap: 12px;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.rank-loading .loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(0, 212, 255, 0.2);
+  border-top-color: #00d4ff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
 .animate-spin {
