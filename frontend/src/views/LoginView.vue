@@ -217,6 +217,12 @@ const handleResend = async () => {
             </span>
             <span v-else>登录</span>
           </button>
+
+          <div class="text-center">
+            <router-link to="/forgot-password" class="text-sm text-gray-500 dark:text-gray-400 hover:text-primary transition-colors">
+              忘记密码？
+            </router-link>
+          </div>
         </form>
 
         <div class="mt-4 text-center">

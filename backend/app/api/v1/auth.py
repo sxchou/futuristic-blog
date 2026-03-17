@@ -4,12 +4,14 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.config import settings
-from app.models import User, EmailLog, NotificationSettings
-from app.schemas import UserCreate, UserResponse, Token
+from app.models import User, EmailLog, NotificationSettings, PasswordReset
+from app.schemas import UserCreate, UserResponse, Token, PasswordResetRequest, PasswordResetVerify
 from app.utils import verify_password, get_password_hash, create_access_token, get_current_user
 from app.services.email_service import EmailService
 from app.services.log_service import log_login_sync
 from app.utils.timezone import get_now
+import random
+import string
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -244,3 +246,126 @@ async def resend_verification(
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+MAX_RESET_REQUESTS_PER_HOUR = 5
+RESET_CODE_EXPIRE_MINUTES = 15
+
+
+def generate_reset_code() -> str:
+    return ''.join(random.choices(string.digits, k=6))
+
+
+def get_client_ip(request: Request) -> str:
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+@router.post("/password-reset/request")
+async def request_password_reset(
+    request: Request,
+    data: PasswordResetRequest,
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter(User.email == data.email).first()
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="该邮箱未注册，请检查或注册新账号"
+        )
+    
+    client_ip = get_client_ip(request)
+    one_hour_ago = get_now() - timedelta(hours=1)
+    
+    email_requests = db.query(PasswordReset).filter(
+        PasswordReset.email == data.email,
+        PasswordReset.created_at >= one_hour_ago
+    ).count()
+    
+    if email_requests >= MAX_RESET_REQUESTS_PER_HOUR:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="请求次数过多，请1小时后再试"
+        )
+    
+    ip_requests = db.query(PasswordReset).filter(
+        PasswordReset.ip_address == client_ip,
+        PasswordReset.created_at >= one_hour_ago
+    ).count()
+    
+    if ip_requests >= MAX_RESET_REQUESTS_PER_HOUR:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="请求次数过多，请1小时后再试"
+        )
+    
+    code = generate_reset_code()
+    expires_at = get_now() + timedelta(minutes=RESET_CODE_EXPIRE_MINUTES)
+    
+    password_reset = PasswordReset(
+        email=data.email,
+        code=code,
+        ip_address=client_ip,
+        expires_at=expires_at
+    )
+    db.add(password_reset)
+    db.commit()
+    
+    try:
+        EmailService.send_password_reset_email_db(
+            db=db,
+            email=user.email,
+            username=user.username,
+            code=code
+        )
+    except Exception as e:
+        print(f"Failed to send password reset email: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="发送验证码失败，请稍后重试"
+        )
+    
+    return {
+        "message": "验证码已发送至您的邮箱",
+        "expires_in": RESET_CODE_EXPIRE_MINUTES * 60
+    }
+
+
+@router.post("/password-reset/verify")
+async def verify_password_reset(
+    data: PasswordResetVerify,
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter(User.email == data.email).first()
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="该邮箱未注册"
+        )
+    
+    now = get_now()
+    reset_record = db.query(PasswordReset).filter(
+        PasswordReset.email == data.email,
+        PasswordReset.code == data.code,
+        PasswordReset.is_used == False,
+        PasswordReset.expires_at > now
+    ).first()
+    
+    if not reset_record:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="验证码无效或已过期"
+        )
+    
+    reset_record.is_used = True
+    reset_record.used_at = now
+    
+    user.hashed_password = get_password_hash(data.new_password)
+    
+    db.commit()
+    
+    return {"message": "密码已重置，请使用新密码登录"}

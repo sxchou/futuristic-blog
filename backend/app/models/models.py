@@ -311,3 +311,16 @@ class AccessLog(Base):
     created_at = Column(DateTime, default=get_local_now, index=True)
     
     user = relationship("User")
+
+
+class PasswordReset(Base):
+    __tablename__ = "password_resets"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(100), nullable=False, index=True)
+    code = Column(String(6), nullable=False)
+    ip_address = Column(String(50), nullable=True)
+    is_used = Column(Boolean, default=False)
+    used_at = Column(DateTime, nullable=True)
+    expires_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=get_local_now)

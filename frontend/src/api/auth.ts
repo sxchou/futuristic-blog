@@ -34,5 +34,20 @@ export const authApi = {
       params: { email }
     })
     return response.data
+  },
+
+  requestPasswordReset: async (email: string): Promise<{ message: string; expires_in: number }> => {
+    const response = await apiClient.post('/auth/password-reset/request', { email })
+    return response.data
+  },
+
+  verifyPasswordReset: async (data: {
+    email: string
+    code: string
+    new_password: string
+    confirm_password: string
+  }): Promise<{ message: string }> => {
+    const response = await apiClient.post('/auth/password-reset/verify', data)
+    return response.data
   }
 }

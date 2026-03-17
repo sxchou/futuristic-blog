@@ -82,6 +82,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '验证邮箱' }
   },
   {
+    path: '/forgot-password',
+    name: 'ForgotPassword',
+    component: () => import('@/views/ForgotPasswordView.vue'),
+    meta: { title: '忘记密码' }
+  },
+  {
     path: '/admin',
     component: () => import('@/views/admin/AdminLayout.vue'),
     meta: { requiresAuth: true },

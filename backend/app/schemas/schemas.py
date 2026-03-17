@@ -575,3 +575,31 @@ class NotificationSettingsResponse(NotificationSettingsBase):
 
 CommentResponse.model_rebuild()
 ArticleResponse.model_rebuild()
+
+
+class PasswordResetRequest(BaseModel):
+    email: str = Field(..., min_length=1)
+    
+    @field_validator('email')
+    @classmethod
+    def validate_email_field(cls, v):
+        return validate_email(v)
+
+
+class PasswordResetVerify(BaseModel):
+    email: str = Field(..., min_length=1)
+    code: str = Field(..., min_length=6, max_length=6)
+    new_password: str = Field(..., min_length=6)
+    confirm_password: str = Field(..., min_length=6)
+    
+    @field_validator('email')
+    @classmethod
+    def validate_email_field(cls, v):
+        return validate_email(v)
+    
+    @field_validator('confirm_password')
+    @classmethod
+    def passwords_match(cls, v, info):
+        if 'new_password' in info.data and v != info.data['new_password']:
+            raise ValueError('两次输入的密码不一致')
+        return v
