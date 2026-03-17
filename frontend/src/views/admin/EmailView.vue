@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { emailApi, type EmailConfig, type EmailLog, type EmailStats, type EmailProvider, type ProviderStatus } from '@/api/email'
+import { useDialogStore } from '@/stores'
 
+const dialog = useDialogStore()
 const activeTab = ref<'config' | 'logs'>('config')
 
 const configs = ref<EmailConfig[]>([])
@@ -175,7 +177,7 @@ function startEditConfig(config: EmailConfig) {
 
 async function saveConfig() {
   if (!configForm.value.smtp_user || !configForm.value.smtp_password || !configForm.value.from_email) {
-    alert('请填写所有必填字段')
+    await dialog.showError('请填写所有必填字段', '提示')
     return
   }
 
@@ -186,64 +188,72 @@ async function saveConfig() {
     } else {
       await emailApi.createConfig(configForm.value)
     }
-    alert('保存成功！')
+    await dialog.showSuccess('保存成功！', '成功')
     resetForm()
     await loadConfigs()
   } catch (error: any) {
-    alert(error.response?.data?.detail || '保存失败')
+    await dialog.showError(error.response?.data?.detail || '保存失败', '错误')
   } finally {
     isSaving.value = false
   }
 }
 
 async function activateConfig(config: EmailConfig) {
-  if (!confirm(`确定要激活配置 "${config.smtp_user}" 吗？`)) return
+  const confirmed = await dialog.showConfirm({
+    message: `确定要激活配置 "${config.smtp_user}" 吗？`,
+    title: '确认激活'
+  })
+  if (!confirmed) return
   
   try {
     await emailApi.activateConfig(config.id)
-    alert('激活成功！')
+    await dialog.showSuccess('激活成功！', '成功')
     await loadConfigs()
     await loadProviderStatus()
   } catch (error: any) {
-    alert(error.response?.data?.detail || '激活失败')
+    await dialog.showError(error.response?.data?.detail || '激活失败', '错误')
   }
 }
 
 async function deleteConfig(config: EmailConfig) {
-  if (!confirm(`确定要删除配置 "${config.smtp_user}" 吗？`)) return
+  const confirmed = await dialog.showConfirm({
+    message: `确定要删除配置 "${config.smtp_user}" 吗？`,
+    title: '确认删除'
+  })
+  if (!confirmed) return
 
   try {
     const result = await emailApi.deleteConfig(config.id)
-    alert('删除成功')
+    await dialog.showSuccess('删除成功', '成功')
     if (result.was_active) {
       activeConfig.value = null
     }
     await loadConfigs()
     await loadProviderStatus()
   } catch (error: any) {
-    alert(error.response?.data?.detail || '删除失败')
+    await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
   }
 }
 
 async function sendTestEmail() {
   if (!testEmail.value) {
-    alert('请输入测试邮箱地址')
+    await dialog.showError('请输入测试邮箱地址', '提示')
     return
   }
 
   if (!activeConfig.value) {
-    alert('请先激活一个邮箱配置')
+    await dialog.showError('请先激活一个邮箱配置', '提示')
     return
   }
 
   isTesting.value = true
   try {
     await emailApi.testEmail(testEmail.value)
-    alert('测试邮件发送成功，请查收')
+    await dialog.showSuccess('测试邮件发送成功，请查收', '成功')
     testEmail.value = ''
     await loadStats()
   } catch (error: any) {
-    alert(error.response?.data?.detail || '发送失败')
+    await dialog.showError(error.response?.data?.detail || '发送失败', '错误')
   } finally {
     isTesting.value = false
   }
@@ -251,35 +261,38 @@ async function sendTestEmail() {
 
 async function sendResendTestEmail() {
   if (!testResendEmail.value) {
-    alert('请输入测试邮箱地址')
+    await dialog.showError('请输入测试邮箱地址', '提示')
     return
   }
 
   isTestingResend.value = true
   try {
     const result = await emailApi.testResendEmail(testResendEmail.value)
-    alert(`Resend测试邮件发送成功！\n消息ID: ${result.message_id || 'N/A'}`)
+    await dialog.showSuccess(`Resend测试邮件发送成功！\n消息ID: ${result.message_id || 'N/A'}`, '成功')
     testResendEmail.value = ''
     await loadStats()
   } catch (error: any) {
-    alert(error.response?.data?.detail || 'Resend发送失败')
+    await dialog.showError(error.response?.data?.detail || 'Resend发送失败', '错误')
   } finally {
     isTestingResend.value = false
   }
 }
 
 async function switchProvider(provider: string) {
-  const confirmed = confirm(`确定要切换到 ${getProviderName(provider)} 吗？`)
+  const confirmed = await dialog.showConfirm({
+    message: `确定要切换到 ${getProviderName(provider)} 吗？`,
+    title: '确认切换'
+  })
   if (!confirmed) return
   
   switchingProvider.value = true
   try {
     await emailApi.switchProvider(provider)
-    alert('切换成功！')
+    await dialog.showSuccess('切换成功！', '成功')
     await loadProviderStatus()
     await loadConfigs()
   } catch (error: any) {
-    alert(error.response?.data?.detail || '切换失败')
+    await dialog.showError(error.response?.data?.detail || '切换失败', '错误')
   } finally {
     switchingProvider.value = false
   }

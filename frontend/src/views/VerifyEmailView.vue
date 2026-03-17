@@ -2,7 +2,9 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { authApi } from '@/api'
+import { useDialogStore } from '@/stores'
 
+const dialog = useDialogStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -37,16 +39,16 @@ onMounted(async () => {
 
 const handleResend = async () => {
   if (!email.value) {
-    alert('请输入您的邮箱地址')
+    await dialog.showError('请输入您的邮箱地址', '提示')
     return
   }
   
   try {
     await authApi.resendVerification(email.value)
-    alert('验证邮件已发送，请查收')
+    await dialog.showSuccess('验证邮件已发送，请查收', '成功')
   } catch (error: any) {
     console.error('Resend failed:', error)
-    alert(error.response?.data?.detail || '发送失败')
+    await dialog.showError(error.response?.data?.detail || '发送失败', '错误')
   }
 }
 

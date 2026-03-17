@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { logsApi } from '@/api'
+import { useDialogStore } from '@/stores'
+
+const dialog = useDialogStore()
 
 interface LogStats {
   total_operations: number
@@ -116,7 +119,11 @@ const handleSearch = () => {
 }
 
 const handleClearLogs = async () => {
-  if (!confirm('确定要清理30天前的日志吗？')) return
+  const confirmed = await dialog.showConfirm({
+    message: '确定要清理30天前的日志吗？',
+    title: '确认清理'
+  })
+  if (!confirmed) return
   
   try {
     switch (activeTab.value) {
@@ -130,10 +137,12 @@ const handleClearLogs = async () => {
         await logsApi.clearAccess()
         break
     }
+    await dialog.showSuccess('日志清理成功', '成功')
     fetchLogs()
     fetchStats()
   } catch (error) {
     console.error('Failed to clear logs:', error)
+    await dialog.showError('日志清理失败', '错误')
   }
 }
 

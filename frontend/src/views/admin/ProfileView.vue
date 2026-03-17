@@ -2,7 +2,9 @@
 import { ref, onMounted } from 'vue'
 import { profileApi } from '@/api'
 import type { Profile, TechStackItem, JourneyItem, Education } from '@/types'
+import { useDialogStore } from '@/stores'
 
+const dialog = useDialogStore()
 const profile = ref<Profile | null>(null)
 const isLoading = ref(false)
 const activeTab = ref('basic')
@@ -66,13 +68,13 @@ const fetchProfile = async () => {
 const handleSave = async () => {
   try {
     await profileApi.updateProfile(form.value)
-    alert('保存成功')
+    await dialog.showSuccess('保存成功', '成功')
     await fetchProfile()
   } catch (error: any) {
     if (error.response?.status === 403) {
-      alert('无权限修改个人信息')
+      await dialog.showError('无权限修改个人信息', '权限不足')
     } else {
-      alert(error.response?.data?.detail || '保存失败')
+      await dialog.showError(error.response?.data?.detail || '保存失败', '错误')
     }
   }
 }

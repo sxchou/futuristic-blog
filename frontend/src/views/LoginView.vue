@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore, useSiteConfigStore } from '@/stores'
+import { useAuthStore, useSiteConfigStore, useDialogStore } from '@/stores'
 import { authApi } from '@/api'
 import SliderCaptcha from '@/components/common/SliderCaptcha.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const siteConfigStore = useSiteConfigStore()
+const dialog = useDialogStore()
 
 const form = ref({
   username: '',
@@ -101,17 +102,17 @@ const handleLogin = async () => {
 
 const handleResend = async () => {
   if (!resendEmail.value) {
-    alert('请输入您的邮箱地址')
+    await dialog.showError('请输入您的邮箱地址', '提示')
     return
   }
 
   isResending.value = true
   try {
     await authApi.resendVerification(resendEmail.value)
-    alert('验证邮件已发送，请查收')
+    await dialog.showSuccess('验证邮件已发送，请查收', '成功')
     showResendOption.value = false
   } catch (error: any) {
-    alert(error.response?.data?.detail || '发送失败')
+    await dialog.showError(error.response?.data?.detail || '发送失败', '错误')
   } finally {
     isResending.value = false
   }
