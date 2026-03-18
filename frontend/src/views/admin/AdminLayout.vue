@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAuthStore, useSiteConfigStore } from '@/stores'
+import { useAuthStore, useSiteConfigStore, useUserProfileStore } from '@/stores'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const siteConfigStore = useSiteConfigStore()
+const userProfileStore = useUserProfileStore()
 
 const isSidebarOpen = ref(true)
 
@@ -38,8 +39,37 @@ const handleLogout = () => {
   router.push('/')
 }
 
+const sidebarAvatarStyle = computed(() => {
+  const profile = userProfileStore.profile
+  if (profile?.avatar_type === 'custom' && profile.avatar_url) {
+    return {
+      backgroundImage: `url(${profile.avatar_url})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }
+  }
+  
+  if (profile?.default_avatar_gradient && profile.default_avatar_gradient.length >= 2) {
+    return {
+      background: `linear-gradient(135deg, ${profile.default_avatar_gradient[0]}, ${profile.default_avatar_gradient[1]})`
+    }
+  }
+  
+  return {
+    background: 'linear-gradient(to bottom right, var(--color-primary), var(--color-accent))'
+  }
+})
+
+const showSidebarAvatarInitial = computed(() => {
+  const profile = userProfileStore.profile
+  return !profile?.avatar_type || profile.avatar_type === 'default' || !profile.avatar_url
+})
+
 onMounted(() => {
   siteConfigStore.fetchConfigs()
+  if (authStore.isAuthenticated) {
+    userProfileStore.fetchProfile()
+  }
 })
 </script>
 
@@ -117,8 +147,11 @@ onMounted(() => {
 
         <div class="p-3 border-t border-gray-200 dark:border-white/10">
           <div class="flex items-center gap-2 mb-3">
-            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold text-sm">
-              {{ authStore.user?.username?.charAt(0).toUpperCase() || 'A' }}
+            <div 
+              class="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden"
+              :style="sidebarAvatarStyle"
+            >
+              <span v-if="showSidebarAvatarInitial">{{ authStore.user?.username?.charAt(0).toUpperCase() || 'A' }}</span>
             </div>
             <div>
               <p class="text-gray-900 dark:text-white font-medium text-sm">{{ authStore.user?.username || 'Admin' }}</p>

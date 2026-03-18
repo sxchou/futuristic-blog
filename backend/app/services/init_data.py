@@ -60,12 +60,18 @@ def init_database():
                 email=settings.ADMIN_EMAIL,
                 hashed_password=get_password_hash(settings.ADMIN_PASSWORD),
                 is_admin=True,
+                is_verified=True,
                 bio="Full Stack Engineer | AI Explorer | Open Source Contributor",
                 avatar="/avatars/admin.jpg"
             )
             db.add(admin)
             db.commit()
             print(f"Created admin user: {settings.ADMIN_USERNAME}")
+        else:
+            if not admin.is_verified:
+                admin.is_verified = True
+                db.commit()
+                print(f"Updated admin user verification status: {settings.ADMIN_USERNAME}")
         
         categories_data = [
             {"name": "前端工程化", "slug": "frontend-engineering", "description": "前端架构、工程化最佳实践", "icon": "code", "color": "#00d4ff", "order": 1},

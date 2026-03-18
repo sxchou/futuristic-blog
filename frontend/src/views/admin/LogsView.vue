@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { logsApi } from '@/api'
-import { useDialogStore } from '@/stores'
+import { useDialogStore, useUserProfileStore } from '@/stores'
 
 const dialog = useDialogStore()
+const userProfileStore = useUserProfileStore()
 
 interface LogStats {
   total_operations: number
@@ -156,11 +157,57 @@ const getStatusClass = (status: string) => {
     : 'bg-red-500/20 text-red-400'
 }
 
+const getLoginLogAvatarStyle = (log: any) => {
+  if (log.avatar_type === 'custom' && log.avatar_url) {
+    return {
+      backgroundImage: `url(${log.avatar_url})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }
+  }
+  
+  if (log.avatar_gradient && log.avatar_gradient.length >= 2) {
+    return {
+      background: `linear-gradient(135deg, ${log.avatar_gradient[0]}, ${log.avatar_gradient[1]})`
+    }
+  }
+  
+  return {
+    background: 'linear-gradient(135deg, #667eea, #764ba2)'
+  }
+}
+
+const getOperationLogAvatarStyle = (log: any) => {
+  if (log.avatar_type === 'custom' && log.avatar_url) {
+    return {
+      backgroundImage: `url(${log.avatar_url})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }
+  }
+  
+  if (log.avatar_gradient && log.avatar_gradient.length >= 2) {
+    return {
+      background: `linear-gradient(135deg, ${log.avatar_gradient[0]}, ${log.avatar_gradient[1]})`
+    }
+  }
+  
+  return {
+    background: 'linear-gradient(135deg, #667eea, #764ba2)'
+  }
+}
+
 const totalPages = computed(() => Math.ceil(total.value / pageSize.value))
 
 onMounted(() => {
   fetchStats()
   fetchLogs()
+})
+
+watch(() => userProfileStore.avatarUpdatedAt, () => {
+  if (!loading.value) {
+    fetchLogs()
+  }
 })
 </script>
 
@@ -294,7 +341,19 @@ onMounted(() => {
                   :key="log.id"
                   class="border-b border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5"
                 >
-                  <td class="py-2 px-3 text-gray-900 dark:text-white">{{ log.username || '-' }}</td>
+                  <td class="py-2 px-3">
+                    <div class="flex items-center gap-2">
+                      <div
+                        class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium overflow-hidden flex-shrink-0"
+                        :style="getOperationLogAvatarStyle(log)"
+                      >
+                        <span v-if="!log.avatar_type || log.avatar_type === 'default' || !log.avatar_url">
+                          {{ (log.username || '?').charAt(0).toUpperCase() }}
+                        </span>
+                      </div>
+                      <span class="text-gray-900 dark:text-white">{{ log.username || '-' }}</span>
+                    </div>
+                  </td>
                   <td class="py-2 px-3 text-gray-600 dark:text-gray-300">{{ log.module }}</td>
                   <td class="py-2 px-3 text-gray-600 dark:text-gray-300">{{ log.action }}</td>
                   <td class="py-2 px-3 text-gray-600 dark:text-gray-300 max-w-xs truncate">{{ log.description || '-' }}</td>
@@ -360,7 +419,19 @@ onMounted(() => {
                   :key="log.id"
                   class="border-b border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5"
                 >
-                  <td class="py-2 px-3 text-gray-900 dark:text-white">{{ log.username || '-' }}</td>
+                  <td class="py-2 px-3">
+                    <div class="flex items-center gap-2">
+                      <div
+                        class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium overflow-hidden flex-shrink-0"
+                        :style="getLoginLogAvatarStyle(log)"
+                      >
+                        <span v-if="!log.avatar_type || log.avatar_type === 'default' || !log.avatar_url">
+                          {{ (log.username || '?').charAt(0).toUpperCase() }}
+                        </span>
+                      </div>
+                      <span class="text-gray-900 dark:text-white">{{ log.username || '-' }}</span>
+                    </div>
+                  </td>
                   <td class="py-2 px-3 text-gray-600 dark:text-gray-300">{{ log.login_type === 'login' ? '登录' : '登出' }}</td>
                   <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">{{ log.ip_address || '-' }}</td>
                   <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">{{ log.browser || '-' }}</td>

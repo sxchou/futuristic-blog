@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore, useDialogStore, useUserProfileStore } from '@/stores'
 import { userProfileApi } from '@/api/userProfile'
 import type { UserProfile } from '@/api/userProfile'
+import AvatarCropper from './AvatarCropper.vue'
 
 const props = defineProps<{
   size?: 'sm' | 'md' | 'lg'
@@ -25,6 +26,8 @@ const isDropdownOpen = ref(false)
 const isUploading = ref(false)
 const uploadProgress = ref(0)
 const fileInput = ref<HTMLInputElement | null>(null)
+const showCropper = ref(false)
+const selectedImageSrc = ref('')
 
 const sizeClasses = computed(() => {
   switch (props.size) {
@@ -100,17 +103,30 @@ const handleFileChange = async (event: Event) => {
     return
   }
   
-  if (file.size > 5 * 1024 * 1024) {
-    dialogStore.showError('文件大小不能超过 5MB')
+  if (file.size > 10 * 1024 * 1024) {
+    dialogStore.showError('文件大小不能超过 10MB')
     return
   }
   
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    selectedImageSrc.value = e.target?.result as string
+    showCropper.value = true
+  }
+  reader.readAsDataURL(file)
+  
+  if (target) {
+    target.value = ''
+  }
+}
+
+const handleCropConfirm = async (blob: Blob) => {
   isUploading.value = true
   uploadProgress.value = 0
   
   try {
     const formData = new FormData()
-    formData.append('file', file)
+    formData.append('file', blob, 'avatar.jpg')
     
     const interval = setInterval(() => {
       if (uploadProgress.value < 90) {
@@ -136,10 +152,6 @@ const handleFileChange = async (event: Event) => {
     isUploading.value = false
     uploadProgress.value = 0
     dialogStore.showError(error.response?.data?.detail || '头像上传失败')
-  }
-  
-  if (target) {
-    target.value = ''
   }
 }
 
@@ -296,6 +308,12 @@ const handleClickOutside = (event: MouseEvent) => {
       accept="image/jpeg,image/png,image/webp"
       class="hidden"
       @change="handleFileChange"
+    />
+    
+    <AvatarCropper
+      v-model="showCropper"
+      :image-src="selectedImageSrc"
+      @confirm="handleCropConfirm"
     />
     
     <div

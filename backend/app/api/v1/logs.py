@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from datetime import datetime, timedelta
 from app.core.database import get_db
-from app.models import OperationLog, LoginLog, AccessLog
+from app.models import OperationLog, LoginLog, AccessLog, UserProfile
 from app.utils.auth import get_current_admin_user
 from app.utils.timezone import get_now, get_today_start
 from pydantic import BaseModel
@@ -15,6 +15,10 @@ router = APIRouter(prefix="/logs", tags=["Logs"])
 class OperationLogItem(BaseModel):
     id: int
     username: Optional[str]
+    user_id: Optional[int]
+    avatar_type: Optional[str] = None
+    avatar_url: Optional[str] = None
+    avatar_gradient: Optional[list] = None
     action: str
     module: str
     description: Optional[str]
@@ -33,6 +37,10 @@ class OperationLogItem(BaseModel):
 class LoginLogItem(BaseModel):
     id: int
     username: Optional[str]
+    user_id: Optional[int]
+    avatar_type: Optional[str] = None
+    avatar_url: Optional[str] = None
+    avatar_gradient: Optional[list] = None
     login_type: str
     ip_address: Optional[str]
     location: Optional[str]
@@ -118,8 +126,44 @@ async def get_operation_logs(
     total = query.count()
     logs = query.order_by(desc(OperationLog.created_at)).offset((page - 1) * page_size).limit(page_size).all()
     
+    user_avatar_cache = {}
+    items = []
+    for log in logs:
+        avatar_type = None
+        avatar_url = None
+        avatar_gradient = None
+        
+        if log.user_id:
+            if log.user_id not in user_avatar_cache:
+                profile = db.query(UserProfile).filter(UserProfile.user_id == log.user_id).first()
+                user_avatar_cache[log.user_id] = profile
+            profile = user_avatar_cache.get(log.user_id)
+            if profile:
+                avatar_type = profile.avatar_type.value if profile.avatar_type else None
+                avatar_url = profile.avatar_url
+                avatar_gradient = profile.default_avatar_gradient
+        
+        items.append(OperationLogItem(
+            id=log.id,
+            username=log.username,
+            user_id=log.user_id,
+            avatar_type=avatar_type,
+            avatar_url=avatar_url,
+            avatar_gradient=avatar_gradient,
+            action=log.action,
+            module=log.module,
+            description=log.description,
+            target_type=log.target_type,
+            target_id=log.target_id,
+            request_method=log.request_method,
+            request_url=log.request_url,
+            ip_address=log.ip_address,
+            status=log.status,
+            created_at=log.created_at
+        ))
+    
     return {
-        "items": [OperationLogItem.model_validate(log) for log in logs],
+        "items": items,
         "total": total,
         "page": page,
         "page_size": page_size
@@ -157,8 +201,43 @@ async def get_login_logs(
     total = query.count()
     logs = query.order_by(desc(LoginLog.created_at)).offset((page - 1) * page_size).limit(page_size).all()
     
+    user_avatar_cache = {}
+    items = []
+    for log in logs:
+        avatar_type = None
+        avatar_url = None
+        avatar_gradient = None
+        
+        if log.user_id:
+            if log.user_id not in user_avatar_cache:
+                profile = db.query(UserProfile).filter(UserProfile.user_id == log.user_id).first()
+                user_avatar_cache[log.user_id] = profile
+            profile = user_avatar_cache.get(log.user_id)
+            if profile:
+                avatar_type = profile.avatar_type.value if profile.avatar_type else None
+                avatar_url = profile.avatar_url
+                avatar_gradient = profile.default_avatar_gradient
+        
+        items.append(LoginLogItem(
+            id=log.id,
+            username=log.username,
+            user_id=log.user_id,
+            avatar_type=avatar_type,
+            avatar_url=avatar_url,
+            avatar_gradient=avatar_gradient,
+            login_type=log.login_type,
+            ip_address=log.ip_address,
+            location=log.location,
+            browser=log.browser,
+            os=log.os,
+            device=log.device,
+            status=log.status,
+            fail_reason=log.fail_reason,
+            created_at=log.created_at
+        ))
+    
     return {
-        "items": [LoginLogItem.model_validate(log) for log in logs],
+        "items": items,
         "total": total,
         "page": page,
         "page_size": page_size

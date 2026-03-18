@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useAuthStore, useUserProfileStore, useDialogStore } from '@/stores'
 import { userProfileApi } from '@/api/userProfile'
+import AvatarCropper from '@/components/common/AvatarCropper.vue'
 
 const authStore = useAuthStore()
 const userProfileStore = useUserProfileStore()
@@ -11,6 +12,8 @@ const isLoading = ref(false)
 const isUploading = ref(false)
 const uploadProgress = ref(0)
 const fileInput = ref<HTMLInputElement | null>(null)
+const showCropper = ref(false)
+const selectedImageSrc = ref('')
 
 const user = computed(() => authStore.user)
 const profile = computed(() => userProfileStore.profile)
@@ -78,17 +81,30 @@ const handleFileChange = async (event: Event) => {
     return
   }
   
-  if (file.size > 5 * 1024 * 1024) {
-    dialogStore.showError('文件大小不能超过 5MB')
+  if (file.size > 10 * 1024 * 1024) {
+    dialogStore.showError('文件大小不能超过 10MB')
     return
   }
   
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    selectedImageSrc.value = e.target?.result as string
+    showCropper.value = true
+  }
+  reader.readAsDataURL(file)
+  
+  if (target) {
+    target.value = ''
+  }
+}
+
+const handleCropConfirm = async (blob: Blob) => {
   isUploading.value = true
   uploadProgress.value = 0
   
   try {
     const formData = new FormData()
-    formData.append('file', file)
+    formData.append('file', blob, 'avatar.jpg')
     
     const interval = setInterval(() => {
       if (uploadProgress.value < 90) {
@@ -112,10 +128,6 @@ const handleFileChange = async (event: Event) => {
     isUploading.value = false
     uploadProgress.value = 0
     dialogStore.showError(error.response?.data?.detail || '头像上传失败')
-  }
-  
-  if (target) {
-    target.value = ''
   }
 }
 
@@ -169,7 +181,7 @@ onMounted(fetchProfile)
           
           <div class="flex-1">
             <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
-              点击头像更换图片，支持 JPG、PNG、WebP 格式，最大 5MB
+              点击头像更换图片，支持 JPG、PNG、WebP 格式，最大 10MB
             </p>
             <div class="flex gap-3">
               <button
@@ -196,6 +208,12 @@ onMounted(fetchProfile)
           accept="image/jpeg,image/png,image/webp"
           class="hidden"
           @change="handleFileChange"
+        />
+        
+        <AvatarCropper
+          v-model="showCropper"
+          :image-src="selectedImageSrc"
+          @confirm="handleCropConfirm"
         />
       </div>
 
