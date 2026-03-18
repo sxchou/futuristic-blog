@@ -19,6 +19,39 @@ const isSubmitting = ref(false)
 
 const handleCallback = async () => {
   const provider = route.params.provider as string
+  
+  const accessToken = route.query.access_token as string
+  const needsEmailParam = route.query.needs_email as string
+  const tempTokenParam = route.query.temp_token as string
+  const usernameParam = route.query.username as string
+  const userId = route.query.user_id as string
+  const errorParam = route.query.error as string
+  
+  if (errorParam) {
+    error.value = errorParam
+    isLoading.value = false
+    return
+  }
+  
+  if (needsEmailParam === 'true' && tempTokenParam) {
+    needsEmail.value = true
+    tempToken.value = tempTokenParam
+    username.value = usernameParam || ''
+    isLoading.value = false
+    return
+  }
+  
+  if (accessToken) {
+    localStorage.setItem('token', accessToken)
+    await authStore.fetchUser()
+    
+    await dialog.showSuccess('登录成功！', '欢迎回来')
+    
+    const redirect = route.query.redirect as string
+    router.push(redirect || '/')
+    return
+  }
+  
   const code = route.query.code as string
   const state = route.query.state as string
 

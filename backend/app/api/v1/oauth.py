@@ -270,7 +270,7 @@ def oauth_login(provider_name: str, db: Session = Depends(get_db)):
     return OAuthLoginResponse(authorize_url=authorize_url, state=state)
 
 
-@router.get("/callback/{provider_name}", response_model=OAuthCallbackResponse)
+@router.get("/callback/{provider_name}")
 async def oauth_callback(
     provider_name: str,
     code: str,
@@ -282,10 +282,12 @@ async def oauth_callback(
     ).first()
     
     if not provider:
-        raise HTTPException(status_code=404, detail="Provider not found")
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url=f"{settings.FRONTEND_URL}/login?error=Provider not found")
     
     if not check_provider_configured(provider):
-        raise HTTPException(status_code=400, detail="Provider not properly configured")
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url=f"{settings.FRONTEND_URL}/login?error=Provider not properly configured")
     
     async with httpx.AsyncClient() as client:
         token_response = await client.post(
@@ -395,22 +397,24 @@ async def oauth_callback(
         OAuthConnection.provider_user_id == provider_user_id
     ).first()
     
+    from fastapi.responses import RedirectResponse
+    from urllib.parse import urlencode
+    
     if connection:
         user = connection.user
         jwt_token = create_access_token(data={"sub": user.username})
         
-        return OAuthCallbackResponse(
-            access_token=jwt_token,
-            token_type="bearer",
-            user={
-                "id": user.id,
-                "username": user.username,
-                "email": user.email,
-                "avatar": user.avatar,
-                "is_admin": user.is_admin
-            },
-            needs_email=False
-        )
+        params = {
+            "access_token": jwt_token,
+            "token_type": "bearer",
+            "user_id": user.id,
+            "username": user.username,
+            "email": user.email or "",
+            "avatar": user.avatar or "",
+            "is_admin": str(user.is_admin).lower(),
+            "needs_email": "false"
+        }
+        return RedirectResponse(url=f"{settings.FRONTEND_URL}/oauth/callback/{provider_name}?{urlencode(params)}")
     
     needs_email_setup = not email
     
@@ -463,34 +467,32 @@ async def oauth_callback(
             provider_user_id=provider_user_id
         )
         
-        return OAuthCallbackResponse(
-            access_token="",
-            token_type="bearer",
-            user={
-                "id": user.id,
-                "username": user.username,
-                "email": "",
-                "avatar": user.avatar,
-                "is_admin": user.is_admin
-            },
-            needs_email=True,
-            temp_token=temp_token
-        )
+        params = {
+            "access_token": "",
+            "token_type": "bearer",
+            "user_id": user.id,
+            "username": user.username,
+            "email": "",
+            "avatar": user.avatar or "",
+            "is_admin": str(user.is_admin).lower(),
+            "needs_email": "true",
+            "temp_token": temp_token
+        }
+        return RedirectResponse(url=f"{settings.FRONTEND_URL}/oauth/callback/{provider_name}?{urlencode(params)}")
     
     jwt_token = create_access_token(data={"sub": user.username})
     
-    return OAuthCallbackResponse(
-        access_token=jwt_token,
-        token_type="bearer",
-        user={
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-            "avatar": user.avatar,
-            "is_admin": user.is_admin
-        },
-        needs_email=False
-    )
+    params = {
+        "access_token": jwt_token,
+        "token_type": "bearer",
+        "user_id": user.id,
+        "username": user.username,
+        "email": user.email or "",
+        "avatar": user.avatar or "",
+        "is_admin": str(user.is_admin).lower(),
+        "needs_email": "false"
+    }
+    return RedirectResponse(url=f"{settings.FRONTEND_URL}/oauth/callback/{provider_name}?{urlencode(params)}")
 
 
 @router.post("/submit-email", response_model=OAuthEmailVerifyResponse)
