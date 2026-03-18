@@ -97,11 +97,9 @@ class ArticleLike(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     article_id = Column(Integer, ForeignKey('articles.id', ondelete='CASCADE'), nullable=False)
-    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=True)
     ip_address = Column(String(50), nullable=True)
     created_at = Column(DateTime, default=get_local_now)
-    
-    __table_args__ = (UniqueConstraint('article_id', 'user_id', name='unique_article_like'),)
 
 
 class ArticleFile(Base):

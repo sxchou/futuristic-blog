@@ -2,7 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.models import User, UserProfile, AvatarType, OAuthConnection, Article, Comment, ArticleFile, EmailLog, OperationLog, LoginLog, AccessLog
+from app.models import User, UserProfile, AvatarType, OAuthConnection, OAuthTempToken, Article, Comment, ArticleFile, ArticleLike, EmailLog, OperationLog, LoginLog, AccessLog, CommentAuditLog
 from app.schemas import UserListItem, UserAdminUpdate, PaginatedResponse
 from app.utils import get_current_user, get_password_hash
 from app.services.log_service import LogService
@@ -147,7 +147,13 @@ async def delete_user(
     
     db.query(OAuthConnection).filter(OAuthConnection.user_id == user_id).delete()
     
+    db.query(OAuthTempToken).filter(OAuthTempToken.user_id == user_id).delete()
+    
+    db.query(ArticleLike).filter(ArticleLike.user_id == user_id).delete()
+    
     db.query(Comment).filter(Comment.user_id == user_id).update({Comment.user_id: None, Comment.author_name: username})
+    
+    db.query(Comment).filter(Comment.reply_to_user_id == user_id).update({Comment.reply_to_user_id: None})
     
     db.query(Article).filter(Article.author_id == user_id).update({Article.author_id: None})
     
@@ -160,6 +166,8 @@ async def delete_user(
     db.query(LoginLog).filter(LoginLog.user_id == user_id).update({LoginLog.user_id: None})
     
     db.query(AccessLog).filter(AccessLog.user_id == user_id).update({AccessLog.user_id: None})
+    
+    db.query(CommentAuditLog).filter(CommentAuditLog.operator_id == user_id).update({CommentAuditLog.operator_id: None, CommentAuditLog.operator_name: username})
     
     if user_profile:
         db.delete(user_profile)

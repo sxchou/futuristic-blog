@@ -26,6 +26,31 @@ def run_database_migrations():
                 conn.commit()
                 print("Migration: Added 'deleted_by' column to comments table")
             
+            cursor.execute("PRAGMA table_info(article_likes)")
+            like_columns = [column[1] for column in cursor.fetchall()]
+            
+            if like_columns:
+                cursor.execute("SELECT * FROM pragma_table_info('article_likes') WHERE name='user_id'")
+                result = cursor.fetchone()
+                if result and result[3] == 1:
+                    cursor.execute('''
+                        CREATE TABLE IF NOT EXISTS article_likes_new (
+                            id INTEGER PRIMARY KEY,
+                            article_id INTEGER NOT NULL,
+                            user_id INTEGER,
+                            ip_address TEXT,
+                            created_at TEXT,
+                            FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE,
+                            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                        )
+                    ''')
+                    cursor.execute('INSERT INTO article_likes_new SELECT * FROM article_likes')
+                    cursor.execute('DROP TABLE article_likes')
+                    cursor.execute('ALTER TABLE article_likes_new RENAME TO article_likes')
+                    cursor.execute('CREATE INDEX IF NOT EXISTS ix_article_likes_id ON article_likes(id)')
+                    conn.commit()
+                    print("Migration: Updated article_likes table to allow NULL user_id for anonymous likes")
+            
             conn.close()
         elif "postgresql" in db_url:
             db = SessionLocal()
@@ -37,6 +62,13 @@ def run_database_migrations():
                     print("Migration: Added 'deleted_by' column to comments table")
                 else:
                     print("Migration: 'deleted_by' column already exists")
+                
+                result = db.execute(text("SELECT is_nullable FROM information_schema.columns WHERE table_name = 'article_likes' AND column_name = 'user_id'"))
+                row = result.fetchone()
+                if row and row[0] == 'NO':
+                    db.execute(text("ALTER TABLE article_likes ALTER COLUMN user_id DROP NOT NULL"))
+                    db.commit()
+                    print("Migration: Updated article_likes table to allow NULL user_id for anonymous likes")
             except Exception as e:
                 print(f"PostgreSQL migration error: {e}")
                 db.rollback()
