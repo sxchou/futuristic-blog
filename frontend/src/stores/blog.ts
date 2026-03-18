@@ -20,6 +20,7 @@ export const useBlogStore = defineStore('blog', () => {
 
   const fetchArticles = async (params?: {
     page?: number
+    page_size?: number
     category_id?: number
     tag_id?: number
     is_featured?: boolean
@@ -29,7 +30,7 @@ export const useBlogStore = defineStore('blog', () => {
     try {
       const response = await articleApi.getArticles({
         page: params?.page ?? pagination.value.page,
-        page_size: pagination.value.pageSize,
+        page_size: params?.page_size ?? pagination.value.pageSize,
         ...params
       })
       articles.value = response.items

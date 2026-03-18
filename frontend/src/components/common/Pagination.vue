@@ -17,7 +17,6 @@ const emit = defineEmits<{
 }>()
 
 const jumpPage = ref<string>('')
-const jumpInputRef = ref<HTMLInputElement | null>(null)
 
 const isFirstPage = computed(() => props.currentPage === 1)
 const isLastPage = computed(() => props.currentPage === props.totalPages)
