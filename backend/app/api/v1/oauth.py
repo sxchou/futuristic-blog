@@ -402,6 +402,33 @@ async def oauth_callback(
     
     if connection:
         user = connection.user
+        
+        if user.email and "@oauth.local" in user.email:
+            import uuid
+            temp_token = str(uuid.uuid4())
+            
+            from app.services.email_service import EmailService
+            EmailService.store_oauth_temp_token(
+                db=db,
+                temp_token=temp_token,
+                user_id=user.id,
+                provider_name=provider_name,
+                provider_user_id=provider_user_id
+            )
+            
+            params = {
+                "access_token": "",
+                "token_type": "bearer",
+                "user_id": user.id,
+                "username": user.username,
+                "email": "",
+                "avatar": user.avatar or "",
+                "is_admin": str(user.is_admin).lower(),
+                "needs_email": "true",
+                "temp_token": temp_token
+            }
+            return RedirectResponse(url=f"{settings.FRONTEND_URL}/oauth/callback/{provider_name}?{urlencode(params)}")
+        
         jwt_token = create_access_token(data={"sub": user.username})
         
         params = {

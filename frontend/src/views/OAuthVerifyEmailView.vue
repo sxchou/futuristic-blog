@@ -26,11 +26,13 @@ const verifyEmail = async () => {
     const response = await oauthApi.verifyEmail(token, email)
     
     localStorage.setItem('token', response.access_token)
+    authStore.token = response.access_token
     await authStore.fetchUser()
     
     await dialog.showSuccess('邮箱验证成功！', '欢迎加入我们')
     
-    router.push('/')
+    await router.push('/')
+    window.location.reload()
   } catch (err: any) {
     error.value = err.response?.data?.detail || '验证失败，请重试'
     isLoading.value = false

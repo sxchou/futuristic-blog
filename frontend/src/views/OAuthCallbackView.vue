@@ -42,12 +42,14 @@ const handleCallback = async () => {
   
   if (accessToken) {
     localStorage.setItem('token', accessToken)
+    authStore.token = accessToken
     await authStore.fetchUser()
     
     await dialog.showSuccess('登录成功！', '欢迎回来')
     
     const redirect = route.query.redirect as string
-    router.push(redirect || '/')
+    await router.push(redirect || '/')
+    window.location.reload()
     return
   }
   
@@ -72,12 +74,14 @@ const handleCallback = async () => {
     }
     
     localStorage.setItem('token', response.access_token)
+    authStore.token = response.access_token
     await authStore.fetchUser()
     
     await dialog.showSuccess('登录成功！', '欢迎回来')
     
     const redirect = route.query.redirect as string
-    router.push(redirect || '/')
+    await router.push(redirect || '/')
+    window.location.reload()
   } catch (err: any) {
     error.value = err.response?.data?.detail || '登录失败，请重试'
     isLoading.value = false
