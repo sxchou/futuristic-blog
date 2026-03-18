@@ -360,6 +360,10 @@ async def oauth_callback(
     if connection:
         user = connection.user
         
+        if avatar and user.avatar != avatar:
+            user.avatar = avatar
+            db.commit()
+        
         if user.is_verified:
             jwt_token = create_access_token(data={"sub": user.username})
             

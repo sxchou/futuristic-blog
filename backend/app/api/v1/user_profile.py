@@ -108,12 +108,19 @@ async def get_user_profile(
 ):
     profile = get_or_create_user_profile(db, current_user.id, current_user.username)
     
+    avatar_url = profile.avatar_url
+    avatar_type = profile.avatar_type.value if profile.avatar_type else "default"
+    
+    if not avatar_url and current_user.avatar:
+        avatar_url = current_user.avatar
+        avatar_type = "custom"
+    
     return {
         "id": profile.id,
         "user_id": profile.user_id,
         "username": current_user.username,
-        "avatar_type": profile.avatar_type.value if profile.avatar_type else "default",
-        "avatar_url": profile.avatar_url,
+        "avatar_type": avatar_type,
+        "avatar_url": avatar_url,
         "default_avatar_gradient": profile.default_avatar_gradient,
         "created_at": profile.created_at,
         "updated_at": profile.updated_at
@@ -253,12 +260,19 @@ async def get_user_profile_by_id(
     
     profile = get_or_create_user_profile(db, user.id, user.username)
     
+    avatar_url = profile.avatar_url
+    avatar_type = profile.avatar_type.value if profile.avatar_type else "default"
+    
+    if not avatar_url and user.avatar:
+        avatar_url = user.avatar
+        avatar_type = "custom"
+    
     return {
         "id": profile.id,
         "user_id": profile.user_id,
         "username": user.username,
-        "avatar_type": profile.avatar_type.value if profile.avatar_type else "default",
-        "avatar_url": profile.avatar_url,
+        "avatar_type": avatar_type,
+        "avatar_url": avatar_url,
         "default_avatar_gradient": profile.default_avatar_gradient,
         "created_at": profile.created_at,
         "updated_at": profile.updated_at
