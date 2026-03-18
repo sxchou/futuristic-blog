@@ -71,6 +71,13 @@ export interface OAuthCallbackResponse {
     avatar: string | null
     is_admin: boolean
   }
+  needs_email?: boolean
+  temp_token?: string
+}
+
+export interface OAuthEmailVerifyResponse {
+  message: string
+  temp_token: string
 }
 
 export const oauthApi = {
@@ -102,6 +109,21 @@ export const oauthApi = {
   handleCallback: async (provider: string, code: string, state: string): Promise<OAuthCallbackResponse> => {
     const response = await apiClient.get<OAuthCallbackResponse>(`/oauth/callback/${provider}`, {
       params: { code, state }
+    })
+    return response.data
+  },
+
+  submitEmail: async (email: string, tempToken: string): Promise<OAuthEmailVerifyResponse> => {
+    const response = await apiClient.post<OAuthEmailVerifyResponse>('/oauth/submit-email-with-token', {
+      email,
+      temp_token: tempToken
+    })
+    return response.data
+  },
+
+  verifyEmail: async (token: string, email: string): Promise<OAuthCallbackResponse> => {
+    const response = await apiClient.get<OAuthCallbackResponse>('/oauth/verify-email', {
+      params: { token, email }
     })
     return response.data
   }

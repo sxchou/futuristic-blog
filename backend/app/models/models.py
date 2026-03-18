@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Table, UniqueConstraint, Float, Enum as SQLEnum, JSON
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Table, UniqueConstraint, Float, Enum as SQLEnum, JSON, Index
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 import enum
@@ -14,7 +14,9 @@ article_tags = Table(
     'article_tags',
     Base.metadata,
     Column('article_id', Integer, ForeignKey('articles.id', ondelete='CASCADE'), primary_key=True),
-    Column('tag_id', Integer, ForeignKey('tags.id', ondelete='CASCADE'), primary_key=True)
+    Column('tag_id', Integer, ForeignKey('tags.id', ondelete='CASCADE'), primary_key=True),
+    Index('ix_article_tags_article_id', 'article_id'),
+    Index('ix_article_tags_tag_id', 'tag_id')
 )
 
 
@@ -63,21 +65,27 @@ class Article(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(200), nullable=False)
-    slug = Column(String(200), unique=True, nullable=False)
+    slug = Column(String(200), unique=True, nullable=False, index=True)
     summary = Column(Text, nullable=True)
     content = Column(Text, nullable=False)
     cover_image = Column(String(255), nullable=True)
-    category_id = Column(Integer, ForeignKey('categories.id'), nullable=True)
-    author_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    is_published = Column(Boolean, default=False)
-    is_featured = Column(Boolean, default=False)
+    category_id = Column(Integer, ForeignKey('categories.id'), nullable=True, index=True)
+    author_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
+    is_published = Column(Boolean, default=False, index=True)
+    is_featured = Column(Boolean, default=False, index=True)
     view_count = Column(Integer, default=0)
     like_count = Column(Integer, default=0)
     comment_count = Column(Integer, default=0)
     reading_time = Column(Integer, default=5)
-    published_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=get_local_now)
+    published_at = Column(DateTime, nullable=True, index=True)
+    created_at = Column(DateTime, default=get_local_now, index=True)
     updated_at = Column(DateTime, default=get_local_now, onupdate=get_local_now)
+    
+    __table_args__ = (
+        Index('ix_articles_published_created', 'is_published', 'created_at'),
+        Index('ix_articles_published_featured', 'is_published', 'is_featured'),
+        Index('ix_articles_category_published', 'category_id', 'is_published'),
+    )
     
     category = relationship("Category", backref="articles")
     author = relationship("User", backref="articles")
@@ -136,18 +144,23 @@ class Comment(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     content = Column(Text, nullable=False)
-    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=True, index=True)
     author_name = Column(String(50), nullable=True)
     author_email = Column(String(100), nullable=True)
     author_url = Column(String(255), nullable=True)
-    article_id = Column(Integer, ForeignKey('articles.id', ondelete='CASCADE'), nullable=False)
-    parent_id = Column(Integer, ForeignKey('comments.id', ondelete='CASCADE'), nullable=True)
+    article_id = Column(Integer, ForeignKey('articles.id', ondelete='CASCADE'), nullable=False, index=True)
+    parent_id = Column(Integer, ForeignKey('comments.id', ondelete='CASCADE'), nullable=True, index=True)
     is_approved = Column(Boolean, default=True)
-    is_deleted = Column(Boolean, default=False)
+    is_deleted = Column(Boolean, default=False, index=True)
     deleted_by = Column(String(20), nullable=True)
     reply_to_user_id = Column(Integer, ForeignKey('users.id'), nullable=True)
     status = Column(String(20), default='approved', index=True)
-    created_at = Column(DateTime, default=get_local_now)
+    created_at = Column(DateTime, default=get_local_now, index=True)
+    
+    __table_args__ = (
+        Index('ix_comments_article_status_deleted', 'article_id', 'status', 'is_deleted'),
+        Index('ix_comments_status_deleted', 'status', 'is_deleted'),
+    )
     
     article = relationship("Article", backref="comments")
     user = relationship("User", foreign_keys=[user_id], backref="comments")
@@ -384,3 +397,17 @@ class OAuthConnection(Base):
     provider = relationship("OAuthProvider", backref="connections")
     
     __table_args__ = (UniqueConstraint('provider_id', 'provider_user_id', name='unique_oauth_connection'),)
+
+
+class OAuthTempToken(Base):
+    __tablename__ = "oauth_temp_tokens"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    temp_token = Column(String(100), unique=True, nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    provider_name = Column(String(50), nullable=False)
+    provider_user_id = Column(String(255), nullable=False)
+    created_at = Column(DateTime, default=get_local_now)
+    expires_at = Column(DateTime, nullable=False)
+    
+    user = relationship("User", backref="oauth_temp_tokens")

@@ -82,6 +82,17 @@ class OAuthCallbackResponse(BaseModel):
     access_token: str
     token_type: str
     user: dict
+    needs_email: bool = False
+    temp_token: Optional[str] = None
+
+
+class OAuthEmailVerifyRequest(BaseModel):
+    email: str
+
+
+class OAuthEmailVerifyResponse(BaseModel):
+    message: str
+    temp_token: str
 
 
 def check_provider_configured(provider: OAuthProvider) -> bool:
@@ -323,6 +334,27 @@ async def oauth_callback(
         email = user_info.get("email")
         name = user_info.get("login")
         avatar = user_info.get("avatar_url")
+        
+        if not email:
+            try:
+                emails_response = await client.get(
+                    "https://api.github.com/user/emails",
+                    headers={
+                        "Authorization": f"Bearer {access_token}",
+                        "Accept": "application/json"
+                    }
+                )
+                if emails_response.status_code == 200:
+                    emails = emails_response.json()
+                    primary_email = next((e for e in emails if e.get("primary") and e.get("verified")), None)
+                    if primary_email:
+                        email = primary_email.get("email")
+                    elif emails:
+                        verified_email = next((e for e in emails if e.get("verified")), None)
+                        if verified_email:
+                            email = verified_email.get("email")
+            except Exception:
+                pass
     elif provider_name == "twitter" or provider_name == "x":
         provider_user_id = user_info.get("data", {}).get("id")
         email = user_info.get("data", {}).get("email")
@@ -330,12 +362,30 @@ async def oauth_callback(
         avatar = user_info.get("data", {}).get("profile_image_url")
     elif provider_name == "wechat":
         provider_user_id = user_info.get("openid")
+        email = user_info.get("email")
         name = user_info.get("nickname")
         avatar = user_info.get("headimgurl")
     elif provider_name == "qq":
         provider_user_id = user_info.get("openid")
         name = user_info.get("nickname")
         avatar = user_info.get("figureurl_qq_2") or user_info.get("figureurl_qq_1")
+        
+        if not email and provider_user_id:
+            try:
+                qq_email_response = await client.get(
+                    "https://graph.qq.com/user/get_email",
+                    headers={
+                        "Authorization": f"Bearer {access_token}",
+                        "Accept": "application/json"
+                    },
+                    params={"openid": provider_user_id}
+                )
+                if qq_email_response.status_code == 200:
+                    email_data = qq_email_response.json()
+                    if email_data.get("ret") == 0:
+                        email = email_data.get("email")
+            except Exception:
+                pass
     
     if not provider_user_id:
         raise HTTPException(status_code=400, detail="Failed to get provider user ID")
@@ -347,40 +397,85 @@ async def oauth_callback(
     
     if connection:
         user = connection.user
-    else:
-        if not email:
-            email = f"{provider_name}_{provider_user_id}@oauth.local"
+        jwt_token = create_access_token(data={"sub": user.username})
         
-        user = db.query(User).filter(User.email == email).first()
-        
-        if not user:
-            username = name or f"{provider_name}_{provider_user_id}"
-            base_username = username
-            counter = 1
-            while db.query(User).filter(User.username == username).first():
-                username = f"{base_username}_{counter}"
-                counter += 1
-            
-            user = User(
-                username=username,
-                email=email,
-                hashed_password="",
-                is_verified=True,
-                avatar=avatar
-            )
-            db.add(user)
-            db.commit()
-            db.refresh(user)
-        
-        connection = OAuthConnection(
-            user_id=user.id,
-            provider_id=provider.id,
-            provider_user_id=provider_user_id,
-            access_token=access_token,
-            refresh_token=token_data.get("refresh_token")
+        return OAuthCallbackResponse(
+            access_token=jwt_token,
+            token_type="bearer",
+            user={
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "avatar": user.avatar,
+                "is_admin": user.is_admin
+            },
+            needs_email=False
         )
-        db.add(connection)
+    
+    needs_email_setup = not email
+    
+    if not email:
+        email = f"{provider_name}_{provider_user_id}@oauth.local"
+    
+    existing_user = db.query(User).filter(User.email == email).first()
+    
+    if existing_user:
+        user = existing_user
+    else:
+        username = name or f"{provider_name}_{provider_user_id}"
+        base_username = username
+        counter = 1
+        while db.query(User).filter(User.username == username).first():
+            username = f"{base_username}_{counter}"
+            counter += 1
+        
+        user = User(
+            username=username,
+            email=email,
+            hashed_password="",
+            is_verified=not needs_email_setup,
+            avatar=avatar
+        )
+        db.add(user)
         db.commit()
+        db.refresh(user)
+    
+    connection = OAuthConnection(
+        user_id=user.id,
+        provider_id=provider.id,
+        provider_user_id=provider_user_id,
+        access_token=access_token,
+        refresh_token=token_data.get("refresh_token")
+    )
+    db.add(connection)
+    db.commit()
+    
+    if needs_email_setup:
+        import uuid
+        temp_token = str(uuid.uuid4())
+        
+        from app.services.email_service import EmailService
+        EmailService.store_oauth_temp_token(
+            db=db,
+            temp_token=temp_token,
+            user_id=user.id,
+            provider_name=provider_name,
+            provider_user_id=provider_user_id
+        )
+        
+        return OAuthCallbackResponse(
+            access_token="",
+            token_type="bearer",
+            user={
+                "id": user.id,
+                "username": user.username,
+                "email": "",
+                "avatar": user.avatar,
+                "is_admin": user.is_admin
+            },
+            needs_email=True,
+            temp_token=temp_token
+        )
     
     jwt_token = create_access_token(data={"sub": user.username})
     
@@ -393,5 +488,113 @@ async def oauth_callback(
             "email": user.email,
             "avatar": user.avatar,
             "is_admin": user.is_admin
-        }
+        },
+        needs_email=False
+    )
+
+
+@router.post("/submit-email", response_model=OAuthEmailVerifyResponse)
+async def oauth_submit_email(
+    data: OAuthEmailVerifyRequest,
+    db: Session = Depends(get_db)
+):
+    from app.services.email_service import EmailService
+    from app.models import User
+    
+    existing_user = db.query(User).filter(User.email == data.email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="该邮箱已被使用")
+    
+    temp_token_record = db.query(OAuthTempToken).filter(
+        OAuthTempToken.temp_token == data.temp_token if hasattr(data, 'temp_token') else None
+    ).first() if hasattr(data, 'temp_token') else None
+    
+    return OAuthEmailVerifyResponse(
+        message="请检查您的邮箱获取验证链接",
+        temp_token=data.temp_token if hasattr(data, 'temp_token') else ""
+    )
+
+
+class OAuthSubmitEmailRequest(BaseModel):
+    email: str
+    temp_token: str
+
+
+@router.post("/submit-email-with-token", response_model=OAuthEmailVerifyResponse)
+async def oauth_submit_email_with_token(
+    data: OAuthSubmitEmailRequest,
+    db: Session = Depends(get_db)
+):
+    from app.services.email_service import EmailService
+    from app.models import User, OAuthTempToken
+    
+    existing_user = db.query(User).filter(User.email == data.email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="该邮箱已被使用")
+    
+    temp_token_record = EmailService.get_oauth_temp_token(db, data.temp_token)
+    if not temp_token_record:
+        raise HTTPException(status_code=400, detail="无效或过期的临时令牌")
+    
+    user = db.query(User).filter(User.id == temp_token_record.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    
+    success = EmailService.send_oauth_email_verification(
+        db=db,
+        email=data.email,
+        username=user.username,
+        temp_token=data.temp_token,
+        provider_name=temp_token_record.provider_name
+    )
+    
+    if not success:
+        raise HTTPException(status_code=500, detail="发送验证邮件失败")
+    
+    return OAuthEmailVerifyResponse(
+        message="验证邮件已发送，请检查您的邮箱",
+        temp_token=data.temp_token
+    )
+
+
+@router.get("/verify-email", response_model=OAuthCallbackResponse)
+async def oauth_verify_email(
+    token: str,
+    email: str,
+    db: Session = Depends(get_db)
+):
+    from app.services.email_service import EmailService
+    from app.models import User, OAuthTempToken
+    
+    temp_token_record = EmailService.get_oauth_temp_token(db, token)
+    if not temp_token_record:
+        raise HTTPException(status_code=400, detail="无效或过期的验证链接")
+    
+    user = db.query(User).filter(User.id == temp_token_record.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    
+    existing_user = db.query(User).filter(User.email == email, User.id != user.id).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="该邮箱已被其他用户使用")
+    
+    user.email = email
+    user.is_verified = True
+    db.commit()
+    
+    EmailService.delete_oauth_temp_token(db, token)
+    
+    jwt_token = create_access_token(data={"sub": user.username})
+    
+    return OAuthCallbackResponse(
+        access_token=jwt_token,
+        token_type="bearer",
+        user={
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "avatar": user.avatar,
+            "is_admin": user.is_admin
+        },
+        needs_email=False
     )

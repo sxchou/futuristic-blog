@@ -94,6 +94,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'OAuth登录' }
   },
   {
+    path: '/oauth/verify-email',
+    name: 'OAuthVerifyEmail',
+    component: () => import('@/views/OAuthVerifyEmailView.vue'),
+    meta: { title: '验证邮箱' }
+  },
+  {
     path: '/admin',
     component: () => import('@/views/admin/AdminLayout.vue'),
     meta: { requiresAuth: true },
@@ -206,6 +212,27 @@ const router = createRouter({
   }
 })
 
+const prefetchCache = new Set<string>()
+
+const prefetchComponents = (routeName: string) => {
+  if (prefetchCache.has(routeName)) return
+  prefetchCache.add(routeName)
+  
+  const prefetchMap: Record<string, () => Promise<unknown>> = {
+    'Article': () => import('@/views/ArticleView.vue'),
+    'Categories': () => import('@/views/CategoriesView.vue'),
+    'Tags': () => import('@/views/TagsView.vue'),
+    'Archive': () => import('@/views/ArchiveView.vue'),
+    'Resources': () => import('@/views/ResourcesView.vue'),
+  }
+  
+  if (prefetchMap[routeName]) {
+    requestIdleCallback(() => {
+      prefetchMap[routeName]()
+    }, { timeout: 2000 })
+  }
+}
+
 router.beforeEach((to, _from, next) => {
   const title = to.meta.title as string
   const siteConfigStore = useSiteConfigStore()
@@ -218,6 +245,10 @@ router.beforeEach((to, _from, next) => {
       next({ name: 'Login', query: { redirect: to.fullPath } })
       return
     }
+  }
+  
+  if (to.name) {
+    prefetchComponents(to.name as string)
   }
   
   next()

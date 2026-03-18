@@ -7,24 +7,46 @@ from app.models import Tag, Article, article_tags
 from app.schemas import TagCreate, TagUpdate, TagResponse
 from app.utils import get_current_user
 from app.services.log_service import LogService
+from app.utils.cache import cache
 
 router = APIRouter(prefix="/tags", tags=["Tags"])
+
+TAGS_CACHE_KEY = "tags:all"
+TAGS_CACHE_TTL = 120
+
+
+def invalidate_tags_cache():
+    cache.delete(TAGS_CACHE_KEY)
 
 
 @router.get("", response_model=List[TagResponse])
 async def get_tags(db: Session = Depends(get_db)):
+    cached = cache.get(TAGS_CACHE_KEY)
+    if cached:
+        return cached
+    
     tags = db.query(Tag).all()
+    
+    if not tags:
+        return []
+    
+    tag_ids = [t.id for t in tags]
+    article_counts = dict(
+        db.query(
+            article_tags.c.tag_id,
+            func.count(article_tags.c.article_id)
+        ).filter(
+            article_tags.c.tag_id.in_(tag_ids)
+        ).group_by(article_tags.c.tag_id).all()
+    )
     
     result = []
     for tag in tags:
-        article_count = db.query(func.count(article_tags.c.article_id)).filter(
-            article_tags.c.tag_id == tag.id
-        ).scalar()
-        
         tag_response = TagResponse.model_validate(tag)
-        tag_response.article_count = article_count
+        tag_response.article_count = article_counts.get(tag.id, 0)
         result.append(tag_response)
     
+    cache.set(TAGS_CACHE_KEY, result, TAGS_CACHE_TTL)
     return result
 
 
@@ -64,6 +86,8 @@ async def create_tag(
     db.commit()
     db.refresh(new_tag)
     
+    invalidate_tags_cache()
+    
     LogService.log_operation(
         db=db,
         user_id=current_user.id,
@@ -102,6 +126,8 @@ async def update_tag(
     db.commit()
     db.refresh(tag)
     
+    invalidate_tags_cache()
+    
     LogService.log_operation(
         db=db,
         user_id=current_user.id,
@@ -135,6 +161,8 @@ async def delete_tag(
     tag_name = tag.name
     db.delete(tag)
     db.commit()
+    
+    invalidate_tags_cache()
     
     LogService.log_operation(
         db=db,

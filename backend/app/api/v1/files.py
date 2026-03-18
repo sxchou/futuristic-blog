@@ -160,8 +160,7 @@ async def upload_image(
 async def get_files(
     article_id: Optional[int] = None,
     file_type: Optional[str] = None,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_active_user)
+    db: Session = Depends(get_db)
 ):
     query = db.query(ArticleFile)
     

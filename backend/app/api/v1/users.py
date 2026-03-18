@@ -2,7 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.models import User, UserProfile, AvatarType
+from app.models import User, UserProfile, AvatarType, OAuthConnection, Article, Comment, ArticleFile, EmailLog, OperationLog, LoginLog, AccessLog
 from app.schemas import UserListItem, UserAdminUpdate, PaginatedResponse
 from app.utils import get_current_user, get_password_hash
 from app.services.log_service import LogService
@@ -144,6 +144,25 @@ async def delete_user(
     avatar_url_to_delete = None
     if user_profile and user_profile.avatar_type == AvatarType.custom and user_profile.avatar_url:
         avatar_url_to_delete = user_profile.avatar_url
+    
+    db.query(OAuthConnection).filter(OAuthConnection.user_id == user_id).delete()
+    
+    db.query(Comment).filter(Comment.user_id == user_id).update({Comment.user_id: None, Comment.author_name: username})
+    
+    db.query(Article).filter(Article.author_id == user_id).update({Article.author_id: None})
+    
+    db.query(ArticleFile).filter(ArticleFile.uploaded_by == user_id).update({ArticleFile.uploaded_by: None})
+    
+    db.query(EmailLog).filter(EmailLog.user_id == user_id).update({EmailLog.user_id: None})
+    
+    db.query(OperationLog).filter(OperationLog.user_id == user_id).update({OperationLog.user_id: None})
+    
+    db.query(LoginLog).filter(LoginLog.user_id == user_id).update({LoginLog.user_id: None})
+    
+    db.query(AccessLog).filter(AccessLog.user_id == user_id).update({AccessLog.user_id: None})
+    
+    if user_profile:
+        db.delete(user_profile)
     
     db.delete(user)
     db.commit()

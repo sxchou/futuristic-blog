@@ -13,10 +13,14 @@ export interface SocialLink {
   type: 'link' | 'email'
 }
 
+let fetchProfilePromise: Promise<void> | null = null
+
 export const useSocialLinksStore = defineStore('socialLinks', () => {
   const profile = ref<Profile | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const lastFetchTime = ref(0)
+  const CACHE_TTL = 60000
 
   const socialLinks = computed<SocialLink[]>(() => {
     const links: SocialLink[] = []
@@ -66,25 +70,38 @@ export const useSocialLinksStore = defineStore('socialLinks', () => {
   const email = computed(() => profile.value?.social_email || '')
   const blog = computed(() => profile.value?.social_blog || '')
 
-  const fetchProfile = async () => {
-    if (loading.value) return
-    
-    loading.value = true
-    error.value = null
-    
-    try {
-      profile.value = await profileApi.getProfile()
-    } catch (err) {
-      console.error('Failed to fetch profile for social links:', err)
-      error.value = 'Failed to load social links'
-    } finally {
-      loading.value = false
+  const fetchProfile = async (force = false) => {
+    if (!force && profile.value && Date.now() - lastFetchTime.value < CACHE_TTL) {
+      return
     }
+    
+    if (fetchProfilePromise) {
+      return fetchProfilePromise
+    }
+    
+    fetchProfilePromise = (async () => {
+      loading.value = true
+      error.value = null
+      
+      try {
+        profile.value = await profileApi.getProfile()
+        lastFetchTime.value = Date.now()
+      } catch (err) {
+        console.error('Failed to fetch profile for social links:', err)
+        error.value = 'Failed to load social links'
+      } finally {
+        loading.value = false
+        fetchProfilePromise = null
+      }
+    })()
+    
+    return fetchProfilePromise
   }
 
   const refreshProfile = async () => {
     profile.value = null
-    await fetchProfile()
+    lastFetchTime.value = 0
+    await fetchProfile(true)
   }
 
   return {

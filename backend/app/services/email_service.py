@@ -1114,3 +1114,131 @@ class EmailService:
             email_type='password_reset',
             recipient_name=username
         )
+    
+    @staticmethod
+    def store_oauth_temp_token(
+        db: Session,
+        temp_token: str,
+        user_id: int,
+        provider_name: str,
+        provider_user_id: str
+    ) -> None:
+        from app.models import OAuthTempToken
+        from app.utils.timezone import get_now
+        from datetime import timedelta
+        
+        db.query(OAuthTempToken).filter(OAuthTempToken.user_id == user_id).delete()
+        
+        temp_token_record = OAuthTempToken(
+            temp_token=temp_token,
+            user_id=user_id,
+            provider_name=provider_name,
+            provider_user_id=provider_user_id,
+            expires_at=get_now() + timedelta(hours=24)
+        )
+        db.add(temp_token_record)
+        db.commit()
+    
+    @staticmethod
+    def get_oauth_temp_token(db: Session, temp_token: str) -> Optional['OAuthTempToken']:
+        from app.models import OAuthTempToken
+        from app.utils.timezone import get_now
+        
+        record = db.query(OAuthTempToken).filter(
+            OAuthTempToken.temp_token == temp_token,
+            OAuthTempToken.expires_at > get_now()
+        ).first()
+        return record
+    
+    @staticmethod
+    def delete_oauth_temp_token(db: Session, temp_token: str) -> None:
+        from app.models import OAuthTempToken
+        db.query(OAuthTempToken).filter(OAuthTempToken.temp_token == temp_token).delete()
+        db.commit()
+    
+    @staticmethod
+    def send_oauth_email_verification(
+        db: Session,
+        email: str,
+        username: str,
+        temp_token: str,
+        provider_name: str
+    ) -> bool:
+        from app.utils.timezone import get_now
+        
+        site_name = EmailService.get_site_name(db)
+        current_year = EmailService.get_current_year()
+        
+        verification_url = f"{settings.FRONTEND_URL}/oauth/verify-email?token={temp_token}&email={email}"
+        
+        provider_display = {
+            'github': 'GitHub',
+            'google': 'Google',
+            'twitter': 'Twitter',
+            'x': 'X',
+            'wechat': '微信',
+            'qq': 'QQ'
+        }.get(provider_name, provider_name)
+        
+        text_content = f"""
+您好 {username}，
+
+您正在使用 {provider_display} 登录 {site_name}。
+
+请点击以下链接验证您的邮箱地址：
+{verification_url}
+
+此链接将在24小时后过期。
+
+如果您没有进行此操作，请忽略此邮件。
+
+祝好，
+{site_name} 团队
+"""
+        
+        html_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; color: #333333; padding: 20px; margin: 0; }}
+        .container {{ max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; padding: 40px; border: 1px solid #e0e0e0; }}
+        .logo {{ font-size: 24px; font-weight: bold; color: #0066cc; margin-bottom: 30px; }}
+        .title {{ font-size: 20px; margin-bottom: 20px; color: #333333; }}
+        .button {{ display: inline-block; padding: 12px 32px; background-color: #0066cc; color: #ffffff; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: 500; }}
+        .footer {{ margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 14px; color: #666666; }}
+        .link {{ word-break: break-all; color: #0066cc; }}
+        p {{ line-height: 1.6; }}
+        .provider {{ color: #0066cc; font-weight: 500; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🚀 {site_name}</div>
+        <h1 class="title">验证您的邮箱地址</h1>
+        <p>您好 <strong>{username}</strong>，</p>
+        <p>您正在使用 <span class="provider">{provider_display}</span> 登录 {site_name}。</p>
+        <p>请点击下方按钮验证您的邮箱地址：</p>
+        <a href="{verification_url}" class="button">验证邮箱</a>
+        <p>或复制以下链接到浏览器：</p>
+        <p class="link">{verification_url}</p>
+        <p>此链接将在 <strong>24小时</strong> 后过期。</p>
+        <div class="footer">
+            <p>如果您没有进行此操作，请忽略此邮件。</p>
+            <p>© {current_year} {site_name}. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+        
+        return EmailService.send_email(
+            db=db,
+            to_email=email,
+            subject=f"验证您的邮箱 - {site_name}",
+            html_content=html_content,
+            text_content=text_content,
+            email_type='oauth_verification',
+            recipient_name=username
+        )

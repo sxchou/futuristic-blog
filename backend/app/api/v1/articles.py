@@ -1,6 +1,6 @@
 from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import func
 from app.core.database import get_db
 from app.models import Article, Category, Tag, Comment
@@ -24,7 +24,10 @@ async def get_articles(
     search: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
-    query = db.query(Article).filter(Article.is_published == True)
+    query = db.query(Article).options(
+        joinedload(Article.category),
+        selectinload(Article.tags)
+    ).filter(Article.is_published == True)
     
     if category_id:
         query = query.filter(Article.category_id == category_id)
@@ -33,10 +36,10 @@ async def get_articles(
     if is_featured is not None:
         query = query.filter(Article.is_featured == is_featured)
     if search:
+        search_term = f"%{search}%"
         query = query.filter(
-            (Article.title.contains(search)) | 
-            (Article.summary.contains(search)) |
-            (Article.content.contains(search))
+            (Article.title.ilike(search_term)) | 
+            (Article.summary.ilike(search_term))
         )
     
     total = query.count()

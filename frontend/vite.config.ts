@@ -26,13 +26,45 @@ export default defineConfig({
     }
   },
   build: {
+    target: 'esnext',
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+        pure_funcs: ['console.log']
+      }
+    },
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor': ['vue', 'vue-router', 'pinia'],
-          'markdown': ['marked', 'highlight.js']
-        }
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            if (id.includes('vue') || id.includes('pinia') || id.includes('vue-router')) {
+              return 'vue-vendor'
+            }
+            if (id.includes('echarts') || id.includes('zrender')) {
+              return 'echarts'
+            }
+            if (id.includes('marked') || id.includes('highlight.js') || id.includes('dompurify')) {
+              return 'markdown'
+            }
+            if (id.includes('axios')) {
+              return 'axios'
+            }
+            return 'vendor'
+          }
+        },
+        chunkFileNames: 'assets/js/[name]-[hash].js',
+        entryFileNames: 'assets/js/[name]-[hash].js',
+        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]'
       }
-    }
+    },
+    chunkSizeWarningLimit: 1000,
+    cssCodeSplit: true,
+    sourcemap: false
+  },
+  optimizeDeps: {
+    include: ['vue', 'vue-router', 'pinia', 'axios', 'marked', 'highlight.js', 'dompurify'],
+    exclude: ['@iconify/json']
   }
 })

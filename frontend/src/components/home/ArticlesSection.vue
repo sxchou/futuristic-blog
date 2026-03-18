@@ -1,28 +1,45 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useBlogStore } from '@/stores'
 import ArticleCard from './ArticleCard.vue'
 import Pagination from '@/components/common/Pagination.vue'
 
 const blogStore = useBlogStore()
 const isLoading = ref(false)
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
-onMounted(async () => {
-  isLoading.value = true
-  await blogStore.fetchArticles({ page: 1, page_size: 12 })
-  isLoading.value = false
+const debouncedFetch = (page: number) => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+  searchTimeout = setTimeout(async () => {
+    isLoading.value = true
+    try {
+      await blogStore.fetchArticles({ page, page_size: 12 })
+    } finally {
+      isLoading.value = false
+    }
+  }, 300)
+}
+
+onMounted(() => {
+  debouncedFetch(1)
 })
 
-const handlePageChange = async (page: number) => {
-  isLoading.value = true
-  await blogStore.fetchArticles({ page, page_size: 12 })
-  isLoading.value = false
+const handlePageChange = (page: number) => {
+  debouncedFetch(page)
   
   window.scrollTo({
     top: 0,
     behavior: 'smooth'
   })
 }
+
+onUnmounted(() => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+})
 </script>
 
 <template>

@@ -7,25 +7,47 @@ from app.models import Category, Article
 from app.schemas import CategoryCreate, CategoryUpdate, CategoryResponse
 from app.utils import get_current_user
 from app.services.log_service import LogService
+from app.utils.cache import cache
 
 router = APIRouter(prefix="/categories", tags=["Categories"])
+
+CATEGORIES_CACHE_KEY = "categories:all"
+CATEGORIES_CACHE_TTL = 120
+
+
+def invalidate_categories_cache():
+    cache.delete(CATEGORIES_CACHE_KEY)
 
 
 @router.get("", response_model=List[CategoryResponse])
 async def get_categories(db: Session = Depends(get_db)):
+    cached = cache.get(CATEGORIES_CACHE_KEY)
+    if cached:
+        return cached
+    
     categories = db.query(Category).order_by(Category.order).all()
+    
+    if not categories:
+        return []
+    
+    category_ids = [c.id for c in categories]
+    article_counts = dict(
+        db.query(
+            Article.category_id,
+            func.count(Article.id)
+        ).filter(
+            Article.category_id.in_(category_ids),
+            Article.is_published == True
+        ).group_by(Article.category_id).all()
+    )
     
     result = []
     for cat in categories:
-        article_count = db.query(func.count(Article.id)).filter(
-            Article.category_id == cat.id,
-            Article.is_published == True
-        ).scalar()
-        
         cat_response = CategoryResponse.model_validate(cat)
-        cat_response.article_count = article_count
+        cat_response.article_count = article_counts.get(cat.id, 0)
         result.append(cat_response)
     
+    cache.set(CATEGORIES_CACHE_KEY, result, CATEGORIES_CACHE_TTL)
     return result
 
 
@@ -66,6 +88,8 @@ async def create_category(
     db.commit()
     db.refresh(new_category)
     
+    invalidate_categories_cache()
+    
     LogService.log_operation(
         db=db,
         user_id=current_user.id,
@@ -104,6 +128,8 @@ async def update_category(
     db.commit()
     db.refresh(category)
     
+    invalidate_categories_cache()
+    
     LogService.log_operation(
         db=db,
         user_id=current_user.id,
@@ -137,6 +163,8 @@ async def delete_category(
     category_name = category.name
     db.delete(category)
     db.commit()
+    
+    invalidate_categories_cache()
     
     LogService.log_operation(
         db=db,

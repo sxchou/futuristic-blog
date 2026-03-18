@@ -1,4 +1,4 @@
-export { default as apiClient } from './client'
+export { default as apiClient, clearCache, cancelAllRequests } from './client'
 export { articleApi } from './articles'
 export { categoryApi } from './categories'
 export { tagApi } from './tags'

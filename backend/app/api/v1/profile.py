@@ -6,8 +6,12 @@ from app.models import Profile
 from app.schemas import ProfileResponse, ProfileUpdate
 from app.utils import get_current_user
 from app.services.log_service import LogService
+from app.utils.cache import cache
 
 router = APIRouter(prefix="/profile", tags=["Profile"])
+
+PROFILE_CACHE_KEY = "profile:public"
+PROFILE_CACHE_TTL = 300
 
 
 def get_or_create_profile(db: Session) -> Profile:
@@ -51,6 +55,7 @@ def get_or_create_profile(db: Session) -> Profile:
         db.add(profile)
         db.commit()
         db.refresh(profile)
+        cache.delete(PROFILE_CACHE_KEY)
     return profile
 
 
@@ -76,8 +81,14 @@ def profile_to_response(profile: Profile) -> dict:
 
 @router.get("", response_model=ProfileResponse)
 async def get_profile(db: Session = Depends(get_db)):
+    cached = cache.get(PROFILE_CACHE_KEY)
+    if cached:
+        return cached
+    
     profile = get_or_create_profile(db)
-    return profile_to_response(profile)
+    result = profile_to_response(profile)
+    cache.set(PROFILE_CACHE_KEY, result, PROFILE_CACHE_TTL)
+    return result
 
 
 @router.put("", response_model=ProfileResponse)

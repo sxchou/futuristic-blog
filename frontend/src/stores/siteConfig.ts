@@ -3,41 +3,59 @@ import { ref, computed } from 'vue'
 import { siteConfigApi } from '@/api'
 import type { SiteConfig } from '@/types'
 
+let fetchConfigsPromise: Promise<void> | null = null
+
 export const useSiteConfigStore = defineStore('siteConfig', () => {
   const configs = ref<SiteConfig[]>([])
   const siteName = ref('Futuristic Blog')
   const siteDescription = ref('探索前沿技术，分享工程实践')
   const siteKeywords = ref('')
   const loading = ref(false)
+  const lastFetchTime = ref(0)
+  const CACHE_TTL = 60000
 
   const siteLogo = computed(() => {
     return siteName.value.charAt(0).toUpperCase()
   })
 
-  const fetchConfigs = async () => {
-    loading.value = true
-    try {
-      configs.value = await siteConfigApi.getAll()
-      
-      const nameConfig = configs.value.find(c => c.key === 'site_name')
-      if (nameConfig?.value) {
-        siteName.value = nameConfig.value
-      }
-      
-      const descConfig = configs.value.find(c => c.key === 'site_description')
-      if (descConfig?.value) {
-        siteDescription.value = descConfig.value
-      }
-      
-      const keywordsConfig = configs.value.find(c => c.key === 'site_keywords')
-      if (keywordsConfig?.value) {
-        siteKeywords.value = keywordsConfig.value
-      }
-    } catch (error) {
-      console.error('Failed to fetch site configs:', error)
-    } finally {
-      loading.value = false
+  const fetchConfigs = async (force = false) => {
+    if (!force && configs.value.length > 0 && Date.now() - lastFetchTime.value < CACHE_TTL) {
+      return
     }
+    
+    if (fetchConfigsPromise) {
+      return fetchConfigsPromise
+    }
+    
+    fetchConfigsPromise = (async () => {
+      loading.value = true
+      try {
+        configs.value = await siteConfigApi.getAll()
+        lastFetchTime.value = Date.now()
+        
+        const nameConfig = configs.value.find(c => c.key === 'site_name')
+        if (nameConfig?.value) {
+          siteName.value = nameConfig.value
+        }
+        
+        const descConfig = configs.value.find(c => c.key === 'site_description')
+        if (descConfig?.value) {
+          siteDescription.value = descConfig.value
+        }
+        
+        const keywordsConfig = configs.value.find(c => c.key === 'site_keywords')
+        if (keywordsConfig?.value) {
+          siteKeywords.value = keywordsConfig.value
+        }
+      } catch (error) {
+        console.error('Failed to fetch site configs:', error)
+      } finally {
+        loading.value = false
+        fetchConfigsPromise = null
+      }
+    })()
+    
+    return fetchConfigsPromise
   }
 
   const updateSiteName = async (name: string) => {

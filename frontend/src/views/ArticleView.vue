@@ -130,31 +130,6 @@ const fetchArticleFiles = async (articleId: number) => {
   }
 }
 
-onMounted(async () => {
-  const slug = route.params.slug as string
-  try {
-    article.value = await articleApi.getArticle(slug)
-    likeCount.value = article.value?.like_count || 0
-    isLiked.value = article.value?.is_liked || false
-    if (article.value?.id) {
-      await fetchArticleFiles(article.value.id)
-    }
-  } catch (error) {
-    console.error('Failed to fetch article:', error)
-  } finally {
-    loading.value = false
-  }
-  
-  if (route.hash === '#comments') {
-    setTimeout(() => {
-      const commentsSection = document.getElementById('comments')
-      if (commentsSection) {
-        commentsSection.scrollIntoView({ behavior: 'smooth' })
-      }
-    }, 100)
-  }
-})
-
 const handleCopyCode = (e: Event) => {
   const target = e.target as HTMLElement
   if (target.classList.contains('copy-code-btn')) {
@@ -174,8 +149,45 @@ const handleCopyCode = (e: Event) => {
   }
 }
 
-onMounted(() => {
+const setupLazyLoading = () => {
+  const images = document.querySelectorAll('.article-content img')
+  images.forEach((img) => {
+    img.setAttribute('loading', 'lazy')
+    if (!img.hasAttribute('alt')) {
+      img.setAttribute('alt', 'Article image')
+    }
+  })
+}
+
+onMounted(async () => {
   document.addEventListener('click', handleCopyCode)
+  
+  const slug = route.params.slug as string
+  try {
+    article.value = await articleApi.getArticle(slug)
+    likeCount.value = article.value?.like_count || 0
+    isLiked.value = article.value?.is_liked || false
+    if (article.value?.id) {
+      fetchArticleFiles(article.value.id)
+    }
+    
+    requestAnimationFrame(() => {
+      setupLazyLoading()
+    })
+  } catch (error) {
+    console.error('Failed to fetch article:', error)
+  } finally {
+    loading.value = false
+  }
+  
+  if (route.hash === '#comments') {
+    setTimeout(() => {
+      const commentsSection = document.getElementById('comments')
+      if (commentsSection) {
+        commentsSection.scrollIntoView({ behavior: 'smooth' })
+      }
+    }, 100)
+  }
 })
 
 onUnmounted(() => {

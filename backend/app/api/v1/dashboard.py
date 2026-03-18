@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import func, desc
+from sqlalchemy import func, desc, case
 from datetime import datetime, timedelta
 from typing import List, Optional
 from pydantic import BaseModel
@@ -9,7 +9,7 @@ from app.utils.auth import get_current_admin_user
 from app.utils.timezone import get_now, get_today_start, to_local
 from app.models.models import (
     Article, User, Comment, ArticleLike, Category, Tag,
-    LoginLog, OperationLog, AccessLog
+    LoginLog, OperationLog, AccessLog, article_tags
 )
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
@@ -70,26 +70,35 @@ async def get_overview_stats(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_admin_user)
 ):
-    total_articles = db.query(Article).count()
-    published_articles = db.query(Article).filter(Article.is_published == True).count()
-    total_views = db.query(func.sum(Article.view_count)).scalar() or 0
-    total_likes = db.query(ArticleLike).count()
-    total_comments = db.query(Comment).filter(Comment.is_deleted == False, Comment.status == 'approved').count()
-    total_users = db.query(User).count()
-    
     today = get_today_start()
-    new_users_today = db.query(User).filter(User.created_at >= today).count()
-    new_articles_today = db.query(Article).filter(Article.created_at >= today).count()
+    
+    article_stats = db.query(
+        func.count(Article.id).label('total'),
+        func.sum(case((Article.is_published == True, 1), else_=0)).label('published'),
+        func.sum(Article.view_count).label('views'),
+        func.sum(case((Article.created_at >= today, 1), else_=0)).label('today')
+    ).first()
+    
+    total_likes = db.query(func.count(ArticleLike.id)).scalar() or 0
+    total_comments = db.query(func.count(Comment.id)).filter(
+        Comment.is_deleted == False, 
+        Comment.status == 'approved'
+    ).scalar() or 0
+    
+    user_stats = db.query(
+        func.count(User.id).label('total'),
+        func.sum(case((User.created_at >= today, 1), else_=0)).label('today')
+    ).first()
     
     return OverviewStats(
-        total_articles=total_articles,
-        published_articles=published_articles,
-        total_views=total_views,
+        total_articles=article_stats.total or 0,
+        published_articles=article_stats.published or 0,
+        total_views=article_stats.views or 0,
         total_likes=total_likes,
         total_comments=total_comments,
-        total_users=total_users,
-        new_users_today=new_users_today,
-        new_articles_today=new_articles_today
+        total_users=user_stats.total or 0,
+        new_users_today=user_stats.today or 0,
+        new_articles_today=article_stats.today or 0
     )
 
 
@@ -102,22 +111,28 @@ async def get_views_trend(
     end_date = get_now().date()
     start_date = end_date - timedelta(days=days - 1)
     
-    articles = db.query(Article).all()
+    daily_views = db.query(
+        func.date(Article.created_at).label('date'),
+        func.sum(Article.view_count).label('views')
+    ).filter(
+        Article.created_at >= start_date
+    ).group_by(
+        func.date(Article.created_at)
+    ).all()
     
-    daily_views = {}
+    result_dict = {str(d.date): d.views for d in daily_views if d.date}
+    
+    result = []
     current_date = start_date
     while current_date <= end_date:
-        daily_views[current_date.isoformat()] = 0
+        date_str = current_date.isoformat()
+        result.append(TrendData(
+            date=date_str,
+            value=result_dict.get(date_str, 0)
+        ))
         current_date += timedelta(days=1)
     
-    for article in articles:
-        article_date = to_local(article.created_at).date()
-        if article_date >= start_date:
-            date_str = article_date.isoformat()
-            if date_str in daily_views:
-                daily_views[date_str] += article.view_count
-    
-    return [TrendData(date=k, value=v) for k, v in sorted(daily_views.items())]
+    return result
 
 
 @router.get("/articles-trend", response_model=List[TrendData])
@@ -129,22 +144,28 @@ async def get_articles_trend(
     end_date = get_now().date()
     start_date = end_date - timedelta(days=days - 1)
     
-    daily_articles = {}
-    current_date = start_date
-    while current_date <= end_date:
-        daily_articles[current_date.isoformat()] = 0
-        current_date += timedelta(days=1)
-    
-    articles = db.query(Article).filter(
+    daily_articles = db.query(
+        func.date(Article.created_at).label('date'),
+        func.count(Article.id).label('count')
+    ).filter(
         Article.created_at >= start_date
+    ).group_by(
+        func.date(Article.created_at)
     ).all()
     
-    for article in articles:
-        date_str = to_local(article.created_at).date().isoformat()
-        if date_str in daily_articles:
-            daily_articles[date_str] += 1
+    result_dict = {str(d.date): d.count for d in daily_articles if d.date}
     
-    return [TrendData(date=k, value=v) for k, v in sorted(daily_articles.items())]
+    result = []
+    current_date = start_date
+    while current_date <= end_date:
+        date_str = current_date.isoformat()
+        result.append(TrendData(
+            date=date_str,
+            value=result_dict.get(date_str, 0)
+        ))
+        current_date += timedelta(days=1)
+    
+    return result
 
 
 @router.get("/category-stats", response_model=List[CategoryStats])
@@ -172,8 +193,6 @@ async def get_tag_stats(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_admin_user)
 ):
-    from app.models.models import article_tags
-    
     tags = db.query(
         Tag.name,
         Tag.color,
@@ -195,34 +214,43 @@ async def get_article_rank(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_admin_user)
 ):
-    articles = db.query(Article).filter(Article.is_published == True)
+    comment_subquery = db.query(
+        Comment.article_id,
+        func.count(Comment.id).label('comment_count')
+    ).filter(
+        Comment.is_deleted == False,
+        Comment.status == 'approved'
+    ).group_by(Comment.article_id).subquery()
+    
+    query = db.query(
+        Article.id,
+        Article.title,
+        Article.view_count,
+        Article.like_count,
+        func.coalesce(comment_subquery.c.comment_count, 0).label('comment_count')
+    ).outerjoin(
+        comment_subquery, Article.id == comment_subquery.c.article_id
+    ).filter(Article.is_published == True)
     
     if sort_by == 'views':
-        articles = articles.order_by(desc(Article.view_count))
+        query = query.order_by(desc(Article.view_count))
     elif sort_by == 'likes':
-        articles = articles.order_by(desc(Article.like_count))
+        query = query.order_by(desc(Article.like_count))
     else:
-        articles = articles.order_by(desc(Article.id))
+        query = query.order_by(desc('comment_count'))
     
-    articles = articles.limit(limit).all()
+    articles = query.limit(limit).all()
     
-    result = []
-    for article in articles:
-        comment_count = db.query(Comment).filter(
-            Comment.article_id == article.id,
-            Comment.is_deleted == False,
-            Comment.status == 'approved'
-        ).count()
-        
-        result.append(ArticleViewsRank(
-            id=article.id,
-            title=article.title,
-            views=article.view_count,
-            likes=article.like_count,
-            comments=comment_count
-        ))
-    
-    return result
+    return [
+        ArticleViewsRank(
+            id=a.id,
+            title=a.title,
+            views=a.view_count,
+            likes=a.like_count,
+            comments=a.comment_count
+        )
+        for a in articles
+    ]
 
 
 @router.get("/user-activity", response_model=List[UserActivity])
@@ -234,54 +262,48 @@ async def get_user_activity(
     end_date = get_now().date()
     start_date = end_date - timedelta(days=days - 1)
     
-    daily_data = {}
+    login_counts = dict(
+        db.query(
+            func.date(LoginLog.created_at).label('date'),
+            func.count(LoginLog.id).label('count')
+        ).filter(
+            LoginLog.created_at >= start_date,
+            LoginLog.status == 'success'
+        ).group_by(func.date(LoginLog.created_at)).all()
+    )
+    
+    registration_counts = dict(
+        db.query(
+            func.date(User.created_at).label('date'),
+            func.count(User.id).label('count')
+        ).filter(
+            User.created_at >= start_date
+        ).group_by(func.date(User.created_at)).all()
+    )
+    
+    comment_counts = dict(
+        db.query(
+            func.date(Comment.created_at).label('date'),
+            func.count(Comment.id).label('count')
+        ).filter(
+            Comment.created_at >= start_date,
+            Comment.is_deleted == False
+        ).group_by(func.date(Comment.created_at)).all()
+    )
+    
+    result = []
     current_date = start_date
     while current_date <= end_date:
-        daily_data[current_date.isoformat()] = {
-            'logins': 0,
-            'registrations': 0,
-            'comments': 0
-        }
+        date_str = current_date.isoformat()
+        result.append(UserActivity(
+            date=date_str,
+            logins=login_counts.get(date_str, 0),
+            registrations=registration_counts.get(date_str, 0),
+            comments=comment_counts.get(date_str, 0)
+        ))
         current_date += timedelta(days=1)
     
-    logins = db.query(LoginLog).filter(
-        LoginLog.created_at >= start_date,
-        LoginLog.status == 'success'
-    ).all()
-    
-    for login in logins:
-        date_str = to_local(login.created_at).date().isoformat()
-        if date_str in daily_data:
-            daily_data[date_str]['logins'] += 1
-    
-    registrations = db.query(User).filter(
-        User.created_at >= start_date
-    ).all()
-    
-    for user in registrations:
-        date_str = to_local(user.created_at).date().isoformat()
-        if date_str in daily_data:
-            daily_data[date_str]['registrations'] += 1
-    
-    comments = db.query(Comment).filter(
-        Comment.created_at >= start_date,
-        Comment.is_deleted == False
-    ).all()
-    
-    for comment in comments:
-        date_str = to_local(comment.created_at).date().isoformat()
-        if date_str in daily_data:
-            daily_data[date_str]['comments'] += 1
-    
-    return [
-        UserActivity(
-            date=k,
-            logins=v['logins'],
-            registrations=v['registrations'],
-            comments=v['comments']
-        )
-        for k, v in sorted(daily_data.items())
-    ]
+    return result
 
 
 @router.get("/access-trend", response_model=List[AccessTrend])
@@ -293,41 +315,31 @@ async def get_access_trend(
     end_date = get_now().date()
     start_date = end_date - timedelta(days=days - 1)
     
-    daily_data = {}
-    current_date = start_date
-    while current_date <= end_date:
-        daily_data[current_date.isoformat()] = {
-            'page_views': 0,
-            'unique_ips': set(),
-            'response_times': []
-        }
-        current_date += timedelta(days=1)
-    
-    access_logs = db.query(AccessLog).filter(
+    access_stats = db.query(
+        func.date(AccessLog.created_at).label('date'),
+        func.count(AccessLog.id).label('page_views'),
+        func.count(func.distinct(AccessLog.ip_address)).label('unique_visitors'),
+        func.avg(AccessLog.response_time).label('avg_response_time')
+    ).filter(
         AccessLog.created_at >= start_date
+    ).group_by(
+        func.date(AccessLog.created_at)
     ).all()
     
-    for log in access_logs:
-        date_str = to_local(log.created_at).date().isoformat()
-        if date_str in daily_data:
-            daily_data[date_str]['page_views'] += 1
-            if log.ip_address:
-                daily_data[date_str]['unique_ips'].add(log.ip_address)
-            if log.response_time:
-                daily_data[date_str]['response_times'].append(log.response_time)
+    stats_dict = {str(s.date): s for s in access_stats if s.date}
     
     result = []
-    for date_str, data in sorted(daily_data.items()):
-        avg_time = 0
-        if data['response_times']:
-            avg_time = sum(data['response_times']) / len(data['response_times'])
-        
+    current_date = start_date
+    while current_date <= end_date:
+        date_str = current_date.isoformat()
+        stat = stats_dict.get(date_str)
         result.append(AccessTrend(
             date=date_str,
-            page_views=data['page_views'],
-            unique_visitors=len(data['unique_ips']),
-            avg_response_time=round(avg_time, 2)
+            page_views=stat.page_views if stat else 0,
+            unique_visitors=stat.unique_visitors if stat else 0,
+            avg_response_time=round(stat.avg_response_time, 2) if stat and stat.avg_response_time else 0
         ))
+        current_date += timedelta(days=1)
     
     return result
 
@@ -341,20 +353,26 @@ async def get_comment_trend(
     end_date = get_now().date()
     start_date = end_date - timedelta(days=days - 1)
     
-    daily_comments = {}
-    current_date = start_date
-    while current_date <= end_date:
-        daily_comments[current_date.isoformat()] = 0
-        current_date += timedelta(days=1)
-    
-    comments = db.query(Comment).filter(
+    daily_comments = db.query(
+        func.date(Comment.created_at).label('date'),
+        func.count(Comment.id).label('count')
+    ).filter(
         Comment.created_at >= start_date,
         Comment.is_deleted == False
+    ).group_by(
+        func.date(Comment.created_at)
     ).all()
     
-    for comment in comments:
-        date_str = to_local(comment.created_at).date().isoformat()
-        if date_str in daily_comments:
-            daily_comments[date_str] += 1
+    result_dict = {str(d.date): d.count for d in daily_comments if d.date}
     
-    return [TrendData(date=k, value=v) for k, v in sorted(daily_comments.items())]
+    result = []
+    current_date = start_date
+    while current_date <= end_date:
+        date_str = current_date.isoformat()
+        result.append(TrendData(
+            date=date_str,
+            value=result_dict.get(date_str, 0)
+        ))
+        current_date += timedelta(days=1)
+    
+    return result
