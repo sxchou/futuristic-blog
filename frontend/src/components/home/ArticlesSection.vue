@@ -2,21 +2,26 @@
 import { ref, onMounted } from 'vue'
 import { useBlogStore } from '@/stores'
 import ArticleCard from './ArticleCard.vue'
+import Pagination from '@/components/common/Pagination.vue'
 
 const blogStore = useBlogStore()
 const isLoading = ref(false)
 
 onMounted(async () => {
   isLoading.value = true
-  await blogStore.fetchArticles({ page: 1 })
+  await blogStore.fetchArticles({ page: 1, page_size: 12 })
   isLoading.value = false
 })
 
-const loadMore = async () => {
-  if (blogStore.pagination.page >= blogStore.pagination.totalPages) return
+const handlePageChange = async (page: number) => {
   isLoading.value = true
-  await blogStore.fetchArticles({ page: blogStore.pagination.page + 1 })
+  await blogStore.fetchArticles({ page, page_size: 12 })
   isLoading.value = false
+  
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  })
 }
 </script>
 
@@ -42,21 +47,14 @@ const loadMore = async () => {
         />
       </div>
 
-      <div v-if="blogStore.pagination.page < blogStore.pagination.totalPages" class="text-center mt-8">
-        <button
-          @click="loadMore"
-          :disabled="isLoading"
-          class="btn-secondary"
-        >
-          <span v-if="isLoading" class="flex items-center gap-2">
-            <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-            </svg>
-            加载中...
-          </span>
-          <span v-else>加载更多</span>
-        </button>
+      <div v-if="blogStore.pagination.totalPages > 1" class="mt-8">
+        <Pagination
+          :current-page="blogStore.pagination.page"
+          :total-pages="blogStore.pagination.totalPages"
+          :total-items="blogStore.pagination.total"
+          :page-size="12"
+          @page-change="handlePageChange"
+        />
       </div>
     </div>
   </section>
