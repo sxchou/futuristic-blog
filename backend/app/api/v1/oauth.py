@@ -322,72 +322,29 @@ async def oauth_callback(
         user_info = userinfo_response.json()
     
     provider_user_id = None
-    email = None
     name = None
     avatar = None
     
     if provider_name == "google":
         provider_user_id = user_info.get("id")
-        email = user_info.get("email")
         name = user_info.get("name")
         avatar = user_info.get("picture")
     elif provider_name == "github":
         provider_user_id = str(user_info.get("id"))
-        email = user_info.get("email")
         name = user_info.get("login")
         avatar = user_info.get("avatar_url")
-        
-        if not email:
-            try:
-                emails_response = await client.get(
-                    "https://api.github.com/user/emails",
-                    headers={
-                        "Authorization": f"Bearer {access_token}",
-                        "Accept": "application/json"
-                    }
-                )
-                if emails_response.status_code == 200:
-                    emails = emails_response.json()
-                    primary_email = next((e for e in emails if e.get("primary") and e.get("verified")), None)
-                    if primary_email:
-                        email = primary_email.get("email")
-                    elif emails:
-                        verified_email = next((e for e in emails if e.get("verified")), None)
-                        if verified_email:
-                            email = verified_email.get("email")
-            except Exception:
-                pass
     elif provider_name == "twitter" or provider_name == "x":
         provider_user_id = user_info.get("data", {}).get("id")
-        email = user_info.get("data", {}).get("email")
         name = user_info.get("data", {}).get("username")
         avatar = user_info.get("data", {}).get("profile_image_url")
     elif provider_name == "wechat":
         provider_user_id = user_info.get("openid")
-        email = user_info.get("email")
         name = user_info.get("nickname")
         avatar = user_info.get("headimgurl")
     elif provider_name == "qq":
         provider_user_id = user_info.get("openid")
         name = user_info.get("nickname")
         avatar = user_info.get("figureurl_qq_2") or user_info.get("figureurl_qq_1")
-        
-        if not email and provider_user_id:
-            try:
-                qq_email_response = await client.get(
-                    "https://graph.qq.com/user/get_email",
-                    headers={
-                        "Authorization": f"Bearer {access_token}",
-                        "Accept": "application/json"
-                    },
-                    params={"openid": provider_user_id}
-                )
-                if qq_email_response.status_code == 200:
-                    email_data = qq_email_response.json()
-                    if email_data.get("ret") == 0:
-                        email = email_data.get("email")
-            except Exception:
-                pass
     
     if not provider_user_id:
         raise HTTPException(status_code=400, detail="Failed to get provider user ID")
@@ -403,85 +360,21 @@ async def oauth_callback(
     if connection:
         user = connection.user
         
-        if user.email and "@oauth.local" in user.email:
-            import uuid
-            temp_token = str(uuid.uuid4())
-            
-            from app.services.email_service import EmailService
-            EmailService.store_oauth_temp_token(
-                db=db,
-                temp_token=temp_token,
-                user_id=user.id,
-                provider_name=provider_name,
-                provider_user_id=provider_user_id
-            )
+        if user.is_verified:
+            jwt_token = create_access_token(data={"sub": user.username})
             
             params = {
-                "access_token": "",
+                "access_token": jwt_token,
                 "token_type": "bearer",
                 "user_id": user.id,
                 "username": user.username,
-                "email": "",
+                "email": user.email or "",
                 "avatar": user.avatar or "",
                 "is_admin": str(user.is_admin).lower(),
-                "needs_email": "true",
-                "temp_token": temp_token
+                "needs_email": "false"
             }
             return RedirectResponse(url=f"{settings.FRONTEND_URL}/oauth/callback/{provider_name}?{urlencode(params)}")
         
-        jwt_token = create_access_token(data={"sub": user.username})
-        
-        params = {
-            "access_token": jwt_token,
-            "token_type": "bearer",
-            "user_id": user.id,
-            "username": user.username,
-            "email": user.email or "",
-            "avatar": user.avatar or "",
-            "is_admin": str(user.is_admin).lower(),
-            "needs_email": "false"
-        }
-        return RedirectResponse(url=f"{settings.FRONTEND_URL}/oauth/callback/{provider_name}?{urlencode(params)}")
-    
-    needs_email_setup = not email
-    
-    if not email:
-        email = f"{provider_name}_{provider_user_id}@oauth.local"
-    
-    existing_user = db.query(User).filter(User.email == email).first()
-    
-    if existing_user:
-        user = existing_user
-    else:
-        username = name or f"{provider_name}_{provider_user_id}"
-        base_username = username
-        counter = 1
-        while db.query(User).filter(User.username == username).first():
-            username = f"{base_username}_{counter}"
-            counter += 1
-        
-        user = User(
-            username=username,
-            email=email,
-            hashed_password="",
-            is_verified=not needs_email_setup,
-            avatar=avatar
-        )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-    
-    connection = OAuthConnection(
-        user_id=user.id,
-        provider_id=provider.id,
-        provider_user_id=provider_user_id,
-        access_token=access_token,
-        refresh_token=token_data.get("refresh_token")
-    )
-    db.add(connection)
-    db.commit()
-    
-    if needs_email_setup:
         import uuid
         temp_token = str(uuid.uuid4())
         
@@ -507,17 +400,56 @@ async def oauth_callback(
         }
         return RedirectResponse(url=f"{settings.FRONTEND_URL}/oauth/callback/{provider_name}?{urlencode(params)}")
     
-    jwt_token = create_access_token(data={"sub": user.username})
+    username = name or f"{provider_name}_{provider_user_id}"
+    base_username = username
+    counter = 1
+    while db.query(User).filter(User.username == username).first():
+        username = f"{base_username}_{counter}"
+        counter += 1
+    
+    user = User(
+        username=username,
+        email=f"{provider_name}_{provider_user_id}@oauth.local",
+        hashed_password="",
+        is_verified=False,
+        avatar=avatar
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    
+    connection = OAuthConnection(
+        user_id=user.id,
+        provider_id=provider.id,
+        provider_user_id=provider_user_id,
+        access_token=access_token,
+        refresh_token=token_data.get("refresh_token")
+    )
+    db.add(connection)
+    db.commit()
+    
+    import uuid
+    temp_token = str(uuid.uuid4())
+    
+    from app.services.email_service import EmailService
+    EmailService.store_oauth_temp_token(
+        db=db,
+        temp_token=temp_token,
+        user_id=user.id,
+        provider_name=provider_name,
+        provider_user_id=provider_user_id
+    )
     
     params = {
-        "access_token": jwt_token,
+        "access_token": "",
         "token_type": "bearer",
         "user_id": user.id,
         "username": user.username,
-        "email": user.email or "",
+        "email": "",
         "avatar": user.avatar or "",
         "is_admin": str(user.is_admin).lower(),
-        "needs_email": "false"
+        "needs_email": "true",
+        "temp_token": temp_token
     }
     return RedirectResponse(url=f"{settings.FRONTEND_URL}/oauth/callback/{provider_name}?{urlencode(params)}")
 
