@@ -174,7 +174,8 @@ async def get_article_archive(db: Session = Depends(get_db)):
             "category": {
                 "id": article.category.id,
                 "name": article.category.name,
-                "slug": article.category.slug
+                "slug": article.category.slug,
+                "color": article.category.color
             } if article.category else None
         })
     

@@ -11,6 +11,42 @@ const config: AxiosRequestConfig = {
 
 const apiClient: AxiosInstance = axios.create(config)
 
+const publicApiPatterns = [
+  /^\/articles(\/[^/]+)?$/,
+  /^\/articles\/archive\/list$/,
+  /^\/categories/,
+  /^\/tags/,
+  /^\/likes\/\d+$/,
+  /^\/comments\/article\/\d+$/,
+  /^\/resources$/,
+  /^\/site-config/,
+  /^\/profile\/public/,
+  /^\/files\/\d+\/download$/
+]
+
+const isPublicApi = (url: string): boolean => {
+  const apiPath = url.split('?')[0]
+  return publicApiPatterns.some(pattern => pattern.test(apiPath))
+}
+
+const publicRoutes = [
+  '/',
+  '/about',
+  '/categories',
+  '/tags',
+  '/article',
+  '/resources',
+  '/archive',
+  '/search'
+]
+
+const isPublicRoute = (): boolean => {
+  const currentPath = window.location.pathname
+  return publicRoutes.some(route => 
+    currentPath === route || currentPath.startsWith(route + '/')
+  )
+}
+
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token')
@@ -29,7 +65,16 @@ apiClient.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
-      if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
+      
+      const requestUrl = error.config?.url || ''
+      const isPublic = isPublicApi(requestUrl) || isPublicRoute()
+      
+      if (!isPublic && 
+          !window.location.pathname.includes('/login') && 
+          !window.location.pathname.includes('/register') &&
+          !window.location.pathname.includes('/forgot-password') &&
+          !window.location.pathname.includes('/verify-email') &&
+          !window.location.pathname.includes('/oauth/callback')) {
         window.location.href = '/login'
       }
     }

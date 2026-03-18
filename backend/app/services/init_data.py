@@ -1,6 +1,6 @@
 from app.core.database import SessionLocal, engine
 from app.core.config import settings
-from app.models import User, Category, Tag, Article, Resource, SiteConfig
+from app.models import User, Category, Tag, Article, Resource, SiteConfig, OAuthProvider
 from app.utils import get_password_hash
 from app.utils.timezone import get_now
 from datetime import datetime
@@ -1095,6 +1095,67 @@ OpenAI API 为开发者提供了强大的 AI 能力，合理使用可以构建�
             if not existing:
                 config = SiteConfig(**config_data)
                 db.add(config)
+        
+        db.commit()
+        
+        oauth_providers_data = [
+            {
+                "name": "google",
+                "display_name": "Google",
+                "icon": "google",
+                "authorize_url": "https://accounts.google.com/o/oauth2/v2/auth",
+                "token_url": "https://oauth2.googleapis.com/token",
+                "userinfo_url": "https://www.googleapis.com/oauth2/v2/userinfo",
+                "scope": "openid email profile",
+                "order": 1
+            },
+            {
+                "name": "github",
+                "display_name": "GitHub",
+                "icon": "github",
+                "authorize_url": "https://github.com/login/oauth/authorize",
+                "token_url": "https://github.com/login/oauth/access_token",
+                "userinfo_url": "https://api.github.com/user",
+                "scope": "user:email",
+                "order": 2
+            },
+            {
+                "name": "x",
+                "display_name": "X (Twitter)",
+                "icon": "twitter",
+                "authorize_url": "https://twitter.com/i/oauth2/authorize",
+                "token_url": "https://api.twitter.com/2/oauth2/token",
+                "userinfo_url": "https://api.twitter.com/2/users/me",
+                "scope": "tweet.read users.read email",
+                "order": 3
+            },
+            {
+                "name": "wechat",
+                "display_name": "微信",
+                "icon": "wechat",
+                "authorize_url": "https://open.weixin.qq.com/connect/qrconnect",
+                "token_url": "https://api.weixin.qq.com/sns/oauth2/access_token",
+                "userinfo_url": "https://api.weixin.qq.com/sns/userinfo",
+                "scope": "snsapi_login",
+                "order": 4
+            },
+            {
+                "name": "qq",
+                "display_name": "QQ",
+                "icon": "qq",
+                "authorize_url": "https://graph.qq.com/oauth2.0/authorize",
+                "token_url": "https://graph.qq.com/oauth2.0/token",
+                "userinfo_url": "https://graph.qq.com/user/get_user_info",
+                "scope": "get_user_info",
+                "order": 5
+            }
+        ]
+        
+        for provider_data in oauth_providers_data:
+            existing = db.query(OAuthProvider).filter(OAuthProvider.name == provider_data["name"]).first()
+            if not existing:
+                provider = OAuthProvider(**provider_data)
+                db.add(provider)
         
         db.commit()
         print("Database initialized with sample data!")

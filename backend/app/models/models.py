@@ -344,3 +344,43 @@ class UserProfile(Base):
     updated_at = Column(DateTime, default=get_local_now, onupdate=get_local_now)
     
     user = relationship("User", backref="profile", uselist=False)
+
+
+class OAuthProvider(Base):
+    __tablename__ = "oauth_providers"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(50), unique=True, nullable=False)
+    display_name = Column(String(100), nullable=False)
+    icon = Column(String(50), nullable=True)
+    client_id = Column(String(255), nullable=True)
+    client_secret = Column(String(255), nullable=True)
+    redirect_uri = Column(String(500), nullable=True)
+    authorize_url = Column(String(500), nullable=True)
+    token_url = Column(String(500), nullable=True)
+    userinfo_url = Column(String(500), nullable=True)
+    scope = Column(String(255), nullable=True)
+    is_enabled = Column(Boolean, default=False)
+    show_on_login = Column(Boolean, default=True)
+    order = Column(Integer, default=0)
+    created_at = Column(DateTime, default=get_local_now)
+    updated_at = Column(DateTime, default=get_local_now, onupdate=get_local_now)
+
+
+class OAuthConnection(Base):
+    __tablename__ = "oauth_connections"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    provider_id = Column(Integer, ForeignKey('oauth_providers.id', ondelete='CASCADE'), nullable=False)
+    provider_user_id = Column(String(255), nullable=False)
+    access_token = Column(Text, nullable=True)
+    refresh_token = Column(Text, nullable=True)
+    token_expires_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=get_local_now)
+    updated_at = Column(DateTime, default=get_local_now, onupdate=get_local_now)
+    
+    user = relationship("User", backref="oauth_connections")
+    provider = relationship("OAuthProvider", backref="connections")
+    
+    __table_args__ = (UniqueConstraint('provider_id', 'provider_user_id', name='unique_oauth_connection'),)

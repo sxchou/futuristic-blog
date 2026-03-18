@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore, useSiteConfigStore, useDialogStore } from '@/stores'
 import { authApi } from '@/api'
+import { oauthApi } from '@/api/oauth'
+import type { OAuthProviderResponse } from '@/api/oauth'
 import SliderCaptcha from '@/components/common/SliderCaptcha.vue'
 
 const router = useRouter()
@@ -24,6 +26,69 @@ const resendEmail = ref('')
 const isResending = ref(false)
 const isCaptchaVerified = ref(false)
 const captchaRef = ref<InstanceType<typeof SliderCaptcha> | null>(null)
+const oauthProviders = ref<OAuthProviderResponse[]>([])
+const oauthLoading = ref<string | null>(null)
+
+const fetchOAuthProviders = async () => {
+  try {
+    oauthProviders.value = await oauthApi.getLoginProviders()
+  } catch (error) {
+    console.error('Failed to fetch OAuth providers:', error)
+  }
+}
+
+const handleOAuthLogin = async (provider: OAuthProviderResponse) => {
+  if (!provider.is_configured || !provider.is_enabled) return
+  oauthLoading.value = provider.name
+  try {
+    const response = await oauthApi.getLoginUrl(provider.name)
+    window.location.href = response.authorize_url
+  } catch (error: any) {
+    await dialog.showError(error.response?.data?.detail || '登录失败，请重试', '错误')
+  } finally {
+    oauthLoading.value = null
+  }
+}
+
+const getProviderIcon = (icon: string | null) => {
+  switch (icon) {
+    case 'google':
+      return `<path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>`
+    case 'github':
+      return `<path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>`
+    case 'twitter':
+    case 'x':
+      return `<path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>`
+    case 'wechat':
+      return `<path d="M8.5 3.5C4.36 3.5 1 6.19 1 9.5c0 1.84 1.06 3.48 2.71 4.57-.12.42-.44 1.52-.5 1.76-.08.31.11.31.24.22.1-.07 1.47-.96 2.07-1.35.62.12 1.27.19 1.98.19.26 0 .51-.01.76-.03-.16-.48-.25-.99-.25-1.52 0-2.85 2.77-5.16 6.19-5.16.26 0 .52.02.77.04C14.54 5.21 11.83 3.5 8.5 3.5zm-2.25 3c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1zm4.5 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1z"/><path d="M23 14.5c0-2.76-2.69-5-6-5s-6 2.24-6 5 2.69 5 6 5c.55 0 1.08-.06 1.58-.17.48.32 1.58 1.03 1.67 1.09.11.07.26.07.19-.18-.05-.19-.31-1.07-.4-1.41C21.89 17.99 23 16.38 23 14.5zm-8-.75c-.41 0-.75-.34-.75-.75s.34-.75.75-.75.75.34.75.75-.34.75-.75.75zm4 0c-.41 0-.75-.34-.75-.75s.34-.75.75-.75.75.34.75.75-.34.75-.75.75z"/>`
+    case 'qq':
+      return `<path d="M12.003 2c-2.265 0-6.29 1.364-6.29 7.325v1.195S3.55 14.96 3.55 17.474c0 .665.17 1.025.281 1.025.114 0 .902-.484 1.748-2.072 0 0-.18 2.197 1.904 3.967 0 0-1.77.495-1.77 1.182 0 .686 4.078.43 6.29.43 2.212 0 6.29.256 6.29-.43 0-.687-1.77-1.182-1.77-1.182 2.085-1.77 1.905-3.967 1.905-3.967.845 1.588 1.634 2.072 1.746 2.072.111 0 .283-.36.283-1.025 0-2.514-2.166-6.954-2.166-6.954V9.325C18.29 3.364 14.268 2 12.003 2z"/>`
+    default:
+      return `<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>`
+  }
+}
+
+const getProviderButtonClass = (provider: OAuthProviderResponse) => {
+  const base = 'flex items-center justify-center w-9 h-9 rounded-full border transition-all duration-200'
+  if (!provider.is_configured || !provider.is_enabled) {
+    return `${base} bg-gray-100 dark:bg-dark-200 border-gray-200 dark:border-white/10 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-60`
+  }
+  switch (provider.name) {
+    case 'google':
+      return `${base} bg-white dark:bg-dark-100 border-gray-200 dark:border-white/20 hover:border-gray-300 dark:hover:border-white/30 hover:shadow-md`
+    case 'github':
+      return `${base} bg-gray-900 dark:bg-gray-800 border-gray-900 dark:border-gray-700 text-white hover:bg-gray-800 dark:hover:bg-gray-700 hover:shadow-md`
+    case 'x':
+    case 'twitter':
+      return `${base} bg-black dark:bg-dark-100 border-black dark:border-white/20 text-white hover:bg-gray-900 dark:hover:bg-dark-200 hover:shadow-md`
+    case 'wechat':
+      return `${base} bg-[#07C160] border-[#07C160] text-white hover:bg-[#06AD56] hover:shadow-md`
+    case 'qq':
+      return `${base} bg-[#12B7F5] border-[#12B7F5] text-white hover:bg-[#0FA8E0] hover:shadow-md`
+    default:
+      return `${base} bg-gray-100 dark:bg-dark-100 border-gray-200 dark:border-white/20 hover:bg-gray-200 dark:hover:bg-dark-200 hover:shadow-md`
+  }
+}
 
 const handleCaptchaSuccess = () => {
   isCaptchaVerified.value = true
@@ -101,39 +166,39 @@ const handleLogin = async () => {
 }
 
 const handleResend = async () => {
-  if (!resendEmail.value) {
-    await dialog.showError('请输入您的邮箱地址', '提示')
-    return
-  }
-
+  if (!resendEmail.value) return
+  
   isResending.value = true
   try {
     await authApi.resendVerification(resendEmail.value)
-    await dialog.showSuccess('验证邮件已发送，请查收', '成功')
     showResendOption.value = false
+    generalError.value = ''
+    await dialog.showSuccess('验证邮件已重新发送', '成功')
   } catch (error: any) {
     await dialog.showError(error.response?.data?.detail || '发送失败', '错误')
   } finally {
     isResending.value = false
   }
 }
+
+onMounted(fetchOAuthProviders)
 </script>
 
 <template>
-  <div class="min-h-screen bg-white dark:bg-dark flex items-center justify-center px-4 py-16">
-    <div class="w-full max-w-sm">
-      <div class="glass-card p-6">
-        <div class="text-center mb-6">
-          <div class="w-12 h-12 mx-auto mb-3 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-            <span class="text-xl font-bold text-white">{{ siteConfigStore.siteLogo }}</span>
+  <div class="min-h-screen flex items-center justify-center px-4 py-8">
+    <div class="w-full max-w-[386px]">
+      <div class="glass-card p-5">
+        <div class="text-center mb-4">
+          <div class="w-12 h-12 mx-auto mb-2 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+            <span class="text-base font-bold text-white">{{ siteConfigStore.siteLogo }}</span>
           </div>
-          <h1 class="text-xl font-bold gradient-text">欢迎回来</h1>
-          <p class="text-gray-500 dark:text-gray-400 mt-1 text-sm">登录您的账户</p>
+          <h1 class="text-lg font-bold gradient-text">欢迎回来</h1>
+          <p class="text-gray-500 dark:text-gray-400 mt-0.5 text-xs">登录您的账户</p>
         </div>
 
-        <form @submit.prevent="handleLogin" class="space-y-4">
+        <form @submit.prevent="handleLogin" class="space-y-3">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">用户名/邮箱</label>
+            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">用户名/邮箱</label>
             <input
               v-model="form.username"
               type="text"
@@ -141,17 +206,14 @@ const handleResend = async () => {
               name="username"
               autocomplete="username"
               @input="onUsernameInput"
-              :class="[
-                'w-full px-3 py-2.5 bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none transition-colors text-sm',
-                usernameError ? 'border-red-500 focus:border-red-500' : 'border-gray-200 dark:border-white/10 focus:border-primary'
-              ]"
+              class="w-full px-3 py-2 bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none transition-colors text-sm"
               placeholder="请输入用户名或邮箱"
             />
             <p v-if="usernameError" class="mt-1 text-xs text-red-400">{{ usernameError }}</p>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">密码</label>
+            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">密码</label>
             <input
               v-model="form.password"
               type="password"
@@ -159,46 +221,45 @@ const handleResend = async () => {
               name="password"
               autocomplete="current-password"
               @input="onPasswordInput"
-              :class="[
-                'w-full px-3 py-2.5 bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none transition-colors text-sm',
-                passwordError ? 'border-red-500 focus:border-red-500' : 'border-gray-200 dark:border-white/10 focus:border-primary'
-              ]"
+              class="w-full px-3 py-2 bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none transition-colors text-sm"
               placeholder="请输入密码"
             />
             <p v-if="passwordError" class="mt-1 text-xs text-red-400">{{ passwordError }}</p>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">人机验证</label>
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">验证</label>
+              <router-link to="/forgot-password" class="text-xs text-gray-500 dark:text-gray-400 hover:text-primary transition-colors">
+                忘记密码？
+              </router-link>
+            </div>
             <SliderCaptcha 
               ref="captchaRef"
               @success="handleCaptchaSuccess" 
             />
           </div>
 
-          <div v-if="generalError" class="p-2.5 bg-red-500/10 border border-red-500/20 rounded-lg">
+          <div v-if="generalError" class="p-2 bg-red-500/10 border border-red-500/20 rounded-lg">
             <p class="text-red-400 text-xs">{{ generalError }}</p>
           </div>
 
-          <div v-if="showResendOption" class="p-3 bg-primary/10 border border-primary/20 rounded-lg">
-            <p class="text-xs text-gray-300 mb-2">您的邮箱尚未验证，点击按钮重新发送验证邮件：</p>
+          <div v-if="showResendOption" class="p-2 bg-primary/10 border border-primary/20 rounded-lg">
+            <p class="text-xs text-gray-300 mb-1.5">您的邮箱尚未验证</p>
             <div class="flex gap-2">
               <input
                 v-model="resendEmail"
                 type="email"
-                id="resend-email"
-                name="email"
-                autocomplete="email"
-                placeholder="输入邮箱地址"
-                class="flex-1 px-2.5 py-2 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:outline-none"
+                class="flex-1 px-2 py-1.5 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white"
+                placeholder="邮箱地址"
               />
               <button
                 type="button"
                 @click="handleResend"
                 :disabled="isResending"
-                class="px-3 py-2 text-xs bg-primary text-white rounded-lg hover:bg-primary/80 disabled:opacity-50 whitespace-nowrap"
+                class="px-2 py-1.5 text-xs bg-primary text-white rounded hover:bg-primary/80 disabled:opacity-50 whitespace-nowrap"
               >
-                {{ isResending ? '发送中...' : '重新发送' }}
+                {{ isResending ? '发送中' : '重发' }}
               </button>
             </div>
           </div>
@@ -206,9 +267,9 @@ const handleResend = async () => {
           <button
             type="submit"
             :disabled="isLoading"
-            class="w-full py-2.5 bg-gradient-to-r from-primary to-accent text-white font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 text-sm"
+            class="w-full py-2 bg-gradient-to-r from-primary to-accent text-white font-medium rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 text-sm"
           >
-            <span v-if="isLoading" class="flex items-center justify-center gap-2">
+            <span v-if="isLoading" class="flex items-center justify-center gap-1.5">
               <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
@@ -217,19 +278,43 @@ const handleResend = async () => {
             </span>
             <span v-else>登录</span>
           </button>
-
-          <div class="text-center">
-            <router-link to="/forgot-password" class="text-sm text-gray-500 dark:text-gray-400 hover:text-primary transition-colors">
-              忘记密码？
-            </router-link>
-          </div>
         </form>
 
-        <div class="mt-4 text-center">
-          <p class="text-gray-500 dark:text-gray-400 text-sm">
+        <div class="mt-3 text-center">
+          <p class="text-gray-500 dark:text-gray-400 text-xs">
             还没有账户？
             <router-link to="/register" class="text-primary hover:underline">立即注册</router-link>
           </p>
+        </div>
+
+        <div v-if="oauthProviders.length > 0" class="mt-4">
+          <div class="relative">
+            <div class="absolute inset-0 flex items-center">
+              <div class="w-full border-t border-gray-200 dark:border-white/10"></div>
+            </div>
+            <div class="relative flex justify-center text-xs">
+              <span class="px-2 bg-white dark:bg-dark text-gray-500 dark:text-gray-400">或</span>
+            </div>
+          </div>
+
+          <div class="mt-3 flex items-center justify-center gap-2 flex-wrap">
+            <button
+              v-for="provider in oauthProviders"
+              :key="provider.id"
+              type="button"
+              @click="handleOAuthLogin(provider)"
+              :disabled="oauthLoading === provider.name || (!provider.is_configured || !provider.is_enabled)"
+              :class="getProviderButtonClass(provider)"
+              :title="provider.display_name + (!provider.is_configured || !provider.is_enabled ? ' (当前不可用)' : '')"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+                v-html="getProviderIcon(provider.icon)"
+              />
+            </button>
+          </div>
         </div>
       </div>
     </div>

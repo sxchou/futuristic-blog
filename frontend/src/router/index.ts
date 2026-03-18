@@ -88,6 +88,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '忘记密码' }
   },
   {
+    path: '/oauth/callback/:provider',
+    name: 'OAuthCallback',
+    component: () => import('@/views/OAuthCallbackView.vue'),
+    meta: { title: 'OAuth登录' }
+  },
+  {
     path: '/admin',
     component: () => import('@/views/admin/AdminLayout.vue'),
     meta: { requiresAuth: true },
@@ -169,6 +175,12 @@ const routes: RouteRecordRaw[] = [
         name: 'AdminMyProfile',
         component: () => import('@/views/admin/UserProfileView.vue'),
         meta: { title: '我的资料' }
+      },
+      {
+        path: 'oauth',
+        name: 'AdminOAuth',
+        component: () => import('@/views/admin/OAuthView.vue'),
+        meta: { title: '授权管理' }
       }
     ]
   },

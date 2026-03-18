@@ -206,7 +206,7 @@ const goBack = () => {
     <div class="w-full max-w-sm">
       <div class="glass-card p-6">
         <div class="text-center mb-6">
-          <div class="w-12 h-12 mx-auto mb-3 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+          <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
             <span class="text-xl font-bold text-white">{{ siteConfigStore.siteLogo }}</span>
           </div>
           <h1 class="text-xl font-bold gradient-text">忘记密码</h1>

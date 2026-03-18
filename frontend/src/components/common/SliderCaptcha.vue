@@ -118,7 +118,7 @@ defineExpose({ reset })
   <div class="slider-captcha w-full select-none">
     <div 
       ref="trackRef"
-      class="slider-track relative h-10 rounded overflow-hidden bg-gray-200 dark:bg-dark-100 border border-gray-300 dark:border-white/10"
+      class="slider-track relative h-10 rounded-lg overflow-hidden bg-gray-200 dark:bg-dark-100 border border-gray-300 dark:border-white/10"
       :class="{ 'border-green-500/50 dark:border-green-500/50': isVerified }"
     >
       <div 
@@ -126,10 +126,10 @@ defineExpose({ reset })
         :style="progressStyle"
       ></div>
       <div 
-        class="slider-button absolute left-0 top-0 w-10 h-10 cursor-pointer flex items-center justify-center transition-all duration-100 bg-white dark:bg-dark-200 border-r border-gray-300 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-dark-300"
+        class="slider-button absolute left-0 top-0 w-10 h-10 cursor-pointer flex items-center justify-center transition-all duration-100 bg-white dark:bg-dark-200 border-r border-gray-300 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-dark-300 rounded-l-lg"
         :class="{ 
           'border-primary dark:border-primary': isDragging,
-          '!bg-gradient-to-r !from-green-500 !to-green-600 !border-green-500 cursor-default': isVerified 
+          '!bg-gradient-to-r !from-green-500 !to-green-600 !border-green-500 cursor-default rounded-lg': isVerified 
         }"
         :style="sliderStyle"
         @mousedown="handleMouseDown"
