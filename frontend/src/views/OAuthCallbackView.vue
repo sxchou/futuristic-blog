@@ -24,7 +24,6 @@ const handleCallback = async () => {
   const needsEmailParam = route.query.needs_email as string
   const tempTokenParam = route.query.temp_token as string
   const usernameParam = route.query.username as string
-  const userId = route.query.user_id as string
   const errorParam = route.query.error as string
   
   if (errorParam) {
