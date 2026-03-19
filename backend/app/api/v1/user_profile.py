@@ -53,16 +53,21 @@ def generate_gradient_from_username(username: str) -> list:
     return GRADIENT_PRESETS[index]
 
 
-def get_or_create_user_profile(db: Session, user_id: int, username: str) -> UserProfile:
+def get_or_create_user_profile(db: Session, user_id: int, username: str, oauth_avatar_url: str = None) -> UserProfile:
     profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
     if not profile:
         gradient = generate_gradient_from_username(username)
         profile = UserProfile(
             user_id=user_id,
             avatar_type=AvatarType.default,
-            default_avatar_gradient=gradient
+            default_avatar_gradient=gradient,
+            oauth_avatar_url=oauth_avatar_url
         )
         db.add(profile)
+        db.commit()
+        db.refresh(profile)
+    elif oauth_avatar_url and not profile.oauth_avatar_url:
+        profile.oauth_avatar_url = oauth_avatar_url
         db.commit()
         db.refresh(profile)
     return profile
@@ -108,12 +113,15 @@ async def get_user_profile(
 ):
     profile = get_or_create_user_profile(db, current_user.id, current_user.username)
     
-    avatar_url = profile.avatar_url
-    avatar_type = profile.avatar_type.value if profile.avatar_type else "default"
+    avatar_url = None
+    avatar_type = "default"
     
-    if not avatar_url and current_user.avatar:
-        avatar_url = current_user.avatar
+    if profile.avatar_type == AvatarType.custom and profile.avatar_url:
+        avatar_url = profile.avatar_url
         avatar_type = "custom"
+    elif profile.oauth_avatar_url:
+        avatar_url = profile.oauth_avatar_url
+        avatar_type = "oauth"
     
     return {
         "id": profile.id,
@@ -121,6 +129,7 @@ async def get_user_profile(
         "username": current_user.username,
         "avatar_type": avatar_type,
         "avatar_url": avatar_url,
+        "oauth_avatar_url": profile.oauth_avatar_url,
         "default_avatar_gradient": profile.default_avatar_gradient,
         "created_at": profile.created_at,
         "updated_at": profile.updated_at
@@ -236,8 +245,8 @@ async def reset_avatar(
             "id": profile.id,
             "user_id": profile.user_id,
             "username": current_user.username,
-            "avatar_type": profile.avatar_type.value,
-            "avatar_url": profile.avatar_url,
+            "avatar_type": "default",
+            "avatar_url": None,
             "default_avatar_gradient": profile.default_avatar_gradient,
             "created_at": profile.created_at,
             "updated_at": profile.updated_at
@@ -247,6 +256,69 @@ async def reset_avatar(
         logger.error(f"Failed to reset avatar for user {current_user.id}: {e}")
         db.rollback()
         raise HTTPException(status_code=500, detail=f"头像重置失败: {str(e)}")
+
+
+@router.post("/use-oauth-avatar", response_model=UserProfileResponse)
+async def use_oauth_avatar(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    request: Request = None
+):
+    profile = get_or_create_user_profile(db, current_user.id, current_user.username)
+    
+    if not profile.oauth_avatar_url:
+        raise HTTPException(status_code=400, detail="没有可用的OAuth头像")
+    
+    old_avatar_url = profile.avatar_url if profile.avatar_type == AvatarType.custom else None
+    
+    try:
+        profile.avatar_type = AvatarType.default
+        profile.avatar_url = None
+        db.commit()
+        db.refresh(profile)
+        
+        if old_avatar_url:
+            delete_success, delete_msg = AvatarFileService.delete_avatar_file(
+                avatar_url=old_avatar_url,
+                db=db,
+                user=current_user,
+                request=request,
+                reason="avatar_switch_to_oauth"
+            )
+            if not delete_success:
+                logger.warning(f"Failed to delete old avatar after switching to OAuth: {delete_msg}")
+        
+        LogService.log_operation(
+            db=db,
+            user_id=current_user.id,
+            username=current_user.username,
+            action="切换",
+            module="用户头像",
+            description="切换到OAuth头像",
+            target_type="用户资料",
+            target_id=profile.id,
+            request=request,
+            status="success"
+        )
+        
+        return {
+            "id": profile.id,
+            "user_id": profile.user_id,
+            "username": current_user.username,
+            "avatar_type": "oauth",
+            "avatar_url": profile.oauth_avatar_url,
+            "oauth_avatar_url": profile.oauth_avatar_url,
+            "default_avatar_gradient": profile.default_avatar_gradient,
+            "created_at": profile.created_at,
+            "updated_at": profile.updated_at
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to switch to OAuth avatar for user {current_user.id}: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"切换OAuth头像失败: {str(e)}")
 
 
 @router.get("/{user_id}", response_model=UserProfileResponse)

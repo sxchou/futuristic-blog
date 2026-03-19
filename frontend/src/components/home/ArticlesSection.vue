@@ -15,7 +15,7 @@ const debouncedFetch = (page: number) => {
   searchTimeout = setTimeout(async () => {
     isLoading.value = true
     try {
-      await blogStore.fetchArticles({ page, page_size: 12 })
+      await blogStore.fetchArticles({ page, page_size: 8 })
     } finally {
       isLoading.value = false
     }
@@ -69,7 +69,7 @@ onUnmounted(() => {
           :current-page="blogStore.pagination.page"
           :total-pages="blogStore.pagination.totalPages"
           :total-items="blogStore.pagination.total"
-          :page-size="12"
+          :page-size="8"
           @page-change="handlePageChange"
         />
       </div>

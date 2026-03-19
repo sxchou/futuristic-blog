@@ -44,7 +44,10 @@ async def get_articles(
     
     total = query.count()
     total_pages = (total + page_size - 1) // page_size
-    articles = query.order_by(Article.created_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
+    articles = query.order_by(
+        Article.is_pinned.desc(),
+        Article.created_at.desc()
+    ).offset((page - 1) * page_size).limit(page_size).all()
     
     comment_counts = {}
     if articles:
@@ -70,6 +73,7 @@ async def get_articles(
             cover_image=article.cover_image,
             is_published=article.is_published,
             is_featured=article.is_featured,
+            is_pinned=article.is_pinned or False,
             view_count=article.view_count,
             like_count=article.like_count or 0,
             comment_count=comment_counts.get(article.id, 0),
@@ -126,6 +130,7 @@ async def get_admin_articles(
             cover_image=article.cover_image,
             is_published=article.is_published,
             is_featured=article.is_featured,
+            is_pinned=article.is_pinned or False,
             view_count=article.view_count,
             like_count=article.like_count or 0,
             comment_count=comment_counts.get(article.id, 0),

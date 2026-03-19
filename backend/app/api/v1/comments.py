@@ -23,10 +23,25 @@ def get_user_avatar_info(db: Session, user_id: Optional[int]) -> Dict[str, Any]:
         }
     
     profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
+    
     if profile:
+        if profile.avatar_type == AvatarType.custom and profile.avatar_url:
+            return {
+                'avatar_type': 'custom',
+                'avatar_url': profile.avatar_url,
+                'avatar_gradient': profile.default_avatar_gradient
+            }
+        
+        if profile.oauth_avatar_url:
+            return {
+                'avatar_type': 'oauth',
+                'avatar_url': profile.oauth_avatar_url,
+                'avatar_gradient': profile.default_avatar_gradient
+            }
+        
         return {
-            'avatar_type': profile.avatar_type.value if profile.avatar_type else None,
-            'avatar_url': profile.avatar_url,
+            'avatar_type': 'default',
+            'avatar_url': None,
             'avatar_gradient': profile.default_avatar_gradient
         }
     

@@ -43,7 +43,7 @@ const sizeClasses = computed(() => {
 const avatarStyle = computed(() => {
   if (!props.profile) return {}
   
-  if (props.profile.avatar_type === 'custom' && props.profile.avatar_url) {
+  if ((props.profile.avatar_type === 'custom' || props.profile.avatar_type === 'oauth') && props.profile.avatar_url) {
     return {
       backgroundImage: `url(${props.profile.avatar_url})`,
       backgroundSize: 'cover',
@@ -64,7 +64,10 @@ const avatarStyle = computed(() => {
 })
 
 const showInitial = computed(() => {
-  return !props.profile || props.profile.avatar_type === 'default' || !props.profile.avatar_url
+  return !props.profile || 
+         props.profile.avatar_type === 'default' || 
+         (props.profile.avatar_type !== 'custom' && props.profile.avatar_type !== 'oauth') ||
+         !props.profile.avatar_url
 })
 
 const initial = computed(() => {
@@ -172,6 +175,23 @@ const handleReset = async () => {
   }
 }
 
+const handleUseOAuthAvatar = async () => {
+  const confirmed = await dialogStore.showConfirm({ message: '确定要使用OAuth头像吗？' })
+  if (!confirmed) return
+  
+  try {
+    await userProfileApi.useOAuthAvatar()
+    
+    await userProfileStore.refreshProfile()
+    
+    dialogStore.showSuccess('已切换到OAuth头像')
+    emit('reset')
+    closeDropdown()
+  } catch (error: any) {
+    dialogStore.showError(error.response?.data?.detail || '操作失败')
+  }
+}
+
 const goToProfile = () => {
   router.push('/admin/my-profile')
   closeDropdown()
@@ -265,14 +285,25 @@ const handleClickOutside = (event: MouseEvent) => {
           </button>
           
           <button
-            v-if="profile?.avatar_type === 'custom'"
+            v-if="profile?.oauth_avatar_url && profile?.avatar_type !== 'oauth'"
+            @click="handleUseOAuthAvatar"
+            class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+            使用OAuth头像
+          </button>
+          
+          <button
+            v-if="profile?.avatar_type === 'custom' || profile?.avatar_type === 'oauth'"
             @click="handleReset"
             class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-            恢复默认头像
+            使用默认头像
           </button>
         </div>
         

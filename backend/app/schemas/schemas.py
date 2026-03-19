@@ -160,6 +160,7 @@ class ArticleBase(BaseModel):
     cover_image: Optional[str] = None
     is_published: bool = False
     is_featured: bool = False
+    is_pinned: bool = False
     category_id: Optional[int] = None
 
 
@@ -175,6 +176,7 @@ class ArticleUpdate(BaseModel):
     cover_image: Optional[str] = None
     is_published: Optional[bool] = None
     is_featured: Optional[bool] = None
+    is_pinned: Optional[bool] = None
     category_id: Optional[int] = None
     tag_ids: Optional[List[int]] = None
 
@@ -211,6 +213,7 @@ class ArticleListItem(BaseModel):
     cover_image: Optional[str] = None
     is_published: bool
     is_featured: bool
+    is_pinned: bool = False
     view_count: int
     like_count: int
     comment_count: int = 0
@@ -626,6 +629,7 @@ class UserProfileResponse(BaseModel):
     username: str
     avatar_type: str = "default"
     avatar_url: Optional[str] = None
+    oauth_avatar_url: Optional[str] = None
     default_avatar_gradient: Optional[List[str]] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None

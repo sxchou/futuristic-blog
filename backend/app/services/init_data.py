@@ -26,6 +26,15 @@ def run_database_migrations():
                 conn.commit()
                 print("Migration: Added 'deleted_by' column to comments table")
             
+            cursor.execute("PRAGMA table_info(articles)")
+            article_columns = [column[1] for column in cursor.fetchall()]
+            
+            if 'is_pinned' not in article_columns:
+                cursor.execute("ALTER TABLE articles ADD COLUMN is_pinned BOOLEAN DEFAULT 0")
+                cursor.execute("CREATE INDEX IF NOT EXISTS ix_articles_published_pinned ON articles(is_published, is_pinned)")
+                conn.commit()
+                print("Migration: Added 'is_pinned' column to articles table")
+            
             cursor.execute("PRAGMA table_info(article_likes)")
             like_columns = [column[1] for column in cursor.fetchall()]
             
@@ -51,6 +60,14 @@ def run_database_migrations():
                     conn.commit()
                     print("Migration: Updated article_likes table to allow NULL user_id for anonymous likes")
             
+            cursor.execute("PRAGMA table_info(user_profiles)")
+            profile_columns = [column[1] for column in cursor.fetchall()]
+            
+            if 'oauth_avatar_url' not in profile_columns:
+                cursor.execute("ALTER TABLE user_profiles ADD COLUMN oauth_avatar_url VARCHAR(500)")
+                conn.commit()
+                print("Migration: Added 'oauth_avatar_url' column to user_profiles table")
+            
             conn.close()
         elif "postgresql" in db_url:
             db = SessionLocal()
@@ -63,12 +80,27 @@ def run_database_migrations():
                 else:
                     print("Migration: 'deleted_by' column already exists")
                 
+                result = db.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'articles' AND column_name = 'is_pinned'"))
+                if not result.fetchone():
+                    db.execute(text("ALTER TABLE articles ADD COLUMN is_pinned BOOLEAN DEFAULT FALSE"))
+                    db.execute(text("CREATE INDEX IF NOT EXISTS ix_articles_published_pinned ON articles(is_published, is_pinned)"))
+                    db.commit()
+                    print("Migration: Added 'is_pinned' column to articles table")
+                else:
+                    print("Migration: 'is_pinned' column already exists")
+                
                 result = db.execute(text("SELECT is_nullable FROM information_schema.columns WHERE table_name = 'article_likes' AND column_name = 'user_id'"))
                 row = result.fetchone()
                 if row and row[0] == 'NO':
                     db.execute(text("ALTER TABLE article_likes ALTER COLUMN user_id DROP NOT NULL"))
                     db.commit()
                     print("Migration: Updated article_likes table to allow NULL user_id for anonymous likes")
+                
+                result = db.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'user_profiles' AND column_name = 'oauth_avatar_url'"))
+                if not result.fetchone():
+                    db.execute(text("ALTER TABLE user_profiles ADD COLUMN oauth_avatar_url VARCHAR(500)"))
+                    db.commit()
+                    print("Migration: Added 'oauth_avatar_url' column to user_profiles table")
             except Exception as e:
                 print(f"PostgreSQL migration error: {e}")
                 db.rollback()

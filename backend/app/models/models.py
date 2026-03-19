@@ -73,6 +73,7 @@ class Article(Base):
     author_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
     is_published = Column(Boolean, default=False, index=True)
     is_featured = Column(Boolean, default=False, index=True)
+    is_pinned = Column(Boolean, default=False, index=True)
     view_count = Column(Integer, default=0)
     like_count = Column(Integer, default=0)
     comment_count = Column(Integer, default=0)
@@ -84,6 +85,7 @@ class Article(Base):
     __table_args__ = (
         Index('ix_articles_published_created', 'is_published', 'created_at'),
         Index('ix_articles_published_featured', 'is_published', 'is_featured'),
+        Index('ix_articles_published_pinned', 'is_published', 'is_pinned'),
         Index('ix_articles_category_published', 'category_id', 'is_published'),
     )
     
@@ -350,6 +352,7 @@ class UserProfile(Base):
     user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), unique=True, nullable=False, index=True)
     avatar_type = Column(SQLEnum(AvatarType), default=AvatarType.default, nullable=False)
     avatar_url = Column(String(500), nullable=True)
+    oauth_avatar_url = Column(String(500), nullable=True)
     default_avatar_gradient = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=get_local_now)
     updated_at = Column(DateTime, default=get_local_now, onupdate=get_local_now)

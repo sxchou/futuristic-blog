@@ -362,7 +362,22 @@ async def oauth_callback(
         
         if avatar and user.avatar != avatar:
             user.avatar = avatar
-            db.commit()
+        
+        from app.models import UserProfile, AvatarType
+        profile = db.query(UserProfile).filter(UserProfile.user_id == user.id).first()
+        if not profile:
+            gradient = [f"#{hash(user.username) % 16777215:06x}", f"#{(hash(user.username) + 1000) % 16777215:06x}"]
+            profile = UserProfile(
+                user_id=user.id,
+                avatar_type=AvatarType.default,
+                default_avatar_gradient=gradient,
+                oauth_avatar_url=avatar
+            )
+            db.add(profile)
+        elif avatar and not profile.oauth_avatar_url:
+            profile.oauth_avatar_url = avatar
+        
+        db.commit()
         
         if user.is_verified:
             jwt_token = create_access_token(data={"sub": user.username})
@@ -421,6 +436,16 @@ async def oauth_callback(
     db.add(user)
     db.commit()
     db.refresh(user)
+    
+    from app.models import UserProfile, AvatarType
+    gradient = [f"#{hash(user.username) % 16777215:06x}", f"#{(hash(user.username) + 1000) % 16777215:06x}"]
+    profile = UserProfile(
+        user_id=user.id,
+        avatar_type=AvatarType.default,
+        default_avatar_gradient=gradient,
+        oauth_avatar_url=avatar
+    )
+    db.add(profile)
     
     connection = OAuthConnection(
         user_id=user.id,

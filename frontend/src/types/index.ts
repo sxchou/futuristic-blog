@@ -47,6 +47,7 @@ export interface Article {
   cover_image?: string
   is_published: boolean
   is_featured: boolean
+  is_pinned: boolean
   view_count: number
   like_count: number
   reading_time: number
@@ -69,6 +70,7 @@ export interface ArticleListItem {
   cover_image?: string
   is_published: boolean
   is_featured: boolean
+  is_pinned: boolean
   view_count: number
   like_count: number
   comment_count: number

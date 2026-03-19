@@ -4,8 +4,9 @@ export interface UserProfile {
   id: number
   user_id: number
   username: string
-  avatar_type: 'default' | 'custom'
+  avatar_type: 'default' | 'custom' | 'oauth'
   avatar_url: string | null
+  oauth_avatar_url: string | null
   default_avatar_gradient: string[] | null
   created_at: string | null
   updated_at: string | null
@@ -31,5 +32,8 @@ export const userProfileApi = {
     }).then(res => res.data),
   
   resetAvatar: () => 
-    apiClient.post<UserProfile>('/user-profile/reset-avatar').then(res => res.data)
+    apiClient.post<UserProfile>('/user-profile/reset-avatar').then(res => res.data),
+  
+  useOAuthAvatar: () => 
+    apiClient.post<UserProfile>('/user-profile/use-oauth-avatar').then(res => res.data)
 }

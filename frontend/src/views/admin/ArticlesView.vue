@@ -35,7 +35,8 @@ const form = ref({
   category_id: undefined as number | undefined,
   tag_ids: [] as number[],
   is_published: false,
-  is_featured: false
+  is_featured: false,
+  is_pinned: false
 })
 
 const fetchArticles = async () => {
@@ -73,7 +74,8 @@ const handleEdit = async (article: ArticleListItem) => {
       category_id: fullArticle.category?.id || undefined,
       tag_ids: fullArticle.tags.map(t => t.id),
       is_published: fullArticle.is_published,
-      is_featured: fullArticle.is_featured
+      is_featured: fullArticle.is_featured,
+      is_pinned: fullArticle.is_pinned || false
     }
     await fetchArticleFiles(article.id)
     showEditor.value = true
@@ -134,7 +136,8 @@ const resetForm = () => {
     category_id: undefined,
     tag_ids: [],
     is_published: false,
-    is_featured: false
+    is_featured: false,
+    is_pinned: false
   }
   articleFiles.value = []
 }
@@ -285,6 +288,12 @@ onMounted(() => {
           <tr v-for="article in articles" :key="article.id" class="hover:bg-gray-50 dark:hover:bg-white/5">
             <td class="px-4 py-3">
               <div class="flex items-center gap-2">
+                <span v-if="article.is_pinned" class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-600 dark:text-amber-400 rounded border border-amber-500/30">
+                  <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
+                  </svg>
+                  置顶
+                </span>
                 <span v-if="article.is_featured" class="px-1.5 py-0.5 text-xs bg-accent/20 text-accent rounded">精选</span>
                 <span class="text-gray-900 dark:text-white">{{ article.title }}</span>
               </div>
@@ -522,6 +531,14 @@ onMounted(() => {
                 class="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-200 text-primary focus:ring-primary"
               />
               <span class="text-gray-700 dark:text-gray-300 text-sm">发布文章</span>
+            </label>
+            <label class="flex items-center gap-1.5 cursor-pointer">
+              <input
+                type="checkbox"
+                v-model="form.is_pinned"
+                class="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-200 text-primary focus:ring-primary"
+              />
+              <span class="text-gray-700 dark:text-gray-300 text-sm">置顶文章</span>
             </label>
             <label class="flex items-center gap-1.5 cursor-pointer">
               <input

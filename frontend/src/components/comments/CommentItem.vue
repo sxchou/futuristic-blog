@@ -146,11 +146,12 @@ const avatarText = computed(() => {
 const showAvatarInitial = computed(() => {
   return !props.comment.author_avatar_type || 
          props.comment.author_avatar_type === 'default' || 
+         (props.comment.author_avatar_type !== 'custom' && props.comment.author_avatar_type !== 'oauth') ||
          !props.comment.author_avatar_url
 })
 
 const avatarStyle = computed(() => {
-  if (props.comment.author_avatar_type === 'custom' && props.comment.author_avatar_url) {
+  if ((props.comment.author_avatar_type === 'custom' || props.comment.author_avatar_type === 'oauth') && props.comment.author_avatar_url) {
     return {
       backgroundImage: `url(${props.comment.author_avatar_url})`,
       backgroundSize: 'cover',
