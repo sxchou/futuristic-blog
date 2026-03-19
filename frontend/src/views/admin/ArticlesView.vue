@@ -294,7 +294,7 @@ onMounted(() => {
                   </svg>
                   置顶
                 </span>
-                <span v-if="article.is_featured" class="px-1.5 py-0.5 text-xs bg-accent/20 text-accent rounded">精选</span>
+                <span v-if="article.is_featured" class="px-2 py-0.5 text-xs font-medium bg-gradient-to-r from-primary to-accent text-white rounded-full">精选</span>
                 <span class="text-gray-900 dark:text-white">{{ article.title }}</span>
               </div>
             </td>
@@ -517,7 +517,16 @@ onMounted(() => {
                     v-model="form.tag_ids"
                     class="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-200 text-primary focus:ring-primary"
                   />
-                  <span class="text-xs text-gray-700 dark:text-gray-300">{{ tag.name }}</span>
+                  <span 
+                    class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full border"
+                    :style="{ 
+                      color: tag.color, 
+                      backgroundColor: tag.color + '15',
+                      borderColor: tag.color + '40'
+                    }"
+                  >
+                    {{ tag.name }}
+                  </span>
                 </label>
               </div>
             </div>

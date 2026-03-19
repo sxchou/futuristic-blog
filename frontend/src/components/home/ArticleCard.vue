@@ -67,7 +67,9 @@ const goToComments = (e: Event) => {
         </svg>
         置顶
       </span>
-      <span v-if="article.is_featured" class="px-1.5 py-0.5 text-xs bg-accent/20 text-accent rounded">精选</span>
+      <span v-if="article.is_featured" class="px-2 py-0.5 text-xs font-medium bg-gradient-to-r from-primary to-accent text-white rounded-full">
+        精选
+      </span>
     </div>
 
     <h3 class="text-base font-bold text-gray-900 dark:text-white mb-1 group-hover:text-primary transition-colors line-clamp-2">
@@ -92,7 +94,12 @@ const goToComments = (e: Event) => {
       <span
         v-for="tag in article.tags.slice(0, 2)"
         :key="tag.id"
-        class="tag text-xs"
+        class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full border transition-all duration-300 hover:border-primary/50"
+        :style="{ 
+          color: tag.color, 
+          backgroundColor: tag.color + '15',
+          borderColor: tag.color + '40'
+        }"
       >
         {{ tag.name }}
       </span>
