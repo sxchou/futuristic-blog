@@ -247,6 +247,7 @@ async def reset_avatar(
             "username": current_user.username,
             "avatar_type": "default",
             "avatar_url": None,
+            "oauth_avatar_url": profile.oauth_avatar_url,
             "default_avatar_gradient": profile.default_avatar_gradient,
             "created_at": profile.created_at,
             "updated_at": profile.updated_at

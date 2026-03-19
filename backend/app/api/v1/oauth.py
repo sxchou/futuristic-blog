@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from pydantic import BaseModel
 from app.core.database import get_db
-from app.utils.auth import create_access_token
+from app.utils.auth import create_access_token, get_current_admin_user
 from app.models import OAuthProvider, OAuthConnection, User
 from app.core.config import settings
 import httpx
@@ -175,7 +175,11 @@ def get_oauth_provider(provider_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/providers", response_model=OAuthProviderResponse)
-def create_oauth_provider(data: OAuthProviderCreate, db: Session = Depends(get_db)):
+def create_oauth_provider(
+    data: OAuthProviderCreate, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
+):
     existing = db.query(OAuthProvider).filter(OAuthProvider.name == data.name).first()
     if existing:
         raise HTTPException(status_code=400, detail="Provider already exists")
@@ -200,7 +204,12 @@ def create_oauth_provider(data: OAuthProviderCreate, db: Session = Depends(get_d
 
 
 @router.put("/providers/{provider_id}", response_model=OAuthProviderResponse)
-def update_oauth_provider(provider_id: int, data: OAuthProviderUpdate, db: Session = Depends(get_db)):
+def update_oauth_provider(
+    provider_id: int, 
+    data: OAuthProviderUpdate, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
+):
     provider = db.query(OAuthProvider).filter(OAuthProvider.id == provider_id).first()
     if not provider:
         raise HTTPException(status_code=404, detail="Provider not found")
@@ -227,7 +236,11 @@ def update_oauth_provider(provider_id: int, data: OAuthProviderUpdate, db: Sessi
 
 
 @router.delete("/providers/{provider_id}")
-def delete_oauth_provider(provider_id: int, db: Session = Depends(get_db)):
+def delete_oauth_provider(
+    provider_id: int, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
+):
     provider = db.query(OAuthProvider).filter(OAuthProvider.id == provider_id).first()
     if not provider:
         raise HTTPException(status_code=404, detail="Provider not found")

@@ -71,6 +71,7 @@ class UserListItem(BaseModel):
     avatar: Optional[str] = None
     avatar_type: Optional[str] = None
     avatar_url: Optional[str] = None
+    oauth_avatar_url: Optional[str] = None
     avatar_gradient: Optional[List[str]] = None
     bio: Optional[str] = None
     is_admin: bool = False

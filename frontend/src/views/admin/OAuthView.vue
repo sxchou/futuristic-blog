@@ -1,16 +1,19 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { oauthApi } from '@/api/oauth'
 import type { OAuthProviderResponse, OAuthProviderDetail, OAuthProviderUpdate } from '@/api/oauth'
-import { useDialogStore } from '@/stores'
+import { useDialogStore, useAuthStore } from '@/stores'
 
 const dialog = useDialogStore()
+const authStore = useAuthStore()
 const providers = ref<OAuthProviderResponse[]>([])
 const isLoading = ref(true)
 const savingId = ref<number | null>(null)
 const editingProvider = ref<OAuthProviderDetail | null>(null)
 const isEditing = ref(false)
 const isSaving = ref(false)
+
+const isAdmin = computed(() => authStore.user?.is_admin === true)
 
 const form = ref<OAuthProviderUpdate>({
   display_name: '',
@@ -70,6 +73,11 @@ const fetchProviders = async () => {
 }
 
 const openEditModal = async (provider: OAuthProviderResponse) => {
+  if (!isAdmin.value) {
+    await dialog.showWarning('需要管理员权限', '权限不足')
+    return
+  }
+  
   try {
     const detail = await oauthApi.getProvider(provider.id)
     editingProvider.value = detail
@@ -121,6 +129,11 @@ const applyDefaultConfig = () => {
 }
 
 const saveConfig = async () => {
+  if (!isAdmin.value) {
+    await dialog.showWarning('需要管理员权限', '权限不足')
+    return
+  }
+  
   if (!editingProvider.value) return
   isSaving.value = true
   try {
@@ -141,6 +154,11 @@ const saveConfig = async () => {
 }
 
 const toggleShowOnLogin = async (provider: OAuthProviderResponse) => {
+  if (!isAdmin.value) {
+    await dialog.showWarning('需要管理员权限', '权限不足')
+    return
+  }
+  
   if (savingId.value) return
   savingId.value = provider.id
   try {
@@ -154,6 +172,11 @@ const toggleShowOnLogin = async (provider: OAuthProviderResponse) => {
 }
 
 const toggleEnabled = async (provider: OAuthProviderResponse) => {
+  if (!isAdmin.value) {
+    await dialog.showWarning('需要管理员权限', '权限不足')
+    return
+  }
+  
   if (savingId.value) return
   savingId.value = provider.id
   try {

@@ -60,10 +60,14 @@ const goToComments = (e: Event) => {
       <div class="absolute inset-0 bg-gradient-to-t from-dark to-transparent opacity-60" />
     </div>
 
-    <div v-if="article.is_featured" class="mb-2">
-      <span class="px-2 py-0.5 text-xs font-medium bg-gradient-to-r from-primary to-accent text-white rounded-full">
-        精选
+    <div v-if="article.is_pinned || article.is_featured" class="mb-2 flex items-center gap-2">
+      <span v-if="article.is_pinned" class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-600 dark:text-amber-400 rounded border border-amber-500/30">
+        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
+        </svg>
+        置顶
       </span>
+      <span v-if="article.is_featured" class="px-1.5 py-0.5 text-xs bg-accent/20 text-accent rounded">精选</span>
     </div>
 
     <h3 class="text-base font-bold text-gray-900 dark:text-white mb-1 group-hover:text-primary transition-colors line-clamp-2">

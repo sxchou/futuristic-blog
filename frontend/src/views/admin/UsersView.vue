@@ -130,6 +130,14 @@ const getUserAvatarStyle = (user: User) => {
     }
   }
   
+  if (user.avatar_type === 'oauth' && user.oauth_avatar_url) {
+    return {
+      backgroundImage: `url(${user.oauth_avatar_url})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }
+  }
+  
   if (user.avatar_gradient && user.avatar_gradient.length >= 2) {
     return {
       background: `linear-gradient(135deg, ${user.avatar_gradient[0]}, ${user.avatar_gradient[1]})`
@@ -194,7 +202,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                   class="w-8 h-8 rounded-full flex items-center justify-center text-white font-medium overflow-hidden flex-shrink-0"
                   :style="getUserAvatarStyle(user)"
                 >
-                  <span v-if="!user.avatar_type || user.avatar_type === 'default' || !user.avatar_url">
+                  <span v-if="user.avatar_type === 'default' || (user.avatar_type === 'custom' && !user.avatar_url) || (user.avatar_type === 'oauth' && !user.oauth_avatar_url)">
                     {{ user.username.charAt(0).toUpperCase() }}
                   </span>
                 </div>

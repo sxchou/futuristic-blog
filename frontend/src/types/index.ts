@@ -10,6 +10,7 @@ export interface User {
   avatar?: string
   avatar_type?: string
   avatar_url?: string
+  oauth_avatar_url?: string
   avatar_gradient?: string[]
   bio?: string
   is_admin: boolean

@@ -50,6 +50,14 @@ const sidebarAvatarStyle = computed(() => {
     }
   }
   
+  if (profile?.avatar_type === 'oauth' && profile.oauth_avatar_url) {
+    return {
+      backgroundImage: `url(${profile.oauth_avatar_url})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }
+  }
+  
   if (profile?.default_avatar_gradient && profile.default_avatar_gradient.length >= 2) {
     return {
       background: `linear-gradient(135deg, ${profile.default_avatar_gradient[0]}, ${profile.default_avatar_gradient[1]})`
@@ -63,7 +71,9 @@ const sidebarAvatarStyle = computed(() => {
 
 const showSidebarAvatarInitial = computed(() => {
   const profile = userProfileStore.profile
-  return !profile?.avatar_type || profile.avatar_type === 'default' || !profile.avatar_url
+  return !profile?.avatar_type || profile.avatar_type === 'default' || 
+         (profile.avatar_type === 'custom' && !profile.avatar_url) ||
+         (profile.avatar_type === 'oauth' && !profile.oauth_avatar_url)
 })
 
 onMounted(() => {

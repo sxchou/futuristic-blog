@@ -28,13 +28,26 @@ async def get_users(
     items = []
     for user in users:
         profile = db.query(UserProfile).filter(UserProfile.user_id == user.id).first()
+        
+        avatar_url = None
+        avatar_type = "default"
+        
+        if profile:
+            if profile.avatar_type == AvatarType.custom and profile.avatar_url:
+                avatar_url = profile.avatar_url
+                avatar_type = "custom"
+            elif profile.oauth_avatar_url:
+                avatar_url = profile.oauth_avatar_url
+                avatar_type = "oauth"
+        
         item = UserListItem(
             id=user.id,
             username=user.username,
             email=user.email,
             avatar=user.avatar,
-            avatar_type=profile.avatar_type.value if profile and profile.avatar_type else None,
-            avatar_url=profile.avatar_url if profile else None,
+            avatar_type=avatar_type,
+            avatar_url=avatar_url,
+            oauth_avatar_url=profile.oauth_avatar_url if profile else None,
             avatar_gradient=profile.default_avatar_gradient if profile else None,
             bio=user.bio,
             is_admin=user.is_admin,

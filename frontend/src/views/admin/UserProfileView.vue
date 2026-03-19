@@ -29,6 +29,14 @@ const avatarStyle = computed(() => {
     }
   }
   
+  if (profile.value.avatar_type === 'oauth' && profile.value.oauth_avatar_url) {
+    return {
+      backgroundImage: `url(${profile.value.oauth_avatar_url})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }
+  }
+  
   if (profile.value.default_avatar_gradient && profile.value.default_avatar_gradient.length >= 2) {
     const colors = profile.value.default_avatar_gradient
     return {
@@ -42,7 +50,11 @@ const avatarStyle = computed(() => {
 })
 
 const showInitial = computed(() => {
-  return !profile.value || profile.value.avatar_type === 'default' || !profile.value.avatar_url
+  if (!profile.value) return true
+  if (profile.value.avatar_type === 'default') return true
+  if (profile.value.avatar_type === 'custom' && !profile.value.avatar_url) return true
+  if (profile.value.avatar_type === 'oauth' && !profile.value.oauth_avatar_url) return true
+  return false
 })
 
 const initial = computed(() => {
@@ -144,6 +156,19 @@ const handleResetAvatar = async () => {
   }
 }
 
+const handleUseOAuthAvatar = async () => {
+  const confirmed = await dialogStore.showConfirm({ message: '确定要使用OAuth头像吗？' })
+  if (!confirmed) return
+  
+  try {
+    await userProfileApi.useOAuthAvatar()
+    dialogStore.showSuccess('已切换到OAuth头像')
+    await userProfileStore.refreshProfile()
+  } catch (error: any) {
+    dialogStore.showError(error.response?.data?.detail || '操作失败')
+  }
+}
+
 onMounted(fetchProfile)
 </script>
 
@@ -183,7 +208,7 @@ onMounted(fetchProfile)
             <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
               点击头像更换图片，支持 JPG、PNG、WebP 格式，最大 10MB
             </p>
-            <div class="flex gap-3">
+            <div class="flex gap-3 flex-wrap">
               <button
                 @click="triggerUpload"
                 class="px-4 py-2 bg-primary text-white text-sm rounded-lg hover:opacity-90 transition-opacity"
@@ -192,7 +217,15 @@ onMounted(fetchProfile)
                 {{ isUploading ? '上传中...' : '上传头像' }}
               </button>
               <button
-                v-if="profile?.avatar_type === 'custom'"
+                v-if="profile?.oauth_avatar_url && profile?.avatar_type !== 'oauth'"
+                @click="handleUseOAuthAvatar"
+                class="px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors"
+                :disabled="isUploading"
+              >
+                使用OAuth头像
+              </button>
+              <button
+                v-if="profile?.avatar_type === 'custom' || profile?.avatar_type === 'oauth'"
                 @click="handleResetAvatar"
                 class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
               >

@@ -73,6 +73,10 @@ const showError = (message: string, title?: string, autoClose: boolean = true, d
   return showAlert({ message, title, type: 'error', autoClose, duration })
 }
 
+const showWarning = (message: string, title?: string, autoClose: boolean = true, duration: number = 3000): Promise<boolean> => {
+  return showAlert({ message, title, type: 'alert', autoClose, duration })
+}
+
 const confirm = () => {
   closeDialog(true)
 }
@@ -89,6 +93,7 @@ export function useDialogStore() {
     showAlert,
     showSuccess,
     showError,
+    showWarning,
     confirm,
     cancel
   }
