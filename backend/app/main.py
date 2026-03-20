@@ -88,8 +88,13 @@ def ensure_uploads_dir():
     )
     if not os.path.exists(uploads_dir):
         os.makedirs(uploads_dir, exist_ok=True)
-        avatars_dir = os.path.join(uploads_dir, "avatars")
-        os.makedirs(avatars_dir, exist_ok=True)
+    
+    subdirs = ["avatars", "images", "articles"]
+    for subdir in subdirs:
+        subdir_path = os.path.join(uploads_dir, subdir)
+        if not os.path.exists(subdir_path):
+            os.makedirs(subdir_path, exist_ok=True)
+    
     return uploads_dir
 
 

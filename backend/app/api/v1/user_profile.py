@@ -412,11 +412,37 @@ async def list_avatar_files(
 async def check_storage():
     stats = AvatarFileService.get_storage_stats()
     storage_path = AvatarFileService.get_avatar_base_path()
+    base_path = storage_path.parent if storage_path.name == "avatars" else storage_path
+    
+    all_stats = {
+        "avatars": stats,
+        "images": {"total_files": 0, "total_size_mb": 0.0},
+        "articles": {"total_files": 0, "total_size_mb": 0.0}
+    }
+    
+    for subdir in ["images", "articles"]:
+        subdir_path = base_path / subdir
+        if subdir_path.exists():
+            total_files = 0
+            total_size = 0
+            for f in subdir_path.iterdir():
+                if f.is_file():
+                    total_files += 1
+                    total_size += f.stat().st_size
+            all_stats[subdir] = {
+                "total_files": total_files,
+                "total_size_mb": round(total_size / (1024 * 1024), 2)
+            }
+    
+    total_files = all_stats["avatars"]["total_files"] + all_stats["images"]["total_files"] + all_stats["articles"]["total_files"]
+    total_size = all_stats["avatars"]["total_size_mb"] + all_stats["images"]["total_size_mb"] + all_stats["articles"]["total_size_mb"]
     
     return {
         "volume_configured": bool(os.getenv("RAILWAY_VOLUME_MOUNT_PATH") or os.getenv("AVATAR_STORAGE_PATH")),
-        "storage_path": str(storage_path),
-        "path_exists": storage_path.exists(),
-        "stats": stats,
-        "message": "Volume 已配置且正常工作" if storage_path.exists() else "存储路径不存在，请检查 Volume 配置"
+        "storage_path": str(base_path),
+        "path_exists": base_path.exists(),
+        "stats": all_stats,
+        "total_files": total_files,
+        "total_size_mb": round(total_size, 2),
+        "message": "Volume 已配置且正常工作" if base_path.exists() else "存储路径不存在，请检查 Volume 配置"
     }

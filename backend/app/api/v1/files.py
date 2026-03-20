@@ -11,11 +11,12 @@ from app.models import ArticleFile
 from app.schemas import ArticleFileResponse
 from app.utils import get_current_active_user
 from app.utils.timezone import get_now
+from app.core.config import settings
 
 
 router = APIRouter(prefix="/files", tags=["Files"])
 
-UPLOAD_DIR = "uploads"
+UPLOAD_DIR = settings.AVATAR_STORAGE_PATH or os.getenv("RAILWAY_VOLUME_MOUNT_PATH") or os.getenv("AVATAR_STORAGE_PATH") or "uploads"
 ALLOWED_IMAGE_TYPES = [
     "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"
 ]
