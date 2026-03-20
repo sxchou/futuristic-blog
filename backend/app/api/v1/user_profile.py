@@ -130,7 +130,7 @@ async def get_user_profile(
         "avatar_type": avatar_type,
         "avatar_url": avatar_url,
         "oauth_avatar_url": profile.oauth_avatar_url,
-        "default_avatar_gradient": profile.default_avatar_gradient,
+        "default_avatar_gradient": profile.default_avatar_gradient if not profile.oauth_avatar_url else None,
         "created_at": profile.created_at,
         "updated_at": profile.updated_at
     }
@@ -187,7 +187,8 @@ async def upload_avatar(
             "username": current_user.username,
             "avatar_type": profile.avatar_type.value,
             "avatar_url": profile.avatar_url,
-            "default_avatar_gradient": profile.default_avatar_gradient,
+            "oauth_avatar_url": profile.oauth_avatar_url,
+            "default_avatar_gradient": profile.default_avatar_gradient if not profile.oauth_avatar_url else None,
             "created_at": profile.created_at,
             "updated_at": profile.updated_at
         }
@@ -207,6 +208,9 @@ async def reset_avatar(
     request: Request = None
 ):
     profile = get_or_create_user_profile(db, current_user.id, current_user.username)
+    
+    if profile.oauth_avatar_url:
+        raise HTTPException(status_code=400, detail="OAuth用户无法使用此功能，请使用'使用OAuth头像'功能")
     
     old_avatar_url = profile.avatar_url if profile.avatar_type == AvatarType.custom else None
     
@@ -253,6 +257,8 @@ async def reset_avatar(
             "updated_at": profile.updated_at
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Failed to reset avatar for user {current_user.id}: {e}")
         db.rollback()
@@ -309,7 +315,7 @@ async def use_oauth_avatar(
             "avatar_type": "oauth",
             "avatar_url": profile.oauth_avatar_url,
             "oauth_avatar_url": profile.oauth_avatar_url,
-            "default_avatar_gradient": profile.default_avatar_gradient,
+            "default_avatar_gradient": None,
             "created_at": profile.created_at,
             "updated_at": profile.updated_at
         }
@@ -333,10 +339,16 @@ async def get_user_profile_by_id(
     
     profile = get_or_create_user_profile(db, user.id, user.username)
     
-    avatar_url = profile.avatar_url
-    avatar_type = profile.avatar_type.value if profile.avatar_type else "default"
+    avatar_url = None
+    avatar_type = "default"
     
-    if not avatar_url and user.avatar:
+    if profile.avatar_type == AvatarType.custom and profile.avatar_url:
+        avatar_url = profile.avatar_url
+        avatar_type = "custom"
+    elif profile.oauth_avatar_url:
+        avatar_url = profile.oauth_avatar_url
+        avatar_type = "oauth"
+    elif user.avatar:
         avatar_url = user.avatar
         avatar_type = "custom"
     
@@ -346,7 +358,8 @@ async def get_user_profile_by_id(
         "username": user.username,
         "avatar_type": avatar_type,
         "avatar_url": avatar_url,
-        "default_avatar_gradient": profile.default_avatar_gradient,
+        "oauth_avatar_url": profile.oauth_avatar_url,
+        "default_avatar_gradient": profile.default_avatar_gradient if not profile.oauth_avatar_url else None,
         "created_at": profile.created_at,
         "updated_at": profile.updated_at
     }

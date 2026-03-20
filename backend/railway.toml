@@ -1,0 +1,24 @@
+# Railway 服务配置文件
+# 用于配置后端服务的持久化存储
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# 健康检查
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+# Volume 挂载配置
+# 在 Railway 控制台中手动添加 Volume 并挂载到 /app/uploads
+# 或者使用 Railway CLI: railway volume create --mount /app/uploads
+
+[[services]]
+name = "backend"
+
+[[services.volumes]]
+name = "avatar-storage"
+mountPath = "/app/uploads"

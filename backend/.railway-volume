@@ -1,0 +1,8 @@
+# Railway Volume 持久化存储配置
+# 用于保存用户上传的头像文件
+
+# Volume 挂载点
+VOLUME_PATH=/app/uploads
+
+# 头像存储目录
+AVATAR_DIR=/app/uploads/avatars

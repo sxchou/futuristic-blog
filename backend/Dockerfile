@@ -16,7 +16,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN mkdir -p /app/uploads
+RUN mkdir -p /app/uploads/avatars && \
+    chmod -R 755 /app/uploads
 
 EXPOSE 8000
 

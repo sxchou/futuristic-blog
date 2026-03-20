@@ -15,6 +15,10 @@ class AvatarFileService:
     
     @classmethod
     def get_avatar_base_path(cls) -> Path:
+        env_path = os.getenv("AVATAR_STORAGE_PATH")
+        if env_path:
+            return Path(env_path) / cls.AVATAR_DIR_NAME
+        
         backend_dir = Path(__file__).parent.parent.parent
         return backend_dir / cls.UPLOAD_DIR_NAME / cls.AVATAR_DIR_NAME
     

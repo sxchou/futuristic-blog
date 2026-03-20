@@ -80,9 +80,10 @@ app.add_middleware(AccessLogMiddleware)
 
 app.include_router(api_router, prefix="/api")
 
-uploads_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+uploads_dir = os.getenv("AVATAR_STORAGE_PATH", os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads"))
 if not os.path.exists(uploads_dir):
     os.makedirs(uploads_dir)
+    os.makedirs(os.path.join(uploads_dir, "avatars"), exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 
 

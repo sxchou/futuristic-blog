@@ -29,7 +29,7 @@ const avatarStyle = computed(() => {
     }
   }
   
-  if (profile.value.avatar_type === 'oauth' && profile.value.oauth_avatar_url) {
+  if (profile.value.oauth_avatar_url) {
     return {
       backgroundImage: `url(${profile.value.oauth_avatar_url})`,
       backgroundSize: 'cover',
@@ -51,10 +51,9 @@ const avatarStyle = computed(() => {
 
 const showInitial = computed(() => {
   if (!profile.value) return true
-  if (profile.value.avatar_type === 'default') return true
-  if (profile.value.avatar_type === 'custom' && !profile.value.avatar_url) return true
-  if (profile.value.avatar_type === 'oauth' && !profile.value.oauth_avatar_url) return true
-  return false
+  if (profile.value.avatar_type === 'custom' && profile.value.avatar_url) return false
+  if (profile.value.oauth_avatar_url) return false
+  return true
 })
 
 const initial = computed(() => {

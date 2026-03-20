@@ -43,9 +43,17 @@ const sizeClasses = computed(() => {
 const avatarStyle = computed(() => {
   if (!props.profile) return {}
   
-  if ((props.profile.avatar_type === 'custom' || props.profile.avatar_type === 'oauth') && props.profile.avatar_url) {
+  if (props.profile.avatar_type === 'custom' && props.profile.avatar_url) {
     return {
       backgroundImage: `url(${props.profile.avatar_url})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }
+  }
+  
+  if (props.profile.oauth_avatar_url) {
+    return {
+      backgroundImage: `url(${props.profile.oauth_avatar_url})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center'
     }
@@ -64,10 +72,10 @@ const avatarStyle = computed(() => {
 })
 
 const showInitial = computed(() => {
-  return !props.profile || 
-         props.profile.avatar_type === 'default' || 
-         (props.profile.avatar_type !== 'custom' && props.profile.avatar_type !== 'oauth') ||
-         !props.profile.avatar_url
+  if (!props.profile) return true
+  if (props.profile.avatar_type === 'custom' && props.profile.avatar_url) return false
+  if (props.profile.oauth_avatar_url) return false
+  return true
 })
 
 const initial = computed(() => {
@@ -296,7 +304,7 @@ const handleClickOutside = (event: MouseEvent) => {
           </button>
           
           <button
-            v-if="profile?.avatar_type === 'custom' || profile?.avatar_type === 'oauth'"
+            v-if="profile?.avatar_type === 'custom' && !profile?.oauth_avatar_url"
             @click="handleReset"
             class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2"
           >
