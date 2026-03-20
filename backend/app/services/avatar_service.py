@@ -19,7 +19,7 @@ class AvatarFileService:
         if settings.AVATAR_STORAGE_PATH:
             return Path(settings.AVATAR_STORAGE_PATH) / cls.AVATAR_DIR_NAME
         
-        env_path = os.getenv("AVATAR_STORAGE_PATH")
+        env_path = os.getenv("AVATAR_STORAGE_PATH") or os.getenv("RAILWAY_VOLUME_MOUNT_PATH")
         if env_path:
             return Path(env_path) / cls.AVATAR_DIR_NAME
         

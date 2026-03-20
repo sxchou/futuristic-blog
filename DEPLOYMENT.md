@@ -97,15 +97,16 @@ git push -u origin main
 
 Railway 默认每次部署会重新构建容器，导致本地文件丢失。需要配置 Volume 持久化存储：
 
-**方式一：通过 Railway 控制台（推荐）**
+**方式一：通过项目画布（推荐）**
 
-1. 进入后端服务 → **"Settings"** → **"Volumes"**
-2. 点击 **"Add Volume"**
-3. 配置 Volume：
+1. 在 Railway 项目页面，**右键点击项目画布空白处**
+2. 或使用快捷键 `Ctrl+K` (Windows) / `⌘K` (Mac) 打开命令面板
+3. 选择 **"Create Volume"**
+4. 配置 Volume：
    - **Name**: `avatar-storage`
    - **Mount Path**: `/app/uploads`
-4. 点击 **"Add"** 保存
-5. 服务会自动重启并挂载 Volume
+5. 选择要连接的服务：你的后端服务
+6. 服务会自动重启并挂载 Volume
 
 **方式二：使用 Railway CLI**
 
@@ -126,10 +127,16 @@ railway volume create --service backend --mount /app/uploads
 railway up
 ```
 
+**Railway 自动提供的环境变量**
+
+当 Volume 连接到服务后，Railway 会自动提供以下环境变量（无需手动配置）：
+- `RAILWAY_VOLUME_NAME`: Volume 名称
+- `RAILWAY_VOLUME_MOUNT_PATH`: 挂载路径（如 `/app/uploads`）
+
 **验证 Volume 配置**
 
-1. 进入后端服务 → **"Settings"** → **"Volumes"**
-2. 确认 Volume 已挂载到 `/app/uploads`
+1. 在项目画布中确认 Volume 已连接到后端服务
+2. 点击 Volume 查看详情，确认挂载路径为 `/app/uploads`
 3. 上传测试头像后重新部署，验证头像是否保留
 
 ### 5. 部署前端服务
@@ -182,11 +189,12 @@ FRONTEND_URL=https://your-frontend.railway.app
 # 时区
 TIMEZONE=Asia/Shanghai
 
-# 头像存储路径 (可选，默认为 /app/uploads)
-# 如果配置了 Railway Volume，建议显式设置
-AVATAR_STORAGE_PATH=/app/uploads
+# 头像存储路径（可选）
+# Railway Volume 会自动提供 RAILWAY_VOLUME_MOUNT_PATH 环境变量
+# 无需手动配置 AVATAR_STORAGE_PATH，除非需要覆盖默认行为
+# AVATAR_STORAGE_PATH=/app/uploads
 
-# 邮件配置 (可选)
+# 邮件配置（可选）
 SMTP_HOST=smtp.example.com
 SMTP_PORT=587
 SMTP_USER=your-email@example.com
@@ -257,9 +265,10 @@ CORS_ORIGINS=["https://your-frontend.railway.app"]
 
 **解决方案**: 配置持久化 Volume 存储
 
-1. 进入后端服务 → **"Settings"** → **"Volumes"**
-2. 添加 Volume，挂载路径为 `/app/uploads`
-3. 重新部署后，头像文件会被持久化保存
+1. 在项目画布中右键点击空白处
+2. 选择 "Create Volume"
+3. 配置挂载路径为 `/app/uploads`
+4. 连接到后端服务
 
 详见 [4.1 配置持久化存储](#41-配置持久化存储重要)
 

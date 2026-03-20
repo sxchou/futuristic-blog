@@ -80,7 +80,12 @@ app.include_router(api_router, prefix="/api")
 
 
 def ensure_uploads_dir():
-    uploads_dir = settings.AVATAR_STORAGE_PATH or os.getenv("AVATAR_STORAGE_PATH") or os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+    uploads_dir = (
+        settings.AVATAR_STORAGE_PATH or 
+        os.getenv("AVATAR_STORAGE_PATH") or 
+        os.getenv("RAILWAY_VOLUME_MOUNT_PATH") or
+        os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+    )
     if not os.path.exists(uploads_dir):
         os.makedirs(uploads_dir, exist_ok=True)
         avatars_dir = os.path.join(uploads_dir, "avatars")
