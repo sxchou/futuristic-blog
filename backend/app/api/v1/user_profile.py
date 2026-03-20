@@ -406,3 +406,17 @@ async def list_avatar_files(
         "stats": stats,
         "files": files
     }
+
+
+@router.get("/storage/check")
+async def check_storage():
+    stats = AvatarFileService.get_storage_stats()
+    storage_path = AvatarFileService.get_avatar_base_path()
+    
+    return {
+        "volume_configured": bool(os.getenv("RAILWAY_VOLUME_MOUNT_PATH") or os.getenv("AVATAR_STORAGE_PATH")),
+        "storage_path": str(storage_path),
+        "path_exists": storage_path.exists(),
+        "stats": stats,
+        "message": "Volume 已配置且正常工作" if storage_path.exists() else "存储路径不存在，请检查 Volume 配置"
+    }
