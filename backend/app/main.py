@@ -16,8 +16,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-Base.metadata.create_all(bind=engine)
-
 app = FastAPI(
     title="Futuristic Blog API",
     description="A futuristic personal blog system API",
@@ -80,17 +78,31 @@ app.add_middleware(AccessLogMiddleware)
 
 app.include_router(api_router, prefix="/api")
 
-uploads_dir = settings.AVATAR_STORAGE_PATH or os.getenv("AVATAR_STORAGE_PATH") or os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
-if not os.path.exists(uploads_dir):
-    os.makedirs(uploads_dir)
-    os.makedirs(os.path.join(uploads_dir, "avatars"), exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
+
+def ensure_uploads_dir():
+    uploads_dir = settings.AVATAR_STORAGE_PATH or os.getenv("AVATAR_STORAGE_PATH") or os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+    if not os.path.exists(uploads_dir):
+        os.makedirs(uploads_dir, exist_ok=True)
+        avatars_dir = os.path.join(uploads_dir, "avatars")
+        os.makedirs(avatars_dir, exist_ok=True)
+    return uploads_dir
+
+
+uploads_dir = ensure_uploads_dir()
+try:
+    app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
+except Exception as e:
+    logger.warning(f"Failed to mount uploads directory: {e}")
 
 
 @app.on_event("startup")
 async def startup_event():
-    init_database()
-    logger.info("Application started successfully")
+    try:
+        Base.metadata.create_all(bind=engine)
+        init_database()
+        logger.info("Application started successfully")
+    except Exception as e:
+        logger.error(f"Startup error: {e}")
 
 
 @app.get("/")
