@@ -1,19 +1,18 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { oauthApi } from '@/api/oauth'
 import type { OAuthProviderResponse, OAuthProviderDetail, OAuthProviderUpdate } from '@/api/oauth'
-import { useDialogStore, useAuthStore } from '@/stores'
+import { useDialogStore } from '@/stores'
+import { useAdminCheck } from '@/composables/useAdminCheck'
 
 const dialog = useDialogStore()
-const authStore = useAuthStore()
+const { requireAdmin } = useAdminCheck()
 const providers = ref<OAuthProviderResponse[]>([])
 const isLoading = ref(true)
 const savingId = ref<number | null>(null)
 const editingProvider = ref<OAuthProviderDetail | null>(null)
 const isEditing = ref(false)
 const isSaving = ref(false)
-
-const isAdmin = computed(() => authStore.user?.is_admin === true)
 
 const form = ref<OAuthProviderUpdate>({
   display_name: '',
@@ -73,10 +72,7 @@ const fetchProviders = async () => {
 }
 
 const openEditModal = async (provider: OAuthProviderResponse) => {
-  if (!isAdmin.value) {
-    await dialog.showWarning('需要管理员权限', '权限不足')
-    return
-  }
+  if (!await requireAdmin('编辑OAuth配置')) return
   
   try {
     const detail = await oauthApi.getProvider(provider.id)
@@ -129,10 +125,7 @@ const applyDefaultConfig = () => {
 }
 
 const saveConfig = async () => {
-  if (!isAdmin.value) {
-    await dialog.showWarning('需要管理员权限', '权限不足')
-    return
-  }
+  if (!await requireAdmin('保存OAuth配置')) return
   
   if (!editingProvider.value) return
   isSaving.value = true
@@ -154,10 +147,7 @@ const saveConfig = async () => {
 }
 
 const toggleShowOnLogin = async (provider: OAuthProviderResponse) => {
-  if (!isAdmin.value) {
-    await dialog.showWarning('需要管理员权限', '权限不足')
-    return
-  }
+  if (!await requireAdmin('修改登录页显示设置')) return
   
   if (savingId.value) return
   savingId.value = provider.id
@@ -172,10 +162,7 @@ const toggleShowOnLogin = async (provider: OAuthProviderResponse) => {
 }
 
 const toggleEnabled = async (provider: OAuthProviderResponse) => {
-  if (!isAdmin.value) {
-    await dialog.showWarning('需要管理员权限', '权限不足')
-    return
-  }
+  if (!await requireAdmin('启用/禁用OAuth提供商')) return
   
   if (savingId.value) return
   savingId.value = provider.id

@@ -3,9 +3,11 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { commentApi } from '@/api'
 import type { AdminComment, CommentAuditLog, PaginatedResponse } from '@/types'
 import { useDialogStore, useUserProfileStore } from '@/stores'
+import { useAdminCheck } from '@/composables/useAdminCheck'
 
 const dialog = useDialogStore()
 const userProfileStore = useUserProfileStore()
+const { requireAdmin, isAdmin } = useAdminCheck()
 
 const comments = ref<AdminComment[]>([])
 const loading = ref(false)
@@ -96,7 +98,8 @@ const toggleSelect = (id: number) => {
   }
 }
 
-const openAuditModal = (comment: AdminComment, status: 'pending' | 'approved' | 'rejected') => {
+const openAuditModal = async (comment: AdminComment, status: 'pending' | 'approved' | 'rejected') => {
+  if (!await requireAdmin('审核评论')) return
   currentComment.value = comment
   auditStatus.value = status
   auditReason.value = ''
@@ -115,11 +118,7 @@ const submitAudit = async () => {
     fetchComments()
   } catch (error: any) {
     console.error('Failed to audit comment:', error)
-    if (error.response?.status === 403) {
-      await dialog.showError('您没有权限审核此评论，请联系管理员', '权限不足')
-    } else {
-      await dialog.showError(error.response?.data?.detail || '审核失败', '错误')
-    }
+    await dialog.showError(error.response?.data?.detail || '审核失败', '错误')
   }
 }
 
@@ -133,7 +132,8 @@ const openLogsModal = async (comment: AdminComment) => {
   }
 }
 
-const openBatchAuditModal = (status: 'pending' | 'approved' | 'rejected') => {
+const openBatchAuditModal = async (status: 'pending' | 'approved' | 'rejected') => {
+  if (!await requireAdmin('批量审核评论')) return
   batchAuditStatus.value = status
   batchAuditReason.value = ''
   showBatchAuditModal.value = true
@@ -155,11 +155,7 @@ const submitBatchAudit = async () => {
     fetchComments()
   } catch (error: any) {
     console.error('Failed to batch audit:', error)
-    if (error.response?.status === 403) {
-      await dialog.showError('您没有权限批量审核评论，请联系管理员', '权限不足')
-    } else {
-      await dialog.showError(error.response?.data?.detail || '批量审核失败', '错误')
-    }
+    await dialog.showError(error.response?.data?.detail || '批量审核失败', '错误')
   }
 }
 
@@ -167,7 +163,8 @@ const showDeleteModal = ref(false)
 const deleteTargetComment = ref<AdminComment | null>(null)
 const deleteType = ref<'soft' | 'permanent'>('soft')
 
-const openDeleteModal = (comment: AdminComment) => {
+const openDeleteModal = async (comment: AdminComment) => {
+  if (!await requireAdmin('删除评论')) return
   deleteTargetComment.value = comment
   deleteType.value = 'soft'
   showDeleteModal.value = true
@@ -187,11 +184,7 @@ const confirmDelete = async () => {
     fetchComments()
   } catch (error: any) {
     console.error('Failed to delete comment:', error)
-    if (error.response?.status === 403) {
-      await dialog.showError('您没有权限删除此评论，请联系管理员', '权限不足')
-    } else {
-      await dialog.showError(error.response?.data?.detail || '删除评论失败', '错误')
-    }
+    await dialog.showError(error.response?.data?.detail || '删除评论失败', '错误')
   }
 }
 
@@ -208,6 +201,7 @@ const formatDate = (dateStr: string) => {
 }
 
 onMounted(() => {
+  if (!isAdmin.value) return
   fetchComments()
 })
 
@@ -223,13 +217,23 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-bold text-gray-900 dark:text-white">评论管理</h1>
       <div class="flex items-center gap-4">
-        <span v-if="pendingCount > 0" class="px-3 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 rounded-full text-sm font-medium">
+        <span v-if="pendingCount > 0 && isAdmin" class="px-3 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 rounded-full text-sm font-medium">
           {{ pendingCount }} 条待审核
         </span>
       </div>
     </div>
 
-    <div class="bg-white dark:bg-dark-200 rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
+    <div v-if="!isAdmin" class="bg-white dark:bg-dark-200 rounded-xl border border-gray-200 dark:border-white/10 p-8 text-center">
+      <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
+        <svg class="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">权限不足</h2>
+      <p class="text-gray-500 dark:text-gray-400">您没有权限访问此页面，请联系管理员</p>
+    </div>
+
+    <div v-else class="bg-white dark:bg-dark-200 rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
       <div class="p-4 border-b border-gray-200 dark:border-white/10 flex flex-wrap items-center justify-between gap-4">
         <div class="flex items-center gap-4">
           <select

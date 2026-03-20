@@ -3,9 +3,11 @@ import { ref, onMounted, watch } from 'vue'
 import { userApi } from '@/api'
 import type { User } from '@/types'
 import { useDialogStore, useUserProfileStore } from '@/stores'
+import { useAdminCheck } from '@/composables/useAdminCheck'
 
 const dialog = useDialogStore()
 const userProfileStore = useUserProfileStore()
+const { requireAdmin, isAdmin } = useAdminCheck()
 
 const users = ref<User[]>([])
 const isLoading = ref(false)
@@ -38,7 +40,8 @@ const fetchUsers = async () => {
   }
 }
 
-const handleEdit = (user: User) => {
+const handleEdit = async (user: User) => {
+  if (!await requireAdmin('编辑用户信息')) return
   editingUser.value = user
   form.value = {
     username: user.username,
@@ -50,6 +53,8 @@ const handleEdit = (user: User) => {
 }
 
 const handleDelete = async (user: User) => {
+  if (!await requireAdmin('删除用户')) return
+  
   const confirmed = await dialog.showConfirm({
     title: '确认删除',
     message: `确定要删除用户"${user.username}"吗？此操作不可恢复。`
@@ -62,15 +67,13 @@ const handleDelete = async (user: User) => {
     await dialog.showSuccess('用户已删除', '成功')
   } catch (error: any) {
     console.error('Failed to delete user:', error)
-    if (error.response?.status === 403) {
-      await dialog.showError('您没有权限删除此用户，请联系管理员', '权限不足')
-    } else {
-      await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
-    }
+    await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
   }
 }
 
 const handleSubmit = async () => {
+  if (!await requireAdmin('保存用户信息')) return
+  
   try {
     if (editingUser.value) {
       await userApi.updateUser(editingUser.value.id, form.value)
@@ -81,15 +84,12 @@ const handleSubmit = async () => {
     await dialog.showSuccess('用户信息已更新', '成功')
   } catch (error: any) {
     console.error('Failed to save user:', error)
-    if (error.response?.status === 403) {
-      await dialog.showError('您没有权限修改此用户信息，请联系管理员', '权限不足')
-    } else {
-      await dialog.showError(error.response?.data?.detail || '保存失败', '错误')
-    }
+    await dialog.showError(error.response?.data?.detail || '保存失败', '错误')
   }
 }
 
 const handleResetPassword = async () => {
+  if (!await requireAdmin('重置用户密码')) return
   if (!editingUser.value || !newPassword.value) return
   
   try {
@@ -99,15 +99,12 @@ const handleResetPassword = async () => {
     await dialog.showSuccess('密码重置成功', '成功')
   } catch (error: any) {
     console.error('Failed to reset password:', error)
-    if (error.response?.status === 403) {
-      await dialog.showError('您没有权限重置此用户的密码，请联系管理员', '权限不足')
-    } else {
-      await dialog.showError(error.response?.data?.detail || '密码重置失败', '错误')
-    }
+    await dialog.showError(error.response?.data?.detail || '密码重置失败', '错误')
   }
 }
 
-const openPasswordModal = (user: User) => {
+const openPasswordModal = async (user: User) => {
+  if (!await requireAdmin('重置用户密码')) return
   editingUser.value = user
   newPassword.value = ''
   showPasswordModal.value = true
@@ -163,7 +160,10 @@ const nextPage = () => {
   }
 }
 
-onMounted(fetchUsers)
+onMounted(() => {
+  if (!isAdmin.value) return
+  fetchUsers()
+})
 
 watch(() => userProfileStore.avatarUpdatedAt, () => {
   if (!isLoading.value) {
@@ -178,7 +178,17 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
       <h1 class="text-lg font-bold text-gray-900 dark:text-white">用户管理</h1>
     </div>
 
-    <div v-if="isLoading" class="flex justify-center py-16">
+    <div v-if="!isAdmin" class="glass-card p-8 text-center">
+      <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
+        <svg class="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">权限不足</h2>
+      <p class="text-gray-500 dark:text-gray-400">您没有权限访问此页面，请联系管理员</p>
+    </div>
+
+    <div v-else-if="isLoading" class="flex justify-center py-16">
       <div class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
     </div>
 

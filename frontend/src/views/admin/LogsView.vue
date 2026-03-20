@@ -2,9 +2,11 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { logsApi } from '@/api'
 import { useDialogStore, useUserProfileStore } from '@/stores'
+import { useAdminCheck } from '@/composables/useAdminCheck'
 
 const dialog = useDialogStore()
 const userProfileStore = useUserProfileStore()
+const { requireAdmin, isAdmin } = useAdminCheck()
 
 interface LogStats {
   total_operations: number
@@ -120,6 +122,8 @@ const handleSearch = () => {
 }
 
 const handleClearLogs = async () => {
+  if (!await requireAdmin('清理日志')) return
+  
   const confirmed = await dialog.showConfirm({
     message: '确定要清理30天前的日志吗？',
     title: '确认清理'
@@ -200,6 +204,7 @@ const getOperationLogAvatarStyle = (log: any) => {
 const totalPages = computed(() => Math.ceil(total.value / pageSize.value))
 
 onMounted(() => {
+  if (!isAdmin.value) return
   fetchStats()
   fetchLogs()
 })
@@ -216,6 +221,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
     <div class="flex items-center justify-between mb-4">
       <h1 class="text-lg font-bold text-gray-900 dark:text-white">日志管理</h1>
       <button
+        v-if="isAdmin"
         @click="handleClearLogs"
         class="px-3 py-1.5 text-sm bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors"
       >
@@ -223,6 +229,17 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
       </button>
     </div>
 
+    <div v-if="!isAdmin" class="glass-card p-8 text-center">
+      <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
+        <svg class="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">权限不足</h2>
+      <p class="text-gray-500 dark:text-gray-400">您没有权限访问此页面，请联系管理员</p>
+    </div>
+
+    <template v-else>
     <div class="grid grid-cols-3 gap-3 mb-6">
       <div class="glass-card p-3">
         <div class="flex items-center gap-2">
@@ -561,5 +578,6 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
         </div>
       </div>
     </div>
+    </template>
   </div>
 </template>

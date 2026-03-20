@@ -2,8 +2,10 @@
 import { ref, onMounted, computed } from 'vue'
 import { emailApi, type EmailConfig, type EmailLog, type EmailStats, type EmailProvider, type ProviderStatus } from '@/api/email'
 import { useDialogStore } from '@/stores'
+import { useAdminCheck } from '@/composables/useAdminCheck'
 
 const dialog = useDialogStore()
+const { requireAdmin } = useAdminCheck()
 const activeTab = ref<'config' | 'logs'>('config')
 
 const configs = ref<EmailConfig[]>([])
@@ -163,7 +165,8 @@ function startAddConfig() {
   showAddForm.value = true
 }
 
-function startEditConfig(config: EmailConfig) {
+async function startEditConfig(config: EmailConfig) {
+  if (!await requireAdmin('编辑邮箱配置')) return
   editingConfig.value = config
   configForm.value = {
     provider: config.provider,
@@ -176,6 +179,8 @@ function startEditConfig(config: EmailConfig) {
 }
 
 async function saveConfig() {
+  if (!await requireAdmin('保存邮箱配置')) return
+  
   if (!configForm.value.smtp_user || !configForm.value.smtp_password || !configForm.value.from_email) {
     await dialog.showError('请填写所有必填字段', '提示')
     return
@@ -199,6 +204,8 @@ async function saveConfig() {
 }
 
 async function activateConfig(config: EmailConfig) {
+  if (!await requireAdmin('激活邮箱配置')) return
+  
   const confirmed = await dialog.showConfirm({
     message: `确定要激活配置 "${config.smtp_user}" 吗？`,
     title: '确认激活'
@@ -216,6 +223,8 @@ async function activateConfig(config: EmailConfig) {
 }
 
 async function deleteConfig(config: EmailConfig) {
+  if (!await requireAdmin('删除邮箱配置')) return
+  
   const confirmed = await dialog.showConfirm({
     message: `确定要删除配置 "${config.smtp_user}" 吗？`,
     title: '确认删除'
@@ -236,6 +245,8 @@ async function deleteConfig(config: EmailConfig) {
 }
 
 async function sendTestEmail() {
+  if (!await requireAdmin('发送测试邮件')) return
+  
   if (!testEmail.value) {
     await dialog.showError('请输入测试邮箱地址', '提示')
     return
@@ -260,6 +271,8 @@ async function sendTestEmail() {
 }
 
 async function sendResendTestEmail() {
+  if (!await requireAdmin('发送Resend测试邮件')) return
+  
   if (!testResendEmail.value) {
     await dialog.showError('请输入测试邮箱地址', '提示')
     return
@@ -279,6 +292,8 @@ async function sendResendTestEmail() {
 }
 
 async function switchProvider(provider: string) {
+  if (!await requireAdmin('切换邮件服务提供商')) return
+  
   const confirmed = await dialog.showConfirm({
     message: `确定要切换到 ${getProviderName(provider)} 吗？`,
     title: '确认切换'

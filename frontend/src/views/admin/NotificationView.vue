@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { notificationApi, type NotificationSettings } from '@/api/notifications'
+import { useAdminCheck } from '@/composables/useAdminCheck'
+
+const { requireAdmin } = useAdminCheck()
 
 const settings = ref<NotificationSettings | null>(null)
 const isLoading = ref(false)
@@ -38,8 +41,8 @@ const notificationOptions = [
   }
 ]
 
-onMounted(async () => {
-  await loadSettings()
+onMounted(() => {
+  loadSettings()
 })
 
 async function loadSettings() {
@@ -62,6 +65,8 @@ async function loadSettings() {
 }
 
 async function saveSettings() {
+  if (!await requireAdmin('保存通知设置')) return
+  
   isSaving.value = true
   message.value = ''
   try {
@@ -79,7 +84,8 @@ async function saveSettings() {
   }
 }
 
-function toggleSetting(key: keyof typeof settingsForm.value) {
+async function toggleSetting(key: keyof typeof settingsForm.value) {
+  if (!await requireAdmin('修改通知设置')) return
   settingsForm.value[key] = !settingsForm.value[key]
   saveSettings()
 }

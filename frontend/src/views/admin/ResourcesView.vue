@@ -3,8 +3,10 @@ import { ref, onMounted } from 'vue'
 import { resourceApi } from '@/api'
 import type { Resource } from '@/types'
 import { useDialogStore } from '@/stores'
+import { useAdminCheck } from '@/composables/useAdminCheck'
 
 const dialog = useDialogStore()
+const { requireAdmin } = useAdminCheck()
 
 const resources = ref<Resource[]>([])
 const isLoading = ref(false)
@@ -40,7 +42,8 @@ const fetchResources = async () => {
   }
 }
 
-const handleEdit = (resource: Resource) => {
+const handleEdit = async (resource: Resource) => {
+  if (!await requireAdmin('编辑资源')) return
   editingResource.value = resource
   form.value = {
     title: resource.title,
@@ -55,6 +58,8 @@ const handleEdit = (resource: Resource) => {
 }
 
 const handleDelete = async (resource: Resource) => {
+  if (!await requireAdmin('删除资源')) return
+  
   const confirmed = await dialog.showConfirm({
     title: '确认删除',
     message: `确定要删除资源"${resource.title}"吗？`
@@ -67,15 +72,13 @@ const handleDelete = async (resource: Resource) => {
     await dialog.showSuccess('资源已删除', '成功')
   } catch (error: any) {
     console.error('Failed to delete resource:', error)
-    if (error.response?.status === 403) {
-      await dialog.showError('您没有权限删除此资源，请联系管理员', '权限不足')
-    } else {
-      await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
-    }
+    await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
   }
 }
 
 const handleSubmit = async () => {
+  if (!await requireAdmin('保存资源')) return
+  
   try {
     const isEditing = !!editingResource.value
     if (editingResource.value) {
@@ -90,11 +93,7 @@ const handleSubmit = async () => {
     await dialog.showSuccess(isEditing ? '资源已更新' : '资源已创建', '成功')
   } catch (error: any) {
     console.error('Failed to save resource:', error)
-    if (error.response?.status === 403) {
-      await dialog.showError('您没有权限修改此资源，请联系管理员', '权限不足')
-    } else {
-      await dialog.showError(error.response?.data?.detail || '保存失败', '错误')
-    }
+    await dialog.showError(error.response?.data?.detail || '保存失败', '错误')
   }
 }
 
@@ -115,6 +114,13 @@ const getCategoryLabel = (category: string) => {
   return option ? option.label : category
 }
 
+const openCreateModal = async () => {
+  if (!await requireAdmin('创建资源')) return
+  editingResource.value = null
+  resetForm()
+  showEditor.value = true
+}
+
 onMounted(() => {
   fetchResources()
 })
@@ -125,7 +131,7 @@ onMounted(() => {
     <div class="flex items-center justify-between mb-4">
       <h1 class="text-lg font-bold text-gray-900 dark:text-white">资源管理</h1>
       <button
-        @click="showEditor = true; editingResource = null; resetForm()"
+        @click="openCreateModal"
         class="px-4 py-1.5 bg-primary text-white rounded-lg text-sm hover:bg-primary/90 transition-colors"
       >
         添加资源

@@ -3,8 +3,10 @@ import { ref, onMounted } from 'vue'
 import { useDialogStore } from '@/stores'
 import { categoryApi } from '@/api'
 import type { Category } from '@/types'
+import { useAdminCheck } from '@/composables/useAdminCheck'
 
 const dialog = useDialogStore()
+const { requireAdmin } = useAdminCheck()
 
 const categories = ref<Category[]>([])
 const isLoading = ref(false)
@@ -31,7 +33,8 @@ const fetchCategories = async () => {
   }
 }
 
-const handleEdit = (category: Category) => {
+const handleEdit = async (category: Category) => {
+  if (!await requireAdmin('编辑分类')) return
   editingCategory.value = category
   form.value = {
     name: category.name,
@@ -45,6 +48,8 @@ const handleEdit = (category: Category) => {
 }
 
 const handleDelete = async (category: Category) => {
+  if (!await requireAdmin('删除分类')) return
+  
   const confirmed = await dialog.showConfirm({
     title: '确认删除',
     message: `确定要删除分类"${category.name}"吗？`
@@ -57,15 +62,13 @@ const handleDelete = async (category: Category) => {
     await dialog.showSuccess('分类已删除', '成功')
   } catch (error: any) {
     console.error('Failed to delete category:', error)
-    if (error.response?.status === 403) {
-      await dialog.showError('无权限删除此分类', '权限不足')
-    } else {
-      await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
-    }
+    await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
   }
 }
 
 const handleSubmit = async () => {
+  if (!await requireAdmin('保存分类')) return
+  
   try {
     if (editingCategory.value) {
       await categoryApi.updateCategory(editingCategory.value.id, form.value)
@@ -79,11 +82,7 @@ const handleSubmit = async () => {
     await dialog.showSuccess('分类已保存', '成功')
   } catch (error: any) {
     console.error('Failed to save category:', error)
-    if (error.response?.status === 403) {
-      await dialog.showError('无权限修改此分类', '权限不足')
-    } else {
-      await dialog.showError(error.response?.data?.detail || '保存失败', '错误')
-    }
+    await dialog.showError(error.response?.data?.detail || '保存失败', '错误')
   }
 }
 
@@ -98,6 +97,13 @@ const resetForm = () => {
   }
 }
 
+const openCreateModal = async () => {
+  if (!await requireAdmin('创建分类')) return
+  editingCategory.value = null
+  resetForm()
+  showEditor.value = true
+}
+
 onMounted(fetchCategories)
 </script>
 
@@ -106,7 +112,7 @@ onMounted(fetchCategories)
     <div class="flex items-center justify-between mb-4">
       <h1 class="text-lg font-bold text-gray-900 dark:text-white">分类管理</h1>
       <button
-        @click="showEditor = true; editingCategory = null; resetForm()"
+        @click="openCreateModal"
         class="btn-primary text-sm px-4 py-1.5"
       >
         新建分类

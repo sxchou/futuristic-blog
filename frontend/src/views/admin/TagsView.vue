@@ -3,8 +3,10 @@ import { ref, onMounted } from 'vue'
 import { tagApi } from '@/api'
 import type { Tag } from '@/types'
 import { useDialogStore } from '@/stores'
+import { useAdminCheck } from '@/composables/useAdminCheck'
 
 const dialog = useDialogStore()
+const { requireAdmin } = useAdminCheck()
 
 const tags = ref<Tag[]>([])
 const isLoading = ref(false)
@@ -28,7 +30,8 @@ const fetchTags = async () => {
   }
 }
 
-const handleEdit = (tag: Tag) => {
+const handleEdit = async (tag: Tag) => {
+  if (!await requireAdmin('编辑标签')) return
   editingTag.value = tag
   form.value = {
     name: tag.name,
@@ -39,6 +42,8 @@ const handleEdit = (tag: Tag) => {
 }
 
 const handleDelete = async (tag: Tag) => {
+  if (!await requireAdmin('删除标签')) return
+  
   const confirmed = await dialog.showConfirm({
     title: '确认删除',
     message: `确定要删除标签"${tag.name}"吗？`
@@ -51,15 +56,13 @@ const handleDelete = async (tag: Tag) => {
     await dialog.showSuccess('标签已删除', '成功')
   } catch (error: any) {
     console.error('Failed to delete tag:', error)
-    if (error.response?.status === 403) {
-      await dialog.showError('您没有权限删除此标签，请联系管理员', '权限不足')
-    } else {
-      await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
-    }
+    await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
   }
 }
 
 const handleSubmit = async () => {
+  if (!await requireAdmin('保存标签')) return
+  
   try {
     const isEditing = !!editingTag.value
     if (editingTag.value) {
@@ -74,11 +77,7 @@ const handleSubmit = async () => {
     await dialog.showSuccess(isEditing ? '标签已更新' : '标签已创建', '成功')
   } catch (error: any) {
     console.error('Failed to save tag:', error)
-    if (error.response?.status === 403) {
-      await dialog.showError('您没有权限修改此标签，请联系管理员', '权限不足')
-    } else {
-      await dialog.showError(error.response?.data?.detail || '保存失败', '错误')
-    }
+    await dialog.showError(error.response?.data?.detail || '保存失败', '错误')
   }
 }
 
@@ -90,6 +89,13 @@ const resetForm = () => {
   }
 }
 
+const openCreateModal = async () => {
+  if (!await requireAdmin('创建标签')) return
+  editingTag.value = null
+  resetForm()
+  showEditor.value = true
+}
+
 onMounted(fetchTags)
 </script>
 
@@ -98,7 +104,7 @@ onMounted(fetchTags)
     <div class="flex items-center justify-between mb-4">
       <h1 class="text-lg font-bold text-gray-900 dark:text-white">标签管理</h1>
       <button
-        @click="showEditor = true; editingTag = null; resetForm()"
+        @click="openCreateModal"
         class="btn-primary text-sm px-4 py-1.5"
       >
         新建标签

@@ -12,6 +12,9 @@ import type {
 import LineChart from '@/components/charts/LineChart.vue'
 import BarChart from '@/components/charts/BarChart.vue'
 import PieChart from '@/components/charts/PieChart.vue'
+import { useAdminCheck } from '@/composables/useAdminCheck'
+
+const { requireAdmin } = useAdminCheck()
 
 const loading = ref(true)
 const overview = ref<OverviewStats | null>(null)
@@ -80,7 +83,14 @@ const fetchAllData = async () => {
   }
 }
 
+const handleRefresh = async () => {
+  if (!await requireAdmin('刷新仪表盘数据')) return
+  await fetchAllData()
+}
+
 const refreshViewsTrend = async () => {
+  if (!await requireAdmin('刷新浏览量趋势')) return
+  
   loadingViewsTrend.value = true
   try {
     const res = await dashboardApi.getViewsTrend(trendDays.value)
@@ -93,6 +103,8 @@ const refreshViewsTrend = async () => {
 }
 
 const refreshArticlesTrend = async () => {
+  if (!await requireAdmin('刷新文章发布趋势')) return
+  
   loadingArticlesTrend.value = true
   try {
     const res = await dashboardApi.getArticlesTrend(trendDays.value)
@@ -105,6 +117,8 @@ const refreshArticlesTrend = async () => {
 }
 
 const refreshCommentTrend = async () => {
+  if (!await requireAdmin('刷新评论趋势')) return
+  
   loadingCommentTrend.value = true
   try {
     const res = await dashboardApi.getCommentTrend(trendDays.value)
@@ -117,6 +131,8 @@ const refreshCommentTrend = async () => {
 }
 
 const refreshCategoryStats = async () => {
+  if (!await requireAdmin('刷新分类统计')) return
+  
   loadingCategoryStats.value = true
   try {
     const res = await dashboardApi.getCategoryStats()
@@ -129,6 +145,8 @@ const refreshCategoryStats = async () => {
 }
 
 const refreshTagStats = async () => {
+  if (!await requireAdmin('刷新标签统计')) return
+  
   loadingTagStats.value = true
   try {
     const res = await dashboardApi.getTagStats(10)
@@ -141,6 +159,8 @@ const refreshTagStats = async () => {
 }
 
 const refreshArticleRank = async () => {
+  if (!await requireAdmin('刷新文章排行')) return
+  
   loadingArticleRank.value = true
   try {
     const res = await dashboardApi.getArticleRank(rankLimit.value, rankSortBy.value)
@@ -153,6 +173,8 @@ const refreshArticleRank = async () => {
 }
 
 const refreshAccessTrend = async () => {
+  if (!await requireAdmin('刷新访问量趋势')) return
+  
   loadingAccessTrend.value = true
   try {
     const res = await dashboardApi.getAccessTrend(7)
@@ -195,7 +217,7 @@ onMounted(() => {
           <option :value="60">近 60 天</option>
           <option :value="90">近 90 天</option>
         </select>
-        <button @click="fetchAllData" class="refresh-btn" :disabled="loading">
+        <button @click="handleRefresh" class="refresh-btn" :disabled="loading">
           <svg class="w-4 h-4" :class="{ 'animate-spin': loading }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>

@@ -70,6 +70,9 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import VChart from './echarts'
 import type { EChartsOption } from 'echarts'
+import { useAdminCheck } from '@/composables/useAdminCheck'
+
+const { requireAdmin } = useAdminCheck()
 
 interface Props {
   title?: string
@@ -150,7 +153,8 @@ const handleClick = (params: any) => {
   emit('click', params)
 }
 
-const exportChart = (type: 'png' | 'svg') => {
+const exportChart = async (type: 'png' | 'svg') => {
+  if (!await requireAdmin('导出图表')) return
   if (!chartRef.value) return
   
   const chartInstance = chartRef.value
@@ -168,7 +172,8 @@ const exportChart = (type: 'png' | 'svg') => {
   emit('export-complete', type)
 }
 
-const exportData = (type: 'csv') => {
+const exportData = async (type: 'csv') => {
+  if (!await requireAdmin('导出数据')) return
   if (!props.option) return
   
   let csvContent = ''

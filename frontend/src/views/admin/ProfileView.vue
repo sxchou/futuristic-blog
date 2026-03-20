@@ -3,8 +3,10 @@ import { ref, onMounted } from 'vue'
 import { profileApi } from '@/api'
 import type { Profile, TechStackItem, JourneyItem, Education } from '@/types'
 import { useDialogStore } from '@/stores'
+import { useAdminCheck } from '@/composables/useAdminCheck'
 
 const dialog = useDialogStore()
+const { requireAdmin } = useAdminCheck()
 const profile = ref<Profile | null>(null)
 const isLoading = ref(false)
 const activeTab = ref('basic')
@@ -66,42 +68,45 @@ const fetchProfile = async () => {
 }
 
 const handleSave = async () => {
+  if (!await requireAdmin('保存个人资料')) return
+  
   try {
     await profileApi.updateProfile(form.value)
     await dialog.showSuccess('保存成功', '成功')
     await fetchProfile()
   } catch (error: any) {
-    if (error.response?.status === 403) {
-      await dialog.showError('无权限修改个人信息', '权限不足')
-    } else {
-      await dialog.showError(error.response?.data?.detail || '保存失败', '错误')
-    }
+    await dialog.showError(error.response?.data?.detail || '保存失败', '错误')
   }
 }
 
-const addTag = () => {
+const addTag = async () => {
+  if (!await requireAdmin('添加标签')) return
   if (newTag.value.trim()) {
     form.value.tags.push(newTag.value.trim())
     newTag.value = ''
   }
 }
 
-const removeTag = (index: number) => {
+const removeTag = async (index: number) => {
+  if (!await requireAdmin('删除标签')) return
   form.value.tags.splice(index, 1)
 }
 
-const addExplorationArea = () => {
+const addExplorationArea = async () => {
+  if (!await requireAdmin('添加探索方向')) return
   if (newExplorationArea.value.trim()) {
     form.value.exploration_areas.push(newExplorationArea.value.trim())
     newExplorationArea.value = ''
   }
 }
 
-const removeExplorationArea = (index: number) => {
+const removeExplorationArea = async (index: number) => {
+  if (!await requireAdmin('删除探索方向')) return
   form.value.exploration_areas.splice(index, 1)
 }
 
-const addTechCategory = () => {
+const addTechCategory = async () => {
+  if (!await requireAdmin('添加技术分类')) return
   if (newTechCategory.value.trim() && newTechItems.value.trim()) {
     form.value.tech_stack.push({
       category: newTechCategory.value.trim(),
@@ -112,11 +117,13 @@ const addTechCategory = () => {
   }
 }
 
-const removeTechCategory = (index: number) => {
+const removeTechCategory = async (index: number) => {
+  if (!await requireAdmin('删除技术分类')) return
   form.value.tech_stack.splice(index, 1)
 }
 
-const addJourney = () => {
+const addJourney = async () => {
+  if (!await requireAdmin('添加职业经历')) return
   form.value.journey.push({
     period: '',
     company: '',
@@ -125,11 +132,13 @@ const addJourney = () => {
   })
 }
 
-const removeJourney = (index: number) => {
+const removeJourney = async (index: number) => {
+  if (!await requireAdmin('删除职业经历')) return
   form.value.journey.splice(index, 1)
 }
 
-const initEducation = () => {
+const initEducation = async () => {
+  if (!await requireAdmin('添加教育背景')) return
   if (!form.value.education) {
     form.value.education = {
       period: '',
@@ -140,7 +149,9 @@ const initEducation = () => {
   }
 }
 
-onMounted(fetchProfile)
+onMounted(() => {
+  fetchProfile()
+})
 </script>
 
 <template>

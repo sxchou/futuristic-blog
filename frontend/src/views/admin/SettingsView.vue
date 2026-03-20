@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useSiteConfigStore } from '@/stores'
+import { useAdminCheck } from '@/composables/useAdminCheck'
 
 const siteConfigStore = useSiteConfigStore()
+const { requireAdmin } = useAdminCheck()
 
 const formData = ref({
   siteName: '',
@@ -23,6 +25,8 @@ onMounted(async () => {
 })
 
 const handleSave = async () => {
+  if (!await requireAdmin('保存网站设置')) return
+  
   isSaving.value = true
   saveMessage.value = ''
   

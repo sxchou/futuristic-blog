@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useBlogStore, useDialogStore } from '@/stores'
 import { articleApi, fileApi } from '@/api'
 import type { ArticleListItem } from '@/types'
+import { useAdminCheck } from '@/composables/useAdminCheck'
 
 interface ArticleFile {
   id: number
@@ -18,6 +19,7 @@ interface ArticleFile {
 
 const blogStore = useBlogStore()
 const dialog = useDialogStore()
+const { requireAdmin, isAdmin } = useAdminCheck()
 
 const articles = ref<ArticleListItem[]>([])
 const isLoading = ref(false)
@@ -62,6 +64,8 @@ const fetchArticleFiles = async (articleId: number) => {
 }
 
 const handleEdit = async (article: ArticleListItem) => {
+  if (!await requireAdmin('编辑文章')) return
+  
   editingArticle.value = article
   
   try {
@@ -86,6 +90,8 @@ const handleEdit = async (article: ArticleListItem) => {
 }
 
 const handleDelete = async (article: ArticleListItem) => {
+  if (!await requireAdmin('删除文章')) return
+  
   const confirmed = await dialog.showConfirm({
     title: '确认删除',
     message: `确定要删除文章"${article.title}"吗？`
@@ -98,15 +104,13 @@ const handleDelete = async (article: ArticleListItem) => {
     await dialog.showSuccess('文章已删除', '成功')
   } catch (error: any) {
     console.error('Failed to delete article:', error)
-    if (error.response?.status === 403) {
-      await dialog.showError('无权限删除此文章', '权限不足')
-    } else {
-      await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
-    }
+    await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
   }
 }
 
 const handleSubmit = async () => {
+  if (!await requireAdmin('保存文章')) return
+  
   try {
     if (editingArticle.value) {
       await articleApi.updateArticle(editingArticle.value.id, form.value)
@@ -119,11 +123,7 @@ const handleSubmit = async () => {
     await fetchArticles()
   } catch (error: any) {
     console.error('Failed to save article:', error)
-    if (error.response?.status === 403) {
-      await dialog.showError('无权限修改此文章', '权限不足')
-    } else {
-      await dialog.showError(error.response?.data?.detail || '保存失败', '错误')
-    }
+    await dialog.showError(error.response?.data?.detail || '保存失败', '错误')
   }
 }
 
@@ -249,7 +249,15 @@ const getFileIcon = (fileType: string, mimeType: string): string => {
   return '📎'
 }
 
+const openCreateModal = async () => {
+  if (!await requireAdmin('新建文章')) return
+  editingArticle.value = null
+  resetForm()
+  showEditor.value = true
+}
+
 onMounted(() => {
+  if (!isAdmin.value) return
   fetchArticles()
   blogStore.fetchCategories()
   blogStore.fetchTags()
@@ -261,14 +269,24 @@ onMounted(() => {
     <div class="flex items-center justify-between mb-4">
       <h1 class="text-lg font-bold text-gray-900 dark:text-white">文章管理</h1>
       <button
-        @click="showEditor = true; editingArticle = null; resetForm()"
+        @click="openCreateModal"
         class="btn-primary text-sm px-4 py-1.5"
       >
         新建文章
       </button>
     </div>
 
-    <div v-if="isLoading" class="flex justify-center py-16">
+    <div v-if="!isAdmin" class="glass-card p-8 text-center">
+      <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
+        <svg class="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">权限不足</h2>
+      <p class="text-gray-500 dark:text-gray-400">您没有权限访问此页面，请联系管理员</p>
+    </div>
+
+    <div v-else-if="isLoading" class="flex justify-center py-16">
       <div class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
     </div>
 
