@@ -190,3 +190,24 @@ class AvatarFileService:
             "total_size_bytes": total_size,
             "total_size_mb": round(total_size / (1024 * 1024), 2)
         }
+    
+    @classmethod
+    def list_avatar_files(cls) -> list:
+        avatar_path = cls.get_avatar_base_path()
+        
+        if not avatar_path.exists():
+            return []
+        
+        files = []
+        for file_path in avatar_path.iterdir():
+            if file_path.is_file() and file_path.name != ".gitkeep":
+                stat = file_path.stat()
+                files.append({
+                    "name": file_path.name,
+                    "size_bytes": stat.st_size,
+                    "size_kb": round(stat.st_size / 1024, 2),
+                    "modified": stat.st_mtime,
+                    "url": f"/uploads/avatars/{file_path.name}"
+                })
+        
+        return sorted(files, key=lambda x: x["modified"], reverse=True)

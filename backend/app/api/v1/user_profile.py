@@ -388,3 +388,21 @@ async def get_avatar_storage_stats(
     )
     
     return stats
+
+
+@router.get("/storage/files")
+async def list_avatar_files(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="需要管理员权限")
+    
+    files = AvatarFileService.list_avatar_files()
+    stats = AvatarFileService.get_storage_stats()
+    
+    return {
+        "storage_path": str(AvatarFileService.get_avatar_base_path()),
+        "stats": stats,
+        "files": files
+    }
