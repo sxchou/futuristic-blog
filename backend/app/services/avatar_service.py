@@ -5,6 +5,7 @@ from typing import Optional, Tuple
 from sqlalchemy.orm import Session
 from app.services.log_service import LogService
 from app.models.models import User
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +16,9 @@ class AvatarFileService:
     
     @classmethod
     def get_avatar_base_path(cls) -> Path:
+        if settings.AVATAR_STORAGE_PATH:
+            return Path(settings.AVATAR_STORAGE_PATH) / cls.AVATAR_DIR_NAME
+        
         env_path = os.getenv("AVATAR_STORAGE_PATH")
         if env_path:
             return Path(env_path) / cls.AVATAR_DIR_NAME

@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     EMAIL_PROVIDER: str = "resend"
     
     UPLOAD_DIR: str = "uploads"
+    AVATAR_STORAGE_PATH: str = ""
     
     @property
     def tz(self) -> ZoneInfo:

@@ -91,6 +91,47 @@ git push -u origin main
 | `FRONTEND_URL` | `https://your-frontend.railway.app` |
 | `TIMEZONE` | `Asia/Shanghai` |
 
+### 4.1 配置持久化存储（重要！）
+
+**⚠️ 必须配置，否则用户上传的头像会在部署时丢失！**
+
+Railway 默认每次部署会重新构建容器，导致本地文件丢失。需要配置 Volume 持久化存储：
+
+**方式一：通过 Railway 控制台（推荐）**
+
+1. 进入后端服务 → **"Settings"** → **"Volumes"**
+2. 点击 **"Add Volume"**
+3. 配置 Volume：
+   - **Name**: `avatar-storage`
+   - **Mount Path**: `/app/uploads`
+4. 点击 **"Add"** 保存
+5. 服务会自动重启并挂载 Volume
+
+**方式二：使用 Railway CLI**
+
+```bash
+# 安装 Railway CLI
+npm install -g @railway/cli
+
+# 登录
+railway login
+
+# 链接项目
+railway link
+
+# 创建 Volume 并挂载到后端服务
+railway volume create --service backend --mount /app/uploads
+
+# 部署
+railway up
+```
+
+**验证 Volume 配置**
+
+1. 进入后端服务 → **"Settings"** → **"Volumes"**
+2. 确认 Volume 已挂载到 `/app/uploads`
+3. 上传测试头像后重新部署，验证头像是否保留
+
 ### 5. 部署前端服务
 
 1. 在项目中点击 **"+ New"**
@@ -140,6 +181,10 @@ FRONTEND_URL=https://your-frontend.railway.app
 
 # 时区
 TIMEZONE=Asia/Shanghai
+
+# 头像存储路径 (可选，默认为 /app/uploads)
+# 如果配置了 Railway Volume，建议显式设置
+AVATAR_STORAGE_PATH=/app/uploads
 
 # 邮件配置 (可选)
 SMTP_HOST=smtp.example.com
@@ -206,6 +251,18 @@ CORS_ORIGINS=["https://your-frontend.railway.app"]
 2. 后端是否正常运行
 3. 查看 Railway 日志排查问题
 
+### Q: 用户上传的头像在部署后丢失?
+
+**原因**: Railway 每次部署会重新构建容器，本地文件系统会被清空。
+
+**解决方案**: 配置持久化 Volume 存储
+
+1. 进入后端服务 → **"Settings"** → **"Volumes"**
+2. 添加 Volume，挂载路径为 `/app/uploads`
+3. 重新部署后，头像文件会被持久化保存
+
+详见 [4.1 配置持久化存储](#41-配置持久化存储重要)
+
 ### Q: 如何查看日志?
 
 Railway 控制台 → 选择服务 → 点击 "Logs" 标签
@@ -231,11 +288,13 @@ Railway 控制台 → 选择服务 → 点击 "Redeploy"
 - [ ] Railway 项目已创建
 - [ ] PostgreSQL 数据库已添加
 - [ ] 后端服务已部署
+- [ ] **后端 Volume 已配置（重要！）**
 - [ ] 前端服务已部署
 - [ ] 环境变量已配置
 - [ ] 前端页面正常加载
 - [ ] API 接口可访问
 - [ ] 登录功能正常
+- [ ] 头像上传功能正常
 
 ---
 
