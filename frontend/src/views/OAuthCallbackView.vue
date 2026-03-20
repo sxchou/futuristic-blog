@@ -41,8 +41,14 @@ const handleCallback = async () => {
   }
   
   if (accessToken) {
-    localStorage.setItem('token', accessToken)
-    authStore.token = accessToken
+    const refreshTokenParam = route.query.refresh_token as string
+    const expiresInParam = route.query.expires_in as string
+    
+    authStore.setTokens(
+      accessToken, 
+      refreshTokenParam || undefined, 
+      expiresInParam ? parseInt(expiresInParam) : undefined
+    )
     await authStore.fetchUser()
     
     await dialog.showSuccess('登录成功！', '欢迎回来')
@@ -73,8 +79,11 @@ const handleCallback = async () => {
       return
     }
     
-    localStorage.setItem('token', response.access_token)
-    authStore.token = response.access_token
+    authStore.setTokens(
+      response.access_token,
+      response.refresh_token,
+      response.expires_in
+    )
     await authStore.fetchUser()
     
     await dialog.showSuccess('登录成功！', '欢迎回来')

@@ -1,6 +1,17 @@
 export interface Token {
   access_token: string
   token_type: string
+  refresh_token?: string
+  expires_in?: number
+}
+
+export interface SessionInfo {
+  id: number
+  ip_address?: string
+  user_agent?: string
+  last_used_at?: string
+  created_at?: string
+  is_current: boolean
 }
 
 export interface User {

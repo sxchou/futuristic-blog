@@ -1,22 +1,97 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { authApi } from '@/api'
-import type { User } from '@/types'
+import type { User, SessionInfo } from '@/types'
+
+const TOKEN_KEY = 'token'
+const REFRESH_TOKEN_KEY = 'refresh_token'
+const TOKEN_EXPIRY_KEY = 'token_expiry'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
-  const token = ref<string | null>(localStorage.getItem('token'))
+  const token = ref<string | null>(localStorage.getItem(TOKEN_KEY))
+  const refreshToken = ref<string | null>(localStorage.getItem(REFRESH_TOKEN_KEY))
+  const tokenExpiry = ref<number | null>(
+    localStorage.getItem(TOKEN_EXPIRY_KEY) 
+      ? parseInt(localStorage.getItem(TOKEN_EXPIRY_KEY)!) 
+      : null
+  )
   const loading = ref(false)
+  const isRefreshing = ref(false)
 
   const isAuthenticated = computed(() => !!token.value)
   const isAdmin = computed(() => user.value?.is_admin ?? false)
+
+  const setTokens = (newToken: string, newRefreshToken?: string, expiresIn?: number) => {
+    token.value = newToken
+    localStorage.setItem(TOKEN_KEY, newToken)
+    
+    if (newRefreshToken) {
+      refreshToken.value = newRefreshToken
+      localStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken)
+    }
+    
+    if (expiresIn) {
+      const expiry = Date.now() + expiresIn * 1000
+      tokenExpiry.value = expiry
+      localStorage.setItem(TOKEN_EXPIRY_KEY, expiry.toString())
+    }
+  }
+
+  const clearTokens = () => {
+    token.value = null
+    refreshToken.value = null
+    tokenExpiry.value = null
+    user.value = null
+    localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem(REFRESH_TOKEN_KEY)
+    localStorage.removeItem(TOKEN_EXPIRY_KEY)
+  }
+
+  const isTokenExpiringSoon = (bufferSeconds: number = 300): boolean => {
+    if (!tokenExpiry.value) return false
+    return Date.now() + bufferSeconds * 1000 >= tokenExpiry.value
+  }
+
+  const refreshAccessToken = async (): Promise<boolean> => {
+    if (!refreshToken.value || isRefreshing.value) return false
+    
+    isRefreshing.value = true
+    try {
+      const response = await authApi.refreshToken(refreshToken.value)
+      setTokens(
+        response.access_token, 
+        response.refresh_token, 
+        response.expires_in
+      )
+      return true
+    } catch (error) {
+      console.error('Token refresh failed:', error)
+      clearTokens()
+      return false
+    } finally {
+      isRefreshing.value = false
+    }
+  }
+
+  const checkAndRefreshToken = async (): Promise<boolean> => {
+    if (!token.value) return false
+    
+    if (isTokenExpiringSoon()) {
+      return await refreshAccessToken()
+    }
+    return true
+  }
 
   const login = async (credentials: { username: string; password: string }) => {
     loading.value = true
     try {
       const response = await authApi.login(credentials.username, credentials.password)
-      token.value = response.access_token
-      localStorage.setItem('token', response.access_token)
+      setTokens(
+        response.access_token, 
+        response.refresh_token, 
+        response.expires_in
+      )
       await fetchUser()
       return true
     } catch (error) {
@@ -50,10 +125,32 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const logout = () => {
-    user.value = null
-    token.value = null
-    localStorage.removeItem('token')
+  const logout = async () => {
+    if (refreshToken.value) {
+      try {
+        await authApi.logout(refreshToken.value)
+      } catch (error) {
+        console.error('Logout API call failed:', error)
+      }
+    }
+    clearTokens()
+  }
+
+  const logoutAll = async () => {
+    try {
+      await authApi.logoutAll()
+    } catch (error) {
+      console.error('Logout all API call failed:', error)
+    }
+    clearTokens()
+  }
+
+  const getSessions = async (): Promise<SessionInfo[]> => {
+    return await authApi.getSessions()
+  }
+
+  const revokeSession = async (sessionId: number) => {
+    return await authApi.revokeSession(sessionId)
   }
 
   if (token.value) {
@@ -63,12 +160,21 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     user,
     token,
+    refreshToken,
     loading,
+    isRefreshing,
     isAuthenticated,
     isAdmin,
     login,
     register,
     logout,
-    fetchUser
+    logoutAll,
+    fetchUser,
+    refreshAccessToken,
+    checkAndRefreshToken,
+    getSessions,
+    revokeSession,
+    setTokens,
+    clearTokens
   }
 })

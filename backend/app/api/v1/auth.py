@@ -2,11 +2,16 @@ from datetime import timedelta, datetime
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from typing import List
 from app.core.database import get_db
 from app.core.config import settings
-from app.models import User, EmailLog, NotificationSettings, PasswordReset
-from app.schemas import UserCreate, UserResponse, Token, PasswordResetRequest, PasswordResetVerify
-from app.utils import verify_password, get_password_hash, create_access_token, get_current_user
+from app.models import User, EmailLog, NotificationSettings, PasswordReset, RefreshToken
+from app.schemas import UserCreate, UserResponse, Token, PasswordResetRequest, PasswordResetVerify, RefreshTokenRequest, SessionInfo
+from app.utils import (
+    verify_password, get_password_hash, create_access_token, get_current_user,
+    create_refresh_token, verify_refresh_token, update_refresh_token_usage,
+    revoke_refresh_token, revoke_all_user_tokens
+)
 from app.services.email_service import EmailService
 from app.services.log_service import log_login_sync
 from app.utils.timezone import get_now
@@ -119,7 +124,19 @@ async def login(
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    
+    refresh_token = create_refresh_token(
+        db=db,
+        user_id=user.id,
+        request=request
+    )
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "refresh_token": refresh_token.token,
+        "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+    }
 
 
 @router.post("/register", response_model=UserResponse)
@@ -246,6 +263,121 @@ async def resend_verification(
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+@router.post("/refresh", response_model=Token)
+async def refresh_token(
+    request: Request,
+    data: RefreshTokenRequest,
+    db: Session = Depends(get_db)
+):
+    refresh_token_obj, error = verify_refresh_token(db, data.refresh_token, request)
+    
+    if error:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=error,
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    user = db.query(User).filter(User.id == refresh_token_obj.user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="用户不存在",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    if not user.is_verified and not user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="账户未验证"
+        )
+    
+    update_refresh_token_usage(db, refresh_token_obj)
+    
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.username}, expires_delta=access_token_expires
+    )
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "refresh_token": refresh_token_obj.token,
+        "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+    }
+
+
+@router.post("/logout")
+async def logout(
+    request: Request,
+    data: RefreshTokenRequest,
+    db: Session = Depends(get_db)
+):
+    revoke_refresh_token(db, data.refresh_token, "用户登出")
+    return {"message": "登出成功"}
+
+
+@router.post("/logout-all")
+async def logout_all(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    count = revoke_all_user_tokens(db, current_user.id, "用户登出所有设备")
+    return {"message": f"已登出 {count} 个设备"}
+
+
+@router.get("/sessions", response_model=List[SessionInfo])
+async def get_sessions(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    current_token = request.headers.get("X-Refresh-Token")
+    
+    sessions = db.query(RefreshToken).filter(
+        RefreshToken.user_id == current_user.id,
+        RefreshToken.is_revoked == False,
+        RefreshToken.expires_at > get_now()
+    ).order_by(RefreshToken.last_used_at.desc()).all()
+    
+    return [
+        SessionInfo(
+            id=session.id,
+            ip_address=session.ip_address,
+            user_agent=session.user_agent,
+            last_used_at=session.last_used_at,
+            created_at=session.created_at,
+            is_current=(session.token == current_token)
+        )
+        for session in sessions
+    ]
+
+
+@router.delete("/sessions/{session_id}")
+async def revoke_session(
+    session_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    session = db.query(RefreshToken).filter(
+        RefreshToken.id == session_id,
+        RefreshToken.user_id == current_user.id
+    ).first()
+    
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="会话不存在"
+        )
+    
+    session.is_revoked = True
+    session.revoked_at = get_now()
+    session.revoked_reason = "用户手动撤销"
+    db.commit()
+    
+    return {"message": "会话已撤销"}
 
 
 MAX_RESET_REQUESTS_PER_HOUR = 5

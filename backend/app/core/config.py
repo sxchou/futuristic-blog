@@ -9,7 +9,8 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
     SECRET_KEY: str = "your-super-secret-key-change-in-production-please"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 43200  # 30 days
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     ADMIN_USERNAME: str = "admin"
     ADMIN_PASSWORD: str = "admin123"
     ADMIN_EMAIL: str = "admin@futuristic-blog.com"

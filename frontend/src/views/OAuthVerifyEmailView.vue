@@ -25,8 +25,11 @@ const verifyEmail = async () => {
   try {
     const response = await oauthApi.verifyEmail(token, email)
     
-    localStorage.setItem('token', response.access_token)
-    authStore.token = response.access_token
+    authStore.setTokens(
+      response.access_token,
+      response.refresh_token,
+      response.expires_in
+    )
     await authStore.fetchUser()
     
     await dialog.showSuccess('邮箱验证成功！', '欢迎加入我们')

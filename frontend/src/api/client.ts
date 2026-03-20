@@ -11,41 +11,16 @@ const config: AxiosRequestConfig = {
 
 const apiClient: AxiosInstance = axios.create(config)
 
-const publicApiPatterns = [
-  /^\/articles(\/[^/]+)?$/,
-  /^\/articles\/archive\/list$/,
-  /^\/categories/,
-  /^\/tags/,
-  /^\/likes\/\d+$/,
-  /^\/comments\/article\/\d+$/,
-  /^\/resources$/,
-  /^\/site-config/,
-  /^\/profile\/public/,
-  /^\/files$/,
-  /^\/files\/\d+\/download$/
-]
+let isRefreshing = false
+let refreshSubscribers: ((token: string) => void)[] = []
 
-const isPublicApi = (url: string): boolean => {
-  const apiPath = url.split('?')[0]
-  return publicApiPatterns.some(pattern => pattern.test(apiPath))
+const subscribeTokenRefresh = (cb: (token: string) => void) => {
+  refreshSubscribers.push(cb)
 }
 
-const publicRoutes = [
-  '/',
-  '/about',
-  '/categories',
-  '/tags',
-  '/article',
-  '/resources',
-  '/archive',
-  '/search'
-]
-
-const isPublicRoute = (): boolean => {
-  const currentPath = window.location.pathname
-  return publicRoutes.some(route => 
-    currentPath === route || currentPath.startsWith(route + '/')
-  )
+const onTokenRefreshed = (token: string) => {
+  refreshSubscribers.forEach(cb => cb(token))
+  refreshSubscribers = []
 }
 
 const pendingRequests = new Map<string, { controller: AbortController; count: number }>()
@@ -114,6 +89,35 @@ const shouldCache = (url: string | undefined): boolean => {
   return cacheableEndpoints.some(endpoint => url === endpoint || url.startsWith(endpoint + '?'))
 }
 
+const refreshToken = async (): Promise<string | null> => {
+  const storedRefreshToken = localStorage.getItem('refresh_token')
+  if (!storedRefreshToken) return null
+  
+  try {
+    const response = await axios.post('/api/v1/auth/refresh', {
+      refresh_token: storedRefreshToken
+    })
+    
+    const { access_token, refresh_token: newRefreshToken, expires_in } = response.data
+    
+    localStorage.setItem('token', access_token)
+    if (newRefreshToken) {
+      localStorage.setItem('refresh_token', newRefreshToken)
+    }
+    if (expires_in) {
+      const expiry = Date.now() + expires_in * 1000
+      localStorage.setItem('token_expiry', expiry.toString())
+    }
+    
+    return access_token
+  } catch (error) {
+    localStorage.removeItem('token')
+    localStorage.removeItem('refresh_token')
+    localStorage.removeItem('token_expiry')
+    return null
+  }
+}
+
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token')
@@ -159,7 +163,9 @@ apiClient.interceptors.response.use(
     
     return response
   },
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
+    const originalConfig = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
+    
     if (error.config) {
       removePendingRequest(error.config)
     }
@@ -168,22 +174,76 @@ apiClient.interceptors.response.use(
       return Promise.resolve({} as AxiosResponse)
     }
     
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token')
-      responseCache.clear()
+    if (error.response?.status === 401 && originalConfig && !originalConfig._retry) {
+      if (originalConfig.url === '/auth/refresh') {
+        localStorage.removeItem('token')
+        localStorage.removeItem('refresh_token')
+        localStorage.removeItem('token_expiry')
+        responseCache.clear()
+        
+        if (!window.location.pathname.includes('/login') && 
+            !window.location.pathname.includes('/register') &&
+            !window.location.pathname.includes('/forgot-password') &&
+            !window.location.pathname.includes('/verify-email') &&
+            !window.location.pathname.includes('/oauth/callback')) {
+          window.location.href = '/login'
+        }
+        return Promise.reject(error)
+      }
       
-      const requestUrl = error.config?.url || ''
-      const isPublic = isPublicApi(requestUrl) || isPublicRoute()
+      if (isRefreshing) {
+        return new Promise((resolve) => {
+          subscribeTokenRefresh((token: string) => {
+            originalConfig.headers.Authorization = `Bearer ${token}`
+            resolve(apiClient(originalConfig))
+          })
+        })
+      }
       
-      if (!isPublic && 
-          !window.location.pathname.includes('/login') && 
-          !window.location.pathname.includes('/register') &&
-          !window.location.pathname.includes('/forgot-password') &&
-          !window.location.pathname.includes('/verify-email') &&
-          !window.location.pathname.includes('/oauth/callback')) {
-        window.location.href = '/login'
+      originalConfig._retry = true
+      isRefreshing = true
+      
+      try {
+        const newToken = await refreshToken()
+        
+        if (newToken) {
+          onTokenRefreshed(newToken)
+          originalConfig.headers.Authorization = `Bearer ${newToken}`
+          return apiClient(originalConfig)
+        } else {
+          localStorage.removeItem('token')
+          localStorage.removeItem('refresh_token')
+          localStorage.removeItem('token_expiry')
+          responseCache.clear()
+          
+          if (!window.location.pathname.includes('/login') && 
+              !window.location.pathname.includes('/register') &&
+              !window.location.pathname.includes('/forgot-password') &&
+              !window.location.pathname.includes('/verify-email') &&
+              !window.location.pathname.includes('/oauth/callback')) {
+            window.location.href = '/login'
+          }
+          return Promise.reject(error)
+        }
+      } catch (refreshError) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('refresh_token')
+        localStorage.removeItem('token_expiry')
+        responseCache.clear()
+        
+        if (!window.location.pathname.includes('/login') && 
+            !window.location.pathname.includes('/register') &&
+            !window.location.pathname.includes('/forgot-password') &&
+            !window.location.pathname.includes('/verify-email') &&
+            !window.location.pathname.includes('/oauth/callback')) {
+          window.location.href = '/login'
+        }
+        return Promise.reject(refreshError)
+      } finally {
+        isRefreshing = false
       }
     }
+    
     return Promise.reject(error)
   }
 )

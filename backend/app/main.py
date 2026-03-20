@@ -2,17 +2,20 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from app.core.config import settings
 from app.core.database import engine, Base, SessionLocal
 from app.api import router as api_router
 from app.services.init_data import init_database
 from app.services.log_service import LogService
+from app.utils import cleanup_expired_tokens
 import os
 import time
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import logging
+from contextlib import contextmanager
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +29,25 @@ app = FastAPI(
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        
+        if request.url.path.startswith("/api"):
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
@@ -37,6 +59,25 @@ app.add_middleware(
 executor = ThreadPoolExecutor(max_workers=4)
 
 SKIP_LOG_PATHS = ['/api/docs', '/api/redoc', '/api/openapi.json', '/uploads', '/health', '/favicon']
+
+@contextmanager
+def get_db_session():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+async def cleanup_expired_tokens_task():
+    while True:
+        try:
+            await asyncio.sleep(86400)
+            with get_db_session() as db:
+                count = cleanup_expired_tokens(db)
+                if count > 0:
+                    logger.info(f"Cleaned up {count} expired refresh tokens")
+        except Exception as e:
+            logger.error(f"Error cleaning up expired tokens: {e}")
 
 class AccessLogMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -110,6 +151,7 @@ async def startup_event():
     try:
         Base.metadata.create_all(bind=engine)
         init_database()
+        asyncio.create_task(cleanup_expired_tokens_task())
         logger.info("Application started successfully")
     except Exception as e:
         logger.error(f"Startup error: {e}")

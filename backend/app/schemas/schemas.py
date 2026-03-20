@@ -382,10 +382,33 @@ class AdminCommentResponse(CommentBase):
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    refresh_token: Optional[str] = None
+    expires_in: Optional[int] = None
 
 
 class TokenData(BaseModel):
     username: Optional[str] = None
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+
+class SessionInfo(BaseModel):
+    id: int
+    ip_address: Optional[str] = None
+    user_agent: Optional[str] = None
+    last_used_at: Optional[str] = None
+    created_at: Optional[str] = None
+    is_current: bool = False
+    
+    @field_validator('last_used_at', 'created_at', mode='before')
+    @classmethod
+    def serialize_datetime_field(cls, v):
+        return serialize_datetime(v)
+    
+    class Config:
+        from_attributes = True
 
 
 class PaginatedResponse(BaseModel):

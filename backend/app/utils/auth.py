@@ -1,13 +1,15 @@
 import bcrypt
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, Tuple
+import secrets
 from jose import JWTError, jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.database import get_db
-from app.models import User
+from app.models import User, RefreshToken
+from app.utils.timezone import get_now
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
@@ -26,9 +28,121 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
         expire = datetime.utcnow() + expires_delta
     else:
         expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
+    to_encode.update({"exp": expire, "type": "access"})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
+
+
+def create_refresh_token_value() -> str:
+    return secrets.token_urlsafe(64)
+
+
+def create_refresh_token(
+    db: Session,
+    user_id: int,
+    request: Optional[Request] = None,
+    device_fingerprint: Optional[str] = None
+) -> RefreshToken:
+    token_value = create_refresh_token_value()
+    expires_at = get_now() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    
+    ip_address = None
+    user_agent = None
+    if request:
+        forwarded = request.headers.get("X-Forwarded-For")
+        if forwarded:
+            ip_address = forwarded.split(",")[0].strip()
+        elif request.client:
+            ip_address = request.client.host
+        user_agent = request.headers.get("User-Agent", "")[:500]
+    
+    refresh_token = RefreshToken(
+        token=token_value,
+        user_id=user_id,
+        ip_address=ip_address,
+        user_agent=user_agent,
+        device_fingerprint=device_fingerprint,
+        expires_at=expires_at,
+        last_used_at=get_now()
+    )
+    db.add(refresh_token)
+    db.commit()
+    db.refresh(refresh_token)
+    return refresh_token
+
+
+def verify_refresh_token(
+    db: Session,
+    token_value: str,
+    request: Optional[Request] = None
+) -> Tuple[Optional[RefreshToken], Optional[str]]:
+    refresh_token = db.query(RefreshToken).filter(
+        RefreshToken.token == token_value,
+        RefreshToken.is_revoked == False
+    ).first()
+    
+    if not refresh_token:
+        return None, "无效的刷新令牌"
+    
+    if refresh_token.expires_at < get_now():
+        return None, "刷新令牌已过期"
+    
+    if request:
+        forwarded = request.headers.get("X-Forwarded-For")
+        current_ip = None
+        if forwarded:
+            current_ip = forwarded.split(",")[0].strip()
+        elif request.client:
+            current_ip = request.client.host
+        
+        if refresh_token.ip_address and current_ip and refresh_token.ip_address != current_ip:
+            refresh_token.is_revoked = True
+            refresh_token.revoked_at = get_now()
+            refresh_token.revoked_reason = "IP地址变更"
+            db.commit()
+            return None, "检测到IP地址变更，请重新登录"
+    
+    return refresh_token, None
+
+
+def update_refresh_token_usage(db: Session, refresh_token: RefreshToken) -> None:
+    refresh_token.last_used_at = get_now()
+    db.commit()
+
+
+def revoke_refresh_token(db: Session, token_value: str, reason: str = "用户登出") -> bool:
+    refresh_token = db.query(RefreshToken).filter(
+        RefreshToken.token == token_value
+    ).first()
+    
+    if refresh_token and not refresh_token.is_revoked:
+        refresh_token.is_revoked = True
+        refresh_token.revoked_at = get_now()
+        refresh_token.revoked_reason = reason
+        db.commit()
+        return True
+    return False
+
+
+def revoke_all_user_tokens(db: Session, user_id: int, reason: str = "安全措施") -> int:
+    count = db.query(RefreshToken).filter(
+        RefreshToken.user_id == user_id,
+        RefreshToken.is_revoked == False
+    ).update({
+        "is_revoked": True,
+        "revoked_at": get_now(),
+        "revoked_reason": reason
+    })
+    db.commit()
+    return count
+
+
+def cleanup_expired_tokens(db: Session) -> int:
+    count = db.query(RefreshToken).filter(
+        RefreshToken.expires_at < get_now()
+    ).delete()
+    db.commit()
+    return count
 
 
 def decode_token(token: str) -> Optional[dict]:

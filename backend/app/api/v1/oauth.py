@@ -3,12 +3,12 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from pydantic import BaseModel
 from app.core.database import get_db
-from app.utils.auth import create_access_token, get_current_admin_user
+from app.utils.auth import create_access_token, get_current_admin_user, create_refresh_token
 from app.models import OAuthProvider, OAuthConnection, User
 from app.core.config import settings
 import httpx
 import secrets
-from datetime import datetime
+from datetime import datetime, timedelta
 
 router = APIRouter(prefix="/oauth", tags=["oauth"])
 
@@ -81,6 +81,8 @@ class OAuthLoginResponse(BaseModel):
 class OAuthCallbackResponse(BaseModel):
     access_token: str
     token_type: str
+    refresh_token: Optional[str] = None
+    expires_in: Optional[int] = None
     user: dict
     needs_email: bool = False
     temp_token: Optional[str] = None
@@ -394,10 +396,13 @@ async def oauth_callback(
         
         if user.is_verified:
             jwt_token = create_access_token(data={"sub": user.username})
+            refresh_token_obj = create_refresh_token(db=db, user_id=user.id, request=None)
             
             params = {
                 "access_token": jwt_token,
                 "token_type": "bearer",
+                "refresh_token": refresh_token_obj.token,
+                "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
                 "user_id": user.id,
                 "username": user.username,
                 "email": user.email or "",
@@ -588,10 +593,13 @@ async def oauth_verify_email(
     EmailService.delete_oauth_temp_token(db, token)
     
     jwt_token = create_access_token(data={"sub": user.username})
+    refresh_token_obj = create_refresh_token(db=db, user_id=user.id, request=None)
     
     return OAuthCallbackResponse(
         access_token=jwt_token,
         token_type="bearer",
+        refresh_token=refresh_token_obj.token,
+        expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         user={
             "id": user.id,
             "username": user.username,

@@ -14,7 +14,7 @@ export function useAdminCheck() {
     }
     
     const message = action 
-      ? `"${action}" 需要管理员权限才能执行`
+      ? `"${action}" 需要管理员权限`
       : '此操作需要管理员权限'
     
     await dialog.showWarning(message, '权限不足')

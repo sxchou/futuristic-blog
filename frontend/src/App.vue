@@ -2,6 +2,7 @@
 import { onMounted, onUnmounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useBlogStore } from '@/stores'
+import { useSessionManager, useActivityTracker } from '@/composables/useSessionManager'
 import Navbar from '@/components/common/Navbar.vue'
 import Footer from '@/components/common/Footer.vue'
 import GlobalSearch from '@/components/common/GlobalSearch.vue'
@@ -10,6 +11,9 @@ import ModalDialog from '@/components/common/ModalDialog.vue'
 
 const route = useRoute()
 const blogStore = useBlogStore()
+
+useSessionManager()
+useActivityTracker()
 
 const isAdminPage = computed(() => route.path.startsWith('/admin'))
 

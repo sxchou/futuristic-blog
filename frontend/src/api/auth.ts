@@ -1,5 +1,5 @@
 import apiClient from './client'
-import type { User, Token } from '@/types'
+import type { User, Token, SessionInfo } from '@/types'
 
 export const authApi = {
   login: async (username: string, password: string): Promise<Token> => {
@@ -19,6 +19,31 @@ export const authApi = {
 
   getMe: async (): Promise<User> => {
     const response = await apiClient.get('/auth/me')
+    return response.data
+  },
+
+  refreshToken: async (refreshToken: string): Promise<Token> => {
+    const response = await apiClient.post('/auth/refresh', { refresh_token: refreshToken })
+    return response.data
+  },
+
+  logout: async (refreshToken: string): Promise<{ message: string }> => {
+    const response = await apiClient.post('/auth/logout', { refresh_token: refreshToken })
+    return response.data
+  },
+
+  logoutAll: async (): Promise<{ message: string }> => {
+    const response = await apiClient.post('/auth/logout-all')
+    return response.data
+  },
+
+  getSessions: async (): Promise<SessionInfo[]> => {
+    const response = await apiClient.get('/auth/sessions')
+    return response.data
+  },
+
+  revokeSession: async (sessionId: number): Promise<{ message: string }> => {
+    const response = await apiClient.delete(`/auth/sessions/${sessionId}`)
     return response.data
   },
 
