@@ -3,11 +3,15 @@ import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore, useDialogStore } from '@/stores'
 import { oauthApi } from '@/api/oauth'
+import { usePendingOAuth } from '@/composables/usePendingOAuth'
+import { useOAuthAnalytics } from '@/composables/useOAuthAnalytics'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const dialog = useDialogStore()
+const { setPendingState, clearPendingState } = usePendingOAuth()
+const { trackEvent } = useOAuthAnalytics()
 
 const isLoading = ref(true)
 const error = ref('')
@@ -20,22 +24,39 @@ const isSubmitting = ref(false)
 const handleCallback = async () => {
   const provider = route.params.provider as string
   
+  trackEvent('oauth_login_attempt', { provider })
+  
   const accessToken = route.query.access_token as string
   const needsEmailParam = route.query.needs_email as string
   const tempTokenParam = route.query.temp_token as string
   const usernameParam = route.query.username as string
+  const emailParam = route.query.email as string
   const errorParam = route.query.error as string
   
   if (errorParam) {
     error.value = errorParam
+    clearPendingState()
+    trackEvent('oauth_login_error', { provider, error: errorParam })
     isLoading.value = false
     return
   }
   
   if (needsEmailParam === 'true' && tempTokenParam) {
+    if (emailParam && !emailParam.endsWith('@oauth.local')) {
+      setPendingState(tempTokenParam, usernameParam || '', provider, emailParam)
+      trackEvent('oauth_needs_verification', { provider, hasEmail: true })
+      router.push({
+        path: '/oauth/pending-verification',
+        query: { temp_token: tempTokenParam }
+      })
+      return
+    }
+    
     needsEmail.value = true
     tempToken.value = tempTokenParam
     username.value = usernameParam || ''
+    setPendingState(tempTokenParam, usernameParam || '', provider, '')
+    trackEvent('oauth_needs_email', { provider })
     isLoading.value = false
     return
   }
@@ -51,6 +72,7 @@ const handleCallback = async () => {
     )
     await authStore.fetchUser()
     
+    trackEvent('oauth_login_success', { provider })
     await dialog.showSuccess('登录成功！', '欢迎回来')
     
     const redirect = route.query.redirect as string
@@ -72,6 +94,14 @@ const handleCallback = async () => {
     const response = await oauthApi.handleCallback(provider, code, state)
     
     if (response.needs_email && response.temp_token) {
+      if (response.user.email && !response.user.email.endsWith('@oauth.local')) {
+        router.push({
+          path: '/oauth/pending-verification',
+          query: { temp_token: response.temp_token }
+        })
+        return
+      }
+      
       needsEmail.value = true
       tempToken.value = response.temp_token
       username.value = response.user.username
@@ -113,7 +143,10 @@ const submitEmail = async () => {
   try {
     await oauthApi.submitEmail(email.value, tempToken.value)
     await dialog.showSuccess('验证邮件已发送', '请检查您的邮箱完成验证')
-    router.push('/login')
+    router.push({
+      path: '/oauth/pending-verification',
+      query: { temp_token: tempToken.value }
+    })
   } catch (err: any) {
     dialog.showError(err.response?.data?.detail || '发送验证邮件失败')
   } finally {

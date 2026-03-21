@@ -3,11 +3,15 @@ import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore, useDialogStore } from '@/stores'
 import { oauthApi } from '@/api/oauth'
+import { usePendingOAuth } from '@/composables/usePendingOAuth'
+import { useOAuthAnalytics } from '@/composables/useOAuthAnalytics'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const dialog = useDialogStore()
+const { clearPendingState } = usePendingOAuth()
+const { trackEvent } = useOAuthAnalytics()
 
 const isLoading = ref(true)
 const error = ref('')
@@ -25,6 +29,9 @@ const verifyEmail = async () => {
   try {
     const response = await oauthApi.verifyEmail(token, email)
     
+    clearPendingState()
+    trackEvent('oauth_verification_complete', { emailDomain: email.split('@')[1] })
+    
     authStore.setTokens(
       response.access_token,
       response.refresh_token,
@@ -37,6 +44,7 @@ const verifyEmail = async () => {
     await router.push('/')
     window.location.reload()
   } catch (err: any) {
+    trackEvent('oauth_verification_failed', { error: err.response?.data?.detail })
     error.value = err.response?.data?.detail || '验证失败，请重试'
     isLoading.value = false
   }

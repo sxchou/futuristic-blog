@@ -100,6 +100,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '验证邮箱' }
   },
   {
+    path: '/oauth/pending-verification',
+    name: 'OAuthPendingVerification',
+    component: () => import('@/views/OAuthPendingVerificationView.vue'),
+    meta: { title: '邮箱验证' }
+  },
+  {
     path: '/admin',
     component: () => import('@/views/admin/AdminLayout.vue'),
     meta: { requiresAuth: true },

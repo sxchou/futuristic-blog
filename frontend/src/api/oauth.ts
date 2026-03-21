@@ -82,6 +82,20 @@ export interface OAuthEmailVerifyResponse {
   temp_token: string
 }
 
+export interface ResendVerificationResponse {
+  message: string
+  masked_email: string
+  delivery_time: string
+}
+
+export interface PendingVerificationInfo {
+  username: string
+  has_email: boolean
+  masked_email: string
+  is_verified: boolean
+  provider_name: string
+}
+
 export const oauthApi = {
   getProviders: async (): Promise<OAuthProviderResponse[]> => {
     const response = await apiClient.get<OAuthProviderResponse[]>('/oauth/providers')
@@ -126,6 +140,26 @@ export const oauthApi = {
   verifyEmail: async (token: string, email: string): Promise<OAuthCallbackResponse> => {
     const response = await apiClient.get<OAuthCallbackResponse>('/oauth/verify-email', {
       params: { token, email }
+    })
+    return response.data
+  },
+
+  getPendingVerification: async (tempToken: string): Promise<PendingVerificationInfo> => {
+    const response = await apiClient.get<PendingVerificationInfo>(`/oauth/pending-verification/${tempToken}`)
+    return response.data
+  },
+
+  resendVerification: async (tempToken: string): Promise<ResendVerificationResponse> => {
+    const response = await apiClient.post<ResendVerificationResponse>('/oauth/resend-verification', {
+      temp_token: tempToken
+    })
+    return response.data
+  },
+
+  changeEmail: async (tempToken: string, newEmail: string): Promise<ResendVerificationResponse> => {
+    const response = await apiClient.post<ResendVerificationResponse>('/oauth/change-email', {
+      temp_token: tempToken,
+      new_email: newEmail
     })
     return response.data
   }

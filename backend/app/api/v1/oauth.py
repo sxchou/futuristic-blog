@@ -429,7 +429,7 @@ async def oauth_callback(
             "token_type": "bearer",
             "user_id": user.id,
             "username": user.username,
-            "email": "",
+            "email": user.email if user.email and not user.email.endswith('@oauth.local') else "",
             "avatar": user.avatar or "",
             "is_admin": str(user.is_admin).lower(),
             "needs_email": "true",
@@ -609,3 +609,129 @@ async def oauth_verify_email(
         },
         needs_email=False
     )
+
+
+class ResendVerificationRequest(BaseModel):
+    temp_token: str
+
+
+class ChangeEmailRequest(BaseModel):
+    temp_token: str
+    new_email: str
+
+
+@router.post("/resend-verification")
+async def resend_oauth_verification(
+    data: ResendVerificationRequest,
+    db: Session = Depends(get_db)
+):
+    from app.services.email_service import EmailService
+    from app.models import OAuthTempToken
+    
+    temp_token_record = EmailService.get_oauth_temp_token(db, data.temp_token)
+    if not temp_token_record:
+        raise HTTPException(status_code=400, detail="无效或过期的临时令牌")
+    
+    user = db.query(User).filter(User.id == temp_token_record.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    
+    if user.is_verified:
+        raise HTTPException(status_code=400, detail="邮箱已验证")
+    
+    current_email = user.email
+    if not current_email or current_email.endswith('@oauth.local'):
+        raise HTTPException(status_code=400, detail="请先设置邮箱地址")
+    
+    success = EmailService.send_oauth_email_verification(
+        db=db,
+        email=current_email,
+        username=user.username,
+        temp_token=data.temp_token,
+        provider_name=temp_token_record.provider_name
+    )
+    
+    if not success:
+        raise HTTPException(status_code=500, detail="发送验证邮件失败")
+    
+    email_domain = current_email.split('@')[-1] if '@' in current_email else ''
+    masked_email = f"***@{email_domain}"
+    
+    return {
+        "message": "验证邮件已重新发送",
+        "masked_email": masked_email,
+        "delivery_time": "1-5分钟"
+    }
+
+
+@router.post("/change-email")
+async def change_oauth_email(
+    data: ChangeEmailRequest,
+    db: Session = Depends(get_db)
+):
+    from app.services.email_service import EmailService
+    from app.models import OAuthTempToken
+    
+    temp_token_record = EmailService.get_oauth_temp_token(db, data.temp_token)
+    if not temp_token_record:
+        raise HTTPException(status_code=400, detail="无效或过期的临时令牌")
+    
+    user = db.query(User).filter(User.id == temp_token_record.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    
+    existing_user = db.query(User).filter(User.email == data.new_email, User.id != user.id).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="该邮箱已被其他用户使用")
+    
+    success = EmailService.send_oauth_email_verification(
+        db=db,
+        email=data.new_email,
+        username=user.username,
+        temp_token=data.temp_token,
+        provider_name=temp_token_record.provider_name
+    )
+    
+    if not success:
+        raise HTTPException(status_code=500, detail="发送验证邮件失败")
+    
+    email_domain = data.new_email.split('@')[-1] if '@' in data.new_email else ''
+    masked_email = f"***@{email_domain}"
+    
+    return {
+        "message": "验证邮件已发送到新邮箱",
+        "masked_email": masked_email,
+        "delivery_time": "1-5分钟"
+    }
+
+
+@router.get("/pending-verification/{temp_token}")
+async def get_pending_verification_info(
+    temp_token: str,
+    db: Session = Depends(get_db)
+):
+    from app.services.email_service import EmailService
+    
+    temp_token_record = EmailService.get_oauth_temp_token(db, temp_token)
+    if not temp_token_record:
+        raise HTTPException(status_code=400, detail="无效或过期的临时令牌")
+    
+    user = db.query(User).filter(User.id == temp_token_record.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    
+    current_email = user.email
+    has_email = current_email and not current_email.endswith('@oauth.local')
+    
+    masked_email = ""
+    if has_email and '@' in current_email:
+        email_domain = current_email.split('@')[-1]
+        masked_email = f"***@{email_domain}"
+    
+    return {
+        "username": user.username,
+        "has_email": has_email,
+        "masked_email": masked_email,
+        "is_verified": user.is_verified,
+        "provider_name": temp_token_record.provider_name
+    }
