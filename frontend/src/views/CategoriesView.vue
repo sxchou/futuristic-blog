@@ -10,7 +10,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="pt-20 pb-16">
+  <div class="pb-16">
     <div class="container mx-auto px-4">
       <div class="text-center mb-8">
         <h1 class="text-2xl md:text-3xl font-bold mb-2">
@@ -34,7 +34,7 @@ onMounted(() => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
             </svg>
           </div>
-          <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-primary transition-colors">
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-primary transition-colors">
             {{ category.name }}
           </h3>
           <p v-if="category.description" class="text-gray-500 dark:text-gray-400 text-sm mb-4">

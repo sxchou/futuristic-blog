@@ -215,7 +215,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
 <template>
   <div class="space-y-6">
     <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">评论管理</h1>
+      <h1 class="text-lg font-bold text-gray-900 dark:text-white">评论管理</h1>
       <div class="flex items-center gap-4">
         <span v-if="pendingCount > 0 && isAdmin" class="px-3 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 rounded-full text-sm font-medium">
           {{ pendingCount }} 条待审核
@@ -229,7 +229,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
       </div>
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">权限不足</h2>
+      <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-2">权限不足</h2>
       <p class="text-gray-500 dark:text-gray-400">您没有权限访问此页面，请联系管理员</p>
     </div>
 
@@ -402,7 +402,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
 
     <div v-if="showAuditModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div class="bg-white dark:bg-dark-200 rounded-xl p-6 w-full max-w-md mx-4">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">审核评论</h3>
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">审核评论</h3>
         <div class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">状态</label>
@@ -490,7 +490,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
     <div v-if="showLogsModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div class="bg-white dark:bg-dark-200 rounded-xl p-6 w-full max-w-lg mx-4 max-h-[80vh] overflow-y-auto">
         <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">审核日志</h3>
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">审核日志</h3>
           <button
             @click="showLogsModal = false"
             class="text-gray-400 hover:text-gray-900 dark:hover:text-white"
@@ -547,7 +547,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
 
     <div v-if="showDeleteModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div class="bg-white dark:bg-dark-200 rounded-xl p-6 w-full max-w-md mx-4">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">删除评论</h3>
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">删除评论</h3>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
           请选择删除方式：
         </p>

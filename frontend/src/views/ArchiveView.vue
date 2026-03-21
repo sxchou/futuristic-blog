@@ -1,5 +1,5 @@
 <template>
-  <div class="pt-20 pb-16 min-h-screen">
+  <div class="pb-16 min-h-screen">
     <div class="container mx-auto px-4">
       <div class="text-center mb-12">
         <h1 class="text-2xl md:text-3xl font-bold mb-2">
@@ -35,7 +35,7 @@
               {{ yearData.year }}
             </div>
             <div>
-              <h2 class="text-xl font-bold text-gray-900 dark:text-white">{{ yearData.year }}年</h2>
+              <h2 class="text-lg md:text-xl font-bold text-gray-900 dark:text-white">{{ yearData.year }}年</h2>
               <p class="text-sm text-gray-500 dark:text-gray-400">
                 {{ yearData.months.reduce((sum, m) => sum + m.count, 0) }} 篇文章
               </p>
@@ -87,7 +87,7 @@
                   </div>
 
                   <div class="flex-1 min-w-0">
-                    <h4 class="text-gray-900 dark:text-white font-medium truncate group-hover:text-primary transition-colors">
+                    <h4 class="text-sm text-gray-900 dark:text-white font-medium truncate group-hover:text-primary transition-colors">
                       {{ article.title }}
                     </h4>
                   </div>

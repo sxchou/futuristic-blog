@@ -196,7 +196,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="pt-24 pb-20">
+  <div class="pb-20">
     <div class="container mx-auto px-4">
       <div v-if="loading" class="flex justify-center py-20">
         <div class="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
@@ -266,7 +266,7 @@ onUnmounted(() => {
         />
 
         <div v-if="articleFiles.length > 0" class="mt-8 p-6 bg-gray-50 dark:bg-dark-100/50 rounded-xl border border-gray-200 dark:border-white/10">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <span>📎</span>
             <span>附件下载</span>
           </h3>
@@ -303,7 +303,7 @@ onUnmounted(() => {
         <footer class="mt-12 pt-8 border-t border-gray-200 dark:border-white/10">
           <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">分享文章</h3>
+              <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-3">分享文章</h3>
               <div class="flex gap-3">
                 <button
                   @click="shareArticle('twitter')"

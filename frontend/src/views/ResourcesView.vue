@@ -49,7 +49,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="pt-20 pb-16">
+  <div class="pb-16">
     <div class="container mx-auto px-4">
       <div class="text-center mb-8">
         <h1 class="text-2xl md:text-3xl font-bold mb-2">
@@ -78,7 +78,7 @@ onMounted(async () => {
 
       <div v-else class="max-w-6xl mx-auto space-y-12">
         <div v-for="(items, category) in groupedResources" :key="category">
-          <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
+          <h2 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
             <span class="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
               <svg v-if="categoryIcons[category] === 'book'" class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -111,7 +111,7 @@ onMounted(async () => {
                   </svg>
                 </div>
                 <div class="flex-1 min-w-0">
-                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-1 group-hover:text-primary transition-colors">
+                  <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1 group-hover:text-primary transition-colors">
                     {{ resource.title }}
                   </h3>
                   <p v-if="resource.description" class="text-gray-500 dark:text-gray-400 text-sm line-clamp-2">

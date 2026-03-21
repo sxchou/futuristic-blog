@@ -47,7 +47,7 @@ onUnmounted(() => {
       <ReadingProgress />
       <Navbar />
     </template>
-    <main class="flex-1" :class="{ 'pt-16': !isAdminPage }">
+    <main class="flex-1" :class="{ 'pt-32': !isAdminPage }">
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
           <component :is="Component" />

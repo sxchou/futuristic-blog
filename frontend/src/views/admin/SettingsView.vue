@@ -49,7 +49,7 @@ const handleSave = async () => {
 <template>
   <div class="space-y-6">
     <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">网站设置</h1>
+      <h1 class="text-lg font-bold text-gray-900 dark:text-white">网站设置</h1>
     </div>
 
     <div class="bg-white dark:bg-dark-100 rounded-xl border border-gray-200 dark:border-white/10 p-6">
@@ -122,7 +122,7 @@ const handleSave = async () => {
     </div>
 
     <div class="bg-white dark:bg-dark-100 rounded-xl border border-gray-200 dark:border-white/10 p-6">
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">预览效果</h2>
+      <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-4">预览效果</h2>
       
       <div class="space-y-4">
         <div class="p-4 bg-gray-50 dark:bg-dark-200 rounded-lg">

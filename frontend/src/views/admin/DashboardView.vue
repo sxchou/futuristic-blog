@@ -204,7 +204,7 @@ onMounted(() => {
 <template>
   <div class="dashboard">
     <div class="dashboard-header">
-      <h1 class="text-xl font-bold text-gray-900 dark:text-white">仪表盘</h1>
+      <h1 class="text-lg font-bold text-gray-900 dark:text-white">仪表盘</h1>
       <div class="header-actions">
         <select 
           v-model="trendDays" 

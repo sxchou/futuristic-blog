@@ -344,7 +344,7 @@ function isProviderActive(providerId: string): boolean {
 <template>
   <div class="space-y-6">
     <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">邮件管理</h1>
+      <h1 class="text-lg font-bold text-gray-900 dark:text-white">邮件管理</h1>
       <div class="flex gap-2">
         <button
           @click="activeTab = 'config'"
@@ -392,7 +392,7 @@ function isProviderActive(providerId: string): boolean {
       </div>
 
       <div class="glass-card p-6">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">邮件服务提供商</h2>
+          <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-4">邮件服务提供商</h2>
           
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             <div
@@ -470,7 +470,7 @@ function isProviderActive(providerId: string): boolean {
         </div>
 
       <div v-if="providerStatus?.current_provider === 'resend' && providerStatus?.has_resend_api_key" class="glass-card p-6">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Resend 测试</h2>
+        <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-4">Resend 测试</h2>
         <div class="flex gap-4">
           <input
             v-model="testResendEmail"
@@ -493,7 +493,7 @@ function isProviderActive(providerId: string): boolean {
 
       <div class="glass-card p-6">
         <div class="flex items-center justify-between mb-6">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">邮箱配置列表</h2>
+          <h2 class="text-base font-semibold text-gray-900 dark:text-white">邮箱配置列表</h2>
           <button
             @click="startAddConfig"
             class="btn-primary flex items-center gap-2"
@@ -566,7 +566,7 @@ function isProviderActive(providerId: string): boolean {
 
       <div v-if="showAddForm" class="glass-card p-6">
         <div class="flex items-center justify-between mb-6">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <h2 class="text-base font-semibold text-gray-900 dark:text-white">
             {{ editingConfig ? '编辑配置' : '添加新配置' }}
           </h2>
           <button
@@ -721,7 +721,7 @@ function isProviderActive(providerId: string): boolean {
       </div>
 
       <div class="glass-card p-6">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">发送测试邮件</h2>
+        <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-4">发送测试邮件</h2>
         <div class="flex gap-4">
           <input
             v-model="testEmail"

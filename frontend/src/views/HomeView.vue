@@ -4,7 +4,7 @@ import TagsSection from '@/components/home/TagsSection.vue'
 </script>
 
 <template>
-  <div class="relative pt-4">
+  <div class="relative">
     <ArticlesSection />
     <TagsSection />
   </div>

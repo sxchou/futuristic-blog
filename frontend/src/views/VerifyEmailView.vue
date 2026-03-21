@@ -58,7 +58,7 @@ const goToLogin = () => {
 </script>
 
 <template>
-  <div class="min-h-screen pt-24 pb-20 flex items-center justify-center">
+  <div class="min-h-screen pb-20 flex items-center justify-center">
     <div class="container mx-auto px-4">
       <div class="max-w-md mx-auto">
         <div class="glass-card p-8 text-center">
@@ -73,7 +73,7 @@ const goToLogin = () => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">邮箱验证成功！</h1>
+            <h1 class="text-xl font-bold text-gray-900 dark:text-white mb-4">邮箱验证成功！</h1>
             <p class="text-gray-400 mb-6">您的邮箱已成功验证，现在可以登录了。</p>
             <button @click="goToLogin" class="btn-primary w-full">
               前往登录
@@ -86,7 +86,7 @@ const goToLogin = () => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </div>
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">验证失败</h1>
+            <h1 class="text-xl font-bold text-gray-900 dark:text-white mb-4">验证失败</h1>
             <p class="text-gray-400 mb-6">{{ errorMessage }}</p>
             
             <div class="border-t border-gray-200 dark:border-white/10 pt-6 mt-6">

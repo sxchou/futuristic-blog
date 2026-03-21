@@ -94,7 +94,7 @@ async function toggleSetting(key: keyof typeof settingsForm.value) {
 <template>
   <div class="space-y-6">
     <div class="flex items-center justify-between">
-      <h1 class="text-xl font-bold text-gray-900 dark:text-white">通知管理</h1>
+      <h1 class="text-lg font-bold text-gray-900 dark:text-white">通知管理</h1>
     </div>
 
     <div v-if="isLoading" class="flex justify-center py-12">

@@ -31,7 +31,7 @@ const currentCategory = () => {
 </script>
 
 <template>
-  <div class="pt-24 pb-20">
+  <div class="pb-20">
     <div class="container mx-auto px-4">
       <div class="text-center mb-12">
         <h1 class="text-4xl md:text-5xl font-bold mb-4">

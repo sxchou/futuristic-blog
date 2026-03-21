@@ -45,10 +45,10 @@ const handleSearch = () => {
 </script>
 
 <template>
-  <div class="pt-24 pb-20">
+  <div class="pb-20">
     <div class="container mx-auto px-4">
       <div class="max-w-3xl mx-auto mb-12">
-        <h1 class="text-4xl md:text-5xl font-bold text-center mb-8">
+        <h1 class="text-2xl md:text-3xl font-bold text-center mb-8">
           <span class="gradient-text">搜索文章</span>
         </h1>
 

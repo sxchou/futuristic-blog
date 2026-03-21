@@ -30,7 +30,7 @@ const getTagStyle = (tag: { article_count: number; color: string }) => {
 </script>
 
 <template>
-  <div class="pt-20 pb-16 min-h-screen">
+  <div class="pb-16 min-h-screen">
     <div class="container mx-auto px-4">
       <div class="text-center mb-8">
         <h1 class="text-2xl md:text-3xl font-bold mb-2">
@@ -55,7 +55,7 @@ const getTagStyle = (tag: { article_count: number; color: string }) => {
       </div>
 
       <div class="mt-16 max-w-4xl mx-auto">
-        <h2 class="text-xl font-bold text-center mb-8">
+        <h2 class="text-lg md:text-xl font-bold text-center mb-8">
           <span class="gradient-text">热门标签</span>
         </h2>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">

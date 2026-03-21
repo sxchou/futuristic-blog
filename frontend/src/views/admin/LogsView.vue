@@ -170,6 +170,14 @@ const getLoginLogAvatarStyle = (log: any) => {
     }
   }
   
+  if (log.oauth_avatar_url) {
+    return {
+      backgroundImage: `url(${log.oauth_avatar_url})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }
+  }
+  
   if (log.avatar_gradient && log.avatar_gradient.length >= 2) {
     return {
       background: `linear-gradient(135deg, ${log.avatar_gradient[0]}, ${log.avatar_gradient[1]})`
@@ -185,6 +193,14 @@ const getOperationLogAvatarStyle = (log: any) => {
   if (log.avatar_type === 'custom' && log.avatar_url) {
     return {
       backgroundImage: `url(${log.avatar_url})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }
+  }
+  
+  if (log.oauth_avatar_url) {
+    return {
+      backgroundImage: `url(${log.oauth_avatar_url})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center'
     }
@@ -235,7 +251,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
       </div>
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">权限不足</h2>
+      <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-2">权限不足</h2>
       <p class="text-gray-500 dark:text-gray-400">您没有权限访问此页面，请联系管理员</p>
     </div>
 
@@ -364,7 +380,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                         class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium overflow-hidden flex-shrink-0"
                         :style="getOperationLogAvatarStyle(log)"
                       >
-                        <span v-if="!log.avatar_type || log.avatar_type === 'default' || !log.avatar_url">
+                        <span v-if="(!log.avatar_type || log.avatar_type === 'default') && !log.oauth_avatar_url">
                           {{ (log.username || '?').charAt(0).toUpperCase() }}
                         </span>
                       </div>
@@ -442,7 +458,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                         class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium overflow-hidden flex-shrink-0"
                         :style="getLoginLogAvatarStyle(log)"
                       >
-                        <span v-if="!log.avatar_type || log.avatar_type === 'default' || !log.avatar_url">
+                        <span v-if="(!log.avatar_type || log.avatar_type === 'default') && !log.oauth_avatar_url">
                           {{ (log.username || '?').charAt(0).toUpperCase() }}
                         </span>
                       </div>

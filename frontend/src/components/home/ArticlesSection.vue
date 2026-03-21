@@ -43,7 +43,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <section class="py-12 relative">
+  <section class="pb-12 relative">
     <div class="container mx-auto px-4">
       <div class="text-center mb-8">
         <h2 class="text-2xl md:text-3xl font-bold mb-2">

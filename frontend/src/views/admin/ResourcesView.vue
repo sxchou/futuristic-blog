@@ -211,7 +211,7 @@ onMounted(() => {
     <div v-if="showEditor" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div class="bg-white dark:bg-dark-100 rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div class="p-4 border-b border-gray-200 dark:border-white/10">
-          <h2 class="text-lg font-bold text-gray-900 dark:text-white">
+          <h2 class="text-base font-semibold text-gray-900 dark:text-white">
             {{ editingResource ? '编辑资源' : '添加资源' }}
           </h2>
         </div>

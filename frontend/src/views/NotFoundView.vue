@@ -12,7 +12,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center pt-20 pb-20">
+  <div class="min-h-screen flex items-center justify-center pb-20">
     <div class="container mx-auto px-4">
       <div class="max-w-2xl mx-auto text-center">
         <div class="mb-8">

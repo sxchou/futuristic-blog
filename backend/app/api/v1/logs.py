@@ -19,6 +19,7 @@ class OperationLogItem(BaseModel):
     avatar_type: Optional[str] = None
     avatar_url: Optional[str] = None
     avatar_gradient: Optional[list] = None
+    oauth_avatar_url: Optional[str] = None
     action: str
     module: str
     description: Optional[str]
@@ -41,6 +42,7 @@ class LoginLogItem(BaseModel):
     avatar_type: Optional[str] = None
     avatar_url: Optional[str] = None
     avatar_gradient: Optional[list] = None
+    oauth_avatar_url: Optional[str] = None
     login_type: str
     ip_address: Optional[str]
     location: Optional[str]
@@ -132,6 +134,7 @@ async def get_operation_logs(
         avatar_type = None
         avatar_url = None
         avatar_gradient = None
+        oauth_avatar_url = None
         
         if log.user_id:
             if log.user_id not in user_avatar_cache:
@@ -142,6 +145,7 @@ async def get_operation_logs(
                 avatar_type = profile.avatar_type.value if profile.avatar_type else None
                 avatar_url = profile.avatar_url
                 avatar_gradient = profile.default_avatar_gradient
+                oauth_avatar_url = profile.oauth_avatar_url
         
         items.append(OperationLogItem(
             id=log.id,
@@ -150,6 +154,7 @@ async def get_operation_logs(
             avatar_type=avatar_type,
             avatar_url=avatar_url,
             avatar_gradient=avatar_gradient,
+            oauth_avatar_url=oauth_avatar_url,
             action=log.action,
             module=log.module,
             description=log.description,
@@ -207,6 +212,7 @@ async def get_login_logs(
         avatar_type = None
         avatar_url = None
         avatar_gradient = None
+        oauth_avatar_url = None
         
         if log.user_id:
             if log.user_id not in user_avatar_cache:
@@ -217,6 +223,7 @@ async def get_login_logs(
                 avatar_type = profile.avatar_type.value if profile.avatar_type else None
                 avatar_url = profile.avatar_url
                 avatar_gradient = profile.default_avatar_gradient
+                oauth_avatar_url = profile.oauth_avatar_url
         
         items.append(LoginLogItem(
             id=log.id,
@@ -225,6 +232,7 @@ async def get_login_logs(
             avatar_type=avatar_type,
             avatar_url=avatar_url,
             avatar_gradient=avatar_gradient,
+            oauth_avatar_url=oauth_avatar_url,
             login_type=log.login_type,
             ip_address=log.ip_address,
             location=log.location,
