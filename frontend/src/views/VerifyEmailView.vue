@@ -58,9 +58,8 @@ const goToLogin = () => {
 </script>
 
 <template>
-  <div class="min-h-screen pb-20 flex items-center justify-center">
-    <div class="container mx-auto px-4">
-      <div class="max-w-md mx-auto">
+  <div class="flex items-center justify-center px-4 pt-8 pb-32">
+    <div class="w-full max-w-md mx-auto">
         <div class="glass-card p-8 text-center">
           <div v-if="isVerifying" class="py-8">
             <div class="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4" />
@@ -92,9 +91,13 @@ const goToLogin = () => {
             <div class="border-t border-gray-200 dark:border-white/10 pt-6 mt-6">
               <p class="text-sm text-gray-500 mb-4">重新发送验证邮件：</p>
               <div class="flex gap-2">
+                <label for="verify-email" class="sr-only">邮箱地址</label>
                 <input
                   v-model="email"
                   type="email"
+                  id="verify-email"
+                  name="email"
+                  autocomplete="email"
                   placeholder="输入您的邮箱"
                   class="flex-1 px-4 py-2 bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:outline-none"
                 />
@@ -109,7 +112,6 @@ const goToLogin = () => {
             </button>
           </div>
         </div>
-      </div>
     </div>
   </div>
 </template>

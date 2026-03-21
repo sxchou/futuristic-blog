@@ -381,20 +381,24 @@ onMounted(() => {
         <form @submit.prevent="handleSubmit" class="space-y-4">
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">标题</label>
+              <label for="article-title" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">标题</label>
               <input
                 v-model="form.title"
                 type="text"
+                id="article-title"
+                name="title"
                 class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
                 placeholder="请输入文章标题"
                 @blur="generateSlug"
               />
             </div>
             <div>
-              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Slug</label>
+              <label for="article-slug" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Slug</label>
               <input
                 v-model="form.slug"
                 type="text"
+                id="article-slug"
+                name="slug"
                 class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
                 placeholder="url-slug"
               />
@@ -402,9 +406,11 @@ onMounted(() => {
           </div>
 
           <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">摘要</label>
+            <label for="article-summary" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">摘要</label>
             <textarea
               v-model="form.summary"
+              id="article-summary"
+              name="summary"
               rows="2"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none resize-none"
               placeholder="请输入文章摘要"
@@ -412,9 +418,10 @@ onMounted(() => {
           </div>
 
           <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">内容 (Markdown)</label>
+            <label for="article-content" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">内容 (Markdown)</label>
             <textarea
               v-model="form.content"
+              id="article-content"
               name="content"
               rows="8"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none resize-none font-mono"

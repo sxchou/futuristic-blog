@@ -48,7 +48,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-white dark:bg-dark flex items-center justify-center px-4">
+  <div class="flex items-center justify-center px-4 pt-8 pb-32">
     <div class="text-center">
       <div v-if="isLoading" class="space-y-4">
         <div class="w-12 h-12 mx-auto border-4 border-primary/30 border-t-primary rounded-full animate-spin" />

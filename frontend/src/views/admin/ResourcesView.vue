@@ -218,29 +218,35 @@ onMounted(() => {
 
         <form @submit.prevent="handleSubmit" class="p-4 space-y-4">
           <div>
-            <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">标题 *</label>
+            <label for="resource-title" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">标题 *</label>
             <input
               v-model="form.title"
               type="text"
+              id="resource-title"
+              name="title"
               required
               class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white text-sm"
             />
           </div>
 
           <div>
-            <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">链接 *</label>
+            <label for="resource-url" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">链接 *</label>
             <input
               v-model="form.url"
               type="url"
+              id="resource-url"
+              name="url"
               required
               class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white text-sm"
             />
           </div>
 
           <div>
-            <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">描述</label>
+            <label for="resource-description" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">描述</label>
             <textarea
               v-model="form.description"
+              id="resource-description"
+              name="description"
               rows="2"
               class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white text-sm"
             />
@@ -248,9 +254,11 @@ onMounted(() => {
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">分类</label>
+              <label for="resource-category" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">分类</label>
               <select
                 v-model="form.category"
+                id="resource-category"
+                name="category"
                 class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white text-sm"
               >
                 <option v-for="opt in categoryOptions" :key="opt.value" :value="opt.value">
@@ -260,10 +268,12 @@ onMounted(() => {
             </div>
 
             <div>
-              <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">图标</label>
+              <label for="resource-icon" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">图标</label>
               <input
                 v-model="form.icon"
                 type="text"
+                id="resource-icon"
+                name="icon"
                 placeholder="emoji 或图标类名"
                 class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white text-sm"
               />
@@ -272,10 +282,12 @@ onMounted(() => {
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm text-gray-600 dark:text-gray-400 mb-1">排序</label>
+              <label for="resource-order" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">排序</label>
               <input
                 v-model.number="form.order"
                 type="number"
+                id="resource-order"
+                name="order"
                 min="0"
                 class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white text-sm"
               />
@@ -286,6 +298,8 @@ onMounted(() => {
                 <input
                   v-model="form.is_active"
                   type="checkbox"
+                  id="resource-is-active"
+                  name="is_active"
                   class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
                 />
                 <span class="text-sm text-gray-600 dark:text-gray-400">启用</span>

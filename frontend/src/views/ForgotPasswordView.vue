@@ -202,7 +202,7 @@ const goBack = () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-white dark:bg-dark flex items-center justify-center px-4 py-16">
+  <div class="flex items-center justify-center px-4 pt-8 pb-32">
     <div class="w-full max-w-sm">
       <div class="glass-card p-6">
         <div class="text-center mb-6">
@@ -244,10 +244,13 @@ const goBack = () => {
 
         <form @submit.prevent="step === 1 ? handleSendCode() : handleResetPassword()" class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">邮箱地址</label>
+            <label for="forgot-email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">邮箱地址</label>
             <input
               v-model="email"
               type="email"
+              id="forgot-email"
+              name="email"
+              autocomplete="email"
               :disabled="step === 2"
               @blur="validateEmail"
               :class="[
@@ -262,11 +265,13 @@ const goBack = () => {
 
           <template v-if="step === 2">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">验证码</label>
+              <label for="forgot-code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">验证码</label>
               <div class="flex gap-2">
                 <input
                   v-model="code"
                   type="text"
+                  id="forgot-code"
+                  name="code"
                   maxlength="6"
                   @input="codeError = ''"
                   :class="[
@@ -288,10 +293,13 @@ const goBack = () => {
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">新密码</label>
+              <label for="forgot-new-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">新密码</label>
               <input
                 v-model="newPassword"
                 type="password"
+                id="forgot-new-password"
+                name="new-password"
+                autocomplete="new-password"
                 @input="passwordError = ''"
                 :class="[
                   'w-full px-3 py-2.5 bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none transition-colors text-sm',
@@ -303,10 +311,13 @@ const goBack = () => {
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">确认新密码</label>
+              <label for="forgot-confirm-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">确认新密码</label>
               <input
                 v-model="confirmPassword"
                 type="password"
+                id="forgot-confirm-password"
+                name="confirm-password"
+                autocomplete="new-password"
                 @input="confirmError = ''"
                 :class="[
                   'w-full px-3 py-2.5 bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none transition-colors text-sm',

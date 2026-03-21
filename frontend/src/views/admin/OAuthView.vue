@@ -388,18 +388,22 @@ onMounted(fetchProviders)
 
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">显示名称</label>
+                  <label for="oauth-display-name" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">显示名称</label>
                   <input
                     v-model="form.display_name"
                     type="text"
+                    id="oauth-display-name"
+                    name="display-name"
                     class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all"
                   />
                 </div>
                 <div>
-                  <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">授权范围</label>
+                  <label for="oauth-scope" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">授权范围</label>
                   <input
                     v-model="form.scope"
                     type="text"
+                    id="oauth-scope"
+                    name="scope"
                     class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all"
                   />
                 </div>
@@ -407,22 +411,27 @@ onMounted(fetchProviders)
 
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  <label for="oauth-client-id" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                     Client ID <span class="text-red-500">*</span>
                   </label>
                   <input
                     v-model="form.client_id"
                     type="text"
+                    id="oauth-client-id"
+                    name="client-id"
                     class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all"
                   />
                 </div>
                 <div>
-                  <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  <label for="oauth-client-secret" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                     Client Secret <span class="text-red-500">*</span>
                   </label>
                   <input
                     v-model="form.client_secret"
                     type="password"
+                    id="oauth-client-secret"
+                    name="client-secret"
+                    autocomplete="new-password"
                     class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all"
                     placeholder="留空保持原值"
                   />
@@ -430,12 +439,14 @@ onMounted(fetchProviders)
               </div>
 
               <div>
-                <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                <label for="oauth-redirect-uri" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                   回调地址 <span class="text-red-500">*</span>
                 </label>
                 <input
                   v-model="form.redirect_uri"
                   type="text"
+                  id="oauth-redirect-uri"
+                  name="redirect-uri"
                   class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all"
                   placeholder="http://localhost:3001/oauth/callback/{provider}"
                 />
@@ -456,26 +467,32 @@ onMounted(fetchProviders)
                 <div class="space-y-2">
                   <div class="grid grid-cols-3 gap-2">
                     <div>
-                      <label class="block text-xs text-gray-500 dark:text-gray-500 mb-0.5">授权端点</label>
+                      <label for="oauth-authorize-url" class="block text-xs text-gray-500 dark:text-gray-500 mb-0.5">授权端点</label>
                       <input
                         v-model="form.authorize_url"
                         type="text"
+                        id="oauth-authorize-url"
+                        name="authorize-url"
                         class="w-full px-2 py-1 text-xs rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
                       />
                     </div>
                     <div>
-                      <label class="block text-xs text-gray-500 dark:text-gray-500 mb-0.5">令牌端点</label>
+                      <label for="oauth-token-url" class="block text-xs text-gray-500 dark:text-gray-500 mb-0.5">令牌端点</label>
                       <input
                         v-model="form.token_url"
                         type="text"
+                        id="oauth-token-url"
+                        name="token-url"
                         class="w-full px-2 py-1 text-xs rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
                       />
                     </div>
                     <div>
-                      <label class="block text-xs text-gray-500 dark:text-gray-500 mb-0.5">用户信息端点</label>
+                      <label for="oauth-userinfo-url" class="block text-xs text-gray-500 dark:text-gray-500 mb-0.5">用户信息端点</label>
                       <input
                         v-model="form.userinfo_url"
                         type="text"
+                        id="oauth-userinfo-url"
+                        name="userinfo-url"
                         class="w-full px-2 py-1 text-xs rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
                       />
                     </div>

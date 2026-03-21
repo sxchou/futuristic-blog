@@ -127,7 +127,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-white dark:bg-dark flex items-center justify-center px-4">
+  <div class="flex items-center justify-center px-4 pt-8 pb-32">
     <div class="text-center">
       <div v-if="isLoading" class="space-y-4">
         <div class="w-12 h-12 mx-auto border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
@@ -152,9 +152,13 @@ onMounted(() => {
         
         <form @submit.prevent="submitEmail" class="space-y-4">
           <div>
+            <label for="oauth-email" class="sr-only">邮箱地址</label>
             <input
               v-model="email"
               type="email"
+              id="oauth-email"
+              name="email"
+              autocomplete="email"
               placeholder="请输入您的邮箱地址"
               class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
               :disabled="isSubmitting"

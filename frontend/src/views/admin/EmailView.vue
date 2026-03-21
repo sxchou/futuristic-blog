@@ -652,24 +652,30 @@ function isProviderActive(providerId: string): boolean {
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label for="email-smtp-user" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 邮箱账号 <span class="text-red-400">*</span>
               </label>
               <input
                 v-model="configForm.smtp_user"
                 type="text"
+                id="email-smtp-user"
+                name="smtp-user"
+                autocomplete="email"
                 :placeholder="configForm.provider === 'qq' ? '您的QQ邮箱@qq.com' : '您的Gmail@gmail.com'"
                 class="w-full px-4 py-3 bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:outline-none"
               />
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label for="email-smtp-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {{ configForm.provider === 'qq' ? '授权码' : '应用密码' }} <span class="text-red-400">*</span>
               </label>
               <input
                 v-model="configForm.smtp_password"
                 type="password"
+                id="email-smtp-password"
+                name="smtp-password"
+                autocomplete="new-password"
                 :placeholder="editingConfig ? '留空则保持原密码不变' : (configForm.provider === 'qq' ? '16位授权码' : '16位应用密码')"
                 class="w-full px-4 py-3 bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:outline-none"
               />
@@ -678,24 +684,29 @@ function isProviderActive(providerId: string): boolean {
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label for="email-from-email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 发件人邮箱 <span class="text-red-400">*</span>
               </label>
               <input
                 v-model="configForm.from_email"
                 type="email"
+                id="email-from-email"
+                name="from-email"
+                autocomplete="email"
                 placeholder="用于发送邮件的邮箱地址"
                 class="w-full px-4 py-3 bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:outline-none"
               />
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label for="email-from-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 发件人名称
               </label>
               <input
                 v-model="configForm.from_name"
                 type="text"
+                id="email-from-name"
+                name="from-name"
                 placeholder="显示的发件人名称"
                 class="w-full px-4 py-3 bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:outline-none"
               />

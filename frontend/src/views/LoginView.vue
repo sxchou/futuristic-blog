@@ -193,7 +193,7 @@ onMounted(fetchOAuthProviders)
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center px-4 py-8">
+  <div class="flex items-center justify-center px-4 pt-8 pb-32">
     <div class="w-full max-w-[386px]">
       <div class="glass-card p-5">
         <div class="text-center mb-4">
@@ -206,7 +206,7 @@ onMounted(fetchOAuthProviders)
 
         <form @submit.prevent="handleLogin" class="space-y-3">
           <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">用户名/邮箱</label>
+            <label for="login-username" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">用户名/邮箱</label>
             <input
               v-model="form.username"
               type="text"
@@ -221,7 +221,7 @@ onMounted(fetchOAuthProviders)
           </div>
 
           <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">密码</label>
+            <label for="login-password" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">密码</label>
             <input
               v-model="form.password"
               type="password"
@@ -258,6 +258,9 @@ onMounted(fetchOAuthProviders)
               <input
                 v-model="resendEmail"
                 type="email"
+                id="resend-email"
+                name="resend-email"
+                autocomplete="email"
                 class="flex-1 px-2 py-1.5 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white"
                 placeholder="邮箱地址"
               />

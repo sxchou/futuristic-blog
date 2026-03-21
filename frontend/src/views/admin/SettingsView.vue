@@ -55,12 +55,14 @@ const handleSave = async () => {
     <div class="bg-white dark:bg-dark-100 rounded-xl border border-gray-200 dark:border-white/10 p-6">
       <form @submit.prevent="handleSave" class="space-y-6">
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label for="settings-site-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             网站名称
           </label>
           <input
             v-model="formData.siteName"
             type="text"
+            id="settings-site-name"
+            name="site-name"
             class="w-full px-4 py-2 bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none transition-colors"
             placeholder="请输入网站名称"
           />
@@ -70,11 +72,13 @@ const handleSave = async () => {
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label for="settings-site-description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             网站描述
           </label>
           <textarea
             v-model="formData.siteDescription"
+            id="settings-site-description"
+            name="site-description"
             rows="3"
             class="w-full px-4 py-2 bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none transition-colors resize-none"
             placeholder="请输入网站描述"
@@ -85,12 +89,14 @@ const handleSave = async () => {
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label for="settings-site-keywords" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             网站关键词
           </label>
           <input
             v-model="formData.siteKeywords"
             type="text"
+            id="settings-site-keywords"
+            name="site-keywords"
             class="w-full px-4 py-2 bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none transition-colors"
             placeholder="请输入网站关键词，用逗号分隔"
           />

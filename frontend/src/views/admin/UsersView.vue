@@ -314,30 +314,37 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
 
         <form @submit.prevent="handleSubmit" class="space-y-3">
           <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">用户名</label>
+            <label for="user-username" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">用户名</label>
             <input
               v-model="form.username"
               type="text"
+              id="user-username"
+              name="username"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
               placeholder="用户名"
             />
           </div>
 
           <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">邮箱</label>
+            <label for="user-email" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">邮箱</label>
             <input
               v-model="form.email"
               type="email"
+              id="user-email"
+              name="email"
+              autocomplete="email"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
               placeholder="邮箱地址"
             />
           </div>
 
           <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">简介</label>
+            <label for="user-bio" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">简介</label>
             <textarea
               v-model="form.bio"
-              rows="2"
+              id="user-bio"
+              name="bio"
+              rows="3"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none resize-none"
               placeholder="个人简介"
             />
@@ -348,6 +355,8 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
               <input
                 type="checkbox"
                 v-model="form.is_admin"
+                id="user-is-admin"
+                name="is_admin"
                 class="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-200 text-primary focus:ring-primary"
               />
               <span class="text-gray-700 dark:text-gray-300 text-sm">管理员权限</span>
@@ -392,10 +401,13 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
 
         <form @submit.prevent="handleResetPassword" class="space-y-3">
           <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">新密码</label>
+            <label for="user-new-password" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">新密码</label>
             <input
               v-model="newPassword"
               type="password"
+              id="user-new-password"
+              name="new-password"
+              autocomplete="new-password"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
               placeholder="请输入新密码"
             />

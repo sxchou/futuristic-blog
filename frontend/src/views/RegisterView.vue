@@ -59,7 +59,7 @@ const goToLogin = () => {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center px-4 py-8">
+  <div class="flex items-center justify-center px-4 pt-8 pb-32">
     <div class="w-full max-w-[386px]">
       <div class="glass-card p-5">
         <div v-if="!showSuccess">
@@ -73,7 +73,7 @@ const goToLogin = () => {
 
           <form @submit.prevent="handleRegister" class="space-y-3">
             <div>
-              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">用户名</label>
+              <label for="register-username" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">用户名</label>
               <input
                 v-model="form.username"
                 type="text"
@@ -86,7 +86,7 @@ const goToLogin = () => {
             </div>
 
             <div>
-              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">邮箱</label>
+              <label for="register-email" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">邮箱</label>
               <input
                 v-model="form.email"
                 type="email"
@@ -99,7 +99,7 @@ const goToLogin = () => {
             </div>
 
             <div>
-              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">密码</label>
+              <label for="register-password" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">密码</label>
               <input
                 v-model="form.password"
                 type="password"
@@ -112,7 +112,7 @@ const goToLogin = () => {
             </div>
 
             <div>
-              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">确认密码</label>
+              <label for="register-confirm-password" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">确认密码</label>
               <input
                 v-model="form.confirmPassword"
                 type="password"

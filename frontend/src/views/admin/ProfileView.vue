@@ -191,43 +191,51 @@ onMounted(() => {
         <div v-if="activeTab === 'basic'" class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">姓名</label>
+              <label for="profile-name" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">姓名</label>
               <input
                 v-model="form.name"
                 type="text"
+                id="profile-name"
+                name="name"
                 class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
               />
             </div>
             <div>
-              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">别名</label>
+              <label for="profile-alias" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">别名</label>
               <input
                 v-model="form.alias"
                 type="text"
+                id="profile-alias"
+                name="alias"
                 class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
               />
             </div>
           </div>
 
           <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">标语</label>
+            <label for="profile-slogan" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">标语</label>
             <input
               v-model="form.slogan"
               type="text"
+              id="profile-slogan"
+              name="slogan"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
             />
           </div>
 
           <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">头像 URL</label>
+            <label for="profile-avatar" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">头像 URL</label>
             <input
               v-model="form.avatar"
               type="text"
+              id="profile-avatar"
+              name="avatar"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
             />
           </div>
 
           <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">标签</label>
+            <label for="profile-new-tag" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">标签</label>
             <div class="flex flex-wrap gap-2 mb-2">
               <span
                 v-for="(tag, index) in form.tags"
@@ -242,6 +250,8 @@ onMounted(() => {
               <input
                 v-model="newTag"
                 type="text"
+                id="profile-new-tag"
+                name="new-tag"
                 class="flex-1 px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
                 placeholder="输入标签"
                 @keyup.enter="addTag"
@@ -251,9 +261,11 @@ onMounted(() => {
           </div>
 
           <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">个人简介</label>
+            <label for="profile-bio" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">个人简介</label>
             <textarea
               v-model="form.bio"
+              id="profile-bio"
+              name="bio"
               rows="4"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none resize-none"
             />
@@ -351,36 +363,44 @@ onMounted(() => {
           <div v-if="form.education" class="p-4 bg-gray-50 dark:bg-dark-100 rounded-lg space-y-2">
             <div class="grid grid-cols-2 gap-2">
               <div>
-                <label class="block text-xs text-gray-500 mb-1">时间段</label>
+                <label for="edu-period" class="block text-xs text-gray-500 mb-1">时间段</label>
                 <input
                   v-model="form.education.period"
                   type="text"
+                  id="edu-period"
+                  name="period"
                   class="w-full px-2 py-1 text-sm bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
                 />
               </div>
               <div>
-                <label class="block text-xs text-gray-500 mb-1">学校</label>
+                <label for="edu-school" class="block text-xs text-gray-500 mb-1">学校</label>
                 <input
                   v-model="form.education.school"
                   type="text"
+                  id="edu-school"
+                  name="school"
                   class="w-full px-2 py-1 text-sm bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
                 />
               </div>
             </div>
             <div class="grid grid-cols-2 gap-2">
               <div>
-                <label class="block text-xs text-gray-500 mb-1">专业</label>
+                <label for="edu-major" class="block text-xs text-gray-500 mb-1">专业</label>
                 <input
                   v-model="form.education.major"
                   type="text"
+                  id="edu-major"
+                  name="major"
                   class="w-full px-2 py-1 text-sm bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
                 />
               </div>
               <div>
-                <label class="block text-xs text-gray-500 mb-1">学位</label>
+                <label for="edu-degree" class="block text-xs text-gray-500 mb-1">学位</label>
                 <input
                   v-model="form.education.degree"
                   type="text"
+                  id="edu-degree"
+                  name="degree"
                   class="w-full px-2 py-1 text-sm bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
                 />
               </div>
@@ -407,9 +427,12 @@ onMounted(() => {
             </span>
           </div>
           <div class="flex gap-2">
+            <label for="profile-new-exploration" class="sr-only">探索方向</label>
             <input
               v-model="newExplorationArea"
               type="text"
+              id="profile-new-exploration"
+              name="new-exploration"
               class="flex-1 px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
               placeholder="输入探索方向"
               @keyup.enter="addExplorationArea"
@@ -420,28 +443,35 @@ onMounted(() => {
 
         <div v-if="activeTab === 'social'" class="space-y-4">
           <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">GitHub</label>
+            <label for="profile-github" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">GitHub</label>
             <input
               v-model="form.social_github"
               type="text"
+              id="profile-github"
+              name="github"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
               placeholder="https://github.com/username"
             />
           </div>
           <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">博客</label>
+            <label for="profile-blog" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">博客</label>
             <input
               v-model="form.social_blog"
               type="text"
+              id="profile-blog"
+              name="blog"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
               placeholder="https://your-blog.com"
             />
           </div>
           <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">邮箱</label>
+            <label for="profile-email" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">邮箱</label>
             <input
               v-model="form.social_email"
-              type="text"
+              type="email"
+              id="profile-email"
+              name="email"
+              autocomplete="email"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
               placeholder="your@email.com"
             />

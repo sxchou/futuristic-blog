@@ -189,29 +189,35 @@ onMounted(fetchCategories)
 
         <form @submit.prevent="handleSubmit" class="space-y-3">
           <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">名称</label>
+            <label for="category-name" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">名称</label>
             <input
               v-model="form.name"
               type="text"
+              id="category-name"
+              name="name"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
               placeholder="分类名称"
             />
           </div>
 
           <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Slug</label>
+            <label for="category-slug" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Slug</label>
             <input
               v-model="form.slug"
               type="text"
+              id="category-slug"
+              name="slug"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
               placeholder="url-slug"
             />
           </div>
 
           <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">描述</label>
+            <label for="category-description" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">描述</label>
             <textarea
               v-model="form.description"
+              id="category-description"
+              name="description"
               rows="2"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none resize-none"
               placeholder="分类描述"
@@ -219,16 +225,20 @@ onMounted(fetchCategories)
           </div>
 
           <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">颜色</label>
+            <label for="category-color" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">颜色</label>
             <div class="flex gap-2">
               <input
                 v-model="form.color"
                 type="color"
+                id="category-color"
+                name="color"
                 class="w-10 h-10 rounded-lg cursor-pointer"
               />
               <input
                 v-model="form.color"
                 type="text"
+                id="category-color-text"
+                name="color-text"
                 class="flex-1 px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
                 placeholder="#00d4ff"
               />

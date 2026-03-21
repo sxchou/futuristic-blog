@@ -405,9 +405,11 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
         <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">审核评论</h3>
         <div class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">状态</label>
+            <label for="comment-audit-status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">状态</label>
             <select
               v-model="auditStatus"
+              id="comment-audit-status"
+              name="audit-status"
               class="w-full px-3 py-2 bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
               <option value="pending">待审核</option>
@@ -416,9 +418,11 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">原因（可选）</label>
+            <label for="comment-audit-reason" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">原因（可选）</label>
             <textarea
               v-model="auditReason"
+              id="comment-audit-reason"
+              name="audit-reason"
               rows="3"
               class="w-full px-3 py-2 bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
               placeholder="请输入审核原因..."
@@ -450,9 +454,11 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
         </p>
         <div class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">状态</label>
+            <label for="batch-audit-status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">状态</label>
             <select
               v-model="batchAuditStatus"
+              id="batch-audit-status"
+              name="batch-audit-status"
               class="w-full px-3 py-2 bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
               <option value="pending">待审核</option>
@@ -461,9 +467,11 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">原因（可选）</label>
+            <label for="batch-audit-reason" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">原因（可选）</label>
             <textarea
               v-model="batchAuditReason"
+              id="batch-audit-reason"
+              name="batch-audit-reason"
               rows="3"
               class="w-full px-3 py-2 bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
               placeholder="请输入审核原因..."
