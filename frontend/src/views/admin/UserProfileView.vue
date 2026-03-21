@@ -174,7 +174,7 @@ onMounted(fetchProfile)
 <template>
   <div>
     <div class="flex items-center justify-between mb-6">
-      <h1 class="text-lg font-bold text-gray-900 dark:text-white">我的资料</h1>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">我的资料</h1>
     </div>
 
     <div v-if="isLoading" class="flex justify-center py-16">
@@ -183,7 +183,7 @@ onMounted(fetchProfile)
 
     <div v-else class="space-y-6">
       <div class="glass-card p-6">
-        <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-4">头像设置</h2>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">头像设置</h2>
         
         <div class="flex items-center gap-6">
           <div class="relative">
@@ -250,7 +250,7 @@ onMounted(fetchProfile)
       </div>
 
       <div class="glass-card p-6">
-        <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-4">账户信息</h2>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">账户信息</h2>
         
         <div class="space-y-4">
           <div class="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700">
@@ -291,7 +291,7 @@ onMounted(fetchProfile)
       </div>
 
       <div v-if="user?.is_admin" class="glass-card p-6">
-        <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-4">管理员功能</h2>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">管理功能</h2>
         <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
           作为管理员，您可以编辑网站所有者的公开资料信息（显示在"关于我"页面）。
         </p>

@@ -157,7 +157,7 @@ onMounted(() => {
 <template>
   <div>
     <div class="flex items-center justify-between mb-4">
-      <h1 class="text-lg font-bold text-gray-900 dark:text-white">个人资料管理</h1>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">个人资料管理</h1>
       <button
         @click="handleSave"
         class="btn-primary text-sm px-4 py-1.5"

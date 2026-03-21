@@ -33,10 +33,10 @@ const getTagStyle = (tag: { article_count: number; color: string }) => {
   <div class="pb-16 min-h-screen">
     <div class="container mx-auto px-4">
       <div class="text-center mb-8">
-        <h1 class="text-2xl md:text-3xl font-bold mb-2">
+        <h1 class="text-3xl md:text-4xl font-bold mb-2">
           <span class="gradient-text">标签云</span>
         </h1>
-        <p class="text-gray-500 dark:text-gray-400 text-sm">探索不同技术标签</p>
+        <p class="text-gray-500 dark:text-gray-400 text-base">探索不同技术标签</p>
       </div>
 
       <div class="flex flex-wrap justify-center gap-4 max-w-5xl mx-auto">

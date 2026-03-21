@@ -72,17 +72,17 @@ const goToComments = (e: Event) => {
       </span>
     </div>
 
-    <h3 class="text-base font-bold text-gray-900 dark:text-white mb-1 group-hover:text-primary transition-colors line-clamp-2">
+    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1 group-hover:text-primary transition-colors line-clamp-2">
       {{ article.title }}
     </h3>
 
-    <p v-if="article.summary" class="text-gray-500 dark:text-gray-400 text-xs mb-2 line-clamp-2 flex-grow">
+    <p v-if="article.summary" class="text-gray-500 dark:text-gray-400 text-sm mb-2 line-clamp-2 flex-grow">
       {{ article.summary }}
     </p>
 
     <div v-if="article.category" class="mb-2">
       <span
-        class="inline-flex items-center gap-1 text-xs"
+        class="inline-flex items-center gap-1 text-sm"
         :style="{ color: article.category.color }"
       >
         <span class="w-1.5 h-1.5 rounded-full" :style="{ backgroundColor: article.category.color }" />
@@ -94,7 +94,7 @@ const goToComments = (e: Event) => {
       <span
         v-for="tag in article.tags.slice(0, 2)"
         :key="tag.id"
-        class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full border transition-all duration-300 hover:border-primary/50"
+        class="inline-flex items-center px-2 py-0.5 text-sm font-medium rounded-full border transition-all duration-300 hover:border-primary/50"
         :style="{ 
           color: tag.color, 
           backgroundColor: tag.color + '15',
@@ -105,7 +105,7 @@ const goToComments = (e: Event) => {
       </span>
     </div>
 
-    <div class="flex items-center justify-between text-xs text-gray-500 mt-auto pt-2 border-t border-gray-200 dark:border-white/5">
+    <div class="flex items-center justify-between text-sm text-gray-500 mt-auto pt-2 border-t border-gray-200 dark:border-white/5">
       <span>{{ formatDate(article.created_at) }}</span>
       <div class="flex items-center gap-3">
         <span class="flex items-center gap-1">

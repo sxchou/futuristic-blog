@@ -29,10 +29,10 @@ onMounted(() => {
     <div class="container mx-auto px-4">
       <div class="max-w-5xl mx-auto">
         <div class="text-center mb-8">
-          <h1 class="text-2xl md:text-3xl font-bold mb-2">
+          <h1 class="text-3xl md:text-4xl font-bold mb-2">
             <span class="gradient-text">关于我</span>
           </h1>
-          <p class="text-gray-500 dark:text-gray-400 text-sm">了解博主的技术背景与成长历程</p>
+          <p class="text-gray-500 dark:text-gray-400 text-base">了解博主的技术背景与成长历程</p>
         </div>
         
         <div v-if="isLoading" class="flex justify-center py-16">
@@ -56,7 +56,7 @@ onMounted(() => {
               </div>
 
               <div class="flex-1 text-center md:text-left">
-                <h1 class="text-2xl md:text-3xl font-bold mb-2">
+                <h1 class="text-3xl md:text-4xl font-bold mb-2">
                   <span class="gradient-text">{{ profile.name }}</span>
                 </h1>
                 <p v-if="profile.alias" class="text-xl text-gray-400 mb-4">{{ profile.alias }}</p>

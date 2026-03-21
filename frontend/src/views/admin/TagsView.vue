@@ -102,7 +102,7 @@ onMounted(fetchTags)
 <template>
   <div>
     <div class="flex items-center justify-between mb-4">
-      <h1 class="text-lg font-bold text-gray-900 dark:text-white">标签管理</h1>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">标签管理</h1>
       <button
         @click="openCreateModal"
         class="btn-primary text-sm px-4 py-1.5"

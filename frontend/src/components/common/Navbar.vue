@@ -65,7 +65,7 @@ onMounted(() => {
     <nav class="container mx-auto px-4 py-2">
       <div class="flex items-center justify-between">
         <router-link to="/" class="flex items-center gap-2 group">
-          <span class="text-lg font-bold gradient-text">{{ siteConfigStore.siteName }}</span>
+          <span class="text-xl font-bold gradient-text">{{ siteConfigStore.siteName }}</span>
         </router-link>
 
         <div class="hidden md:flex items-center gap-6">
@@ -73,7 +73,7 @@ onMounted(() => {
             v-for="link in navLinks"
             :key="link.path"
             :to="link.path"
-            class="relative text-gray-600 dark:text-gray-300 hover:text-primary transition-colors py-1 text-sm"
+            class="relative text-gray-600 dark:text-gray-300 hover:text-primary transition-colors py-1 text-base"
             :class="{ 'text-primary': isActive(link.path) }"
           >
             {{ link.name }}
@@ -93,8 +93,8 @@ onMounted(() => {
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            <span class="text-xs hidden sm:inline">搜索</span>
-            <kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-dark-200 rounded text-xs hidden sm:inline">⌘K</kbd>
+            <span class="text-sm hidden sm:inline">搜索</span>
+            <kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-dark-200 rounded text-sm hidden sm:inline">⌘K</kbd>
           </button>
 
           <button
@@ -112,13 +112,13 @@ onMounted(() => {
           <div v-if="!authStore.isAuthenticated" class="hidden sm:flex items-center gap-2">
             <router-link
               to="/login"
-              class="px-3 py-1.5 text-gray-600 dark:text-gray-300 hover:text-primary transition-colors text-sm"
+              class="px-3 py-1.5 text-gray-600 dark:text-gray-300 hover:text-primary transition-colors text-base"
             >
               登录
             </router-link>
             <router-link
               to="/register"
-              class="px-3 py-1.5 bg-gradient-to-r from-primary to-accent text-white rounded-lg hover:opacity-90 transition-opacity text-sm"
+              class="px-3 py-1.5 bg-gradient-to-r from-primary to-accent text-white rounded-lg hover:opacity-90 transition-opacity text-base"
             >
               注册
             </router-link>

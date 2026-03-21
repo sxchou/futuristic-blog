@@ -18,9 +18,9 @@ onMounted(() => {
       <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div class="md:col-span-2">
           <div class="flex items-center gap-2 mb-2">
-            <span class="text-lg font-bold gradient-text">{{ siteConfigStore.siteName }}</span>
+            <span class="text-xl font-bold gradient-text">{{ siteConfigStore.siteName }}</span>
           </div>
-          <p class="text-gray-500 dark:text-gray-400 mb-3 max-w-md text-sm">
+          <p class="text-gray-500 dark:text-gray-400 mb-3 max-w-md text-base">
             {{ siteConfigStore.siteDescription || 'Code for Future, Share for Growth. 一个充满未来感的个人技术博客，分享全栈开发、AI应用、架构设计等技术探索。' }}
           </p>
           <div class="flex gap-2">
@@ -49,34 +49,34 @@ onMounted(() => {
         </div>
 
         <div>
-          <h4 class="text-gray-900 dark:text-white font-semibold mb-2 text-sm">快速链接</h4>
+          <h4 class="text-gray-900 dark:text-white font-semibold mb-2 text-base">快速链接</h4>
           <ul class="space-y-1">
-            <li><router-link to="/" class="text-gray-500 dark:text-gray-400 hover:text-primary transition-colors text-sm">首页</router-link></li>
-            <li><router-link to="/about" class="text-gray-500 dark:text-gray-400 hover:text-primary transition-colors text-sm">关于我</router-link></li>
-            <li><router-link to="/categories" class="text-gray-500 dark:text-gray-400 hover:text-primary transition-colors text-sm">分类</router-link></li>
-            <li><router-link to="/tags" class="text-gray-500 dark:text-gray-400 hover:text-primary transition-colors text-sm">标签</router-link></li>
-            <li><router-link to="/resources" class="text-gray-500 dark:text-gray-400 hover:text-primary transition-colors text-sm">资源导航</router-link></li>
-            <li><router-link to="/archive" class="text-gray-500 dark:text-gray-400 hover:text-primary transition-colors text-sm">文章归档</router-link></li>
+            <li><router-link to="/" class="text-gray-500 dark:text-gray-400 hover:text-primary transition-colors text-base">首页</router-link></li>
+            <li><router-link to="/about" class="text-gray-500 dark:text-gray-400 hover:text-primary transition-colors text-base">关于我</router-link></li>
+            <li><router-link to="/categories" class="text-gray-500 dark:text-gray-400 hover:text-primary transition-colors text-base">分类</router-link></li>
+            <li><router-link to="/tags" class="text-gray-500 dark:text-gray-400 hover:text-primary transition-colors text-base">标签</router-link></li>
+            <li><router-link to="/resources" class="text-gray-500 dark:text-gray-400 hover:text-primary transition-colors text-base">资源导航</router-link></li>
+            <li><router-link to="/archive" class="text-gray-500 dark:text-gray-400 hover:text-primary transition-colors text-base">文章归档</router-link></li>
           </ul>
         </div>
 
         <div>
-          <h4 class="text-gray-900 dark:text-white font-semibold mb-2 text-sm">技术栈</h4>
+          <h4 class="text-gray-900 dark:text-white font-semibold mb-2 text-base">技术栈</h4>
           <div class="flex flex-wrap gap-1">
-            <span class="tag text-xs">Vue 3</span>
-            <span class="tag text-xs">TypeScript</span>
-            <span class="tag text-xs">FastAPI</span>
-            <span class="tag text-xs">Python</span>
-            <span class="tag text-xs">TailwindCSS</span>
+            <span class="tag text-sm">Vue 3</span>
+            <span class="tag text-sm">TypeScript</span>
+            <span class="tag text-sm">FastAPI</span>
+            <span class="tag text-sm">Python</span>
+            <span class="tag text-sm">TailwindCSS</span>
           </div>
         </div>
       </div>
 
       <div class="mt-6 pt-4 border-t border-gray-200 dark:border-white/10 flex flex-col md:flex-row justify-between items-center gap-2">
-        <p class="text-gray-500 text-xs">
+        <p class="text-gray-500 text-sm">
           © {{ currentYear }} {{ siteConfigStore.siteName }}. All rights reserved.
         </p>
-        <p class="text-gray-500 text-xs">
+        <p class="text-gray-500 text-sm">
           Built with <span class="text-primary">♥</span> using Vue 3 + FastAPI
         </p>
       </div>

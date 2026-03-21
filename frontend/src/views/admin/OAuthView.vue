@@ -364,7 +364,7 @@ onMounted(fetchProviders)
                   v-html="getProviderIcon(editingProvider?.icon || null)"
                 />
               </div>
-              <h2 class="text-base font-semibold text-gray-900 dark:text-white">
+              <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
                 配置 {{ editingProvider?.display_name }}
               </h2>
             </div>

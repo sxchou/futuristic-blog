@@ -215,7 +215,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
 <template>
   <div class="space-y-6">
     <div class="flex items-center justify-between">
-      <h1 class="text-lg font-bold text-gray-900 dark:text-white">评论管理</h1>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">评论管理</h1>
       <div class="flex items-center gap-4">
         <span v-if="pendingCount > 0 && isAdmin" class="px-3 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 rounded-full text-sm font-medium">
           {{ pendingCount }} 条待审核
@@ -229,7 +229,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
       </div>
-      <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-2">权限不足</h2>
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">权限不足</h2>
       <p class="text-gray-500 dark:text-gray-400">您没有权限访问此页面，请联系管理员</p>
     </div>
 

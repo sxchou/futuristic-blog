@@ -129,7 +129,7 @@ onMounted(() => {
 <template>
   <div>
     <div class="flex items-center justify-between mb-4">
-      <h1 class="text-lg font-bold text-gray-900 dark:text-white">资源管理</h1>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">资源管理</h1>
       <button
         @click="openCreateModal"
         class="px-4 py-1.5 bg-primary text-white rounded-lg text-sm hover:bg-primary/90 transition-colors"

@@ -52,10 +52,10 @@ onMounted(async () => {
   <div class="pb-16">
     <div class="container mx-auto px-4">
       <div class="text-center mb-8">
-        <h1 class="text-2xl md:text-3xl font-bold mb-2">
+        <h1 class="text-3xl md:text-4xl font-bold mb-2">
           <span class="gradient-text">资源导航</span>
         </h1>
-        <p class="text-gray-500 dark:text-gray-400 text-sm">精选优质开发资源，助力技术成长</p>
+        <p class="text-gray-500 dark:text-gray-400 text-base">精选优质开发资源，助力技术成长</p>
       </div>
 
       <div class="flex flex-wrap justify-center gap-3 mb-12">

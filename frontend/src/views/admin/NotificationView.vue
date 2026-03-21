@@ -94,7 +94,7 @@ async function toggleSetting(key: keyof typeof settingsForm.value) {
 <template>
   <div class="space-y-6">
     <div class="flex items-center justify-between">
-      <h1 class="text-lg font-bold text-gray-900 dark:text-white">通知管理</h1>
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">通知管理</h1>
     </div>
 
     <div v-if="isLoading" class="flex justify-center py-12">
@@ -104,7 +104,7 @@ async function toggleSetting(key: keyof typeof settingsForm.value) {
     <div v-else class="space-y-6">
       <div class="glass-card p-5">
         <div class="mb-5">
-          <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-1">评论审核设置</h2>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">评论审核设置</h2>
           <p class="text-xs text-gray-500 dark:text-gray-400">控制评论是否需要审核后才能显示</p>
         </div>
 
@@ -148,7 +148,7 @@ async function toggleSetting(key: keyof typeof settingsForm.value) {
 
       <div class="glass-card p-5">
         <div class="mb-5">
-          <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-1">邮件通知设置</h2>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">邮件通知设置</h2>
           <p class="text-xs text-gray-500 dark:text-gray-400">配置系统在特定事件发生时是否发送邮件通知</p>
         </div>
 
@@ -204,7 +204,7 @@ async function toggleSetting(key: keyof typeof settingsForm.value) {
       </div>
 
       <div class="glass-card p-5">
-        <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">说明</h2>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">说明</h2>
         <div class="space-y-2 text-xs text-gray-500 dark:text-gray-400">
           <p>• <strong>启用评论审核</strong>：开启后，新评论需要管理员审核通过后才能在前台显示。</p>
           <p>• <strong>新用户注册通知</strong>：当有新用户注册账户时，系统会发送邮件通知所有管理员。</p>

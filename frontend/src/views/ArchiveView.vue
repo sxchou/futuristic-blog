@@ -2,10 +2,10 @@
   <div class="pb-16 min-h-screen">
     <div class="container mx-auto px-4">
       <div class="text-center mb-12">
-        <h1 class="text-2xl md:text-3xl font-bold mb-2">
+        <h1 class="text-3xl md:text-4xl font-bold mb-2">
           <span class="gradient-text">文章归档</span>
         </h1>
-        <p class="text-gray-500 dark:text-gray-400 text-sm">
+        <p class="text-gray-500 dark:text-gray-400 text-base">
           共 <span class="text-primary font-semibold">{{ totalArticles }}</span> 篇文章
         </p>
       </div>
