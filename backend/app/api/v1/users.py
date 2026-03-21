@@ -2,7 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.models import User, UserProfile, AvatarType, OAuthConnection, OAuthTempToken, Article, Comment, ArticleFile, ArticleLike, EmailLog, OperationLog, LoginLog, AccessLog, CommentAuditLog
+from app.models import User, UserProfile, AvatarType, OAuthConnection, OAuthTempToken, Article, Comment, ArticleFile, ArticleLike, EmailLog, OperationLog, LoginLog, AccessLog, CommentAuditLog, RefreshToken
 from app.schemas import UserListItem, UserAdminUpdate, PaginatedResponse
 from app.utils import get_current_user, get_password_hash
 from app.services.log_service import LogService
@@ -161,6 +161,8 @@ async def delete_user(
     db.query(OAuthConnection).filter(OAuthConnection.user_id == user_id).delete()
     
     db.query(OAuthTempToken).filter(OAuthTempToken.user_id == user_id).delete()
+    
+    db.query(RefreshToken).filter(RefreshToken.user_id == user_id).delete()
     
     db.query(ArticleLike).filter(ArticleLike.user_id == user_id).delete()
     

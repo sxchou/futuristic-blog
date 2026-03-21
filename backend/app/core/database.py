@@ -43,6 +43,7 @@ if is_sqlite:
         cursor.execute("PRAGMA cache_size=-64000")
         cursor.execute("PRAGMA busy_timeout=5000")
         cursor.execute("PRAGMA temp_store=MEMORY")
+        cursor.execute("PRAGMA foreign_keys=ON")
         cursor.close()
 
 def get_db():
