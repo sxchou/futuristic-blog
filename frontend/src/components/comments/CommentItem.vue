@@ -1,5 +1,8 @@
 <template>
-  <div class="comment-item bg-gray-100 dark:bg-dark-100/30 border border-gray-200 dark:border-white/5 rounded-lg p-4">
+  <div 
+    :id="`comment-${comment.id}`"
+    class="comment-item bg-gray-100 dark:bg-dark-100/30 border border-gray-200 dark:border-white/5 rounded-lg p-4 transition-all duration-300"
+  >
     <div class="flex gap-3">
       <div 
         class="avatar w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0 overflow-hidden"

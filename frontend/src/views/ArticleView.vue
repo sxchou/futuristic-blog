@@ -159,6 +159,24 @@ const setupLazyLoading = () => {
   })
 }
 
+const scrollToComment = (commentId: number) => {
+  setTimeout(() => {
+    const commentElement = document.getElementById(`comment-${commentId}`)
+    if (commentElement) {
+      commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      commentElement.classList.add('highlight-comment')
+      setTimeout(() => {
+        commentElement.classList.remove('highlight-comment')
+      }, 3000)
+    } else {
+      const commentsSection = document.getElementById('comments')
+      if (commentsSection) {
+        commentsSection.scrollIntoView({ behavior: 'smooth' })
+      }
+    }
+  }, 500)
+}
+
 onMounted(async () => {
   document.addEventListener('click', handleCopyCode)
   
@@ -180,13 +198,20 @@ onMounted(async () => {
     loading.value = false
   }
   
-  if (route.hash === '#comments') {
-    setTimeout(() => {
-      const commentsSection = document.getElementById('comments')
-      if (commentsSection) {
-        commentsSection.scrollIntoView({ behavior: 'smooth' })
+  if (route.hash) {
+    if (route.hash === '#comments') {
+      setTimeout(() => {
+        const commentsSection = document.getElementById('comments')
+        if (commentsSection) {
+          commentsSection.scrollIntoView({ behavior: 'smooth' })
+        }
+      }, 100)
+    } else if (route.hash.startsWith('#comment-')) {
+      const commentId = parseInt(route.hash.replace('#comment-', ''), 10)
+      if (!isNaN(commentId)) {
+        scrollToComment(commentId)
       }
-    }, 100)
+    }
   }
 })
 

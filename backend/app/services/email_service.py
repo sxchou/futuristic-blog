@@ -706,7 +706,7 @@ class EmailService:
                 <span class="value">{liker_name}</span>
             </div>
         </div>
-        <a href="{article_url}" class="button">查看文章</a>
+        <a href="{article_url}" class="button">查看评论</a>
         <div class="footer">
             <p>此邮件为系统自动发送，请勿回复。</p>
             <p>© {current_year} {site_name}. All rights reserved.</p>
@@ -796,12 +796,18 @@ class EmailService:
         article_title: str,
         article_slug: str,
         reply_content: str,
-        commenter_name: str
+        commenter_name: str,
+        comment_id: int = None,
+        parent_comment_id: int = None
     ) -> bool:
         site_name = EmailService.get_site_name(db)
         current_year = EmailService.get_current_year()
         
-        article_url = f"{settings.FRONTEND_URL}/article/{article_slug}"
+        target_id = parent_comment_id or comment_id
+        if target_id:
+            article_url = f"{settings.FRONTEND_URL}/article/{article_slug}#comment-{target_id}"
+        else:
+            article_url = f"{settings.FRONTEND_URL}/article/{article_slug}#comments"
         
         text_content = f"""
 评论回复通知
@@ -813,7 +819,7 @@ class EmailService:
 回复者：{commenter_name}
 回复内容：{reply_content}
 
-查看文章：{article_url}
+查看评论：{article_url}
 
 {site_name}
 """
@@ -885,12 +891,16 @@ class EmailService:
         recipient_name: str,
         article_title: str,
         article_slug: str,
-        comment_content: str
+        comment_content: str,
+        comment_id: int = None
     ) -> bool:
         site_name = EmailService.get_site_name(db)
         current_year = EmailService.get_current_year()
         
-        article_url = f"{settings.FRONTEND_URL}/article/{article_slug}"
+        if comment_id:
+            article_url = f"{settings.FRONTEND_URL}/article/{article_slug}#comment-{comment_id}"
+        else:
+            article_url = f"{settings.FRONTEND_URL}/article/{article_slug}#comments"
         
         text_content = f"""
 评论审核通过通知
@@ -901,7 +911,7 @@ class EmailService:
 
 评论内容：{comment_content}
 
-查看文章：{article_url}
+查看评论：{article_url}
 
 {site_name}
 """
@@ -933,7 +943,7 @@ class EmailService:
         <div class="comment-box">
             <p style="margin: 0; white-space: pre-wrap;">{comment_content}</p>
         </div>
-        <a href="{article_url}" class="button">查看文章</a>
+        <a href="{article_url}" class="button">查看评论</a>
         <div class="footer">
             <p>此邮件为系统自动发送，请勿回复。</p>
             <p>© {current_year} {site_name}. All rights reserved.</p>

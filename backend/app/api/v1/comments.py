@@ -161,7 +161,7 @@ def send_pending_comment_notification_bg(article_title: str, article_slug: str, 
         db.close()
 
 
-def send_comment_approved_notification_bg(recipient_email: str, recipient_name: str, article_title: str, article_slug: str, comment_content: str):
+def send_comment_approved_notification_bg(recipient_email: str, recipient_name: str, article_title: str, article_slug: str, comment_content: str, comment_id: int = None):
     from app.core.database import SessionLocal
     db = SessionLocal()
     try:
@@ -171,7 +171,8 @@ def send_comment_approved_notification_bg(recipient_email: str, recipient_name: 
             recipient_name=recipient_name,
             article_title=article_title,
             article_slug=article_slug,
-            comment_content=comment_content
+            comment_content=comment_content,
+            comment_id=comment_id
         )
     except Exception as e:
         print(f"Failed to send comment approved notification: {e}")
@@ -185,7 +186,9 @@ def send_reply_notification_bg(
     article_title: str,
     article_slug: str,
     reply_content: str,
-    commenter_name: str
+    commenter_name: str,
+    comment_id: int = None,
+    parent_comment_id: int = None
 ):
     from app.core.database import SessionLocal
     db = SessionLocal()
@@ -199,7 +202,9 @@ def send_reply_notification_bg(
                 article_title=article_title,
                 article_slug=article_slug,
                 reply_content=reply_content,
-                commenter_name=commenter_name
+                commenter_name=commenter_name,
+                comment_id=comment_id,
+                parent_comment_id=parent_comment_id
             )
     except Exception as e:
         print(f"Failed to send reply notification: {e}")
@@ -290,7 +295,9 @@ async def create_comment(
                     article.title,
                     article.slug,
                     comment_data.content,
-                    current_user.username
+                    current_user.username,
+                    new_comment.id,
+                    parent_comment.id
                 )
     else:
         background_tasks.add_task(
@@ -472,7 +479,8 @@ async def audit_comment(
                 comment.author_name,
                 comment.article.title if comment.article else '',
                 comment.article.slug if comment.article else '',
-                comment.content
+                comment.content,
+                comment.id
             )
     
     reply_to_user_name = None
@@ -546,7 +554,8 @@ async def batch_audit_comments(
                     comment.author_name,
                     comment.article.title if comment.article else '',
                     comment.article.slug if comment.article else '',
-                    comment.content
+                    comment.content,
+                    comment.id
                 )
     
     db.commit()
