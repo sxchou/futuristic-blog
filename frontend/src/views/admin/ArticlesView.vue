@@ -111,6 +111,16 @@ const handleDelete = async (article: ArticleListItem) => {
 const handleSubmit = async () => {
   if (!await requireAdmin('保存文章')) return
   
+  if (!form.value.category_id) {
+    await dialog.showError('请选择文章分类', '验证失败')
+    return
+  }
+  
+  if (!form.value.tag_ids || form.value.tag_ids.length === 0) {
+    await dialog.showError('请至少选择一个标签', '验证失败')
+    return
+  }
+  
   try {
     if (editingArticle.value) {
       await articleApi.updateArticle(editingArticle.value.id, form.value)

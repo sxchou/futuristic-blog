@@ -162,11 +162,11 @@ class ArticleBase(BaseModel):
     is_published: bool = False
     is_featured: bool = False
     is_pinned: bool = False
-    category_id: Optional[int] = None
+    category_id: int = Field(..., description="分类ID为必填项")
 
 
 class ArticleCreate(ArticleBase):
-    tag_ids: List[int] = []
+    tag_ids: List[int] = Field(..., min_length=1, description="至少需要选择一个标签")
 
 
 class ArticleUpdate(BaseModel):
@@ -179,7 +179,14 @@ class ArticleUpdate(BaseModel):
     is_featured: Optional[bool] = None
     is_pinned: Optional[bool] = None
     category_id: Optional[int] = None
-    tag_ids: Optional[List[int]] = None
+    tag_ids: Optional[List[int]] = Field(None, min_length=1, description="如果提供标签，至少需要选择一个")
+    
+    @field_validator('tag_ids')
+    @classmethod
+    def validate_tag_ids(cls, v):
+        if v is not None and len(v) == 0:
+            raise ValueError('至少需要选择一个标签')
+        return v
 
 
 class ArticleResponse(ArticleBase):

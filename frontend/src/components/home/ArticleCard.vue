@@ -14,11 +14,11 @@ const likeCount = ref(props.article.like_count || 0)
 const isLiking = ref(false)
 
 const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
+  const d = new Date(date)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 const handleLike = async (e: Event) => {
@@ -60,18 +60,6 @@ const goToComments = (e: Event) => {
       <div class="absolute inset-0 bg-gradient-to-t from-dark to-transparent opacity-60" />
     </div>
 
-    <div v-if="article.is_pinned || article.is_featured" class="mb-2 flex items-center gap-2">
-      <span v-if="article.is_pinned" class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-600 dark:text-amber-400 rounded border border-amber-500/30">
-        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
-        </svg>
-        置顶
-      </span>
-      <span v-if="article.is_featured" class="px-2 py-0.5 text-xs font-medium bg-gradient-to-r from-primary to-accent text-white rounded-full">
-        精选
-      </span>
-    </div>
-
     <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1 group-hover:text-primary transition-colors line-clamp-2">
       {{ article.title }}
     </h3>
@@ -90,30 +78,38 @@ const goToComments = (e: Event) => {
       </span>
     </div>
 
-    <div class="flex flex-wrap gap-1 mb-2">
-      <span
-        v-for="tag in article.tags.slice(0, 2)"
-        :key="tag.id"
-        class="inline-flex items-center px-2 py-0.5 text-sm font-medium rounded-full border transition-all duration-300 hover:border-primary/50"
-        :style="{ 
-          color: tag.color, 
-          backgroundColor: tag.color + '15',
-          borderColor: tag.color + '40'
-        }"
-      >
-        {{ tag.name }}
-      </span>
+    <div class="flex items-center justify-between mb-2">
+      <div class="flex flex-wrap gap-1">
+        <span
+          v-for="tag in article.tags.slice(0, 2)"
+          :key="tag.id"
+          class="inline-flex items-center px-2 py-0.5 text-sm font-medium rounded-full border transition-all duration-300 hover:border-primary/50"
+          :style="{ 
+            color: tag.color, 
+            backgroundColor: tag.color + '15',
+            borderColor: tag.color + '40'
+          }"
+        >
+          {{ tag.name }}
+        </span>
+      </div>
+      <div v-if="article.is_pinned || article.is_featured" class="flex items-center gap-1 flex-shrink-0 ml-2">
+        <span v-if="article.is_pinned" class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500/90 text-white shadow-sm" title="置顶">
+          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
+          </svg>
+        </span>
+        <span v-if="article.is_featured" class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gradient-to-r from-primary to-accent text-white shadow-sm" title="精选">
+          <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+        </span>
+      </div>
     </div>
 
     <div class="flex items-center justify-between text-sm text-gray-500 mt-auto pt-2 border-t border-gray-200 dark:border-white/5">
       <span>{{ formatDate(article.created_at) }}</span>
       <div class="flex items-center gap-3">
-        <span class="flex items-center gap-1">
-          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          {{ article.reading_time }}分钟
-        </span>
         <span class="flex items-center gap-1">
           <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />

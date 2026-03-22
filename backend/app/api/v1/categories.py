@@ -160,6 +160,16 @@ async def delete_category(
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
     
+    article_count = db.query(func.count(Article.id)).filter(
+        Article.category_id == category.id
+    ).scalar()
+    
+    if article_count > 0:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"此分类无法删除，因为它当前被 {article_count} 篇文章使用。请先将这些文章重新分配到其他分类，或移除分类关联后再删除。"
+        )
+    
     category_name = category.name
     db.delete(category)
     db.commit()

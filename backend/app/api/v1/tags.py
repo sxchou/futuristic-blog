@@ -158,6 +158,16 @@ async def delete_tag(
     if not tag:
         raise HTTPException(status_code=404, detail="Tag not found")
     
+    article_count = db.query(func.count(article_tags.c.article_id)).filter(
+        article_tags.c.tag_id == tag.id
+    ).scalar()
+    
+    if article_count > 0:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"此标签无法删除，因为它当前被 {article_count} 篇文章使用。请先将这些文章的标签关联移除后再删除。"
+        )
+    
     tag_name = tag.name
     db.delete(tag)
     db.commit()
