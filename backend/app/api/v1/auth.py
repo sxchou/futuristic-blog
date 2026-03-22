@@ -201,13 +201,23 @@ async def verify_email(
             detail="无效的验证链接"
         )
     
-    from app.utils.timezone import get_now
+    from app.utils.timezone import get_now, to_utc
     now = get_now()
-    if user.verification_token_expires and user.verification_token_expires < now:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="验证链接已过期，请重新发送验证邮件"
-        )
+    token_expires = user.verification_token_expires
+    if token_expires:
+        if token_expires.tzinfo is None:
+            token_expires_utc = to_utc(token_expires.replace(tzinfo=None))
+            now_utc = to_utc(now)
+            if token_expires_utc < now_utc:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="验证链接已过期，请重新发送验证邮件"
+                )
+        elif token_expires < now:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="验证链接已过期，请重新发送验证邮件"
+            )
     
     user.is_verified = True
     user.verification_token = None
