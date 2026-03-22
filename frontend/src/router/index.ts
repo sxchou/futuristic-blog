@@ -220,6 +220,14 @@ const router = createRouter({
 
 const prefetchCache = new Set<string>()
 
+const requestIdleCallbackPolyfill = (callback: () => void, options?: { timeout?: number }) => {
+  if (typeof requestIdleCallback !== 'undefined') {
+    requestIdleCallback(callback, options)
+  } else {
+    setTimeout(callback, 1)
+  }
+}
+
 const prefetchComponents = (routeName: string) => {
   if (prefetchCache.has(routeName)) return
   prefetchCache.add(routeName)
@@ -233,7 +241,7 @@ const prefetchComponents = (routeName: string) => {
   }
   
   if (prefetchMap[routeName]) {
-    requestIdleCallback(() => {
+    requestIdleCallbackPolyfill(() => {
       prefetchMap[routeName]()
     }, { timeout: 2000 })
   }
