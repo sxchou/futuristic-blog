@@ -123,7 +123,7 @@ def build_comment_tree(comments: List[Comment], db: Session) -> List[dict]:
     return root_comments
 
 
-def send_comment_notification_bg(article_title: str, article_slug: str, commenter_name: str, comment_content: str):
+def send_comment_notification_bg(article_title: str, article_slug: str, commenter_name: str, comment_content: str, comment_id: int = None):
     from app.core.database import SessionLocal
     db = SessionLocal()
     try:
@@ -134,7 +134,8 @@ def send_comment_notification_bg(article_title: str, article_slug: str, commente
                 commenter_name=commenter_name,
                 article_title=article_title,
                 article_slug=article_slug,
-                comment_content=comment_content
+                comment_content=comment_content,
+                comment_id=comment_id
             )
     except Exception as e:
         print(f"Failed to send comment notification: {e}")
@@ -142,7 +143,7 @@ def send_comment_notification_bg(article_title: str, article_slug: str, commente
         db.close()
 
 
-def send_pending_comment_notification_bg(article_title: str, article_slug: str, commenter_name: str, comment_content: str):
+def send_pending_comment_notification_bg(article_title: str, article_slug: str, commenter_name: str, comment_content: str, comment_id: int = None):
     from app.core.database import SessionLocal
     db = SessionLocal()
     try:
@@ -153,7 +154,8 @@ def send_pending_comment_notification_bg(article_title: str, article_slug: str, 
                 commenter_name=commenter_name,
                 article_title=article_title,
                 article_slug=article_slug,
-                comment_content=comment_content
+                comment_content=comment_content,
+                comment_id=comment_id
             )
     except Exception as e:
         print(f"Failed to send pending comment notification: {e}")
@@ -282,7 +284,8 @@ async def create_comment(
             article.title,
             article.slug,
             current_user.username,
-            comment_data.content
+            comment_data.content,
+            new_comment.id
         )
         
         if parent_comment and parent_comment.user_id != current_user.id:
@@ -305,7 +308,8 @@ async def create_comment(
             article.title,
             article.slug,
             current_user.username,
-            comment_data.content
+            comment_data.content,
+            new_comment.id
         )
     
     reply_to_user_name = None

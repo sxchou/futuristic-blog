@@ -561,12 +561,16 @@ class EmailService:
         commenter_name: str,
         article_title: str,
         article_slug: str,
-        comment_content: str
+        comment_content: str,
+        comment_id: int = None
     ) -> bool:
         site_name = EmailService.get_site_name(db)
         current_year = EmailService.get_current_year()
         
-        article_url = f"{settings.FRONTEND_URL}/article/{article_slug}#comments"
+        if comment_id:
+            article_url = f"{settings.FRONTEND_URL}/article/{article_slug}#comment-{comment_id}"
+        else:
+            article_url = f"{settings.FRONTEND_URL}/article/{article_slug}#comments"
         
         truncated_content = comment_content[:200] + "..." if len(comment_content) > 200 else comment_content
         
@@ -579,7 +583,7 @@ class EmailService:
 评论内容:
 {truncated_content}
 
-查看完整上下文: {article_url}
+查看评论: {article_url}
 
 请登录管理后台查看详情。
 
@@ -626,7 +630,7 @@ class EmailService:
             <p class="label">评论内容：</p>
             <p class="value">{truncated_content}</p>
         </div>
-        <a href="{article_url}" class="button">查看完整上下文</a>
+        <a href="{article_url}" class="button">查看评论</a>
         <p>或复制以下链接到浏览器：</p>
         <p class="link">{article_url}</p>
         <p>请登录管理后台查看详情并进行审核。</p>
@@ -973,12 +977,16 @@ class EmailService:
         commenter_name: str,
         article_title: str,
         article_slug: str,
-        comment_content: str
+        comment_content: str,
+        comment_id: int = None
     ) -> bool:
         site_name = EmailService.get_site_name(db)
         current_year = EmailService.get_current_year()
         
-        article_url = f"{settings.FRONTEND_URL}/article/{article_slug}"
+        if comment_id:
+            article_url = f"{settings.FRONTEND_URL}/article/{article_slug}#comment-{comment_id}"
+        else:
+            article_url = f"{settings.FRONTEND_URL}/article/{article_slug}#comments"
         admin_url = f"{settings.FRONTEND_URL}/admin/comments"
         
         text_content = f"""
@@ -988,7 +996,8 @@ class EmailService:
 评论者：{commenter_name}
 评论内容：{comment_content}
 
-请登录管理后台审核：{admin_url}
+查看评论：{article_url}
+管理后台审核：{admin_url}
 
 {site_name}
 """
@@ -1033,7 +1042,10 @@ class EmailService:
         <div class="comment-box">
             <p style="margin: 0; white-space: pre-wrap;">{comment_content}</p>
         </div>
-        <a href="{admin_url}" class="button">前往审核</a>
+        <div style="margin: 20px 0;">
+            <a href="{article_url}" class="button" style="margin-right: 10px;">查看评论</a>
+            <a href="{admin_url}" class="button" style="background-color: #10b981;">前往审核</a>
+        </div>
         <div class="footer">
             <p>此邮件为系统自动发送，请勿回复。</p>
             <p>© {current_year} {site_name}. All rights reserved.</p>
