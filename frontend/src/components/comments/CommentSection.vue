@@ -16,26 +16,21 @@
 
     <div v-else class="comment-form mb-8">
       <div class="bg-gray-100 dark:bg-dark-100/50 border border-gray-200 dark:border-white/10 rounded-lg p-4">
-        <div class="flex justify-between items-center mb-2">
+        <div class="flex justify-between items-center mb-1">
           <span class="text-xs text-gray-500">支持 Markdown 格式</span>
-          <div class="flex items-center gap-3">
-            <EmojiPicker @select="insertEmoji" />
-            <a 
-              href="https://markdown.com.cn/basic-syntax/" 
-              target="_blank" 
-              class="text-xs text-primary hover:text-primary/80 transition-colors"
-            >
-              Markdown 语法帮助
-            </a>
-          </div>
+          <a 
+            href="https://markdown.com.cn/basic-syntax/" 
+            target="_blank" 
+            class="text-xs text-primary hover:text-primary/80 transition-colors"
+          >
+            Markdown 语法帮助
+          </a>
         </div>
-        <textarea
-          ref="commentTextarea"
+        <CommentEditor
           v-model="newComment"
           placeholder="写下你的想法...&#10;&#10;支持 **粗体**、*斜体*、`代码`、[链接](url) 等 Markdown 语法"
-          class="w-full bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 resize-none"
-          rows="4"
           :disabled="submitting"
+          :rows="4"
         />
         <div class="flex justify-end mt-3">
           <button
@@ -77,7 +72,7 @@ import { useDialogStore } from '@/stores'
 import { commentApi } from '@/api'
 import type { Comment } from '@/types'
 import CommentItem from './CommentItem.vue'
-import EmojiPicker from '@/components/common/EmojiPicker.vue'
+import CommentEditor from './CommentEditor.vue'
 
 const props = defineProps<{
   articleId: number
@@ -90,7 +85,6 @@ const comments = ref<Comment[]>([])
 const loading = ref(true)
 const newComment = ref('')
 const submitting = ref(false)
-const commentTextarea = ref<HTMLTextAreaElement | null>(null)
 
 const totalComments = computed(() => {
   let count = 0
@@ -105,24 +99,6 @@ const totalComments = computed(() => {
   countReplies(comments.value)
   return count
 })
-
-const insertEmoji = (emoji: string) => {
-  if (!commentTextarea.value) return
-  
-  const textarea = commentTextarea.value
-  const start = textarea.selectionStart
-  const end = textarea.selectionEnd
-  
-  newComment.value = 
-    newComment.value.substring(0, start) + 
-    emoji + 
-    newComment.value.substring(end)
-  
-  setTimeout(() => {
-    textarea.focus()
-    textarea.selectionStart = textarea.selectionEnd = start + emoji.length
-  }, 0)
-}
 
 const fetchComments = async () => {
   try {

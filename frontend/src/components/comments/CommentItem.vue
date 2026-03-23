@@ -38,7 +38,9 @@
         <div v-else-if="comment.status === 'rejected'" class="text-red-500 dark:text-red-400 text-sm italic mb-3">
           审核不通过
         </div>
-        <div v-else class="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-3 comment-content prose prose-sm dark:prose-invert max-w-none" v-html="renderedContent" />
+        <div v-else class="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-3 comment-content">
+          <CommentMarkdownPreview :content="commentContent" />
+        </div>
         
         <div v-if="!comment.is_deleted && comment.status === 'approved'" class="flex items-center gap-4 text-xs">
           <button
@@ -66,19 +68,12 @@
         
         <div v-if="showReplyForm" class="mt-3">
           <div class="bg-gray-200 dark:bg-dark-200/50 border border-gray-300 dark:border-white/10 rounded-lg p-3">
-            <div class="flex justify-between items-center mb-2">
-              <span class="text-xs text-gray-500">
-                回复 @{{ comment.author_name || '匿名用户' }}
-              </span>
-              <EmojiPicker @select="insertEmojiToReply" />
-            </div>
-            <textarea
-              ref="replyTextarea"
+            <CommentEditor
               v-model="replyContent"
               placeholder="写下你的回复...&#10;支持 **粗体**、*斜体*、`代码` 等"
-              class="w-full bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 resize-none text-sm"
-              rows="3"
+              :reply-to="comment.author_name"
               :disabled="submittingReply"
+              :rows="3"
             />
             <div class="flex justify-end gap-2 mt-2">
               <button
@@ -116,11 +111,10 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { marked } from 'marked'
-import DOMPurify from 'dompurify'
 import { useAuthStore } from '@/stores/auth'
 import type { Comment } from '@/types'
-import EmojiPicker from '@/components/common/EmojiPicker.vue'
+import CommentMarkdownPreview from './CommentMarkdownPreview.vue'
+import CommentEditor from './CommentEditor.vue'
 import { formatDateTime } from '@/utils/date'
 
 const props = withDefaults(defineProps<{
@@ -140,7 +134,6 @@ const authStore = useAuthStore()
 const showReplyForm = ref(false)
 const replyContent = ref('')
 const submittingReply = ref(false)
-const replyTextarea = ref<HTMLTextAreaElement | null>(null)
 
 const avatarText = computed(() => {
   const name = props.comment.author_name || '匿'
@@ -182,41 +175,17 @@ const canDelete = computed(() => {
          !props.comment.is_deleted
 })
 
-const renderedContent = computed(() => {
+const commentContent = computed(() => {
   if (!props.comment.content) return ''
   
-  let content = props.comment.content
-  
   if (props.comment.reply_to_user_name) {
-    content = `@${props.comment.reply_to_user_name} ${content}`
+    return `@${props.comment.reply_to_user_name} ${props.comment.content}`
   }
   
-  let html = DOMPurify.sanitize(marked(content) as string)
-  
-  html = html.replace(/@([^\s<]+)/g, '<span class="mention text-primary font-medium hover:underline cursor-pointer">@$1</span>')
-  
-  return html
+  return props.comment.content
 })
 
 const formatDate = (date: string) => formatDateTime(date)
-
-const insertEmojiToReply = (emoji: string) => {
-  if (!replyTextarea.value) return
-  
-  const textarea = replyTextarea.value
-  const start = textarea.selectionStart
-  const end = textarea.selectionEnd
-  
-  replyContent.value = 
-    replyContent.value.substring(0, start) + 
-    emoji + 
-    replyContent.value.substring(end)
-  
-  setTimeout(() => {
-    textarea.focus()
-    textarea.selectionStart = textarea.selectionEnd = start + emoji.length
-  }, 0)
-}
 
 const submitReply = async () => {
   if (!replyContent.value.trim() || submittingReply.value) return

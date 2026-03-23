@@ -18,8 +18,32 @@ const isRendering = ref(false)
 const renderer = new marked.Renderer()
 
 renderer.code = (code: string, language: string | undefined) => {
-  const validLang = language && hljs.getLanguage(language) ? language : 'plaintext'
-  const highlighted = hljs.highlight(code, { language: validLang }).value
+  let validLang = 'plaintext'
+  
+  if (language) {
+    const langMap: Record<string, string> = {
+      'js': 'javascript',
+      'ts': 'typescript',
+      'py': 'python',
+      'rb': 'ruby',
+      'sh': 'bash',
+      'shell': 'bash',
+      'yml': 'yaml',
+      'md': 'markdown',
+      'cs': 'csharp',
+      'c++': 'cpp',
+      'c#': 'csharp',
+    }
+    
+    const normalizedLang = language.toLowerCase()
+    validLang = langMap[normalizedLang] || normalizedLang
+    
+    if (!hljs.getLanguage(validLang)) {
+      validLang = 'plaintext'
+    }
+  }
+  
+  const highlighted = hljs.highlight(code, { language: validLang, ignoreIllegals: true }).value
   const encodedCode = encodeURIComponent(code)
   return `<div class="code-block-wrapper relative group">
     <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
