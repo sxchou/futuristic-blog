@@ -4,6 +4,7 @@ import { userApi } from '@/api'
 import type { User } from '@/types'
 import { useDialogStore, useUserProfileStore } from '@/stores'
 import { useAdminCheck } from '@/composables/useAdminCheck'
+import { formatDateShort } from '@/utils/date'
 
 const dialog = useDialogStore()
 const userProfileStore = useUserProfileStore()
@@ -110,13 +111,7 @@ const openPasswordModal = async (user: User) => {
   showPasswordModal.value = true
 }
 
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
-}
+const formatDate = (date: string) => formatDateShort(date)
 
 const getUserAvatarStyle = (user: User) => {
   if (user.avatar_type === 'custom' && user.avatar_url) {

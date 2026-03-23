@@ -3,6 +3,7 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { logsApi } from '@/api'
 import { useDialogStore, useUserProfileStore } from '@/stores'
 import { useAdminCheck } from '@/composables/useAdminCheck'
+import { formatDateTime } from '@/utils/date'
 
 const dialog = useDialogStore()
 const userProfileStore = useUserProfileStore()
@@ -151,9 +152,7 @@ const handleClearLogs = async () => {
   }
 }
 
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleString('zh-CN')
-}
+const formatDate = (date: string) => formatDateTime(date)
 
 const getStatusClass = (status: string) => {
   return status === 'success' 

@@ -4,6 +4,7 @@ import { useBlogStore, useDialogStore } from '@/stores'
 import { articleApi, fileApi } from '@/api'
 import type { ArticleListItem } from '@/types'
 import { useAdminCheck } from '@/composables/useAdminCheck'
+import { formatDateShort } from '@/utils/date'
 
 interface ArticleFile {
   id: number
@@ -158,6 +159,8 @@ const generateSlug = () => {
     .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
     .replace(/^-|-$/g, '')
 }
+
+const formatDate = (date: string) => formatDateShort(date)
 
 const formatFileSize = (bytes: number): string => {
   if (bytes < 1024) return bytes + ' B'
@@ -348,7 +351,7 @@ onMounted(() => {
             </td>
             <td class="px-4 py-3 text-gray-400">{{ article.view_count }}</td>
             <td class="px-4 py-3 text-gray-400">
-              {{ new Date(article.created_at).toLocaleDateString('zh-CN') }}
+              {{ formatDate(article.created_at) }}
             </td>
             <td class="px-4 py-3 text-right">
               <button

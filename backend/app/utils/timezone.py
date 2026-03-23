@@ -15,7 +15,7 @@ def to_local(dt: datetime) -> datetime:
     if dt is None:
         return None
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=ZoneInfo("UTC"))
+        dt = dt.replace(tzinfo=settings.tz)
     return dt.astimezone(settings.tz)
 
 

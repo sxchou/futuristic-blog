@@ -121,6 +121,7 @@ import DOMPurify from 'dompurify'
 import { useAuthStore } from '@/stores/auth'
 import type { Comment } from '@/types'
 import EmojiPicker from '@/components/common/EmojiPicker.vue'
+import { formatDateTime } from '@/utils/date'
 
 const props = withDefaults(defineProps<{
   comment: Comment
@@ -197,18 +198,7 @@ const renderedContent = computed(() => {
   return html
 })
 
-const formatDate = (date: string) => {
-  const commentDate = new Date(date)
-  
-  const year = commentDate.getFullYear()
-  const month = String(commentDate.getMonth() + 1).padStart(2, '0')
-  const day = String(commentDate.getDate()).padStart(2, '0')
-  const hours = String(commentDate.getHours()).padStart(2, '0')
-  const minutes = String(commentDate.getMinutes()).padStart(2, '0')
-  const seconds = String(commentDate.getSeconds()).padStart(2, '0')
-  
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
-}
+const formatDate = (date: string) => formatDateTime(date)
 
 const insertEmojiToReply = (emoji: string) => {
   if (!replyTextarea.value) return

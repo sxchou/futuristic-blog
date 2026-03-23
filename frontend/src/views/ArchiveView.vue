@@ -168,10 +168,16 @@ const totalArticles = computed(() => {
 })
 
 const formatDate = (dateStr: string) => {
-  const date = new Date(dateStr)
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${month}-${day}`
+  if (!dateStr) return ''
+  
+  const options: Intl.DateTimeFormatOptions = {
+    timeZone: 'Asia/Shanghai',
+    month: '2-digit',
+    day: '2-digit'
+  }
+  
+  const formatted = new Date(dateStr).toLocaleDateString('zh-CN', options)
+  return formatted.replace(/\//g, '-')
 }
 
 const fetchArchive = async () => {

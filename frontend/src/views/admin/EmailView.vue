@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { emailApi, type EmailConfig, type EmailLog, type EmailStats, type EmailProvider, type ProviderStatus } from '@/api/email'
 import { useDialogStore } from '@/stores'
 import { useAdminCheck } from '@/composables/useAdminCheck'
+import { formatDateTime } from '@/utils/date'
 
 const dialog = useDialogStore()
 const { requireAdmin } = useAdminCheck()
@@ -319,8 +320,7 @@ function switchToLogs() {
 }
 
 function formatDate(dateStr: string | null) {
-  if (!dateStr) return '-'
-  return new Date(dateStr).toLocaleString('zh-CN')
+  return formatDateTime(dateStr)
 }
 
 function changePage(page: number) {

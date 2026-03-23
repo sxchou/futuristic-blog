@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useAuthStore, useUserProfileStore, useDialogStore } from '@/stores'
 import { userProfileApi } from '@/api/userProfile'
 import AvatarCropper from '@/components/common/AvatarCropper.vue'
+import { formatDateTime } from '@/utils/date'
 
 const authStore = useAuthStore()
 const userProfileStore = useUserProfileStore()
@@ -285,7 +286,7 @@ onMounted(fetchProfile)
           
           <div class="flex items-center justify-between py-3">
             <span class="text-sm text-gray-600 dark:text-gray-400">注册时间</span>
-            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ user?.created_at || '-' }}</span>
+            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ formatDateTime(user?.created_at) }}</span>
           </div>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import type { ArticleListItem } from '@/types'
 import { likeApi } from '@/api'
+import { formatDateShort } from '@/utils/date'
 
 const props = defineProps<{
   article: ArticleListItem
@@ -13,13 +14,7 @@ const isLiked = ref(props.article.is_liked || false)
 const likeCount = ref(props.article.like_count || 0)
 const isLiking = ref(false)
 
-const formatDate = (date: string) => {
-  const d = new Date(date)
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
+const formatDate = (date: string) => formatDateShort(date)
 
 const handleLike = async (e: Event) => {
   e.preventDefault()

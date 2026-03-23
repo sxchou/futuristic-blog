@@ -55,11 +55,16 @@ const renderedContent = computed(() => {
 })
 
 const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString('zh-CN', {
+  if (!date) return ''
+  
+  const options: Intl.DateTimeFormatOptions = {
+    timeZone: 'Asia/Shanghai',
     year: 'numeric',
     month: 'long',
     day: 'numeric'
-  })
+  }
+  
+  return new Date(date).toLocaleDateString('zh-CN', options)
 }
 
 const handleLike = async () => {
