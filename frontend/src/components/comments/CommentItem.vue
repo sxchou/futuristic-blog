@@ -39,7 +39,36 @@
           审核不通过
         </div>
         <div v-else class="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-3 comment-content">
-          <CommentMarkdownPreview :content="commentContent" />
+          <div v-if="comment.reply_to_user_name" class="mb-1">
+            <span class="text-primary font-medium">@{{ comment.reply_to_user_name }}</span>
+          </div>
+          <div 
+            ref="contentRef"
+            class="relative"
+            :class="{ 'max-h-[240px] overflow-hidden': !isExpanded && shouldShowExpand }"
+          >
+            <CommentMarkdownPreview :content="comment.content" />
+            <div 
+              v-if="!isExpanded && shouldShowExpand" 
+              class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-gray-100 dark:from-dark-100/30 to-transparent pointer-events-none"
+            />
+          </div>
+          <button
+            v-if="shouldShowExpand"
+            @click="toggleExpand"
+            class="mt-1 text-xs text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
+          >
+            <svg 
+              class="w-4 h-4 transition-transform duration-200" 
+              :class="{ 'rotate-180': isExpanded }"
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+            {{ isExpanded ? '收起' : '展开全文' }}
+          </button>
         </div>
         
         <div v-if="!comment.is_deleted && comment.status === 'approved'" class="flex items-center gap-4 text-xs">
@@ -73,9 +102,11 @@
               v-model="replyContent"
               placeholder="写下你的回复...&#10;支持 **粗体**、*斜体*、`代码` 等"
               :reply-to="comment.author_name"
+              :reply-to-content="comment.content"
               :disabled="submittingReply"
               :rows="3"
               :storage-key="`reply-${comment.id}`"
+              @submit="submitReply"
             />
             <div class="flex justify-end gap-2 mt-2">
               <button
@@ -112,7 +143,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import type { Comment } from '@/types'
 import CommentMarkdownPreview from './CommentMarkdownPreview.vue'
@@ -137,6 +168,9 @@ const showReplyForm = ref(false)
 const replyContent = ref('')
 const submittingReply = ref(false)
 const replyEditorRef = ref<InstanceType<typeof CommentEditor> | null>(null)
+const isExpanded = ref(false)
+const contentRef = ref<HTMLElement | null>(null)
+const shouldShowExpand = ref(false)
 
 const avatarText = computed(() => {
   const name = props.comment.author_name || '匿'
@@ -178,17 +212,22 @@ const canDelete = computed(() => {
          !props.comment.is_deleted
 })
 
-const commentContent = computed(() => {
-  if (!props.comment.content) return ''
-  
-  if (props.comment.reply_to_user_name) {
-    return `@${props.comment.reply_to_user_name} ${props.comment.content}`
-  }
-  
-  return props.comment.content
-})
-
 const formatDate = (date: string) => formatDateTime(date)
+
+const checkContentHeight = () => {
+  if (contentRef.value) {
+    const maxHeight = 240
+    shouldShowExpand.value = contentRef.value.scrollHeight > maxHeight + 10
+  }
+}
+
+const toggleExpand = () => {
+  isExpanded.value = !isExpanded.value
+}
+
+onMounted(() => {
+  checkContentHeight()
+})
 
 const submitReply = async () => {
   if (!replyContent.value.trim() || submittingReply.value) return

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch, onUnmounted } from 'vue'
 import { useBlogStore, useDialogStore, useAuthStore } from '@/stores'
 import { articleApi, fileApi } from '@/api'
 import type { ArticleListItem } from '@/types'
@@ -44,6 +44,61 @@ const form = ref({
   is_featured: false,
   is_pinned: false
 })
+
+const DRAFT_KEY = 'article_draft'
+
+const saveFormDraft = () => {
+  try {
+    const draft = {
+      ...form.value,
+      savedAt: new Date().toISOString()
+    }
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
+  } catch (e) {
+    console.warn('Failed to save form draft:', e)
+  }
+}
+
+const loadFormDraft = () => {
+  try {
+    const draftStr = localStorage.getItem(DRAFT_KEY)
+    if (draftStr) {
+      const draft = JSON.parse(draftStr)
+      form.value = {
+        title: draft.title || '',
+        slug: draft.slug || '',
+        summary: draft.summary || '',
+        content: draft.content || '',
+        category_id: draft.category_id || undefined,
+        tag_ids: draft.tag_ids || [],
+        is_published: draft.is_published || false,
+        is_featured: draft.is_featured || false,
+        is_pinned: draft.is_pinned || false
+      }
+      return true
+    }
+  } catch (e) {
+    console.warn('Failed to load form draft:', e)
+  }
+  return false
+}
+
+const clearFormDraft = () => {
+  try {
+    localStorage.removeItem(DRAFT_KEY)
+  } catch (e) {
+    console.warn('Failed to clear form draft:', e)
+  }
+}
+
+let draftSaveTimer: ReturnType<typeof setTimeout> | null = null
+
+const scheduleDraftSave = () => {
+  if (draftSaveTimer) clearTimeout(draftSaveTimer)
+  draftSaveTimer = setTimeout(() => {
+    saveFormDraft()
+  }, 500)
+}
 
 const fetchArticles = async () => {
   isLoading.value = true
@@ -155,6 +210,7 @@ const resetForm = () => {
     is_pinned: false
   }
   articleFiles.value = []
+  clearFormDraft()
 }
 
 const generateSlug = () => {
@@ -269,7 +325,19 @@ const getFileIcon = (fileType: string, mimeType: string): string => {
 const openCreateModal = async () => {
   if (!await requireAdmin('新建文章')) return
   editingArticle.value = null
-  resetForm()
+  
+  const hasDraft = loadFormDraft()
+  if (hasDraft) {
+    const confirmed = await dialog.showConfirm({
+      title: '发现未保存的草稿',
+      message: '检测到上次未保存的文章内容，是否恢复？'
+    })
+    if (!confirmed) {
+      resetForm()
+    }
+  } else {
+    resetForm()
+  }
   showEditor.value = true
 }
 
@@ -280,6 +348,28 @@ onMounted(async () => {
   blogStore.fetchCategories()
   blogStore.fetchTags()
 })
+
+watch(showEditor, (newVal) => {
+  if (newVal) {
+    document.body.style.overflow = 'hidden'
+  } else {
+    document.body.style.overflow = ''
+    if (!editingArticle.value) {
+      saveFormDraft()
+    }
+  }
+})
+
+onUnmounted(() => {
+  document.body.style.overflow = ''
+  if (draftSaveTimer) clearTimeout(draftSaveTimer)
+})
+
+watch(form, () => {
+  if (showEditor.value && !editingArticle.value) {
+    scheduleDraftSave()
+  }
+}, { deep: true })
 </script>
 
 <template>

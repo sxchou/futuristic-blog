@@ -10,6 +10,8 @@ const props = withDefaults(defineProps<{
   replyTo?: string
   rows?: number
   storageKey?: string
+  articleTitle?: string
+  replyToContent?: string
 }>(), {
   placeholder: '写下你的想法...',
   rows: 4
@@ -21,11 +23,16 @@ const emit = defineEmits<{
 }>()
 
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
-const showPreview = ref(false)
+const previewContainerRef = ref<HTMLElement | null>(null)
+const showPreview = ref(true)
 const previewContent = ref('')
 const showLangSelector = ref(false)
 const hasUnsavedChanges = ref(false)
 const originalValue = ref('')
+const isFullscreen = ref(false)
+const isSyncingScroll = ref(false)
+const langSelectorPosition = ref({ top: 0, left: 0 })
+const showMarkdownHelp = ref(false)
 
 const programmingLanguages = [
   { code: 'javascript', label: 'JavaScript', alias: 'js' },
@@ -158,29 +165,35 @@ const insertEmoji = (emoji: string) => {
   
   const newValue = props.modelValue.substring(0, start) + emoji + props.modelValue.substring(end)
   emit('update:modelValue', newValue)
-  updatePreview(newValue)
   
   nextTick(() => {
-    textarea.focus()
+    textarea.focus({ preventScroll: true })
     textarea.selectionStart = textarea.selectionEnd = start + emoji.length
   })
 }
 
-const insertText = (before: string, after: string = '') => {
+const insertText = (before: string, after: string = '', needsNewLine: boolean = false) => {
   if (!textareaRef.value) return
   
   const textarea = textareaRef.value
   const start = textarea.selectionStart
   const end = textarea.selectionEnd
   const selectedText = props.modelValue.substring(start, end)
-  const newValue = props.modelValue.substring(0, start) + before + selectedText + after + props.modelValue.substring(end)
   
+  let prefix = ''
+  if (needsNewLine && start > 0) {
+    const charBefore = props.modelValue[start - 1]
+    if (charBefore !== '\n') {
+      prefix = '\n'
+    }
+  }
+  
+  const newValue = props.modelValue.substring(0, start) + prefix + before + selectedText + after + props.modelValue.substring(end)
   emit('update:modelValue', newValue)
-  updatePreview(newValue)
   
   nextTick(() => {
-    textarea.focus()
-    const newCursorPos = start + before.length + selectedText.length
+    textarea.focus({ preventScroll: true })
+    const newCursorPos = start + prefix.length + before.length + selectedText.length
     textarea.selectionStart = textarea.selectionEnd = newCursorPos
   })
 }
@@ -194,15 +207,23 @@ const insertCodeBlock = (lang: string) => {
   const start = textarea.selectionStart
   const end = textarea.selectionEnd
   const selectedText = props.modelValue.substring(start, end)
-  const codeBlock = `\`\`\`${lang}\n${selectedText || 'code here'}\n\`\`\``
   
-  const newValue = props.modelValue.substring(0, start) + codeBlock + props.modelValue.substring(end)
+  let prefix = ''
+  if (start > 0) {
+    const charBefore = props.modelValue[start - 1]
+    if (charBefore !== '\n') {
+      prefix = '\n'
+    }
+  }
+  
+  const codeBlock = `\`\`\`${lang}\n${selectedText || ''}\n\`\`\``
+  
+  const newValue = props.modelValue.substring(0, start) + prefix + codeBlock + props.modelValue.substring(end)
   emit('update:modelValue', newValue)
-  updatePreview(newValue)
   
   nextTick(() => {
-    textarea.focus()
-    const cursorPos = start + 3 + lang.length + 1 + (selectedText ? selectedText.length : 10)
+    textarea.focus({ preventScroll: true })
+    const cursorPos = start + prefix.length + 3 + lang.length + 1
     textarea.selectionStart = textarea.selectionEnd = cursorPos
   })
 }
@@ -213,8 +234,8 @@ const toolbarActions = [
   { icon: 'S', title: '删除线', action: () => insertText('~~', '~~') },
   { icon: '</>', title: '行内代码', action: () => insertText('`', '`') },
   { icon: '🔗', title: '链接', action: () => insertText('[', '](url)') },
-  { icon: '•', title: '列表', action: () => insertText('- ') },
-  { icon: '>', title: '引用', action: () => insertText('> ') },
+  { icon: '•', title: '列表', action: () => insertText('- ', '', true) },
+  { icon: '>', title: '引用', action: () => insertText('> ', '', true) },
 ]
 
 const togglePreview = () => {
@@ -224,8 +245,63 @@ const togglePreview = () => {
   }
 }
 
-const toggleLangSelector = () => {
+const toggleFullscreen = () => {
+  isFullscreen.value = !isFullscreen.value
+  if (isFullscreen.value) {
+    showPreview.value = true
+    previewContent.value = props.modelValue
+    document.body.style.overflow = 'hidden'
+  } else {
+    document.body.style.overflow = ''
+  }
+}
+
+const handleEditorScroll = () => {
+  if (isSyncingScroll.value || !isFullscreen.value) return
+  
+  const editor = textareaRef.value
+  const previewEl = previewContainerRef.value
+  if (!editor || !previewEl) return
+  
+  const editorScrollRatio = editor.scrollTop / (editor.scrollHeight - editor.clientHeight || 1)
+  const previewScrollTop = editorScrollRatio * (previewEl.scrollHeight - previewEl.clientHeight || 0)
+  
+  isSyncingScroll.value = true
+  previewEl.scrollTop = previewScrollTop
+  
+  setTimeout(() => {
+    isSyncingScroll.value = false
+  }, 50)
+}
+
+const handlePreviewScroll = () => {
+  if (isSyncingScroll.value || !isFullscreen.value) return
+  
+  const editor = textareaRef.value
+  const previewEl = previewContainerRef.value
+  if (!editor || !previewEl) return
+  
+  const previewScrollRatio = previewEl.scrollTop / (previewEl.scrollHeight - previewEl.clientHeight || 1)
+  const editorScrollTop = previewScrollRatio * (editor.scrollHeight - editor.clientHeight || 0)
+  
+  isSyncingScroll.value = true
+  editor.scrollTop = editorScrollTop
+  
+  setTimeout(() => {
+    isSyncingScroll.value = false
+  }, 50)
+}
+
+const toggleLangSelector = (event: MouseEvent) => {
   showLangSelector.value = !showLangSelector.value
+  if (showLangSelector.value) {
+    const target = event.currentTarget as HTMLElement
+    const rect = target.getBoundingClientRect()
+    langSelectorPosition.value = {
+      top: rect.bottom + 4,
+      left: Math.max(0, rect.right - 160)
+    }
+  }
 }
 
 const handleClickOutside = (e: MouseEvent) => {
@@ -241,9 +317,16 @@ const markAsSaved = () => {
   clearDraft()
 }
 
+const handleSubmit = () => {
+  if (!props.modelValue.trim() || props.disabled) return
+  emit('submit')
+}
+
 watch(() => props.modelValue, (newVal) => {
-  previewContent.value = newVal
-}, { immediate: true })
+  if (showPreview.value) {
+    previewContent.value = newVal
+  }
+})
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
@@ -255,6 +338,7 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   if (debounceTimer) clearTimeout(debounceTimer)
   if (autoSaveTimer) clearTimeout(autoSaveTimer)
+  document.body.style.overflow = ''
 })
 
 defineExpose({
@@ -265,8 +349,12 @@ defineExpose({
 </script>
 
 <template>
-  <div class="comment-editor">
-    <div class="flex justify-between items-center mb-2">
+  <div 
+    class="comment-editor transition-all duration-300"
+    :class="{ 'fixed inset-0 z-50 bg-white dark:bg-dark-100 p-4': isFullscreen }"
+  >
+    <!-- 非全屏模式下的工具栏 -->
+    <div v-if="!isFullscreen" class="flex justify-between items-center mb-2">
       <div class="flex items-center gap-1 flex-wrap">
         <button
           v-for="item in toolbarActions"
@@ -282,7 +370,7 @@ defineExpose({
         <div class="lang-selector-container relative">
           <button
             type="button"
-            @click="toggleLangSelector"
+            @click="toggleLangSelector($event)"
             title="代码块"
             class="px-1.5 py-0.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/10 rounded transition-colors"
           >
@@ -291,7 +379,8 @@ defineExpose({
           
           <div
             v-if="showLangSelector"
-            class="absolute z-50 top-full mt-1 left-0 bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-lg shadow-lg py-1 w-40 max-h-60 overflow-y-auto"
+            class="fixed z-[200] bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-lg shadow-lg py-1 w-40 max-h-60 overflow-y-auto"
+            :style="{ top: langSelectorPosition.top + 'px', left: langSelectorPosition.left + 'px' }"
           >
             <div class="px-2 py-1 text-xs text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-white/10">
               选择语言
@@ -309,38 +398,282 @@ defineExpose({
         </div>
       </div>
       
-      <div class="flex items-center gap-2">
-        <EmojiPicker @select="insertEmoji" />
+      <div class="flex items-center gap-1">
+        <button
+          type="button"
+          @click="showMarkdownHelp = !showMarkdownHelp"
+          class="p-1.5 rounded transition-colors text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/10"
+          title="Markdown 语法帮助"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </button>
         <button
           type="button"
           @click="togglePreview"
-          class="px-2 py-0.5 text-xs font-medium rounded transition-colors"
+          class="p-1.5 rounded transition-colors"
           :class="showPreview ? 'text-primary bg-primary/10' : 'text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/10'"
+          :title="showPreview ? '隐藏预览' : '显示预览'"
         >
-          {{ showPreview ? '隐藏预览' : '预览' }}
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          @click="toggleFullscreen"
+          class="p-1.5 rounded transition-colors"
+          :class="isFullscreen ? 'text-primary bg-primary/10' : 'text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/10'"
+          :title="isFullscreen ? '退出全屏' : '全屏编辑'"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path v-if="!isFullscreen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
+          </svg>
         </button>
       </div>
     </div>
     
-    <div class="relative">
-      <textarea
-        ref="textareaRef"
-        :value="modelValue"
-        @input="handleInput"
-        @keydown="handleKeydown"
-        :placeholder="replyTo ? `回复 @${replyTo}...` : placeholder"
-        :disabled="disabled"
-        :rows="rows"
-        class="w-full bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 resize-none text-sm leading-relaxed"
-      />
+    <!-- Markdown 语法帮助 -->
+    <div 
+      v-if="showMarkdownHelp && !isFullscreen" 
+      class="mb-2 p-3 bg-gray-50 dark:bg-dark-200/50 border border-gray-200 dark:border-white/10 rounded-lg text-xs text-gray-600 dark:text-gray-400"
+    >
+      <div class="flex justify-between items-center mb-3">
+        <span class="font-medium text-gray-700 dark:text-gray-300">Markdown 语法参考</span>
+        <button @click="showMarkdownHelp = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-2">
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">**粗体**</code>
+          <span class="text-gray-400">→</span>
+          <strong class="truncate">粗体</strong>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">*斜体*</code>
+          <span class="text-gray-400">→</span>
+          <em class="truncate">斜体</em>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">~~删除线~~</code>
+          <span class="text-gray-400">→</span>
+          <del class="truncate">删除线</del>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">`代码`</code>
+          <span class="text-gray-400">→</span>
+          <code class="bg-gray-200 dark:bg-dark-100 px-1 rounded truncate">代码</code>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">[文字](url)</code>
+          <span class="text-gray-400">→</span>
+          <span class="text-primary truncate">链接</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">![图片](url)</code>
+          <span class="text-gray-400">→</span>
+          <span class="truncate">图片</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0"># 标题</code>
+          <span class="text-gray-400">→</span>
+          <span class="font-bold truncate">H1标题</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">## 标题</code>
+          <span class="text-gray-400">→</span>
+          <span class="font-semibold truncate">H2标题</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">- 列表</code>
+          <span class="text-gray-400">→</span>
+          <span class="truncate">无序列表</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">1. 列表</code>
+          <span class="text-gray-400">→</span>
+          <span class="truncate">有序列表</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">- [ ] 任务</code>
+          <span class="text-gray-400">→</span>
+          <span class="truncate">任务列表</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">> 引用</code>
+          <span class="text-gray-400">→</span>
+          <span class="truncate">引用块</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">---</code>
+          <span class="text-gray-400">→</span>
+          <span class="truncate">分隔线</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">```代码块```</code>
+          <span class="text-gray-400">→</span>
+          <span class="truncate">代码块</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">| 表格 |</code>
+          <span class="text-gray-400">→</span>
+          <span class="truncate">表格</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">[^脚注]</code>
+          <span class="text-gray-400">→</span>
+          <span class="truncate">脚注</span>
+        </div>
+      </div>
     </div>
     
+    <!-- 全屏模式：左右分栏 -->
     <div 
-      v-if="showPreview && modelValue" 
-      class="mt-3 p-3 bg-gray-50 dark:bg-dark-200/50 rounded-lg border border-gray-200 dark:border-white/5"
+      v-if="isFullscreen" 
+      class="flex flex-col"
+      style="height: calc(100vh - 32px);"
     >
-      <div class="text-xs text-gray-500 dark:text-gray-400 mb-2">预览</div>
-      <CommentMarkdownPreview :content="previewContent" :show-lang-label="true" />
+      <!-- 上下文信息区域 -->
+      <div class="flex-shrink-0 mb-2 p-2 bg-gray-100 dark:bg-dark-200/50 rounded-lg border border-gray-200 dark:border-white/10">
+        <div v-if="replyTo" class="text-sm">
+          <span class="text-gray-500 dark:text-gray-400">回复 </span>
+          <span class="text-primary font-medium">@{{ replyTo }}</span>
+          <div v-if="replyToContent" class="mt-1 text-gray-600 dark:text-gray-300 text-xs line-clamp-1 truncate bg-gray-200 dark:bg-dark-100/50 p-2 rounded">
+            {{ replyToContent }}
+          </div>
+        </div>
+        <div v-else-if="articleTitle" class="text-sm">
+          <span class="text-gray-500 dark:text-gray-400">评论文章：</span>
+          <span class="text-gray-900 dark:text-white font-medium">{{ articleTitle }}</span>
+        </div>
+      </div>
+      
+      <!-- 编辑和预览区域 -->
+      <div class="flex gap-3 flex-1 min-h-0">
+        <!-- 编辑区 -->
+        <div class="flex-1 flex flex-col border border-gray-200 dark:border-white/10 rounded-lg overflow-visible">
+          <div class="flex-shrink-0 h-8 px-3 bg-gray-50 dark:bg-dark-200 border-b border-gray-200 dark:border-white/10 rounded-t-lg flex justify-between items-center">
+            <span class="text-xs text-gray-500 dark:text-gray-400">编辑</span>
+            <div class="flex items-center gap-1">
+              <button
+                v-for="item in toolbarActions"
+                :key="item.icon"
+                type="button"
+                @click="item.action"
+                :title="item.title"
+                class="px-1 py-0.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/10 rounded transition-colors"
+              >
+                {{ item.icon }}
+              </button>
+              <div class="lang-selector-container relative">
+                <button
+                  type="button"
+                  @click="toggleLangSelector($event)"
+                  title="代码块"
+                  class="px-1 py-0.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/10 rounded transition-colors"
+                >
+                  { }
+                </button>
+                <div
+                  v-if="showLangSelector"
+                  class="fixed z-[200] bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-lg shadow-lg py-1 w-40 max-h-60 overflow-y-auto"
+                  :style="{ top: langSelectorPosition.top + 'px', left: langSelectorPosition.left + 'px' }"
+                >
+                  <div class="px-2 py-1 text-xs text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-white/10">
+                    选择语言
+                  </div>
+                  <button
+                    v-for="lang in programmingLanguages"
+                    :key="lang.code"
+                    type="button"
+                    @click="insertCodeBlock(lang.code)"
+                    class="w-full px-2 py-1 text-xs text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                  >
+                    {{ lang.label }}
+                  </button>
+                </div>
+              </div>
+              <EmojiPicker position="bottom" @select="insertEmoji" />
+            </div>
+          </div>
+          <textarea
+            ref="textareaRef"
+            :value="modelValue"
+            @input="handleInput"
+            @keydown="handleKeydown"
+            @scroll="handleEditorScroll"
+            :placeholder="replyTo ? `回复 @${replyTo}...` : placeholder"
+            :disabled="disabled"
+            class="flex-1 w-full p-3 bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 resize-none text-sm leading-relaxed overflow-y-auto rounded-b-lg"
+          />
+        </div>
+        
+        <!-- 预览区 -->
+        <div class="flex-1 flex flex-col border border-gray-200 dark:border-white/10 rounded-lg overflow-hidden">
+          <div class="flex-shrink-0 h-8 px-3 bg-gray-50 dark:bg-dark-200 border-b border-gray-200 dark:border-white/10 rounded-t-lg flex items-center">
+            <span class="text-xs text-gray-500 dark:text-gray-400">预览</span>
+          </div>
+          <div 
+            ref="previewContainerRef"
+            class="flex-1 p-3 overflow-y-auto"
+            @scroll="handlePreviewScroll"
+          >
+            <CommentMarkdownPreview 
+              :content="previewContent" 
+              :show-lang-label="true"
+            />
+          </div>
+        </div>
+      </div>
+      
+      <!-- 底部操作按钮 -->
+      <div class="flex-shrink-0 flex justify-end gap-2 mt-2 pt-2 border-t border-gray-200 dark:border-white/10">
+        <button
+          type="button"
+          @click="toggleFullscreen"
+          class="px-4 py-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+        >
+          取消
+        </button>
+        <button
+          type="button"
+          @click="handleSubmit"
+          :disabled="disabled || !modelValue.trim()"
+          class="px-4 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {{ disabled ? '发送中...' : (replyTo ? '发送回复' : '发表评论') }}
+        </button>
+      </div>
     </div>
+    
+    <!-- 非全屏模式：原始布局 -->
+    <template v-else>
+      <div class="relative">
+        <textarea
+          ref="textareaRef"
+          :value="modelValue"
+          @input="handleInput"
+          @keydown="handleKeydown"
+          :placeholder="replyTo ? `回复 @${replyTo}...` : placeholder"
+          :disabled="disabled"
+          :rows="rows"
+          class="w-full bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 resize-none text-sm leading-relaxed"
+        />
+      </div>
+      
+      <div 
+        v-if="showPreview && modelValue" 
+        class="mt-3 p-3 bg-gray-50 dark:bg-dark-200/50 rounded-lg border border-gray-200 dark:border-white/5"
+      >
+        <div class="text-xs text-gray-500 dark:text-gray-400 mb-2">预览</div>
+        <CommentMarkdownPreview :content="previewContent" :show-lang-label="true" />
+      </div>
+    </template>
   </div>
 </template>

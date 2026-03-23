@@ -17,10 +17,10 @@ const isRendering = ref(false)
 
 const renderer = new marked.Renderer()
 
-renderer.code = (code: string, language: string | undefined) => {
+renderer.code = (code: string, infostring: string | undefined, _escaped: boolean) => {
   let validLang = 'plaintext'
   
-  if (language) {
+  if (infostring) {
     const langMap: Record<string, string> = {
       'js': 'javascript',
       'ts': 'typescript',
@@ -35,7 +35,7 @@ renderer.code = (code: string, language: string | undefined) => {
       'c#': 'csharp',
     }
     
-    const normalizedLang = language.toLowerCase()
+    const normalizedLang = infostring.toLowerCase()
     validLang = langMap[normalizedLang] || normalizedLang
     
     if (!hljs.getLanguage(validLang)) {
@@ -54,7 +54,7 @@ renderer.code = (code: string, language: string | undefined) => {
   </div>`
 }
 
-renderer.heading = (text: string, level: number) => {
+renderer.heading = (text: string, level: number, _raw: string) => {
   const id = text.toLowerCase().replace(/[^\w\u4e00-\u9fa5]+/g, '-')
   return `<h${level} id="${id}" class="heading-${level}">${text}</h${level}>`
 }
@@ -73,7 +73,7 @@ renderer.blockquote = (quote: string) => {
   return `<blockquote class="border-l-4 border-primary pl-4 my-4 italic text-gray-400">${quote}</blockquote>`
 }
 
-renderer.list = (body: string, ordered: boolean) => {
+renderer.list = (body: string, ordered: boolean, _start: number | string) => {
   const tag = ordered ? 'ol' : 'ul'
   return `<${tag} class="my-4 pl-6 ${ordered ? 'list-decimal' : 'list-disc'}">${body}</${tag}>`
 }
@@ -102,7 +102,7 @@ const renderedContent = computed(() => {
     isRendering.value = false
   })
   
-  return DOMPurify.sanitize(marked(props.content) as string)
+  return DOMPurify.sanitize(marked.parse(props.content, { async: false }) as string)
 })
 
 const handleScroll = (e: Event) => {

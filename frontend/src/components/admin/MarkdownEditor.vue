@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, computed, onMounted, onUnmounted } from 'vue'
 import MarkdownPreview from './MarkdownPreview.vue'
+import EmojiPicker from '@/components/common/EmojiPicker.vue'
 
 const props = withDefaults(defineProps<{
   modelValue: string
@@ -191,22 +192,34 @@ const toggleFullscreen = () => {
   isFullscreen.value = !isFullscreen.value
 }
 
-const insertText = (before: string, after: string = '') => {
+const insertText = (before: string, after: string = '', needsNewLine: boolean = false) => {
   if (!editorRef.value) return
   
   const textarea = editorRef.value
   const start = textarea.selectionStart
   const end = textarea.selectionEnd
   const selectedText = props.modelValue.substring(start, end)
-  const newText = props.modelValue.substring(0, start) + before + selectedText + after + props.modelValue.substring(end)
   
+  let prefix = ''
+  if (needsNewLine && start > 0) {
+    const charBefore = props.modelValue[start - 1]
+    if (charBefore !== '\n') {
+      prefix = '\n'
+    }
+  }
+  
+  const newText = props.modelValue.substring(0, start) + prefix + before + selectedText + after + props.modelValue.substring(end)
   emit('update:modelValue', newText)
   
   nextTick(() => {
-    textarea.focus()
-    const newCursorPos = start + before.length + selectedText.length
+    textarea.focus({ preventScroll: true })
+    const newCursorPos = start + prefix.length + before.length + selectedText.length
     textarea.selectionStart = textarea.selectionEnd = newCursorPos
   })
+}
+
+const insertEmoji = (emoji: string) => {
+  insertText(emoji)
 }
 
 const insertCodeBlock = (lang: string) => {
@@ -218,14 +231,23 @@ const insertCodeBlock = (lang: string) => {
   const start = textarea.selectionStart
   const end = textarea.selectionEnd
   const selectedText = props.modelValue.substring(start, end)
-  const codeBlock = `\`\`\`${lang}\n${selectedText || 'code here'}\n\`\`\``
   
-  const newText = props.modelValue.substring(0, start) + codeBlock + props.modelValue.substring(end)
+  let prefix = ''
+  if (start > 0) {
+    const charBefore = props.modelValue[start - 1]
+    if (charBefore !== '\n') {
+      prefix = '\n'
+    }
+  }
+  
+  const codeBlock = `\`\`\`${lang}\n${selectedText || ''}\n\`\`\``
+  
+  const newText = props.modelValue.substring(0, start) + prefix + codeBlock + props.modelValue.substring(end)
   emit('update:modelValue', newText)
   
   nextTick(() => {
-    textarea.focus()
-    const cursorPos = start + 3 + lang.length + 1 + (selectedText ? selectedText.length : 10)
+    textarea.focus({ preventScroll: true })
+    const cursorPos = start + prefix.length + 3 + lang.length + 1
     textarea.selectionStart = textarea.selectionEnd = cursorPos
   })
 }
@@ -248,13 +270,13 @@ const toolbarActions = [
   { icon: 'I', title: '斜体', action: () => insertText('*', '*') },
   { icon: 'S', title: '删除线', action: () => insertText('~~', '~~') },
   { divider: true },
-  { icon: 'H1', title: '标题1', action: () => insertText('# ') },
-  { icon: 'H2', title: '标题2', action: () => insertText('## ') },
-  { icon: 'H3', title: '标题3', action: () => insertText('### ') },
+  { icon: 'H1', title: '标题1', action: () => insertText('# ', '', true) },
+  { icon: 'H2', title: '标题2', action: () => insertText('## ', '', true) },
+  { icon: 'H3', title: '标题3', action: () => insertText('### ', '', true) },
   { divider: true },
-  { icon: '•', title: '无序列表', action: () => insertText('- ') },
-  { icon: '1.', title: '有序列表', action: () => insertText('1. ') },
-  { icon: '□', title: '任务列表', action: () => insertText('- [ ] ') },
+  { icon: '•', title: '无序列表', action: () => insertText('- ', '', true) },
+  { icon: '1.', title: '有序列表', action: () => insertText('1. ', '', true) },
+  { icon: '□', title: '任务列表', action: () => insertText('- [ ] ', '', true) },
   { divider: true },
   { icon: '🔗', title: '链接', action: () => insertText('[', '](url)') },
   { icon: '🖼', title: '图片', action: () => insertText('![alt](', ')') },
@@ -262,12 +284,14 @@ const toolbarActions = [
   { divider: true },
   { icon: '|', title: '表格', action: () => insertText('\n| 列1 | 列2 | 列3 |\n| --- | --- | --- |\n| 内容 | 内容 | 内容 |\n') },
   { icon: '—', title: '分割线', action: () => insertText('\n---\n') },
-  { icon: '>', title: '引用', action: () => insertText('> ') },
+  { icon: '>', title: '引用', action: () => insertText('> ', '', true) },
 ]
 
 watch(() => props.modelValue, (newVal) => {
-  previewContent.value = newVal
-}, { immediate: true })
+  if (showPreview.value) {
+    previewContent.value = newVal
+  }
+})
 
 const editorContainerStyle = computed(() => ({
   height: isFullscreen.value ? 'calc(100vh - 120px)' : '400px'
@@ -339,6 +363,10 @@ defineExpose({
             </button>
           </div>
         </div>
+        
+        <div class="w-px h-4 bg-gray-300 dark:bg-white/10 mx-1" />
+        
+        <EmojiPicker position="bottom" @select="insertEmoji" />
       </div>
       <div class="flex items-center gap-2">
         <button

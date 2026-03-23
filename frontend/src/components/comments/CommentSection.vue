@@ -32,6 +32,8 @@
           :disabled="submitting"
           :rows="4"
           storage-key="new-comment"
+          :article-title="articleTitle"
+          @submit="submitComment"
           ref="commentEditorRef"
         />
         <div class="flex justify-end mt-3">
@@ -78,6 +80,7 @@ import CommentEditor from './CommentEditor.vue'
 
 const props = defineProps<{
   articleId: number
+  articleTitle?: string
 }>()
 
 const authStore = useAuthStore()

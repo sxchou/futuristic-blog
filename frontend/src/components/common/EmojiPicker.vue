@@ -13,7 +13,10 @@
     
     <div
       v-if="showPicker"
-      class="absolute z-50 bottom-full mb-2 left-0 bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-lg shadow-lg p-3 w-72"
+      :class="[
+        'absolute z-[100] bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-lg shadow-lg p-3 w-72',
+        position === 'top' ? 'bottom-full mb-2 left-0' : 'top-full mt-2 left-0'
+      ]"
     >
       <div class="flex items-center justify-between mb-2">
         <span class="text-xs text-gray-500 dark:text-gray-400">选择表情</span>
@@ -59,6 +62,12 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+
+const props = withDefaults(defineProps<{
+  position?: 'top' | 'bottom'
+}>(), {
+  position: 'top'
+})
 
 const emit = defineEmits<{
   select: [emoji: string]

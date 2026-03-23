@@ -31,8 +31,8 @@ const articleFiles = ref<ArticleFile[]>([])
 
 const renderer = new marked.Renderer()
 
-renderer.code = (code: string, language: string | undefined) => {
-  const validLang = language && hljs.getLanguage(language) ? language : 'plaintext'
+renderer.code = (code: string, infostring: string | undefined, _escaped: boolean) => {
+  const validLang = infostring && hljs.getLanguage(infostring) ? infostring : 'plaintext'
   const highlighted = hljs.highlight(code, { language: validLang }).value
   const encodedCode = encodeURIComponent(code)
   return `<div class="code-block-wrapper relative group">
@@ -51,7 +51,7 @@ marked.setOptions({
 
 const renderedContent = computed(() => {
   if (!article.value?.content) return ''
-  return DOMPurify.sanitize(marked(article.value.content) as string)
+  return DOMPurify.sanitize(marked.parse(article.value.content, { async: false }) as string)
 })
 
 const formatDate = (date: string) => {
@@ -328,7 +328,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <CommentSection v-if="article" :article-id="article.id" />
+        <CommentSection v-if="article" :article-id="article.id" :article-title="article.title" />
 
         <footer class="mt-12 pt-8 border-t border-gray-200 dark:border-white/10">
           <div class="flex flex-wrap items-center justify-between gap-4">
