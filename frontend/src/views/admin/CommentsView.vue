@@ -2,12 +2,13 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { commentApi } from '@/api'
 import type { AdminComment, CommentAuditLog, PaginatedResponse } from '@/types'
-import { useDialogStore, useUserProfileStore } from '@/stores'
+import { useDialogStore, useUserProfileStore, useAuthStore } from '@/stores'
 import { useAdminCheck } from '@/composables/useAdminCheck'
 import { formatDateTime } from '@/utils/date'
 
 const dialog = useDialogStore()
 const userProfileStore = useUserProfileStore()
+const authStore = useAuthStore()
 const { requireAdmin, isAdmin } = useAdminCheck()
 
 const comments = ref<AdminComment[]>([])
@@ -191,7 +192,8 @@ const confirmDelete = async () => {
 
 const formatDate = (dateStr: string) => formatDateTime(dateStr)
 
-onMounted(() => {
+onMounted(async () => {
+  await authStore.waitForInit()
   if (!isAdmin.value) return
   fetchComments()
 })

@@ -18,6 +18,8 @@ export const useAuthStore = defineStore('auth', () => {
   )
   const loading = ref(false)
   const isRefreshing = ref(false)
+  const initializing = ref(false)
+  const initPromise = ref<Promise<void> | null>(null)
 
   const isAuthenticated = computed(() => !!token.value)
   const isAdmin = computed(() => user.value?.is_admin ?? false)
@@ -153,8 +155,18 @@ export const useAuthStore = defineStore('auth', () => {
     return await authApi.revokeSession(sessionId)
   }
 
+  const waitForInit = async (): Promise<void> => {
+    if (initPromise.value) {
+      return initPromise.value
+    }
+    return Promise.resolve()
+  }
+
   if (token.value) {
-    fetchUser()
+    initializing.value = true
+    initPromise.value = fetchUser().finally(() => {
+      initializing.value = false
+    })
   }
 
   return {
@@ -163,6 +175,7 @@ export const useAuthStore = defineStore('auth', () => {
     refreshToken,
     loading,
     isRefreshing,
+    initializing,
     isAuthenticated,
     isAdmin,
     login,
@@ -175,6 +188,7 @@ export const useAuthStore = defineStore('auth', () => {
     getSessions,
     revokeSession,
     setTokens,
-    clearTokens
+    clearTokens,
+    waitForInit
   }
 })

@@ -9,6 +9,8 @@ export function useAdminCheck() {
   const isAdmin = computed(() => authStore.user?.is_admin === true)
   
   const requireAdmin = async (action?: string): Promise<boolean> => {
+    await authStore.waitForInit()
+    
     if (isAdmin.value) {
       return true
     }
@@ -22,6 +24,8 @@ export function useAdminCheck() {
   }
   
   const checkAdminAccess = async (): Promise<boolean> => {
+    await authStore.waitForInit()
+    
     if (isAdmin.value) {
       return true
     }

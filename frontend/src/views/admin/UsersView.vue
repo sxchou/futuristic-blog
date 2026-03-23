@@ -2,12 +2,13 @@
 import { ref, onMounted, watch } from 'vue'
 import { userApi } from '@/api'
 import type { User } from '@/types'
-import { useDialogStore, useUserProfileStore } from '@/stores'
+import { useDialogStore, useUserProfileStore, useAuthStore } from '@/stores'
 import { useAdminCheck } from '@/composables/useAdminCheck'
 import { formatDateTime } from '@/utils/date'
 
 const dialog = useDialogStore()
 const userProfileStore = useUserProfileStore()
+const authStore = useAuthStore()
 const { requireAdmin, isAdmin } = useAdminCheck()
 
 const users = ref<User[]>([])
@@ -155,7 +156,8 @@ const nextPage = () => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await authStore.waitForInit()
   if (!isAdmin.value) return
   fetchUsers()
 })

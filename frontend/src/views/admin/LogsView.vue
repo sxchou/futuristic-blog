@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import { logsApi } from '@/api'
-import { useDialogStore, useUserProfileStore } from '@/stores'
+import { useDialogStore, useUserProfileStore, useAuthStore } from '@/stores'
 import { useAdminCheck } from '@/composables/useAdminCheck'
 import { formatDateTime } from '@/utils/date'
 
 const dialog = useDialogStore()
 const userProfileStore = useUserProfileStore()
+const authStore = useAuthStore()
 const { requireAdmin, isAdmin } = useAdminCheck()
 
 interface LogStats {
@@ -218,7 +219,8 @@ const getOperationLogAvatarStyle = (log: any) => {
 
 const totalPages = computed(() => Math.ceil(total.value / pageSize.value))
 
-onMounted(() => {
+onMounted(async () => {
+  await authStore.waitForInit()
   if (!isAdmin.value) return
   fetchStats()
   fetchLogs()

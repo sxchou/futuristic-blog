@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useBlogStore, useDialogStore } from '@/stores'
+import { useBlogStore, useDialogStore, useAuthStore } from '@/stores'
 import { articleApi, fileApi } from '@/api'
 import type { ArticleListItem } from '@/types'
 import { useAdminCheck } from '@/composables/useAdminCheck'
@@ -20,6 +20,7 @@ interface ArticleFile {
 
 const blogStore = useBlogStore()
 const dialog = useDialogStore()
+const authStore = useAuthStore()
 const { requireAdmin, isAdmin } = useAdminCheck()
 
 const articles = ref<ArticleListItem[]>([])
@@ -269,7 +270,8 @@ const openCreateModal = async () => {
   showEditor.value = true
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await authStore.waitForInit()
   if (!isAdmin.value) return
   fetchArticles()
   blogStore.fetchCategories()
