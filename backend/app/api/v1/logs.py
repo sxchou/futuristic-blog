@@ -6,8 +6,8 @@ from datetime import datetime, timedelta
 from app.core.database import get_db
 from app.models import OperationLog, LoginLog, AccessLog, UserProfile
 from app.utils.auth import get_current_admin_user
-from app.utils.timezone import get_db_now, get_today_start
-from pydantic import BaseModel
+from app.utils.timezone import get_db_now, get_today_start, to_local
+from pydantic import BaseModel, field_validator
 
 router = APIRouter(prefix="/logs", tags=["Logs"])
 
@@ -29,7 +29,15 @@ class OperationLogItem(BaseModel):
     request_url: Optional[str]
     ip_address: Optional[str]
     status: str
-    created_at: datetime
+    created_at: Optional[str] = None
+    
+    @field_validator('created_at', mode='before')
+    @classmethod
+    def serialize_created_at(cls, v):
+        if v is None:
+            return None
+        local_dt = to_local(v)
+        return local_dt.isoformat()
     
     class Config:
         from_attributes = True
@@ -51,7 +59,15 @@ class LoginLogItem(BaseModel):
     device: Optional[str]
     status: str
     fail_reason: Optional[str]
-    created_at: datetime
+    created_at: Optional[str] = None
+    
+    @field_validator('created_at', mode='before')
+    @classmethod
+    def serialize_created_at(cls, v):
+        if v is None:
+            return None
+        local_dt = to_local(v)
+        return local_dt.isoformat()
     
     class Config:
         from_attributes = True
@@ -65,7 +81,15 @@ class AccessLogItem(BaseModel):
     response_status: Optional[int]
     response_time: Optional[float]
     ip_address: Optional[str]
-    created_at: datetime
+    created_at: Optional[str] = None
+    
+    @field_validator('created_at', mode='before')
+    @classmethod
+    def serialize_created_at(cls, v):
+        if v is None:
+            return None
+        local_dt = to_local(v)
+        return local_dt.isoformat()
     
     class Config:
         from_attributes = True
