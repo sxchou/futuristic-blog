@@ -4,7 +4,7 @@ import { userApi } from '@/api'
 import type { User } from '@/types'
 import { useDialogStore, useUserProfileStore } from '@/stores'
 import { useAdminCheck } from '@/composables/useAdminCheck'
-import { formatDateShort } from '@/utils/date'
+import { formatDateTime } from '@/utils/date'
 
 const dialog = useDialogStore()
 const userProfileStore = useUserProfileStore()
@@ -111,7 +111,7 @@ const openPasswordModal = async (user: User) => {
   showPasswordModal.value = true
 }
 
-const formatDate = (date: string) => formatDateShort(date)
+const formatDate = (date: string) => formatDateTime(date)
 
 const getUserAvatarStyle = (user: User) => {
   if (user.avatar_type === 'custom' && user.avatar_url) {

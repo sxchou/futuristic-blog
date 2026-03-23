@@ -4,7 +4,7 @@ import { useBlogStore, useDialogStore } from '@/stores'
 import { articleApi, fileApi } from '@/api'
 import type { ArticleListItem } from '@/types'
 import { useAdminCheck } from '@/composables/useAdminCheck'
-import { formatDateShort } from '@/utils/date'
+import { formatDateTime } from '@/utils/date'
 
 interface ArticleFile {
   id: number
@@ -160,7 +160,7 @@ const generateSlug = () => {
     .replace(/^-|-$/g, '')
 }
 
-const formatDate = (date: string) => formatDateShort(date)
+const formatDate = (date: string) => formatDateTime(date)
 
 const formatFileSize = (bytes: number): string => {
   if (bytes < 1024) return bytes + ' B'
