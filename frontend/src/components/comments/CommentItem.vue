@@ -69,11 +69,13 @@
         <div v-if="showReplyForm" class="mt-3">
           <div class="bg-gray-200 dark:bg-dark-200/50 border border-gray-300 dark:border-white/10 rounded-lg p-3">
             <CommentEditor
+              ref="replyEditorRef"
               v-model="replyContent"
               placeholder="写下你的回复...&#10;支持 **粗体**、*斜体*、`代码` 等"
               :reply-to="comment.author_name"
               :disabled="submittingReply"
               :rows="3"
+              :storage-key="`reply-${comment.id}`"
             />
             <div class="flex justify-end gap-2 mt-2">
               <button
@@ -134,6 +136,7 @@ const authStore = useAuthStore()
 const showReplyForm = ref(false)
 const replyContent = ref('')
 const submittingReply = ref(false)
+const replyEditorRef = ref<InstanceType<typeof CommentEditor> | null>(null)
 
 const avatarText = computed(() => {
   const name = props.comment.author_name || '匿'
@@ -199,6 +202,7 @@ const submitReply = async () => {
     })
     replyContent.value = ''
     showReplyForm.value = false
+    replyEditorRef.value?.markAsSaved()
   } finally {
     submittingReply.value = false
   }

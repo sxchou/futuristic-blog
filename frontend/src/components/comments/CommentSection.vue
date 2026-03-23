@@ -31,6 +31,8 @@
           placeholder="写下你的想法...&#10;&#10;支持 **粗体**、*斜体*、`代码`、[链接](url) 等 Markdown 语法"
           :disabled="submitting"
           :rows="4"
+          storage-key="new-comment"
+          ref="commentEditorRef"
         />
         <div class="flex justify-end mt-3">
           <button
@@ -85,6 +87,7 @@ const comments = ref<Comment[]>([])
 const loading = ref(true)
 const newComment = ref('')
 const submitting = ref(false)
+const commentEditorRef = ref<InstanceType<typeof CommentEditor> | null>(null)
 
 const totalComments = computed(() => {
   let count = 0
@@ -132,6 +135,7 @@ const submitComment = async () => {
     }
     
     newComment.value = ''
+    commentEditorRef.value?.markAsSaved()
   } catch (error) {
     console.error('Failed to submit comment:', error)
     await dialog.showError('评论发送失败，请重试', '错误')

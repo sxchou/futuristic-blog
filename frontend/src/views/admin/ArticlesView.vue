@@ -31,6 +31,7 @@ const editingArticle = ref<ArticleListItem | null>(null)
 const articleFiles = ref<ArticleFile[]>([])
 const isUploading = ref(false)
 const uploadProgress = ref(0)
+const markdownEditorRef = ref<InstanceType<typeof MarkdownEditor> | null>(null)
 
 const form = ref({
   title: '',
@@ -130,6 +131,7 @@ const handleSubmit = async () => {
     } else {
       await articleApi.createArticle(form.value)
     }
+    markdownEditorRef.value?.markAsSaved()
     showEditor.value = false
     editingArticle.value = null
     resetForm()
@@ -436,8 +438,10 @@ onMounted(async () => {
           <div>
             <label for="article-content" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">内容 (Markdown)</label>
             <MarkdownEditor
+              ref="markdownEditorRef"
               v-model="form.content"
               placeholder="请输入文章内容，支持 Markdown 格式"
+              :storage-key="editingArticle?.id ? `article-${editingArticle.id}` : 'new-article'"
             />
           </div>
 

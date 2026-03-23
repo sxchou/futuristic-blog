@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, computed } from 'vue'
+import { ref, watch, nextTick, computed, onMounted, onUnmounted } from 'vue'
 import MarkdownPreview from './MarkdownPreview.vue'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   modelValue: string
   placeholder?: string
   disabled?: boolean
-}>()
+  storageKey?: string
+}>(), {
+  placeholder: '请输入内容...'
+})
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
@@ -18,8 +21,81 @@ const showPreview = ref(true)
 const isSyncingScroll = ref(false)
 const previewContent = ref('')
 const isFullscreen = ref(false)
+const showLangSelector = ref(false)
+const hasUnsavedChanges = ref(false)
+const originalValue = ref('')
+
+const programmingLanguages = [
+  { code: 'javascript', label: 'JavaScript' },
+  { code: 'typescript', label: 'TypeScript' },
+  { code: 'python', label: 'Python' },
+  { code: 'java', label: 'Java' },
+  { code: 'cpp', label: 'C++' },
+  { code: 'csharp', label: 'C#' },
+  { code: 'go', label: 'Go' },
+  { code: 'rust', label: 'Rust' },
+  { code: 'ruby', label: 'Ruby' },
+  { code: 'php', label: 'PHP' },
+  { code: 'swift', label: 'Swift' },
+  { code: 'kotlin', label: 'Kotlin' },
+  { code: 'bash', label: 'Bash/Shell' },
+  { code: 'sql', label: 'SQL' },
+  { code: 'html', label: 'HTML' },
+  { code: 'css', label: 'CSS' },
+  { code: 'json', label: 'JSON' },
+  { code: 'yaml', label: 'YAML' },
+  { code: 'markdown', label: 'Markdown' },
+  { code: 'plaintext', label: 'Plain Text' },
+]
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
+let autoSaveTimer: ReturnType<typeof setTimeout> | null = null
+
+const getStorageKey = () => {
+  return props.storageKey ? `admin_draft_${props.storageKey}` : null
+}
+
+const loadDraft = () => {
+  const key = getStorageKey()
+  if (!key) return
+  
+  try {
+    const draft = localStorage.getItem(key)
+    if (draft && draft.trim()) {
+      emit('update:modelValue', draft)
+      previewContent.value = draft
+      originalValue.value = draft
+    }
+  } catch (e) {
+    console.warn('Failed to load draft:', e)
+  }
+}
+
+const saveDraft = (value: string) => {
+  const key = getStorageKey()
+  if (!key) return
+  
+  try {
+    if (value.trim()) {
+      localStorage.setItem(key, value)
+    } else {
+      localStorage.removeItem(key)
+    }
+  } catch (e) {
+    console.warn('Failed to save draft:', e)
+  }
+}
+
+const clearDraft = () => {
+  const key = getStorageKey()
+  if (!key) return
+  
+  try {
+    localStorage.removeItem(key)
+  } catch (e) {
+    console.warn('Failed to clear draft:', e)
+  }
+}
 
 const updatePreview = (value: string) => {
   if (debounceTimer) clearTimeout(debounceTimer)
@@ -32,6 +108,43 @@ const handleInput = (e: Event) => {
   const target = e.target as HTMLTextAreaElement
   emit('update:modelValue', target.value)
   updatePreview(target.value)
+  hasUnsavedChanges.value = target.value !== originalValue.value
+  
+  if (autoSaveTimer) clearTimeout(autoSaveTimer)
+  autoSaveTimer = setTimeout(() => {
+    saveDraft(target.value)
+  }, 1000)
+}
+
+const handleKeydown = (e: KeyboardEvent) => {
+  if (e.key === 'Tab') {
+    e.preventDefault()
+    
+    const textarea = editorRef.value
+    if (!textarea) return
+    
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    const value = props.modelValue
+    
+    if (e.shiftKey) {
+      const lineStart = value.lastIndexOf('\n', start - 1) + 1
+      const lineContent = value.substring(lineStart, start)
+      if (lineContent.startsWith('  ')) {
+        const newValue = value.substring(0, lineStart) + value.substring(lineStart + 2)
+        emit('update:modelValue', newValue)
+        nextTick(() => {
+          textarea.selectionStart = textarea.selectionEnd = start - 2
+        })
+      }
+    } else {
+      const newValue = value.substring(0, start) + '  ' + value.substring(end)
+      emit('update:modelValue', newValue)
+      nextTick(() => {
+        textarea.selectionStart = textarea.selectionEnd = start + 2
+      })
+    }
+  }
 }
 
 const handleEditorScroll = () => {
@@ -96,6 +209,40 @@ const insertText = (before: string, after: string = '') => {
   })
 }
 
+const insertCodeBlock = (lang: string) => {
+  showLangSelector.value = false
+  
+  if (!editorRef.value) return
+  
+  const textarea = editorRef.value
+  const start = textarea.selectionStart
+  const end = textarea.selectionEnd
+  const selectedText = props.modelValue.substring(start, end)
+  const codeBlock = `\`\`\`${lang}\n${selectedText || 'code here'}\n\`\`\``
+  
+  const newText = props.modelValue.substring(0, start) + codeBlock + props.modelValue.substring(end)
+  emit('update:modelValue', newText)
+  
+  nextTick(() => {
+    textarea.focus()
+    const cursorPos = start + 3 + lang.length + 1 + (selectedText ? selectedText.length : 10)
+    textarea.selectionStart = textarea.selectionEnd = cursorPos
+  })
+}
+
+const handleClickOutside = (e: MouseEvent) => {
+  const target = e.target as HTMLElement
+  if (!target.closest('.lang-selector-container')) {
+    showLangSelector.value = false
+  }
+}
+
+const markAsSaved = () => {
+  originalValue.value = props.modelValue
+  hasUnsavedChanges.value = false
+  clearDraft()
+}
+
 const toolbarActions = [
   { icon: 'B', title: '粗体', action: () => insertText('**', '**') },
   { icon: 'I', title: '斜体', action: () => insertText('*', '*') },
@@ -111,8 +258,7 @@ const toolbarActions = [
   { divider: true },
   { icon: '🔗', title: '链接', action: () => insertText('[', '](url)') },
   { icon: '🖼', title: '图片', action: () => insertText('![alt](', ')') },
-  { icon: '</>', title: '代码', action: () => insertText('`', '`') },
-  { icon: '```', title: '代码块', action: () => insertText('\n```\n', '\n```\n') },
+  { icon: '</>', title: '行内代码', action: () => insertText('`', '`') },
   { divider: true },
   { icon: '|', title: '表格', action: () => insertText('\n| 列1 | 列2 | 列3 |\n| --- | --- | --- |\n| 内容 | 内容 | 内容 |\n') },
   { icon: '—', title: '分割线', action: () => insertText('\n---\n') },
@@ -126,6 +272,23 @@ watch(() => props.modelValue, (newVal) => {
 const editorContainerStyle = computed(() => ({
   height: isFullscreen.value ? 'calc(100vh - 120px)' : '400px'
 }))
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+  loadDraft()
+  originalValue.value = props.modelValue
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+  if (debounceTimer) clearTimeout(debounceTimer)
+  if (autoSaveTimer) clearTimeout(autoSaveTimer)
+})
+
+defineExpose({
+  markAsSaved,
+  clearDraft
+})
 </script>
 
 <template>
@@ -147,6 +310,35 @@ const editorContainerStyle = computed(() => ({
           </button>
           <div v-else class="w-px h-4 bg-gray-300 dark:bg-white/10 mx-1" />
         </template>
+        
+        <div class="lang-selector-container relative">
+          <button
+            type="button"
+            @click="showLangSelector = !showLangSelector"
+            title="代码块"
+            class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/5 rounded transition-colors"
+          >
+            { }
+          </button>
+          
+          <div
+            v-if="showLangSelector"
+            class="absolute z-50 top-full mt-1 left-0 bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-lg shadow-lg py-1 w-40 max-h-60 overflow-y-auto"
+          >
+            <div class="px-2 py-1 text-xs text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-white/10">
+              选择语言
+            </div>
+            <button
+              v-for="lang in programmingLanguages"
+              :key="lang.code"
+              type="button"
+              @click="insertCodeBlock(lang.code)"
+              class="w-full px-2 py-1 text-xs text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+            >
+              {{ lang.label }}
+            </button>
+          </div>
+        </div>
       </div>
       <div class="flex items-center gap-2">
         <button
@@ -179,6 +371,7 @@ const editorContainerStyle = computed(() => ({
           ref="editorRef"
           :value="modelValue"
           @input="handleInput"
+          @keydown="handleKeydown"
           @scroll="handleEditorScroll"
           :placeholder="placeholder"
           :disabled="disabled"

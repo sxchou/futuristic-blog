@@ -4,9 +4,12 @@ import { marked } from 'marked'
 import hljs from 'highlight.js'
 import DOMPurify from 'dompurify'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   content: string
-}>()
+  showLangLabel?: boolean
+}>(), {
+  showLangLabel: false
+})
 
 const previewRef = ref<HTMLElement | null>(null)
 
@@ -41,11 +44,15 @@ renderer.code = (code: string, language: string | undefined) => {
   const highlighted = hljs.highlight(code, { language: validLang, ignoreIllegals: true }).value
   const encodedCode = encodeURIComponent(code)
   
+  const langLabelHtml = props.showLangLabel 
+    ? `<div class="text-xs text-gray-500 absolute top-1 left-2">${validLang}</div>` 
+    : ''
+  
   return `<div class="code-block-wrapper relative group">
     <div class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
       <button class="copy-code-btn px-1.5 py-0.5 bg-dark-200 rounded text-xs text-gray-400 hover:text-primary transition-colors" data-code="${encodedCode}">复制</button>
     </div>
-    <div class="text-xs text-gray-500 absolute top-1 left-2">${validLang}</div>
+    ${langLabelHtml}
     <pre class="!my-2"><code class="hljs language-${validLang}">${highlighted}</code></pre>
   </div>`
 }
@@ -186,6 +193,8 @@ onUnmounted(() => {
   padding: 0.75rem;
   overflow-x: auto;
   margin: 0.5rem 0;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .comment-markdown-preview :deep(.code-block-wrapper) {
