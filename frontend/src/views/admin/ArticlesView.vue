@@ -5,6 +5,7 @@ import { articleApi, fileApi } from '@/api'
 import type { ArticleListItem } from '@/types'
 import { useAdminCheck } from '@/composables/useAdminCheck'
 import { formatDateTime } from '@/utils/date'
+import MarkdownEditor from '@/components/admin/MarkdownEditor.vue'
 
 interface ArticleFile {
   id: number
@@ -378,7 +379,7 @@ onMounted(async () => {
       v-if="showEditor"
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
     >
-      <div class="glass-card w-full max-w-3xl max-h-[90vh] overflow-y-auto m-4 p-5">
+      <div class="glass-card w-full max-w-5xl max-h-[90vh] overflow-hidden m-4 p-5 flex flex-col">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-base font-bold text-gray-900 dark:text-white">
             {{ editingArticle ? '编辑文章' : '新建文章' }}
@@ -393,7 +394,7 @@ onMounted(async () => {
           </button>
         </div>
 
-        <form @submit.prevent="handleSubmit" class="space-y-4">
+        <form @submit.prevent="handleSubmit" class="space-y-4 flex-1 overflow-y-auto pr-2">
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label for="article-title" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">标题</label>
@@ -434,12 +435,8 @@ onMounted(async () => {
 
           <div>
             <label for="article-content" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">内容 (Markdown)</label>
-            <textarea
+            <MarkdownEditor
               v-model="form.content"
-              id="article-content"
-              name="content"
-              rows="8"
-              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none resize-none font-mono"
               placeholder="请输入文章内容，支持 Markdown 格式"
             />
           </div>
