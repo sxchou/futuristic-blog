@@ -11,11 +11,15 @@ def get_utc_now() -> datetime:
     return datetime.now(ZoneInfo("UTC"))
 
 
+def get_db_now() -> datetime:
+    return datetime.utcnow()
+
+
 def to_local(dt: datetime) -> datetime:
     if dt is None:
         return None
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=settings.tz)
+        dt = dt.replace(tzinfo=ZoneInfo("UTC"))
     return dt.astimezone(settings.tz)
 
 
@@ -30,7 +34,7 @@ def to_utc(dt: datetime) -> datetime:
 def format_datetime(dt: datetime, fmt: str = "%Y-%m-%d %H:%M:%S") -> str:
     if dt is None:
         return ""
-    local_dt = to_local(dt) if dt.tzinfo else dt
+    local_dt = to_local(dt)
     return local_dt.strftime(fmt)
 
 

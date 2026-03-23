@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.database import get_db
 from app.models import User, RefreshToken
-from app.utils.timezone import get_now
+from app.utils.timezone import get_now, get_db_now
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
@@ -44,7 +44,7 @@ def create_refresh_token(
     device_fingerprint: Optional[str] = None
 ) -> RefreshToken:
     token_value = create_refresh_token_value()
-    expires_at = get_now() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    expires_at = get_db_now() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     
     ip_address = None
     user_agent = None
@@ -63,7 +63,7 @@ def create_refresh_token(
         user_agent=user_agent,
         device_fingerprint=device_fingerprint,
         expires_at=expires_at,
-        last_used_at=get_now()
+        last_used_at=get_db_now()
     )
     db.add(refresh_token)
     db.commit()
@@ -84,7 +84,7 @@ def verify_refresh_token(
     if not refresh_token:
         return None, "无效的刷新令牌"
     
-    if refresh_token.expires_at < get_now():
+    if refresh_token.expires_at < get_db_now():
         return None, "刷新令牌已过期"
     
     if request:
@@ -97,7 +97,7 @@ def verify_refresh_token(
         
         if refresh_token.ip_address and current_ip and refresh_token.ip_address != current_ip:
             refresh_token.is_revoked = True
-            refresh_token.revoked_at = get_now()
+            refresh_token.revoked_at = get_db_now()
             refresh_token.revoked_reason = "IP地址变更"
             db.commit()
             return None, "检测到IP地址变更，请重新登录"
@@ -106,7 +106,7 @@ def verify_refresh_token(
 
 
 def update_refresh_token_usage(db: Session, refresh_token: RefreshToken) -> None:
-    refresh_token.last_used_at = get_now()
+    refresh_token.last_used_at = get_db_now()
     db.commit()
 
 
@@ -117,7 +117,7 @@ def revoke_refresh_token(db: Session, token_value: str, reason: str = "用户登
     
     if refresh_token and not refresh_token.is_revoked:
         refresh_token.is_revoked = True
-        refresh_token.revoked_at = get_now()
+        refresh_token.revoked_at = get_db_now()
         refresh_token.revoked_reason = reason
         db.commit()
         return True
@@ -130,7 +130,7 @@ def revoke_all_user_tokens(db: Session, user_id: int, reason: str = "安全措�
         RefreshToken.is_revoked == False
     ).update({
         "is_revoked": True,
-        "revoked_at": get_now(),
+        "revoked_at": get_db_now(),
         "revoked_reason": reason
     })
     db.commit()
@@ -139,7 +139,7 @@ def revoke_all_user_tokens(db: Session, user_id: int, reason: str = "安全措�
 
 def cleanup_expired_tokens(db: Session) -> int:
     count = db.query(RefreshToken).filter(
-        RefreshToken.expires_at < get_now()
+        RefreshToken.expires_at < get_db_now()
     ).delete()
     db.commit()
     return count

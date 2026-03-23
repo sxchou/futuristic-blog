@@ -2,7 +2,7 @@ from app.core.database import SessionLocal, engine
 from app.core.config import settings
 from app.models import User, Category, Tag, Article, Resource, SiteConfig, OAuthProvider
 from app.utils import get_password_hash
-from app.utils.timezone import get_now
+from app.utils.timezone import get_db_now
 from datetime import datetime
 from sqlalchemy import text
 import sqlite3
@@ -1141,7 +1141,7 @@ OpenAI API 为开发者提供了强大的 AI 能力，合理使用可以构建�
                     category_id=category.id if category else None,
                     author_id=admin.id,
                     reading_time=reading_time,
-                    published_at=get_now() if article_data["is_published"] else None
+                    published_at=get_db_now() if article_data["is_published"] else None
                 )
                 article.tags = tags
                 db.add(article)

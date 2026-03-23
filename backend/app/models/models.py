@@ -5,9 +5,8 @@ from app.core.database import Base
 import enum
 
 
-def get_local_now():
-    from app.utils.timezone import get_now
-    return get_now()
+def get_db_now():
+    return datetime.utcnow()
 
 
 article_tags = Table(
@@ -33,8 +32,8 @@ class User(Base):
     verification_token_expires = Column(DateTime, nullable=True)
     avatar = Column(String(255), nullable=True)
     bio = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=get_local_now)
-    updated_at = Column(DateTime, default=get_local_now, onupdate=get_local_now)
+    created_at = Column(DateTime, default=get_db_now)
+    updated_at = Column(DateTime, default=get_db_now, onupdate=get_db_now)
 
 
 class Category(Base):
@@ -47,7 +46,7 @@ class Category(Base):
     icon = Column(String(50), nullable=True)
     color = Column(String(20), nullable=True)
     order = Column(Integer, default=0)
-    created_at = Column(DateTime, default=get_local_now)
+    created_at = Column(DateTime, default=get_db_now)
 
 
 class Tag(Base):
@@ -57,7 +56,7 @@ class Tag(Base):
     name = Column(String(30), unique=True, nullable=False)
     slug = Column(String(30), unique=True, nullable=False)
     color = Column(String(20), nullable=True)
-    created_at = Column(DateTime, default=get_local_now)
+    created_at = Column(DateTime, default=get_db_now)
 
 
 class Article(Base):
@@ -79,8 +78,8 @@ class Article(Base):
     comment_count = Column(Integer, default=0)
     reading_time = Column(Integer, default=5)
     published_at = Column(DateTime, nullable=True, index=True)
-    created_at = Column(DateTime, default=get_local_now, index=True)
-    updated_at = Column(DateTime, default=get_local_now, onupdate=get_local_now)
+    created_at = Column(DateTime, default=get_db_now, index=True)
+    updated_at = Column(DateTime, default=get_db_now, onupdate=get_db_now)
     
     __table_args__ = (
         Index('ix_articles_published_created', 'is_published', 'created_at'),
@@ -101,7 +100,7 @@ class ArticleLike(Base):
     article_id = Column(Integer, ForeignKey('articles.id', ondelete='CASCADE'), nullable=False)
     user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=True)
     ip_address = Column(String(50), nullable=True)
-    created_at = Column(DateTime, default=get_local_now)
+    created_at = Column(DateTime, default=get_db_now)
 
 
 class ArticleFile(Base):
@@ -118,7 +117,7 @@ class ArticleFile(Base):
     download_count = Column(Integer, default=0)
     article_id = Column(Integer, ForeignKey('articles.id', ondelete='CASCADE'), nullable=True)
     uploaded_by = Column(Integer, ForeignKey('users.id'), nullable=True)
-    created_at = Column(DateTime, default=get_local_now)
+    created_at = Column(DateTime, default=get_db_now)
     
     article = relationship("Article", backref="files")
     uploader = relationship("User", backref="uploaded_files")
@@ -136,7 +135,7 @@ class Resource(Base):
     is_active = Column(Boolean, default=True)
     order = Column(Integer, default=0)
     resource_type = Column(String(20), default='link')
-    created_at = Column(DateTime, default=get_local_now)
+    created_at = Column(DateTime, default=get_db_now)
 
 
 class Comment(Base):
@@ -155,7 +154,7 @@ class Comment(Base):
     deleted_by = Column(String(20), nullable=True)
     reply_to_user_id = Column(Integer, ForeignKey('users.id'), nullable=True)
     status = Column(String(20), default='approved', index=True)
-    created_at = Column(DateTime, default=get_local_now, index=True)
+    created_at = Column(DateTime, default=get_db_now, index=True)
     
     __table_args__ = (
         Index('ix_comments_article_status_deleted', 'article_id', 'status', 'is_deleted'),
@@ -179,7 +178,7 @@ class CommentAuditLog(Base):
     old_status = Column(String(20), nullable=True)
     new_status = Column(String(20), nullable=False)
     reason = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=get_local_now)
+    created_at = Column(DateTime, default=get_db_now)
     
     comment = relationship("Comment", back_populates="audit_logs")
     operator = relationship("User")
@@ -192,8 +191,8 @@ class SiteConfig(Base):
     key = Column(String(50), unique=True, nullable=False)
     value = Column(Text, nullable=True)
     description = Column(String(200), nullable=True)
-    created_at = Column(DateTime, default=get_local_now)
-    updated_at = Column(DateTime, default=get_local_now, onupdate=get_local_now)
+    created_at = Column(DateTime, default=get_db_now)
+    updated_at = Column(DateTime, default=get_db_now, onupdate=get_db_now)
 
 
 class Profile(Base):
@@ -213,7 +212,7 @@ class Profile(Base):
     social_github = Column(String(255), nullable=True)
     social_blog = Column(String(255), nullable=True)
     social_email = Column(String(100), nullable=True)
-    updated_at = Column(DateTime, default=get_local_now, onupdate=get_local_now)
+    updated_at = Column(DateTime, default=get_db_now, onupdate=get_db_now)
 
 
 class EmailConfig(Base):
@@ -228,8 +227,8 @@ class EmailConfig(Base):
     from_email = Column(String(100), nullable=False)
     from_name = Column(String(100), nullable=True)
     is_active = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=get_local_now)
-    updated_at = Column(DateTime, default=get_local_now, onupdate=get_local_now)
+    created_at = Column(DateTime, default=get_db_now)
+    updated_at = Column(DateTime, default=get_db_now, onupdate=get_db_now)
 
 
 class EmailLog(Base):
@@ -247,7 +246,7 @@ class EmailLog(Base):
     verified_at = Column(DateTime, nullable=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=True)
     sent_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=get_local_now)
+    created_at = Column(DateTime, default=get_db_now)
     
     user = relationship("User", backref="email_logs")
 
@@ -261,8 +260,8 @@ class NotificationSettings(Base):
     notify_on_like = Column(Boolean, default=True)
     notify_on_reply = Column(Boolean, default=True)
     require_comment_audit = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=get_local_now)
-    updated_at = Column(DateTime, default=get_local_now, onupdate=get_local_now)
+    created_at = Column(DateTime, default=get_db_now)
+    updated_at = Column(DateTime, default=get_db_now, onupdate=get_db_now)
 
 
 class OperationLog(Base):
@@ -283,7 +282,7 @@ class OperationLog(Base):
     user_agent = Column(String(500), nullable=True)
     status = Column(String(20), default='success')
     error_message = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=get_local_now, index=True)
+    created_at = Column(DateTime, default=get_db_now, index=True)
     
     user = relationship("User")
 
@@ -303,7 +302,7 @@ class LoginLog(Base):
     user_agent = Column(String(500), nullable=True)
     status = Column(String(20), default='success')
     fail_reason = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=get_local_now, index=True)
+    created_at = Column(DateTime, default=get_db_now, index=True)
     
     user = relationship("User")
 
@@ -322,7 +321,7 @@ class AccessLog(Base):
     ip_address = Column(String(50), nullable=True)
     user_agent = Column(String(500), nullable=True)
     referer = Column(String(500), nullable=True)
-    created_at = Column(DateTime, default=get_local_now, index=True)
+    created_at = Column(DateTime, default=get_db_now, index=True)
     
     user = relationship("User")
 
@@ -337,7 +336,7 @@ class PasswordReset(Base):
     is_used = Column(Boolean, default=False)
     used_at = Column(DateTime, nullable=True)
     expires_at = Column(DateTime, nullable=False)
-    created_at = Column(DateTime, default=get_local_now)
+    created_at = Column(DateTime, default=get_db_now)
 
 
 class AvatarType(str, enum.Enum):
@@ -354,8 +353,8 @@ class UserProfile(Base):
     avatar_url = Column(String(500), nullable=True)
     oauth_avatar_url = Column(String(500), nullable=True)
     default_avatar_gradient = Column(JSON, nullable=True)
-    created_at = Column(DateTime, default=get_local_now)
-    updated_at = Column(DateTime, default=get_local_now, onupdate=get_local_now)
+    created_at = Column(DateTime, default=get_db_now)
+    updated_at = Column(DateTime, default=get_db_now, onupdate=get_db_now)
     
     user = relationship("User", backref="profile", uselist=False)
 
@@ -377,8 +376,8 @@ class OAuthProvider(Base):
     is_enabled = Column(Boolean, default=False)
     show_on_login = Column(Boolean, default=True)
     order = Column(Integer, default=0)
-    created_at = Column(DateTime, default=get_local_now)
-    updated_at = Column(DateTime, default=get_local_now, onupdate=get_local_now)
+    created_at = Column(DateTime, default=get_db_now)
+    updated_at = Column(DateTime, default=get_db_now, onupdate=get_db_now)
 
 
 class OAuthConnection(Base):
@@ -391,8 +390,8 @@ class OAuthConnection(Base):
     access_token = Column(Text, nullable=True)
     refresh_token = Column(Text, nullable=True)
     token_expires_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=get_local_now)
-    updated_at = Column(DateTime, default=get_local_now, onupdate=get_local_now)
+    created_at = Column(DateTime, default=get_db_now)
+    updated_at = Column(DateTime, default=get_db_now, onupdate=get_db_now)
     
     user = relationship("User", backref="oauth_connections")
     provider = relationship("OAuthProvider", backref="connections")
@@ -408,7 +407,7 @@ class OAuthTempToken(Base):
     user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     provider_name = Column(String(50), nullable=False)
     provider_user_id = Column(String(255), nullable=False)
-    created_at = Column(DateTime, default=get_local_now)
+    created_at = Column(DateTime, default=get_db_now)
     expires_at = Column(DateTime, nullable=False)
     
     user = relationship("User", backref="oauth_temp_tokens")
@@ -428,7 +427,7 @@ class RefreshToken(Base):
     revoked_reason = Column(String(100), nullable=True)
     last_used_at = Column(DateTime, nullable=True)
     expires_at = Column(DateTime, nullable=False, index=True)
-    created_at = Column(DateTime, default=get_local_now)
+    created_at = Column(DateTime, default=get_db_now)
     
     user = relationship("User", backref="refresh_tokens")
     

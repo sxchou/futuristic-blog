@@ -14,7 +14,7 @@ from app.utils import (
 )
 from app.services.email_service import EmailService
 from app.services.log_service import log_login_sync
-from app.utils.timezone import get_now
+from app.utils.timezone import get_now, get_db_now
 import random
 import string
 
@@ -201,14 +201,12 @@ async def verify_email(
             detail="无效的验证链接"
         )
     
-    from app.utils.timezone import get_now, to_utc
-    now = get_now()
+    from app.utils.timezone import get_db_now
+    now = get_db_now()
     token_expires = user.verification_token_expires
     if token_expires:
         if token_expires.tzinfo is None:
-            token_expires_utc = to_utc(token_expires.replace(tzinfo=None))
-            now_utc = to_utc(now)
-            if token_expires_utc < now_utc:
+            if token_expires < now:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="验证链接已过期，请重新发送验证邮件"
@@ -226,7 +224,7 @@ async def verify_email(
     email_log = db.query(EmailLog).filter(EmailLog.verification_token == token).first()
     if email_log:
         email_log.is_verified = True
-        email_log.verified_at = get_now()
+        email_log.verified_at = get_db_now()
     
     db.commit()
     
@@ -349,7 +347,7 @@ async def get_sessions(
     sessions = db.query(RefreshToken).filter(
         RefreshToken.user_id == current_user.id,
         RefreshToken.is_revoked == False,
-        RefreshToken.expires_at > get_now()
+        RefreshToken.expires_at > get_db_now()
     ).order_by(RefreshToken.last_used_at.desc()).all()
     
     return [
@@ -383,7 +381,7 @@ async def revoke_session(
         )
     
     session.is_revoked = True
-    session.revoked_at = get_now()
+    session.revoked_at = get_db_now()
     session.revoked_reason = "用户手动撤销"
     db.commit()
     
@@ -420,7 +418,7 @@ async def request_password_reset(
         )
     
     client_ip = get_client_ip(request)
-    one_hour_ago = get_now() - timedelta(hours=1)
+    one_hour_ago = get_db_now() - timedelta(hours=1)
     
     email_requests = db.query(PasswordReset).filter(
         PasswordReset.email == data.email,
@@ -445,7 +443,7 @@ async def request_password_reset(
         )
     
     code = generate_reset_code()
-    expires_at = get_now() + timedelta(minutes=RESET_CODE_EXPIRE_MINUTES)
+    expires_at = get_db_now() + timedelta(minutes=RESET_CODE_EXPIRE_MINUTES)
     
     password_reset = PasswordReset(
         email=data.email,
@@ -489,7 +487,7 @@ async def verify_password_reset(
             detail="该邮箱未注册"
         )
     
-    now = get_now()
+    now = get_db_now()
     reset_record = db.query(PasswordReset).filter(
         PasswordReset.email == data.email,
         PasswordReset.code == data.code,

@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from app.core.database import get_db
 from app.models import OperationLog, LoginLog, AccessLog, UserProfile
 from app.utils.auth import get_current_admin_user
-from app.utils.timezone import get_now, get_today_start
+from app.utils.timezone import get_db_now, get_today_start
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/logs", tags=["Logs"])
@@ -297,7 +297,7 @@ async def clear_operation_logs(
     db: Session = Depends(get_db),
     _: dict = Depends(get_current_admin_user)
 ):
-    cutoff_date = get_now() - timedelta(days=days)
+    cutoff_date = get_db_now() - timedelta(days=days)
     deleted = db.query(OperationLog).filter(OperationLog.created_at < cutoff_date).delete()
     db.commit()
     return {"message": f"已删除 {deleted} 条操作日志"}
@@ -309,7 +309,7 @@ async def clear_login_logs(
     db: Session = Depends(get_db),
     _: dict = Depends(get_current_admin_user)
 ):
-    cutoff_date = get_now() - timedelta(days=days)
+    cutoff_date = get_db_now() - timedelta(days=days)
     deleted = db.query(LoginLog).filter(LoginLog.created_at < cutoff_date).delete()
     db.commit()
     return {"message": f"已删除 {deleted} 条登录日志"}
@@ -321,7 +321,7 @@ async def clear_access_logs(
     db: Session = Depends(get_db),
     _: dict = Depends(get_current_admin_user)
 ):
-    cutoff_date = get_now() - timedelta(days=days)
+    cutoff_date = get_db_now() - timedelta(days=days)
     deleted = db.query(AccessLog).filter(AccessLog.created_at < cutoff_date).delete()
     db.commit()
     return {"message": f"已删除 {deleted} 条访问日志"}

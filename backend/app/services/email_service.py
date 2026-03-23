@@ -10,7 +10,7 @@ from typing import Optional, Dict, Any
 from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.models import EmailConfig, EmailLog, SiteConfig
-from app.utils.timezone import get_now
+from app.utils.timezone import get_now, get_db_now
 
 
 logger = logging.getLogger(__name__)
@@ -55,7 +55,7 @@ class EmailService:
     
     @staticmethod
     def get_token_expiry() -> datetime:
-        return get_now() + timedelta(hours=24)
+        return get_db_now() + timedelta(hours=24)
     
     @staticmethod
     def get_active_config(db: Session) -> Optional[EmailConfig]:
@@ -275,7 +275,7 @@ class EmailService:
             
             if result and result.get('success'):
                 log.status = 'sent'
-                log.sent_at = get_now()
+                log.sent_at = get_db_now()
                 log.error_message = f"Provider: {provider_used}"
                 logger.info(f"Email sent successfully via {provider_used} to {to_email}")
                 return True
@@ -1146,7 +1146,7 @@ class EmailService:
         provider_user_id: str
     ) -> None:
         from app.models import OAuthTempToken
-        from app.utils.timezone import get_now
+        from app.utils.timezone import get_db_now
         from datetime import timedelta
         
         db.query(OAuthTempToken).filter(OAuthTempToken.user_id == user_id).delete()
@@ -1156,7 +1156,7 @@ class EmailService:
             user_id=user_id,
             provider_name=provider_name,
             provider_user_id=provider_user_id,
-            expires_at=get_now() + timedelta(hours=24)
+            expires_at=get_db_now() + timedelta(hours=24)
         )
         db.add(temp_token_record)
         db.commit()
@@ -1164,11 +1164,11 @@ class EmailService:
     @staticmethod
     def get_oauth_temp_token(db: Session, temp_token: str) -> Optional['OAuthTempToken']:
         from app.models import OAuthTempToken
-        from app.utils.timezone import get_now
+        from app.utils.timezone import get_db_now
         
         record = db.query(OAuthTempToken).filter(
             OAuthTempToken.temp_token == temp_token,
-            OAuthTempToken.expires_at > get_now()
+            OAuthTempToken.expires_at > get_db_now()
         ).first()
         return record
     

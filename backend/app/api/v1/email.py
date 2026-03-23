@@ -15,7 +15,7 @@ from app.schemas import (
 )
 from app.utils import get_current_admin_user
 from app.services.log_service import LogService
-from app.utils.timezone import get_now
+from app.utils.timezone import get_now, get_db_now
 import smtplib
 import socket
 from email.mime.text import MIMEText
@@ -125,7 +125,7 @@ def send_email_with_config(
                 server.quit()
                 
                 log.status = 'sent'
-                log.sent_at = get_now()
+                log.sent_at = get_db_now()
                 
                 return {'success': True, 'message': 'Email sent successfully'}
                 
@@ -464,7 +464,7 @@ async def mark_email_verified(
         raise HTTPException(status_code=404, detail="记录不存在")
     
     log.is_verified = True
-    log.verified_at = get_now()
+    log.verified_at = get_db_now()
     db.commit()
     
     LogService.log_operation(
@@ -624,7 +624,7 @@ async def test_resend_email(
         )
         
         log.status = 'sent'
-        log.sent_at = get_now()
+        log.sent_at = get_db_now()
         log.error_message = f"Provider: resend, Message ID: {result.get('message_id')}"
         db.add(log)
         db.commit()
