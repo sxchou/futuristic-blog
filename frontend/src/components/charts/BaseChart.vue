@@ -113,7 +113,7 @@ const chartTheme = computed(() => {
 })
 
 const initOptions = computed(() => ({
-  renderer: 'canvas',
+  renderer: 'canvas' as const,
   devicePixelRatio: window.devicePixelRatio || 1
 }))
 
