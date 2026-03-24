@@ -261,11 +261,6 @@ router.beforeEach(async (to, _from, next) => {
     }
     
     await authStore.waitForInit()
-    
-    if (to.path.startsWith('/admin') && !authStore.isAdmin) {
-      next({ name: 'Home' })
-      return
-    }
   }
   
   if (to.name) {
