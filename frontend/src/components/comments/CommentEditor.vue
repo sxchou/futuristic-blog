@@ -354,86 +354,84 @@ defineExpose({
     :class="{ 'fixed inset-0 z-50 bg-white dark:bg-dark-100 p-4': isFullscreen }"
   >
     <!-- 非全屏模式下的工具栏 -->
-    <div v-if="!isFullscreen" class="flex justify-between items-center mb-2">
-      <div class="flex items-center gap-1 flex-wrap">
+    <div v-if="!isFullscreen" class="flex flex-wrap items-center gap-1 mb-2">
+      <button
+        v-for="item in toolbarActions"
+        :key="item.icon"
+        type="button"
+        @click="item.action"
+        :title="item.title"
+        class="px-1.5 py-0.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/10 rounded transition-colors"
+      >
+        {{ item.icon }}
+      </button>
+      
+      <div class="lang-selector-container relative">
         <button
-          v-for="item in toolbarActions"
-          :key="item.icon"
           type="button"
-          @click="item.action"
-          :title="item.title"
+          @click="toggleLangSelector($event)"
+          title="代码块"
           class="px-1.5 py-0.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/10 rounded transition-colors"
         >
-          {{ item.icon }}
+          { }
         </button>
         
-        <div class="lang-selector-container relative">
-          <button
-            type="button"
-            @click="toggleLangSelector($event)"
-            title="代码块"
-            class="px-1.5 py-0.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/10 rounded transition-colors"
-          >
-            { }
-          </button>
-          
-          <div
-            v-if="showLangSelector"
-            class="fixed z-[200] bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-lg shadow-lg py-1 w-40 max-h-60 overflow-y-auto"
-            :style="{ top: langSelectorPosition.top + 'px', left: langSelectorPosition.left + 'px' }"
-          >
-            <div class="px-2 py-1 text-xs text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-white/10">
-              选择语言
-            </div>
-            <button
-              v-for="lang in programmingLanguages"
-              :key="lang.code"
-              type="button"
-              @click="insertCodeBlock(lang.code)"
-              class="w-full px-2 py-1 text-xs text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
-            >
-              {{ lang.label }}
-            </button>
+        <div
+          v-if="showLangSelector"
+          class="fixed z-[200] bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-lg shadow-lg py-1 w-40 max-h-60 overflow-y-auto"
+          :style="{ top: langSelectorPosition.top + 'px', left: langSelectorPosition.left + 'px' }"
+        >
+          <div class="px-2 py-1 text-xs text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-white/10">
+            选择语言
           </div>
+          <button
+            v-for="lang in programmingLanguages"
+            :key="lang.code"
+            type="button"
+            @click="insertCodeBlock(lang.code)"
+            class="w-full px-2 py-1 text-xs text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+          >
+            {{ lang.label }}
+          </button>
         </div>
       </div>
       
-      <div class="flex items-center gap-1">
-        <button
-          type="button"
-          @click="showMarkdownHelp = !showMarkdownHelp"
-          class="p-1.5 rounded transition-colors text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/10"
-          title="Markdown 语法帮助"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          @click="togglePreview"
-          class="p-1.5 rounded transition-colors"
-          :class="showPreview ? 'text-primary bg-primary/10' : 'text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/10'"
-          :title="showPreview ? '隐藏预览' : '显示预览'"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          @click="toggleFullscreen"
-          class="p-1.5 rounded transition-colors"
-          :class="isFullscreen ? 'text-primary bg-primary/10' : 'text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/10'"
-          :title="isFullscreen ? '退出全屏' : '全屏编辑'"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path v-if="!isFullscreen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-            <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
-          </svg>
-        </button>
-      </div>
+      <div class="w-px h-4 bg-gray-200 dark:bg-white/10 mx-1 hidden sm:block"></div>
+      
+      <button
+        type="button"
+        @click="showMarkdownHelp = !showMarkdownHelp"
+        class="p-1.5 rounded transition-colors text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/10"
+        title="Markdown 语法帮助"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </button>
+      <button
+        type="button"
+        @click="togglePreview"
+        class="p-1.5 rounded transition-colors"
+        :class="showPreview ? 'text-primary bg-primary/10' : 'text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/10'"
+        :title="showPreview ? '隐藏预览' : '显示预览'"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </svg>
+      </button>
+      <button
+        type="button"
+        @click="toggleFullscreen"
+        class="p-1.5 rounded transition-colors"
+        :class="isFullscreen ? 'text-primary bg-primary/10' : 'text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/10'"
+        :title="isFullscreen ? '退出全屏' : '全屏编辑'"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path v-if="!isFullscreen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+          <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
+        </svg>
+      </button>
     </div>
     
     <!-- Markdown 语法帮助 -->
@@ -558,9 +556,9 @@ defineExpose({
       <div class="flex gap-3 flex-1 min-h-0">
         <!-- 编辑区 -->
         <div class="flex-1 flex flex-col border border-gray-200 dark:border-white/10 rounded-lg overflow-visible">
-          <div class="flex-shrink-0 h-8 px-3 bg-gray-50 dark:bg-dark-200 border-b border-gray-200 dark:border-white/10 rounded-t-lg flex justify-between items-center">
+          <div class="flex-shrink-0 min-h-8 px-3 py-1 bg-gray-50 dark:bg-dark-200 border-b border-gray-200 dark:border-white/10 rounded-t-lg flex justify-between items-center">
             <span class="text-xs text-gray-500 dark:text-gray-400">编辑</span>
-            <div class="flex items-center gap-1">
+            <div class="flex flex-wrap items-center gap-0.5">
               <button
                 v-for="item in toolbarActions"
                 :key="item.icon"
@@ -677,3 +675,58 @@ defineExpose({
     </template>
   </div>
 </template>
+
+<style scoped>
+@media (max-width: 640px) {
+  .comment-editor .flex.flex-wrap {
+    gap: 0.25rem;
+  }
+  
+  .comment-editor button.px-1\.5,
+  .comment-editor button.px-1,
+  .comment-editor button.p-1\.5 {
+    padding: 0.25rem 0.375rem;
+    font-size: 0.6875rem;
+  }
+  
+  .comment-editor .w-px\.h-4 {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .comment-editor .flex.flex-wrap {
+    gap: 0.125rem;
+  }
+  
+  .comment-editor button.px-1\.5,
+  .comment-editor button.px-1,
+  .comment-editor button.p-1\.5 {
+    padding: 0.125rem 0.25rem;
+    font-size: 0.625rem;
+  }
+  
+  .comment-editor .lang-selector-container .fixed {
+    width: 120px;
+    max-height: 150px;
+  }
+}
+
+@media (max-width: 360px) {
+  .comment-editor .flex.flex-wrap {
+    gap: 0.0625rem;
+  }
+  
+  .comment-editor button.px-1\.5,
+  .comment-editor button.px-1,
+  .comment-editor button.p-1\.5 {
+    padding: 0.0625rem 0.1875rem;
+    font-size: 0.5625rem;
+  }
+  
+  .comment-editor .lang-selector-container .fixed {
+    width: 100px;
+    left: 0 !important;
+  }
+}
+</style>

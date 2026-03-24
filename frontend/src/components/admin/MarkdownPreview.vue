@@ -239,6 +239,7 @@ defineExpose({
   border-radius: 0.25rem;
   font-size: 0.875em;
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  word-break: break-word;
 }
 
 .preview-content :deep(pre) {
@@ -247,6 +248,7 @@ defineExpose({
   padding: 1rem;
   overflow-x: auto;
   margin: 1rem 0;
+  -webkit-overflow-scrolling: touch;
 }
 
 .preview-content :deep(.code-block-wrapper) {
@@ -301,6 +303,9 @@ defineExpose({
   width: 100%;
   border-collapse: collapse;
   margin: 1rem 0;
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .preview-content :deep(th),
@@ -308,6 +313,7 @@ defineExpose({
   border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 0.5rem 1rem;
   text-align: left;
+  white-space: nowrap;
 }
 
 .preview-content :deep(th) {
@@ -327,5 +333,222 @@ defineExpose({
 .preview-content :deep(del) {
   text-decoration: line-through;
   color: #9ca3af;
+}
+
+@media (max-width: 768px) {
+  .preview-content {
+    padding: 12px;
+  }
+  
+  .preview-content :deep(h1) {
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .preview-content :deep(h2) {
+    font-size: 1.25rem;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .preview-content :deep(h3) {
+    font-size: 1.125rem;
+    margin-top: 0.875rem;
+    margin-bottom: 0.375rem;
+  }
+  
+  .preview-content :deep(h4),
+  .preview-content :deep(h5),
+  .preview-content :deep(h6) {
+    font-size: 0.95rem;
+  }
+  
+  .preview-content :deep(p) {
+    margin-bottom: 0.75rem;
+    line-height: 1.6;
+    font-size: 14px;
+  }
+  
+  .preview-content :deep(pre) {
+    padding: 12px;
+    margin: 0.75rem 0;
+    font-size: 12px;
+    border-radius: 6px;
+  }
+  
+  .preview-content :deep(code:not(.hljs)) {
+    font-size: 12px;
+    padding: 0.1rem 0.25rem;
+  }
+  
+  .preview-content :deep(blockquote) {
+    padding-left: 0.75rem;
+    margin: 0.75rem 0;
+    font-size: 14px;
+  }
+  
+  .preview-content :deep(ul),
+  .preview-content :deep(ol) {
+    margin: 0.75rem 0;
+    padding-left: 1.25rem;
+    font-size: 14px;
+  }
+  
+  .preview-content :deep(li) {
+    margin-bottom: 0.375rem;
+  }
+  
+  .preview-content :deep(th),
+  .preview-content :deep(td) {
+    padding: 0.375rem 0.5rem;
+    font-size: 13px;
+  }
+  
+  .preview-content :deep(img) {
+    margin: 0.75rem 0;
+    border-radius: 6px;
+  }
+  
+  .preview-content :deep(hr) {
+    margin: 1.5rem 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .preview-content {
+    padding: 10px;
+  }
+  
+  .preview-content :deep(h1) {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.375rem;
+  }
+  
+  .preview-content :deep(h2) {
+    font-size: 1.125rem;
+    margin-top: 0.75rem;
+    margin-bottom: 0.375rem;
+  }
+  
+  .preview-content :deep(h3) {
+    font-size: 1rem;
+    margin-top: 0.625rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .preview-content :deep(h4),
+  .preview-content :deep(h5),
+  .preview-content :deep(h6) {
+    font-size: 0.875rem;
+  }
+  
+  .preview-content :deep(p) {
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+    font-size: 13px;
+  }
+  
+  .preview-content :deep(pre) {
+    padding: 10px;
+    margin: 0.5rem 0;
+    font-size: 11px;
+    border-radius: 4px;
+  }
+  
+  .preview-content :deep(code:not(.hljs)) {
+    font-size: 11px;
+    padding: 0.1rem 0.2rem;
+  }
+  
+  .preview-content :deep(blockquote) {
+    padding-left: 0.5rem;
+    margin: 0.5rem 0;
+    font-size: 13px;
+    border-left-width: 3px;
+  }
+  
+  .preview-content :deep(ul),
+  .preview-content :deep(ol) {
+    margin: 0.5rem 0;
+    padding-left: 1rem;
+    font-size: 13px;
+  }
+  
+  .preview-content :deep(li) {
+    margin-bottom: 0.25rem;
+  }
+  
+  .preview-content :deep(th),
+  .preview-content :deep(td) {
+    padding: 0.25rem 0.375rem;
+    font-size: 12px;
+  }
+  
+  .preview-content :deep(img) {
+    margin: 0.5rem 0;
+    border-radius: 4px;
+  }
+  
+  .preview-content :deep(hr) {
+    margin: 1rem 0;
+  }
+  
+  .preview-content :deep(.code-block-wrapper .copy-code-btn) {
+    padding: 2px 6px;
+    font-size: 10px;
+  }
+  
+  .preview-content :deep(.code-block-wrapper .text-xs) {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 360px) {
+  .preview-content {
+    padding: 8px;
+  }
+  
+  .preview-content :deep(h1) {
+    font-size: 1.125rem;
+  }
+  
+  .preview-content :deep(h2) {
+    font-size: 1rem;
+  }
+  
+  .preview-content :deep(h3) {
+    font-size: 0.875rem;
+  }
+  
+  .preview-content :deep(p) {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  
+  .preview-content :deep(pre) {
+    padding: 8px;
+    font-size: 10px;
+  }
+  
+  .preview-content :deep(code:not(.hljs)) {
+    font-size: 10px;
+  }
+  
+  .preview-content :deep(ul),
+  .preview-content :deep(ol) {
+    font-size: 12px;
+    padding-left: 0.875rem;
+  }
+  
+  .preview-content :deep(blockquote) {
+    font-size: 12px;
+  }
+  
+  .preview-content :deep(th),
+  .preview-content :deep(td) {
+    padding: 0.2rem 0.25rem;
+    font-size: 11px;
+  }
 }
 </style>

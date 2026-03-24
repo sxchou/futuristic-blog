@@ -59,6 +59,7 @@
         :option="chartOption"
         :theme="chartTheme"
         :autoresize="true"
+        :init-options="initOptions"
         class="chart"
         @click="handleClick"
       />
@@ -110,6 +111,11 @@ const chartTheme = computed(() => {
   const isDark = document.documentElement.classList.contains('dark')
   return isDark ? 'dark' : 'light'
 })
+
+const initOptions = computed(() => ({
+  renderer: 'canvas',
+  devicePixelRatio: window.devicePixelRatio || 1
+}))
 
 const chartOption = computed(() => {
   const isDark = document.documentElement.classList.contains('dark')

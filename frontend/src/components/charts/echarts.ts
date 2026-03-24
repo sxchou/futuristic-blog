@@ -31,4 +31,28 @@ use([
   UniversalTransition
 ])
 
+const passiveEvents = ['mousewheel', 'wheel', 'touchstart', 'touchmove']
+
+if (typeof window !== 'undefined') {
+  const originalAddEventListener = HTMLElement.prototype.addEventListener
+  HTMLElement.prototype.addEventListener = function(
+    type: string,
+    listener: EventListenerOrEventListenerObject,
+    options?: boolean | AddEventListenerOptions
+  ) {
+    if (passiveEvents.includes(type)) {
+      if (typeof options === 'boolean') {
+        options = { capture: options, passive: true }
+      } else if (typeof options === 'object' && options !== null) {
+        if (options.passive === undefined) {
+          options = { ...options, passive: true }
+        }
+      } else {
+        options = { passive: true }
+      }
+    }
+    return originalAddEventListener.call(this, type, listener, options)
+  }
+}
+
 export default VChart
