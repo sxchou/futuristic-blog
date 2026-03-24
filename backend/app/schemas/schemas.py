@@ -191,6 +191,7 @@ class ArticleUpdate(BaseModel):
 
 class ArticleResponse(ArticleBase):
     id: int
+    category_id: Optional[int] = None
     view_count: int
     like_count: int
     reading_time: int
