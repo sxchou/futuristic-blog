@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import func
 from app.core.database import get_db
-from app.models import Article, Category, Tag, Comment
+from app.models import Article, Category, Tag, Comment, ArticleLike, ArticleFile
 from app.schemas import (
     ArticleCreate, ArticleUpdate, ArticleResponse, ArticleListItem,
     CategoryResponse, TagResponse, PaginatedResponse
@@ -343,20 +343,44 @@ async def delete_article(
         raise HTTPException(status_code=403, detail="无权限删除此文章")
     
     article_title = article.title
-    db.delete(article)
-    db.commit()
     
-    LogService.log_operation(
-        db=db,
-        user_id=current_user.id,
-        username=current_user.username,
-        action="删除",
-        module="文章管理",
-        description=f"删除文章: {article_title}",
-        target_type="文章",
-        target_id=article_id,
-        request=request,
-        status="success"
-    )
-    
-    return {"message": "Article deleted successfully"}
+    try:
+        db.query(Comment).filter(Comment.article_id == article_id).delete()
+        db.query(ArticleLike).filter(ArticleLike.article_id == article_id).delete()
+        db.query(ArticleFile).filter(ArticleFile.article_id == article_id).delete()
+        
+        db.delete(article)
+        db.commit()
+        
+        LogService.log_operation(
+            db=db,
+            user_id=current_user.id,
+            username=current_user.username,
+            action="删除",
+            module="文章管理",
+            description=f"删除文章: {article_title}",
+            target_type="文章",
+            target_id=article_id,
+            request=request,
+            status="success"
+        )
+        
+        return {"message": "Article deleted successfully"}
+    except Exception as e:
+        db.rollback()
+        
+        LogService.log_operation(
+            db=db,
+            user_id=current_user.id,
+            username=current_user.username,
+            action="删除",
+            module="文章管理",
+            description=f"删除文章失败: {article_title}",
+            target_type="文章",
+            target_id=article_id,
+            request=request,
+            status="failed",
+            error_message=str(e)
+        )
+        
+        raise HTTPException(status_code=500, detail=f"删除文章失败: {str(e)}")

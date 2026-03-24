@@ -68,11 +68,17 @@ const fetchLogs = async () => {
   loading.value = true
   try {
     let response: any
-    const params = {
+    const params: Record<string, any> = {
       page: page.value,
-      page_size: pageSize.value,
-      ...filters.value
+      page_size: pageSize.value
     }
+    
+    Object.keys(filters.value).forEach(key => {
+      const value = filters.value[key as keyof typeof filters.value]
+      if (value) {
+        params[key] = value
+      }
+    })
     
     switch (activeTab.value) {
       case 'operations':
