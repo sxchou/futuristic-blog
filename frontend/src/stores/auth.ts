@@ -156,8 +156,11 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const waitForInit = async (): Promise<void> => {
-    if (initPromise.value) {
+    if (initializing.value && initPromise.value) {
       return initPromise.value
+    }
+    if (!user.value && token.value) {
+      return fetchUser()
     }
     return Promise.resolve()
   }
