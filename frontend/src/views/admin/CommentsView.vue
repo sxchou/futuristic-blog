@@ -28,6 +28,8 @@ const auditLogs = ref<CommentAuditLog[]>([])
 const showBatchAuditModal = ref(false)
 const batchAuditStatus = ref<'pending' | 'approved' | 'rejected'>('approved')
 const batchAuditReason = ref('')
+const showBatchDeleteModal = ref(false)
+const batchDeleteType = ref<'soft' | 'permanent'>('soft')
 
 const statusOptions = [
   { value: '', label: '全部状态' },
@@ -190,6 +192,31 @@ const confirmDelete = async () => {
   }
 }
 
+const openBatchDeleteModal = async () => {
+  if (!await requireAdmin('批量删除评论')) return
+  batchDeleteType.value = 'soft'
+  showBatchDeleteModal.value = true
+}
+
+const confirmBatchDelete = async () => {
+  if (selectedComments.value.length === 0) return
+  showBatchDeleteModal.value = false
+  try {
+    const permanent = batchDeleteType.value === 'permanent'
+    const result = await commentApi.batchDelete(selectedComments.value, permanent)
+    selectedComments.value = []
+    if (result.type === 'soft') {
+      await dialog.showSuccess(`已批量删除 ${result.deleted_count} 条评论，记录已保留`, '成功')
+    } else {
+      await dialog.showSuccess(`已彻底删除 ${result.deleted_count} 条评论`, '成功')
+    }
+    fetchComments()
+  } catch (error: any) {
+    console.error('Failed to batch delete comments:', error)
+    await dialog.showError(error.response?.data?.detail || '批量删除失败', '错误')
+  }
+}
+
 const formatDate = (dateStr: string) => formatDateTime(dateStr)
 
 onMounted(async () => {
@@ -255,6 +282,12 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
             class="px-3 py-1.5 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600 transition-colors"
           >
             批量拒绝
+          </button>
+          <button
+            @click="openBatchDeleteModal"
+            class="px-3 py-1.5 bg-gray-600 text-white rounded-lg text-sm hover:bg-gray-700 transition-colors"
+          >
+            批量删除
           </button>
         </div>
       </div>
@@ -548,7 +581,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
 
     <div v-if="showDeleteModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div class="bg-white dark:bg-dark-200 rounded-xl p-6 w-full max-w-md mx-4">
-        <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">删除评论</h3>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">删除评论</h3>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
           请选择删除方式：
         </p>
@@ -585,6 +618,50 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
             ]"
           >
             {{ deleteType === 'permanent' ? '彻底删除' : '确认删除' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showBatchDeleteModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div class="bg-white dark:bg-dark-200 rounded-xl p-6 w-full max-w-md mx-4">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">批量删除评论</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          将删除 <span class="font-medium text-red-500">{{ selectedComments.length }}</span> 条评论，请选择删除方式：
+        </p>
+        <div class="space-y-3 mb-6">
+          <label class="flex items-start gap-3 p-3 border border-gray-200 dark:border-white/10 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-100 transition-colors" :class="{ 'border-primary bg-primary/5 dark:bg-primary/10': batchDeleteType === 'soft' }">
+            <input type="radio" v-model="batchDeleteType" value="soft" class="mt-1" />
+            <div>
+              <div class="font-medium text-gray-900 dark:text-white">保留记录（推荐）</div>
+              <div class="text-sm text-gray-500 dark:text-gray-400">评论将显示为"此评论已被管理员删除"，保留嵌套结构和审核日志</div>
+            </div>
+          </label>
+          <label class="flex items-start gap-3 p-3 border border-gray-200 dark:border-white/10 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-100 transition-colors" :class="{ 'border-red-500 bg-red-50 dark:bg-red-900/20': batchDeleteType === 'permanent' }">
+            <input type="radio" v-model="batchDeleteType" value="permanent" class="mt-1" />
+            <div>
+              <div class="font-medium text-gray-900 dark:text-white">彻底删除</div>
+              <div class="text-sm text-gray-500 dark:text-gray-400">永久删除评论及所有相关记录，包括审核日志，此操作不可恢复</div>
+            </div>
+          </label>
+        </div>
+        <div class="flex justify-end gap-3">
+          <button
+            @click="showBatchDeleteModal = false"
+            class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-100 rounded-lg transition-colors"
+          >
+            取消
+          </button>
+          <button
+            @click="confirmBatchDelete"
+            :class="[
+              'px-4 py-2 text-sm text-white rounded-lg transition-colors',
+              batchDeleteType === 'permanent' 
+                ? 'bg-red-500 hover:bg-red-600' 
+                : 'bg-primary hover:bg-primary/90'
+            ]"
+          >
+            {{ batchDeleteType === 'permanent' ? '彻底删除' : '确认删除' }}
           </button>
         </div>
       </div>

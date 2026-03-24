@@ -46,5 +46,13 @@ export const commentApi = {
       params: { keep_record: keepRecord }
     })
     return response.data
+  },
+
+  batchDelete: async (commentIds: number[], permanent: boolean = false): Promise<{ message: string; deleted_count: number; type: string }> => {
+    const response = await apiClient.post('/comments/admin/batch-delete', {
+      comment_ids: commentIds,
+      permanent
+    })
+    return response.data
   }
 }

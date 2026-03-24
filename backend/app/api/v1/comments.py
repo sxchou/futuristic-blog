@@ -1,5 +1,6 @@
 from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query
+from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload
 from app.core.database import get_db
 from app.models import Comment, Article, User, NotificationSettings, CommentAuditLog, UserProfile, AvatarType
@@ -614,3 +615,41 @@ async def admin_delete_comment(
         db.delete(comment)
         db.commit()
         return {"message": "Comment permanently deleted successfully", "type": "permanent"}
+
+
+class BatchDeleteRequest(BaseModel):
+    comment_ids: List[int]
+    permanent: bool = False
+
+
+@router.post("/admin/batch-delete")
+async def batch_delete_comments(
+    delete_data: BatchDeleteRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
+):
+    comments = db.query(Comment).filter(Comment.id.in_(delete_data.comment_ids)).all()
+    
+    if not comments:
+        raise HTTPException(status_code=404, detail="No comments found")
+    
+    deleted_count = 0
+    if delete_data.permanent:
+        for comment in comments:
+            db.query(CommentAuditLog).filter(CommentAuditLog.comment_id == comment.id).delete()
+            db.delete(comment)
+            deleted_count += 1
+    else:
+        for comment in comments:
+            comment.is_deleted = True
+            comment.deleted_by = 'admin'
+            comment.content = "此评论已被管理员删除"
+            deleted_count += 1
+    
+    db.commit()
+    
+    return {
+        "message": f"Successfully deleted {deleted_count} comments",
+        "deleted_count": deleted_count,
+        "type": "permanent" if delete_data.permanent else "soft"
+    }
