@@ -8,7 +8,7 @@ const blogStore = useBlogStore()
 const isLoading = ref(false)
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
-const displayArticles = computed(() => blogStore.articles.filter(a => !a.is_featured).slice(0, 8))
+const displayArticles = computed(() => blogStore.articles.slice(0, 8))
 
 const debouncedFetch = (page: number) => {
   if (searchTimeout) {

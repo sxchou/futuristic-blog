@@ -9,8 +9,7 @@ const stats = ref({
   articles: 0,
   views: 0,
   likes: 0,
-  comments: 0,
-  users: 0
+  comments: 0
 })
 
 const loading = ref(true)
@@ -39,13 +38,12 @@ const goToSlide = (index: number) => {
 
 const fetchStats = async () => {
   try {
-    const response = await dashboardApi.getOverview()
+    const response = await dashboardApi.getPublicStats()
     stats.value = {
       articles: response.data.total_articles,
       views: response.data.total_views,
       likes: response.data.total_likes,
-      comments: response.data.total_comments,
-      users: response.data.total_users
+      comments: response.data.total_comments
     }
   } catch (error) {
     console.error('Failed to fetch stats:', error)
@@ -63,7 +61,7 @@ onMounted(async () => {
   ])
   
   if (featuredArticles.value.length > 1) {
-    slideInterval = setInterval(nextSlide, 5000)
+    slideInterval = setInterval(nextSlide, 2000)
   }
 })
 
@@ -75,20 +73,18 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <section class="relative overflow-hidden py-12 md:py-16">
+  <section class="relative overflow-hidden pb-12 md:pb-16">
     <div class="absolute inset-0 overflow-hidden pointer-events-none">
       <div class="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse" />
       <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/10 rounded-full blur-3xl animate-pulse" style="animation-delay: 1s" />
     </div>
 
     <div class="container mx-auto px-4 relative z-10">
-      <div class="text-center mb-10">
-        <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
+      <div class="text-center mb-8">
+        <h2 class="text-3xl md:text-4xl font-bold mb-2">
           <span class="gradient-text">探索技术前沿</span>
-        </h1>
-        <p class="text-gray-500 dark:text-gray-400 text-lg md:text-xl max-w-2xl mx-auto">
-          记录学习历程，分享技术心得，探索无限可能
-        </p>
+        </h2>
+        <p class="text-gray-500 dark:text-gray-400 text-base">记录学习历程，分享技术心得，探索无限可能</p>
       </div>
 
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-10">

@@ -15,6 +15,13 @@ from app.models.models import (
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 
+class PublicStats(BaseModel):
+    total_articles: int
+    total_views: int
+    total_likes: int
+    total_comments: int
+
+
 class OverviewStats(BaseModel):
     total_articles: int
     published_articles: int
@@ -63,6 +70,33 @@ class AccessTrend(BaseModel):
     page_views: int
     unique_visitors: int
     avg_response_time: float
+
+
+@router.get("/public-stats", response_model=PublicStats)
+async def get_public_stats(
+    db: Session = Depends(get_db)
+):
+    total_articles = db.query(func.count(Article.id)).filter(
+        Article.is_published == True
+    ).scalar() or 0
+    
+    total_views = db.query(func.sum(Article.view_count)).filter(
+        Article.is_published == True
+    ).scalar() or 0
+    
+    total_likes = db.query(func.count(ArticleLike.id)).scalar() or 0
+    
+    total_comments = db.query(func.count(Comment.id)).filter(
+        Comment.is_deleted == False, 
+        Comment.status == 'approved'
+    ).scalar() or 0
+    
+    return PublicStats(
+        total_articles=total_articles,
+        total_views=total_views,
+        total_likes=total_likes,
+        total_comments=total_comments
+    )
 
 
 @router.get("/overview", response_model=OverviewStats)
