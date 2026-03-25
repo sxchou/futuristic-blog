@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useBlogStore } from '@/stores'
 import ArticleCard from './ArticleCard.vue'
 import Pagination from '@/components/common/Pagination.vue'
@@ -7,6 +7,8 @@ import Pagination from '@/components/common/Pagination.vue'
 const blogStore = useBlogStore()
 const isLoading = ref(false)
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
+
+const displayArticles = computed(() => blogStore.articles.filter(a => !a.is_featured).slice(0, 8))
 
 const debouncedFetch = (page: number) => {
   if (searchTimeout) {
@@ -23,7 +25,9 @@ const debouncedFetch = (page: number) => {
 }
 
 onMounted(() => {
-  debouncedFetch(1)
+  if (blogStore.articles.length === 0) {
+    debouncedFetch(1)
+  }
 })
 
 const handlePageChange = (page: number) => {
@@ -58,7 +62,7 @@ onUnmounted(() => {
 
       <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         <ArticleCard
-          v-for="article in blogStore.articles"
+          v-for="article in displayArticles"
           :key="article.id"
           :article="article"
         />
