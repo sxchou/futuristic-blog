@@ -1,8 +1,8 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from app.core.config import settings
 from app.core.database import engine, Base, SessionLocal
@@ -10,12 +10,14 @@ from app.api import router as api_router
 from app.services.init_data import init_database
 from app.services.log_service import LogService
 from app.utils import cleanup_expired_tokens
+from app.models.models import Article, Category, Tag
 import os
 import time
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import logging
 from contextlib import contextmanager
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -169,3 +171,126 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+
+@app.get("/sitemap.xml")
+async def get_sitemap():
+    base_url = getattr(settings, 'SITE_URL', 'https://zhouzhouya.top')
+    
+    db = SessionLocal()
+    try:
+        urls = []
+        
+        urls.append({
+            'loc': base_url,
+            'lastmod': datetime.utcnow().strftime('%Y-%m-%d'),
+            'changefreq': 'daily',
+            'priority': '1.0'
+        })
+        
+        static_pages = [
+            ('/about', '0.8'),
+            ('/categories', '0.8'),
+            ('/tags', '0.8'),
+            ('/resources', '0.7'),
+            ('/archive', '0.7'),
+        ]
+        
+        for path, priority in static_pages:
+            urls.append({
+                'loc': f'{base_url}{path}',
+                'lastmod': datetime.utcnow().strftime('%Y-%m-%d'),
+                'changefreq': 'weekly',
+                'priority': priority
+            })
+        
+        articles = db.query(Article).filter(
+            Article.is_published == True
+        ).order_by(Article.updated_at.desc()).all()
+        
+        for article in articles:
+            lastmod = article.updated_at if article.updated_at else article.created_at
+            urls.append({
+                'loc': f'{base_url}/article/{article.slug}',
+                'lastmod': lastmod.strftime('%Y-%m-%d') if lastmod else datetime.utcnow().strftime('%Y-%m-%d'),
+                'changefreq': 'weekly',
+                'priority': '0.9' if article.is_featured else '0.7'
+            })
+        
+        categories = db.query(Category).all()
+        for category in categories:
+            urls.append({
+                'loc': f'{base_url}/categories/{category.slug}',
+                'lastmod': datetime.utcnow().strftime('%Y-%m-%d'),
+                'changefreq': 'weekly',
+                'priority': '0.6'
+            })
+        
+        tags = db.query(Tag).all()
+        for tag in tags:
+            urls.append({
+                'loc': f'{base_url}/tags/{tag.slug}',
+                'lastmod': datetime.utcnow().strftime('%Y-%m-%d'),
+                'changefreq': 'weekly',
+                'priority': '0.5'
+            })
+        
+        xml_content = '<?xml version="1.0" encoding="UTF-8"?>\n'
+        xml_content += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        
+        for url in urls:
+            xml_content += '  <url>\n'
+            xml_content += f'    <loc>{url["loc"]}</loc>\n'
+            xml_content += f'    <lastmod>{url["lastmod"]}</lastmod>\n'
+            xml_content += f'    <changefreq>{url["changefreq"]}</changefreq>\n'
+            xml_content += f'    <priority>{url["priority"]}</priority>\n'
+            xml_content += '  </url>\n'
+        
+        xml_content += '</urlset>'
+        
+        return Response(
+            content=xml_content,
+            media_type="application/xml",
+            headers={"Cache-Control": "public, max-age=3600"}
+        )
+    finally:
+        db.close()
+
+
+@app.get("/robots.txt")
+async def get_robots():
+    base_url = getattr(settings, 'SITE_URL', 'https://zhouzhouya.top')
+    
+    robots_content = f"""User-agent: *
+Allow: /
+Allow: /article/
+Allow: /categories/
+Allow: /tags/
+Allow: /about
+Allow: /resources
+Allow: /archive
+
+Disallow: /admin
+Disallow: /api/
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /verify-email
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+Sitemap: {base_url}/sitemap.xml
+"""
+    
+    return Response(
+        content=robots_content,
+        media_type="text/plain",
+        headers={"Cache-Control": "public, max-age=86400"}
+    )
