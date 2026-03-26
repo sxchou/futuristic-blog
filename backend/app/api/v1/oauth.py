@@ -540,13 +540,18 @@ async def oauth_submit_email_with_token(
     if existing_user:
         raise HTTPException(status_code=400, detail="该邮箱已被使用")
     
-    temp_token_record = EmailService.get_oauth_temp_token(db, data.temp_token)
+    temp_token_record = db.query(OAuthTempToken).filter(
+        OAuthTempToken.temp_token == data.temp_token
+    ).first()
     if not temp_token_record:
         raise HTTPException(status_code=400, detail="无效或过期的临时令牌")
     
     user = db.query(User).filter(User.id == temp_token_record.user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
+    
+    user.email = data.email
+    db.commit()
     
     success = EmailService.send_oauth_email_verification(
         db=db,
@@ -648,7 +653,9 @@ async def resend_oauth_verification(
     from app.services.email_service import EmailService
     from app.models import OAuthTempToken
     
-    temp_token_record = EmailService.get_oauth_temp_token(db, data.temp_token)
+    temp_token_record = db.query(OAuthTempToken).filter(
+        OAuthTempToken.temp_token == data.temp_token
+    ).first()
     if not temp_token_record:
         raise HTTPException(status_code=400, detail="无效或过期的临时令牌")
     
@@ -692,7 +699,9 @@ async def change_oauth_email(
     from app.services.email_service import EmailService
     from app.models import OAuthTempToken
     
-    temp_token_record = EmailService.get_oauth_temp_token(db, data.temp_token)
+    temp_token_record = db.query(OAuthTempToken).filter(
+        OAuthTempToken.temp_token == data.temp_token
+    ).first()
     if not temp_token_record:
         raise HTTPException(status_code=400, detail="无效或过期的临时令牌")
     
@@ -703,6 +712,9 @@ async def change_oauth_email(
     existing_user = db.query(User).filter(User.email == data.new_email, User.id != user.id).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="该邮箱已被其他用户使用")
+    
+    user.email = data.new_email
+    db.commit()
     
     success = EmailService.send_oauth_email_verification(
         db=db,
