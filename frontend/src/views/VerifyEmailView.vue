@@ -26,6 +26,8 @@ onMounted(async () => {
   try {
     const response = await authApi.verifyEmail(token)
     
+    isVerified.value = true
+    
     if (response.access_token) {
       authStore.setTokens(
         response.access_token,
@@ -39,8 +41,6 @@ onMounted(async () => {
         await authStore.fetchUser()
       }
     }
-    
-    isVerified.value = true
     
     await dialog.showSuccess('邮箱验证成功！', '欢迎加入我们')
     
