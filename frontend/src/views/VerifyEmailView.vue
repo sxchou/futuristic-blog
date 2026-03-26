@@ -2,9 +2,10 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { authApi } from '@/api'
-import { useDialogStore } from '@/stores'
+import { useDialogStore, useAuthStore } from '@/stores'
 
 const dialog = useDialogStore()
+const authStore = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -23,8 +24,29 @@ onMounted(async () => {
   }
   
   try {
-    await authApi.verifyEmail(token)
+    const response = await authApi.verifyEmail(token) as any
+    
+    if (response.access_token) {
+      authStore.setTokens(
+        response.access_token,
+        response.refresh_token,
+        response.expires_in
+      )
+      
+      if (response.user) {
+        authStore.setUser(response.user)
+      } else {
+        await authStore.fetchUser()
+      }
+    }
+    
     isVerified.value = true
+    
+    await dialog.showSuccess('邮箱验证成功！', '欢迎加入我们')
+    
+    setTimeout(() => {
+      router.push('/')
+    }, 1500)
   } catch (error: any) {
     console.error('Verification failed:', error)
     if (error.response?.data?.detail?.includes('过期')) {
@@ -73,10 +95,7 @@ const goToLogin = () => {
               </svg>
             </div>
             <h1 class="text-xl font-bold text-gray-900 dark:text-white mb-4">邮箱验证成功！</h1>
-            <p class="text-gray-400 mb-6">您的邮箱已成功验证，现在可以登录了。</p>
-            <button @click="goToLogin" class="btn-primary w-full">
-              前往登录
-            </button>
+            <p class="text-gray-400 mb-6">正在跳转到首页...</p>
           </div>
           
           <div v-else class="py-8">

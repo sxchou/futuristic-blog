@@ -92,6 +92,7 @@ export interface PendingVerificationInfo {
   username: string
   has_email: boolean
   masked_email: string
+  email?: string
   is_verified: boolean
   provider_name: string
 }

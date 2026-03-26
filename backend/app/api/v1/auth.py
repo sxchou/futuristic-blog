@@ -228,7 +228,35 @@ async def verify_email(
     
     db.commit()
     
-    return {"message": "邮箱验证成功，您现在可以登录了"}
+    access_token = create_access_token(
+        data={"sub": user.username, "user_id": user.id}
+    )
+    refresh_token = create_refresh_token(
+        data={"sub": user.username, "user_id": user.id}
+    )
+    
+    refresh_token_obj = RefreshToken(
+        token=refresh_token,
+        user_id=user.id,
+        expires_at=datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    )
+    db.add(refresh_token_obj)
+    db.commit()
+    
+    return {
+        "message": "邮箱验证成功",
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+        "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "is_admin": user.is_admin,
+            "is_verified": user.is_verified
+        }
+    }
 
 
 @router.post("/resend-verification")

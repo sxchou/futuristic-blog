@@ -732,6 +732,7 @@ async def get_pending_verification_info(
         "username": user.username,
         "has_email": has_email,
         "masked_email": masked_email,
+        "email": current_email if has_email and user.is_verified else None,
         "is_verified": user.is_verified,
         "provider_name": temp_token_record.provider_name
     }

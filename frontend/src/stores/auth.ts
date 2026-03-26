@@ -50,6 +50,10 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem(TOKEN_EXPIRY_KEY)
   }
 
+  const setUser = (userData: User | any) => {
+    user.value = userData
+  }
+
   const isTokenExpiringSoon = (bufferSeconds: number = 300): boolean => {
     if (!tokenExpiry.value) return false
     return Date.now() + bufferSeconds * 1000 >= tokenExpiry.value
@@ -191,6 +195,7 @@ export const useAuthStore = defineStore('auth', () => {
     getSessions,
     revokeSession,
     setTokens,
+    setUser,
     clearTokens,
     waitForInit
   }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, onUnmounted, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useDialogStore } from '@/stores'
+import { useDialogStore, useAuthStore } from '@/stores'
 import { oauthApi } from '@/api/oauth'
 import { usePendingOAuth } from '@/composables/usePendingOAuth'
 import { useOAuthAnalytics } from '@/composables/useOAuthAnalytics'
@@ -9,6 +9,7 @@ import { useOAuthAnalytics } from '@/composables/useOAuthAnalytics'
 const route = useRoute()
 const router = useRouter()
 const dialog = useDialogStore()
+const authStore = useAuthStore()
 const { setPendingState, clearPendingState, getPendingState } = usePendingOAuth()
 const { trackEvent } = useOAuthAnalytics()
 
@@ -24,6 +25,8 @@ const hasEmail = ref(false)
 const maskedEmail = ref('')
 const providerName = ref('')
 
+let pollInterval: ReturnType<typeof setInterval> | null = null
+
 const providerDisplayName = computed(() => {
   const names: Record<string, string> = {
     google: 'Google',
@@ -35,6 +38,50 @@ const providerDisplayName = computed(() => {
   }
   return names[providerName.value] || providerName.value
 })
+
+const checkVerificationStatus = async () => {
+  if (!tempToken.value) return
+  
+  try {
+    const info = await oauthApi.getPendingVerification(tempToken.value)
+    
+    if (info.is_verified && info.email) {
+      stopPolling()
+      
+      const response = await oauthApi.verifyEmail(tempToken.value, info.email)
+      
+      clearPendingState()
+      trackEvent('oauth_verification_complete', { provider: providerName.value })
+      
+      authStore.setTokens(
+        response.access_token,
+        response.refresh_token || '',
+        response.expires_in || 43200 * 60
+      )
+      await authStore.fetchUser()
+      
+      await dialog.showSuccess('邮箱验证成功！', '欢迎加入我们')
+      
+      await router.push('/')
+      window.location.reload()
+    }
+  } catch (err) {
+    console.error('Poll verification status error:', err)
+  }
+}
+
+const startPolling = () => {
+  if (pollInterval) return
+  
+  pollInterval = setInterval(checkVerificationStatus, 3000)
+}
+
+const stopPolling = () => {
+  if (pollInterval) {
+    clearInterval(pollInterval)
+    pollInterval = null
+  }
+}
 
 const loadPendingInfo = async () => {
   let token = route.query.temp_token as string
@@ -63,6 +110,12 @@ const loadPendingInfo = async () => {
     
     setPendingState(token, info.username, info.provider_name, info.masked_email)
     trackEvent('oauth_pending_verification_view', { provider: info.provider_name, hasEmail: info.has_email })
+    
+    if (info.is_verified) {
+      await checkVerificationStatus()
+    } else {
+      startPolling()
+    }
   } catch (err: any) {
     await dialog.showError(err.response?.data?.detail || '获取验证信息失败', '错误')
     clearPendingState()
@@ -141,6 +194,10 @@ const handleSubmitNewEmail = async () => {
 onMounted(() => {
   loadPendingInfo()
 })
+
+onUnmounted(() => {
+  stopPolling()
+})
 </script>
 
 <template>
@@ -162,6 +219,22 @@ onMounted(() => {
           <p class="text-gray-500 dark:text-gray-400">
             您好，<span class="font-medium text-gray-700 dark:text-gray-300">{{ username }}</span>！
           </p>
+        </div>
+        
+        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <div class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div class="space-y-1">
+              <p class="text-sm font-medium text-blue-800 dark:text-blue-200">
+                正在等待邮箱验证
+              </p>
+              <p class="text-sm text-blue-700 dark:text-blue-300">
+                验证完成后将自动跳转，无需刷新页面
+              </p>
+            </div>
+          </div>
         </div>
         
         <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 space-y-2">
