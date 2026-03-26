@@ -61,7 +61,7 @@ onMounted(async () => {
   ])
   
   if (featuredArticles.value.length > 1) {
-    slideInterval = setInterval(nextSlide, 2000)
+    slideInterval = setInterval(nextSlide, 5000)
   }
 })
 
