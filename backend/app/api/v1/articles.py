@@ -10,6 +10,8 @@ from app.schemas import (
 )
 from app.utils import get_current_user, get_current_active_user, generate_slug, calculate_reading_time
 from app.services.log_service import LogService
+from app.services.baidu_push_service import baidu_push_service
+import asyncio
 
 router = APIRouter(prefix="/articles", tags=["Articles"])
 
@@ -276,6 +278,9 @@ async def create_article(
         status="success"
     )
     
+    if new_article.is_published:
+        asyncio.create_task(baidu_push_service.push_article(new_article.slug))
+    
     return ArticleResponse.model_validate(new_article)
 
 
@@ -324,6 +329,9 @@ async def update_article(
         request=request,
         status="success"
     )
+    
+    if article.is_published and article_data.is_published:
+        asyncio.create_task(baidu_push_service.push_article(article.slug))
     
     return ArticleResponse.model_validate(article)
 
@@ -384,3 +392,44 @@ async def delete_article(
         )
         
         raise HTTPException(status_code=500, detail=f"删除文章失败: {str(e)}")
+
+
+@router.post("/{article_id}/push-baidu")
+async def push_article_to_baidu(
+    article_id: int,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_active_user)
+):
+    article = db.query(Article).filter(Article.id == article_id).first()
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+    
+    if not article.is_published:
+        raise HTTPException(status_code=400, detail="只能推送已发布的文章")
+    
+    result = await baidu_push_service.push_article(article.slug)
+    
+    return {
+        "article_id": article_id,
+        "article_title": article.title,
+        "push_result": result
+    }
+
+
+@router.post("/push-all-baidu")
+async def push_all_articles_to_baidu(
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_active_user)
+):
+    articles = db.query(Article).filter(Article.is_published == True).all()
+    
+    if not articles:
+        return {"message": "没有已发布的文章", "push_result": {"success": 0}}
+    
+    slugs = [article.slug for article in articles]
+    result = await baidu_push_service.push_articles(slugs)
+    
+    return {
+        "total_articles": len(articles),
+        "push_result": result
+    }

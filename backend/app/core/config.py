@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "uploads"
     AVATAR_STORAGE_PATH: str = ""
     
+    SITE_URL: str = "https://zhouzhouya.top"
+    BAIDU_PUSH_TOKEN: str = ""
+    
     @property
     def tz(self) -> ZoneInfo:
         return ZoneInfo(self.TIMEZONE)
