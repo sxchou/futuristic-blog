@@ -197,7 +197,7 @@ async def verify_email(
     
     if not user:
         email_log = db.query(EmailLog).filter(EmailLog.verification_token == token).first()
-        if email_log and email_log.is_verified:
+        if email_log:
             verified_user = db.query(User).filter(User.id == email_log.user_id).first()
             if verified_user and verified_user.is_verified:
                 access_token = create_access_token(
