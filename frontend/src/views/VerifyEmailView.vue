@@ -24,7 +24,7 @@ onMounted(async () => {
   }
   
   try {
-    const response = await authApi.verifyEmail(token) as any
+    const response = await authApi.verifyEmail(token)
     
     if (response.access_token) {
       authStore.setTokens(

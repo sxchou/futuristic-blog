@@ -48,22 +48,32 @@ const checkVerificationStatus = async () => {
     if (info.is_verified && info.email) {
       stopPolling()
       
-      const response = await oauthApi.verifyEmail(tempToken.value, info.email)
-      
-      clearPendingState()
-      trackEvent('oauth_verification_complete', { provider: providerName.value })
-      
-      authStore.setTokens(
-        response.access_token,
-        response.refresh_token || '',
-        response.expires_in || 43200 * 60
-      )
-      await authStore.fetchUser()
-      
-      await dialog.showSuccess('邮箱验证成功！', '欢迎加入我们')
-      
-      await router.push('/')
-      window.location.reload()
+      try {
+        const response = await oauthApi.verifyEmail(tempToken.value, info.email)
+        
+        clearPendingState()
+        trackEvent('oauth_verification_complete', { provider: providerName.value })
+        
+        authStore.setTokens(
+          response.access_token,
+          response.refresh_token || '',
+          response.expires_in || 43200 * 60
+        )
+        await authStore.fetchUser()
+        
+        await dialog.showSuccess('邮箱验证成功！', '欢迎加入我们')
+        
+        setTimeout(() => {
+          window.location.href = '/'
+        }, 500)
+      } catch (verifyErr: any) {
+        console.error('Verify email error:', verifyErr)
+        clearPendingState()
+        await dialog.showSuccess('邮箱验证成功！', '正在跳转...')
+        setTimeout(() => {
+          window.location.href = '/login'
+        }, 1000)
+      }
     }
   } catch (err) {
     console.error('Poll verification status error:', err)

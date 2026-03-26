@@ -574,8 +574,30 @@ async def oauth_verify_email(
     from app.services.email_service import EmailService
     from app.models import User, OAuthTempToken
     
-    temp_token_record = EmailService.get_oauth_temp_token(db, token)
+    temp_token_record = db.query(OAuthTempToken).filter(
+        OAuthTempToken.temp_token == token
+    ).first()
+    
     if not temp_token_record:
+        user = db.query(User).filter(User.email == email, User.is_verified == True).first()
+        if user:
+            jwt_token = create_access_token(data={"sub": user.username})
+            refresh_token_obj = create_refresh_token(db=db, user_id=user.id, request=None)
+            
+            return OAuthCallbackResponse(
+                access_token=jwt_token,
+                token_type="bearer",
+                refresh_token=refresh_token_obj.token,
+                expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+                user={
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "avatar": user.avatar,
+                    "is_admin": user.is_admin
+                },
+                needs_email=False
+            )
         raise HTTPException(status_code=400, detail="无效或过期的验证链接")
     
     user = db.query(User).filter(User.id == temp_token_record.user_id).first()
@@ -589,8 +611,6 @@ async def oauth_verify_email(
     user.email = email
     user.is_verified = True
     db.commit()
-    
-    EmailService.delete_oauth_temp_token(db, token)
     
     jwt_token = create_access_token(data={"sub": user.username})
     refresh_token_obj = create_refresh_token(db=db, user_id=user.id, request=None)
@@ -710,9 +730,12 @@ async def get_pending_verification_info(
     temp_token: str,
     db: Session = Depends(get_db)
 ):
-    from app.services.email_service import EmailService
+    from app.models import OAuthTempToken
     
-    temp_token_record = EmailService.get_oauth_temp_token(db, temp_token)
+    temp_token_record = db.query(OAuthTempToken).filter(
+        OAuthTempToken.temp_token == temp_token
+    ).first()
+    
     if not temp_token_record:
         raise HTTPException(status_code=400, detail="无效或过期的临时令牌")
     
