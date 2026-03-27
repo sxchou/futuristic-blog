@@ -167,7 +167,7 @@ const loadPendingInfo = async () => {
     const info = await oauthApi.getPendingVerification(token)
     username.value = info.username
     hasEmail.value = info.has_email
-    email.value = info.email
+    email.value = info.email || ''
     providerName.value = info.provider_name
     
     if (info.expires_at) {
