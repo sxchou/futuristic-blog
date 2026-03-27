@@ -1144,12 +1144,18 @@ class EmailService:
         user_id: int,
         provider_name: str,
         provider_user_id: str
-    ) -> None:
+    ) -> str:
         from app.models import OAuthTempToken
         from app.utils.timezone import get_db_now
         from datetime import timedelta
         
-        db.query(OAuthTempToken).filter(OAuthTempToken.user_id == user_id).delete()
+        existing_token = db.query(OAuthTempToken).filter(
+            OAuthTempToken.user_id == user_id,
+            OAuthTempToken.expires_at > get_db_now()
+        ).first()
+        
+        if existing_token:
+            return existing_token.temp_token
         
         temp_token_record = OAuthTempToken(
             temp_token=temp_token,
@@ -1160,6 +1166,8 @@ class EmailService:
         )
         db.add(temp_token_record)
         db.commit()
+        
+        return temp_token
     
     @staticmethod
     def get_oauth_temp_token(db: Session, temp_token: str) -> Optional['OAuthTempToken']:

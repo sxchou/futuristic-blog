@@ -209,6 +209,13 @@ const handleResendVerification = async () => {
   try {
     const response = await oauthApi.resendVerification(tempToken.value)
     trackEvent('oauth_resend_verification', { provider: providerName.value })
+    
+    if (response.expires_at) {
+      expiresAt.value = new Date(response.expires_at)
+      isExpired.value = false
+      startCountdown()
+    }
+    
     await dialog.showSuccess(
       `验证邮件已发送到 ${response.email}`,
       '请检查您的邮箱'
@@ -254,6 +261,13 @@ const handleSubmitNewEmail = async () => {
   try {
     const response = await oauthApi.changeEmail(tempToken.value, newEmail.value)
     trackEvent('oauth_change_email', { provider: providerName.value })
+    
+    if (response.expires_at) {
+      expiresAt.value = new Date(response.expires_at)
+      isExpired.value = false
+      startCountdown()
+    }
+    
     await dialog.showSuccess(
       `验证邮件已发送到 ${response.email}`,
       '请检查您的邮箱'

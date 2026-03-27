@@ -416,7 +416,7 @@ async def oauth_callback(
         temp_token = str(uuid.uuid4())
         
         from app.services.email_service import EmailService
-        EmailService.store_oauth_temp_token(
+        actual_token = EmailService.store_oauth_temp_token(
             db=db,
             temp_token=temp_token,
             user_id=user.id,
@@ -433,7 +433,7 @@ async def oauth_callback(
             "avatar": user.avatar or "",
             "is_admin": str(user.is_admin).lower(),
             "needs_email": "true",
-            "temp_token": temp_token
+            "temp_token": actual_token
         }
         return RedirectResponse(url=f"{settings.FRONTEND_URL}/oauth/callback/{provider_name}?{urlencode(params)}")
     
@@ -479,7 +479,7 @@ async def oauth_callback(
     temp_token = str(uuid.uuid4())
     
     from app.services.email_service import EmailService
-    EmailService.store_oauth_temp_token(
+    actual_token = EmailService.store_oauth_temp_token(
         db=db,
         temp_token=temp_token,
         user_id=user.id,
@@ -496,7 +496,7 @@ async def oauth_callback(
         "avatar": user.avatar or "",
         "is_admin": str(user.is_admin).lower(),
         "needs_email": "true",
-        "temp_token": temp_token
+        "temp_token": actual_token
     }
     return RedirectResponse(url=f"{settings.FRONTEND_URL}/oauth/callback/{provider_name}?{urlencode(params)}")
 
@@ -661,6 +661,8 @@ async def resend_oauth_verification(
 ):
     from app.services.email_service import EmailService
     from app.models import OAuthTempToken
+    from app.utils.timezone import get_db_now
+    from datetime import timedelta
     
     temp_token_record = db.query(OAuthTempToken).filter(
         OAuthTempToken.temp_token == data.temp_token
@@ -679,6 +681,9 @@ async def resend_oauth_verification(
     if not current_email or current_email.endswith('@oauth.local'):
         raise HTTPException(status_code=400, detail="请先设置邮箱地址")
     
+    temp_token_record.expires_at = get_db_now() + timedelta(hours=24)
+    db.commit()
+    
     success = EmailService.send_oauth_email_verification(
         db=db,
         email=current_email,
@@ -693,7 +698,8 @@ async def resend_oauth_verification(
     return {
         "message": "验证邮件已重新发送",
         "email": current_email,
-        "delivery_time": "10秒内"
+        "delivery_time": "10秒内",
+        "expires_at": temp_token_record.expires_at.isoformat() + "Z"
     }
 
 
@@ -704,6 +710,8 @@ async def change_oauth_email(
 ):
     from app.services.email_service import EmailService
     from app.models import OAuthTempToken
+    from app.utils.timezone import get_db_now
+    from datetime import timedelta
     
     temp_token_record = db.query(OAuthTempToken).filter(
         OAuthTempToken.temp_token == data.temp_token
@@ -720,6 +728,7 @@ async def change_oauth_email(
         raise HTTPException(status_code=400, detail="该邮箱已被其他用户使用")
     
     user.email = data.new_email
+    temp_token_record.expires_at = get_db_now() + timedelta(hours=24)
     db.commit()
     
     success = EmailService.send_oauth_email_verification(
@@ -736,7 +745,8 @@ async def change_oauth_email(
     return {
         "message": "验证邮件已发送到新邮箱",
         "email": data.new_email,
-        "delivery_time": "10秒内"
+        "delivery_time": "10秒内",
+        "expires_at": temp_token_record.expires_at.isoformat() + "Z"
     }
 
 

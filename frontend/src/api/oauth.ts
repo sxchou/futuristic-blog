@@ -86,6 +86,7 @@ export interface ResendVerificationResponse {
   message: string
   email: string
   delivery_time: string
+  expires_at?: string
 }
 
 export interface PendingVerificationInfo {
