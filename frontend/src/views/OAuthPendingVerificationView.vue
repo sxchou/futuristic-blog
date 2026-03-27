@@ -22,7 +22,7 @@ const confirmEmail = ref('')
 const tempToken = ref('')
 const username = ref('')
 const hasEmail = ref(false)
-const maskedEmail = ref('')
+const email = ref('')
 const providerName = ref('')
 
 let pollInterval: ReturnType<typeof setInterval> | null = null
@@ -115,10 +115,10 @@ const loadPendingInfo = async () => {
     const info = await oauthApi.getPendingVerification(token)
     username.value = info.username
     hasEmail.value = info.has_email
-    maskedEmail.value = info.masked_email
+    email.value = info.email
     providerName.value = info.provider_name
     
-    setPendingState(token, info.username, info.provider_name, info.masked_email)
+    setPendingState(token, info.username, info.provider_name, info.email)
     trackEvent('oauth_pending_verification_view', { provider: info.provider_name, hasEmail: info.has_email })
     
     if (info.is_verified) {
@@ -188,12 +188,12 @@ const handleSubmitNewEmail = async () => {
     const response = await oauthApi.changeEmail(tempToken.value, newEmail.value)
     trackEvent('oauth_change_email', { provider: providerName.value })
     await dialog.showSuccess(
-      `验证邮件已发送到 ${response.masked_email}`,
+      `验证邮件已发送到 ${response.email}`,
       '请检查您的邮箱'
     )
     showChangeEmailForm.value = false
     hasEmail.value = true
-    maskedEmail.value = response.masked_email
+    email.value = response.email
   } catch (err: any) {
     await dialog.showError(err.response?.data?.detail || '发送验证邮件失败', '错误')
   } finally {
@@ -267,7 +267,7 @@ onUnmounted(() => {
           <div class="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 space-y-3">
             <div class="flex items-center justify-between">
               <span class="text-sm text-gray-500 dark:text-gray-400">当前邮箱</span>
-              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ maskedEmail }}</span>
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ email }}</span>
             </div>
             <div class="flex items-center justify-between">
               <span class="text-sm text-gray-500 dark:text-gray-400">登录方式</span>
@@ -275,7 +275,7 @@ onUnmounted(() => {
             </div>
             <div class="flex items-center justify-between">
               <span class="text-sm text-gray-500 dark:text-gray-400">预计送达时间</span>
-              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">1-5 分钟</span>
+              <span class="text-sm font-medium text-gray-700 dark:text-gray-300">10秒内</span>
             </div>
           </div>
           

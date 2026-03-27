@@ -681,13 +681,10 @@ async def resend_oauth_verification(
     if not success:
         raise HTTPException(status_code=500, detail="发送验证邮件失败")
     
-    email_domain = current_email.split('@')[-1] if '@' in current_email else ''
-    masked_email = f"***@{email_domain}"
-    
     return {
         "message": "验证邮件已重新发送",
-        "masked_email": masked_email,
-        "delivery_time": "1-5分钟"
+        "email": current_email,
+        "delivery_time": "10秒内"
     }
 
 
@@ -727,13 +724,10 @@ async def change_oauth_email(
     if not success:
         raise HTTPException(status_code=500, detail="发送验证邮件失败")
     
-    email_domain = data.new_email.split('@')[-1] if '@' in data.new_email else ''
-    masked_email = f"***@{email_domain}"
-    
     return {
         "message": "验证邮件已发送到新邮箱",
-        "masked_email": masked_email,
-        "delivery_time": "1-5分钟"
+        "email": data.new_email,
+        "delivery_time": "10秒内"
     }
 
 
@@ -758,16 +752,10 @@ async def get_pending_verification_info(
     current_email = user.email
     has_email = current_email and not current_email.endswith('@oauth.local')
     
-    masked_email = ""
-    if has_email and '@' in current_email:
-        email_domain = current_email.split('@')[-1]
-        masked_email = f"***@{email_domain}"
-    
     return {
         "username": user.username,
         "has_email": has_email,
-        "masked_email": masked_email,
-        "email": current_email if has_email and user.is_verified else None,
+        "email": current_email if has_email else None,
         "is_verified": user.is_verified,
         "provider_name": temp_token_record.provider_name
     }

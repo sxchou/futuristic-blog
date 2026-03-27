@@ -84,14 +84,13 @@ export interface OAuthEmailVerifyResponse {
 
 export interface ResendVerificationResponse {
   message: string
-  masked_email: string
+  email: string
   delivery_time: string
 }
 
 export interface PendingVerificationInfo {
   username: string
   has_email: boolean
-  masked_email: string
   email?: string
   is_verified: boolean
   provider_name: string

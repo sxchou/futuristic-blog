@@ -6,7 +6,6 @@ interface PendingOAuthState {
   tempToken: string
   username: string
   providerName: string
-  maskedEmail: string
   email?: string
   timestamp: number
 }
@@ -40,12 +39,11 @@ watch(pendingState, (newState) => {
 }, { deep: true })
 
 export function usePendingOAuth() {
-  const setPendingState = (tempToken: string, username: string, providerName: string, maskedEmail: string = '', email?: string) => {
+  const setPendingState = (tempToken: string, username: string, providerName: string, email?: string) => {
     pendingState.value = {
       tempToken,
       username,
       providerName,
-      maskedEmail,
       email,
       timestamp: Date.now()
     }
