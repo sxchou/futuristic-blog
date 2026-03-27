@@ -148,20 +148,27 @@ const handleLogin = async () => {
     const responseData = error.response?.data
     
     if (responseData?.detail?.need_verification) {
-      showResendOption.value = true
-      resendEmail.value = responseData.detail.email || ''
-      generalError.value = responseData.detail.message
+      router.push({
+        path: '/pending-verification',
+        query: {
+          email: responseData.detail.email,
+          username: responseData.detail.username,
+          expires: responseData.detail.verification_token_expires,
+          is_expired: responseData.detail.is_expired ? 'true' : 'false'
+        }
+      })
+      return
+    }
+    
+    const detail = responseData?.detail || '登录失败，请检查用户名和密码'
+    const message = typeof detail === 'string' ? detail : detail.message || '登录失败'
+    
+    if (message.includes('用户不存在')) {
+      usernameError.value = '用户名/邮箱不存在'
+    } else if (message.includes('密码错误')) {
+      passwordError.value = message
     } else {
-      const detail = responseData?.detail || '登录失败，请检查用户名和密码'
-      const message = typeof detail === 'string' ? detail : detail.message || '登录失败'
-      
-      if (message.includes('用户不存在')) {
-        usernameError.value = '用户名/邮箱不存在'
-      } else if (message.includes('密码错误')) {
-        passwordError.value = message
-      } else {
-        generalError.value = message
-      }
+      generalError.value = message
     }
     
     if (captchaRef.value) {

@@ -112,6 +112,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '验证邮箱' }
   },
   {
+    path: '/pending-verification',
+    name: 'PendingVerification',
+    component: () => import('@/views/PendingVerificationView.vue'),
+    meta: { title: '邮箱验证' }
+  },
+  {
     path: '/forgot-password',
     name: 'ForgotPassword',
     component: () => import('@/views/ForgotPasswordView.vue'),

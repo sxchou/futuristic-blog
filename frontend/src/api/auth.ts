@@ -67,9 +67,13 @@ export const authApi = {
     return response.data
   },
 
-  resendVerification: async (email: string): Promise<{ message: string }> => {
+  resendVerification: async (email: string, newEmail?: string): Promise<{ message: string; verification_token_expires?: string }> => {
+    const params: Record<string, string> = { email }
+    if (newEmail) {
+      params.new_email = newEmail
+    }
     const response = await apiClient.post('/auth/resend-verification', null, {
-      params: { email }
+      params
     })
     return response.data
   },

@@ -103,12 +103,28 @@ async def login(
             status="failed",
             fail_reason="邮箱未验证"
         )
+        from app.utils.timezone import get_db_now
+        from datetime import timedelta
+        
+        now = get_db_now()
+        token_expires = user.verification_token_expires
+        is_expired = False
+        
+        if token_expires:
+            if token_expires.tzinfo is not None:
+                token_expires = token_expires.replace(tzinfo=None)
+            if token_expires < now:
+                is_expired = True
+        
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={
                 "message": "请先验证您的邮箱后再登录",
                 "email": user.email,
-                "need_verification": True
+                "username": user.username,
+                "need_verification": True,
+                "verification_token_expires": user.verification_token_expires.isoformat() + "Z" if user.verification_token_expires else None,
+                "is_expired": is_expired
             },
         )
     
@@ -278,6 +294,7 @@ async def verify_email(
 @router.post("/resend-verification")
 async def resend_verification(
     email: str,
+    new_email: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
     user = db.query(User).filter(User.email == email).first()
@@ -294,6 +311,15 @@ async def resend_verification(
             detail="该邮箱已验证"
         )
     
+    if new_email:
+        existing_user = db.query(User).filter(User.email == new_email, User.id != user.id).first()
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="该邮箱已被其他用户使用"
+            )
+        user.email = new_email
+    
     verification_token = EmailService.generate_verification_token()
     token_expiry = EmailService.get_token_expiry()
     
@@ -309,7 +335,10 @@ async def resend_verification(
         user_id=user.id
     )
     
-    return {"message": "验证邮件已发送，请查收"}
+    return {
+        "message": "验证邮件已发送，请查收",
+        "verification_token_expires": token_expiry.isoformat() + "Z" if token_expiry else None
+    }
 
 
 @router.get("/check-verification")
