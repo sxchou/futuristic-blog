@@ -38,15 +38,14 @@ const avatarStyle = computed(() => {
     }
   }
   
-  if (profile.value.default_avatar_gradient && profile.value.default_avatar_gradient.length >= 2) {
-    const colors = profile.value.default_avatar_gradient
+  if (profile.value.default_avatar_gradient && profile.value.default_avatar_gradient.length >= 1) {
     return {
-      background: `linear-gradient(135deg, ${colors[0]}, ${colors[1]})`
+      backgroundColor: profile.value.default_avatar_gradient[0]
     }
   }
   
   return {
-    background: 'linear-gradient(135deg, #667eea, #764ba2)'
+    backgroundColor: '#667eea'
   }
 })
 

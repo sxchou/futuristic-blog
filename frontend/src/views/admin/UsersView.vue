@@ -131,14 +131,14 @@ const getUserAvatarStyle = (user: User) => {
     }
   }
   
-  if (user.avatar_gradient && user.avatar_gradient.length >= 2) {
+  if (user.avatar_gradient && user.avatar_gradient.length >= 1) {
     return {
-      background: `linear-gradient(135deg, ${user.avatar_gradient[0]}, ${user.avatar_gradient[1]})`
+      backgroundColor: user.avatar_gradient[0]
     }
   }
   
   return {
-    background: 'linear-gradient(135deg, #667eea, #764ba2)'
+    backgroundColor: '#667eea'
   }
 }
 

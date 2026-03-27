@@ -193,15 +193,14 @@ const avatarStyle = computed(() => {
     }
   }
   
-  if (props.comment.author_avatar_gradient && props.comment.author_avatar_gradient.length >= 2) {
-    const colors = props.comment.author_avatar_gradient
+  if (props.comment.author_avatar_gradient && props.comment.author_avatar_gradient.length >= 1) {
     return {
-      background: `linear-gradient(135deg, ${colors[0]}, ${colors[1]})`
+      backgroundColor: props.comment.author_avatar_gradient[0]
     }
   }
   
   return {
-    background: 'linear-gradient(135deg, #667eea, #764ba2)'
+    backgroundColor: '#667eea'
   }
 })
 

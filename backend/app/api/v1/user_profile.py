@@ -18,49 +18,48 @@ logger = logging.getLogger(__name__)
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 MAX_FILE_SIZE = 5 * 1024 * 1024
 
-GRADIENT_PRESETS = [
-    ["#667eea", "#764ba2"],
-    ["#f093fb", "#f5576c"],
-    ["#4facfe", "#00f2fe"],
-    ["#43e97b", "#38f9d7"],
-    ["#fa709a", "#fee140"],
-    ["#a8edea", "#fed6e3"],
-    ["#ff9a9e", "#fecfef"],
-    ["#ffecd2", "#fcb69f"],
-    ["#a1c4fd", "#c2e9fb"],
-    ["#d299c2", "#fef9d7"],
-    ["#89f7fe", "#66a6ff"],
-    ["#cd9cf2", "#f6f3ff"],
-    ["#fddb92", "#d1fdff"],
-    ["#96fbc4", "#f9f586"],
-    ["#ff0844", "#ffb199"],
-    ["#3f5efb", "#fc466b"],
-    ["#11998e", "#38ef7d"],
-    ["#ee0979", "#ff6a00"],
-    ["#2193b0", "#6dd5ed"],
-    ["#cc2b5e", "#753a88"],
-    ["#42275a", "#734b6d"],
-    ["#bdc3c7", "#2c3e50"],
-    ["#1f4037", "#99f2c8"],
-    ["#c33764", "#1d2671"],
-    ["#00467f", "#a5cc82"],
+AVATAR_COLORS = [
+    "#e74c3c",
+    "#3498db",
+    "#2ecc71",
+    "#9b59b6",
+    "#f39c12",
+    "#1abc9c",
+    "#e67e22",
+    "#34495e",
+    "#16a085",
+    "#c0392b",
+    "#2980b9",
+    "#8e44ad",
+    "#27ae60",
+    "#d35400",
+    "#2c3e50",
+    "#f1c40f",
+    "#e91e63",
+    "#00bcd4",
+    "#ff5722",
+    "#607d8b",
+    "#795548",
+    "#009688",
+    "#ff9800",
+    "#673ab7",
 ]
 
 
-def generate_gradient_from_username(username: str) -> list:
+def generate_color_from_username(username: str) -> str:
     hash_value = int(hashlib.md5(username.encode()).hexdigest(), 16)
-    index = hash_value % len(GRADIENT_PRESETS)
-    return GRADIENT_PRESETS[index]
+    index = hash_value % len(AVATAR_COLORS)
+    return AVATAR_COLORS[index]
 
 
 def get_or_create_user_profile(db: Session, user_id: int, username: str, oauth_avatar_url: str = None) -> UserProfile:
     profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
     if not profile:
-        gradient = generate_gradient_from_username(username)
+        color = generate_color_from_username(username)
         profile = UserProfile(
             user_id=user_id,
             avatar_type=AvatarType.default,
-            default_avatar_gradient=gradient,
+            default_avatar_gradient=[color],
             oauth_avatar_url=oauth_avatar_url
         )
         db.add(profile)
@@ -217,7 +216,7 @@ async def reset_avatar(
     try:
         profile.avatar_type = AvatarType.default
         profile.avatar_url = None
-        profile.default_avatar_gradient = generate_gradient_from_username(current_user.username)
+        profile.default_avatar_gradient = [generate_color_from_username(current_user.username)]
         db.commit()
         db.refresh(profile)
         

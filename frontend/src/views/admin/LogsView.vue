@@ -184,14 +184,14 @@ const getLoginLogAvatarStyle = (log: any) => {
     }
   }
   
-  if (log.avatar_gradient && log.avatar_gradient.length >= 2) {
+  if (log.avatar_gradient && log.avatar_gradient.length >= 1) {
     return {
-      background: `linear-gradient(135deg, ${log.avatar_gradient[0]}, ${log.avatar_gradient[1]})`
+      backgroundColor: log.avatar_gradient[0]
     }
   }
   
   return {
-    background: 'linear-gradient(135deg, #667eea, #764ba2)'
+    backgroundColor: '#667eea'
   }
 }
 
@@ -212,14 +212,14 @@ const getOperationLogAvatarStyle = (log: any) => {
     }
   }
   
-  if (log.avatar_gradient && log.avatar_gradient.length >= 2) {
+  if (log.avatar_gradient && log.avatar_gradient.length >= 1) {
     return {
-      background: `linear-gradient(135deg, ${log.avatar_gradient[0]}, ${log.avatar_gradient[1]})`
+      backgroundColor: log.avatar_gradient[0]
     }
   }
   
   return {
-    background: 'linear-gradient(135deg, #667eea, #764ba2)'
+    backgroundColor: '#667eea'
   }
 }
 

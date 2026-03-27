@@ -58,14 +58,14 @@ const sidebarAvatarStyle = computed(() => {
     }
   }
   
-  if (profile?.default_avatar_gradient && profile.default_avatar_gradient.length >= 2) {
+  if (profile?.default_avatar_gradient && profile.default_avatar_gradient.length >= 1) {
     return {
-      background: `linear-gradient(135deg, ${profile.default_avatar_gradient[0]}, ${profile.default_avatar_gradient[1]})`
+      backgroundColor: profile.default_avatar_gradient[0]
     }
   }
   
   return {
-    background: 'linear-gradient(to bottom right, var(--color-primary), var(--color-accent))'
+    backgroundColor: '#667eea'
   }
 })
 
