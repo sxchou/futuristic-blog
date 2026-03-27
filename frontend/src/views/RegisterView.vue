@@ -48,7 +48,7 @@ const handleRegister = async () => {
       query: {
         email: form.value.email,
         username: form.value.username,
-        expires: response?.verification_token_expires || '',
+        expires: response?.verification_token_expires || undefined,
         is_expired: 'false'
       }
     })
