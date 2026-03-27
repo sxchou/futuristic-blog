@@ -9,7 +9,8 @@ def serialize_datetime(dt: datetime) -> Optional[str]:
     if dt is None:
         return None
     local_dt = to_local(dt)
-    return local_dt.isoformat()
+    iso_str = local_dt.isoformat()
+    return iso_str
 
 
 def validate_email(email: str) -> str:
