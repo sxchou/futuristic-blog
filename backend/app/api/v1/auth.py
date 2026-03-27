@@ -312,6 +312,43 @@ async def resend_verification(
     return {"message": "验证邮件已发送，请查收"}
 
 
+@router.get("/check-verification")
+async def check_verification(
+    email: str,
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter(User.email == email).first()
+    
+    if not user:
+        return {"is_verified": False}
+    
+    if not user.is_verified:
+        return {"is_verified": False}
+    
+    access_token = create_access_token(
+        data={"sub": user.username, "user_id": user.id}
+    )
+    refresh_token_obj = create_refresh_token(
+        db=db,
+        user_id=user.id
+    )
+    
+    return {
+        "is_verified": True,
+        "access_token": access_token,
+        "refresh_token": refresh_token_obj.token,
+        "token_type": "bearer",
+        "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "is_admin": user.is_admin,
+            "is_verified": user.is_verified
+        }
+    }
+
+
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_user)):
     return current_user

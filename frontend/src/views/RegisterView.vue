@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore, useSiteConfigStore } from '@/stores'
+import { useAuthStore, useSiteConfigStore, useDialogStore } from '@/stores'
+import { authApi } from '@/api'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const siteConfigStore = useSiteConfigStore()
+const dialog = useDialogStore()
 
 const form = ref({
   username: '',
@@ -18,6 +20,47 @@ const isLoading = ref(false)
 const errorMessage = ref('')
 const showSuccess = ref(false)
 const registeredEmail = ref('')
+const isVerifying = ref(false)
+let pollingTimer: ReturnType<typeof setInterval> | null = null
+
+const startPolling = (email: string) => {
+  pollingTimer = setInterval(async () => {
+    try {
+      const response = await authApi.checkVerification(email)
+      
+      if (response.is_verified && response.access_token) {
+        stopPolling()
+        isVerifying.value = true
+        
+        authStore.setTokens(
+          response.access_token,
+          response.refresh_token,
+          response.expires_in
+        )
+        
+        if (response.user) {
+          authStore.setUser(response.user)
+        }
+        
+        await dialog.showSuccess('邮箱验证成功！', '欢迎加入我们')
+        router.push('/')
+      }
+    } catch (error) {
+      console.error('Polling error:', error)
+    }
+  }, 3000)
+}
+
+const stopPolling = () => {
+  if (pollingTimer) {
+    clearInterval(pollingTimer)
+    pollingTimer = null
+  }
+}
+
+onUnmounted(() => {
+  stopPolling()
+})
 
 const handleRegister = async () => {
   if (!form.value.username || !form.value.email || !form.value.password) {
@@ -46,6 +89,7 @@ const handleRegister = async () => {
     })
     registeredEmail.value = form.value.email
     showSuccess.value = true
+    startPolling(form.value.email)
   } catch (error: any) {
     errorMessage.value = error.response?.data?.detail || '注册失败，请稍后重试'
   } finally {
@@ -153,20 +197,30 @@ const goToLogin = () => {
         </div>
 
         <div v-else class="text-center py-4">
-          <div class="w-[76px] h-12 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-3">
-            <svg class="w-7 h-7 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
+          <div v-if="isVerifying" class="py-4">
+            <div class="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-3" />
+            <p class="text-gray-400 text-sm">验证成功，正在登录...</p>
           </div>
-          <h2 class="text-base font-bold text-gray-900 dark:text-white mb-2">注册成功！</h2>
-          <p class="text-gray-400 text-xs mb-0.5">验证邮件已发送至</p>
-          <p class="text-primary font-medium text-sm mb-3">{{ registeredEmail }}</p>
-          <p class="text-xs text-gray-500 mb-3">
-            请点击邮件中的链接验证邮箱
-          </p>
-          <button @click="goToLogin" class="btn-primary w-full text-sm py-2">
-            前往登录
-          </button>
+          <template v-else>
+            <div class="w-[76px] h-12 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-3">
+              <svg class="w-7 h-7 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h2 class="text-base font-bold text-gray-900 dark:text-white mb-2">注册成功！</h2>
+            <p class="text-gray-400 text-xs mb-0.5">验证邮件已发送至</p>
+            <p class="text-primary font-medium text-sm mb-3">{{ registeredEmail }}</p>
+            <p class="text-xs text-gray-500 mb-3">
+              请点击邮件中的链接验证邮箱
+            </p>
+            <div class="flex items-center justify-center gap-2 text-xs text-gray-400 mb-3">
+              <div class="w-3 h-3 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+              <span>等待验证中...</span>
+            </div>
+            <button @click="goToLogin" class="btn-primary w-full text-sm py-2">
+              前往登录
+            </button>
+          </template>
         </div>
       </div>
     </div>
