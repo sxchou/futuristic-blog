@@ -2,6 +2,36 @@ import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore, useSiteConfigStore } from '@/stores'
 
+const CHUNK_LOAD_ERROR_KEY = 'chunk_load_error_reload'
+
+const isChunkLoadError = (error: unknown): boolean => {
+  if (error instanceof Error) {
+    return (
+      error.message.includes('Failed to fetch dynamically imported module') ||
+      error.message.includes('Loading chunk') ||
+      error.message.includes('Loading CSS chunk') ||
+      error.message.includes('Unable to preload CSS') ||
+      error.name === 'ChunkLoadError'
+    )
+  }
+  return false
+}
+
+const handleChunkLoadError = (error: unknown): boolean => {
+  if (!isChunkLoadError(error)) return false
+  
+  const reloadCount = parseInt(sessionStorage.getItem(CHUNK_LOAD_ERROR_KEY) || '0')
+  
+  if (reloadCount < 2) {
+    sessionStorage.setItem(CHUNK_LOAD_ERROR_KEY, String(reloadCount + 1))
+    window.location.reload()
+    return true
+  }
+  
+  sessionStorage.removeItem(CHUNK_LOAD_ERROR_KEY)
+  return false
+}
+
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
@@ -268,6 +298,13 @@ router.beforeEach(async (to, _from, next) => {
   }
   
   next()
+})
+
+router.onError((error) => {
+  if (handleChunkLoadError(error)) {
+    return
+  }
+  console.error('Router error:', error)
 })
 
 export default router
