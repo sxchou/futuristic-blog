@@ -23,14 +23,14 @@ const registeredEmail = ref('')
 const isVerifying = ref(false)
 const tokenExpiresAt = ref<Date | null>(null)
 const isExpired = ref(false)
+const countdownValue = ref(0)
 let pollingTimer: ReturnType<typeof setInterval> | null = null
 let countdownTimer: ReturnType<typeof setInterval> | null = null
 
 const countdownText = computed(() => {
   if (!tokenExpiresAt.value || isExpired.value) return ''
   
-  const now = new Date()
-  const diff = tokenExpiresAt.value.getTime() - now.getTime()
+  const diff = countdownValue.value
   
   if (diff <= 0) {
     return ''
@@ -55,6 +55,8 @@ const updateCountdown = () => {
   const now = new Date()
   const diff = tokenExpiresAt.value.getTime() - now.getTime()
   
+  countdownValue.value = diff
+  
   if (diff <= 0) {
     isExpired.value = true
     stopCountdown()
@@ -65,6 +67,7 @@ const updateCountdown = () => {
 const startCountdown = () => {
   if (countdownTimer) return
   
+  updateCountdown()
   countdownTimer = setInterval(updateCountdown, 1000)
 }
 

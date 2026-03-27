@@ -95,6 +95,7 @@ export interface PendingVerificationInfo {
   is_verified: boolean
   provider_name: string
   expires_at?: string
+  is_expired?: boolean
 }
 
 export const oauthApi = {

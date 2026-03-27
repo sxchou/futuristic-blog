@@ -26,6 +26,7 @@ const email = ref('')
 const providerName = ref('')
 const expiresAt = ref<Date | null>(null)
 const isExpired = ref(false)
+const countdownValue = ref(0)
 
 let pollInterval: ReturnType<typeof setInterval> | null = null
 let countdownInterval: ReturnType<typeof setInterval> | null = null
@@ -45,8 +46,7 @@ const providerDisplayName = computed(() => {
 const countdownText = computed(() => {
   if (!expiresAt.value || isExpired.value) return ''
   
-  const now = new Date()
-  const diff = expiresAt.value.getTime() - now.getTime()
+  const diff = countdownValue.value
   
   if (diff <= 0) {
     return ''
@@ -71,6 +71,8 @@ const updateCountdown = () => {
   const now = new Date()
   const diff = expiresAt.value.getTime() - now.getTime()
   
+  countdownValue.value = diff
+  
   if (diff <= 0) {
     isExpired.value = true
     stopCountdown()
@@ -81,6 +83,7 @@ const updateCountdown = () => {
 const startCountdown = () => {
   if (countdownInterval) return
   
+  updateCountdown()
   countdownInterval = setInterval(updateCountdown, 1000)
 }
 
@@ -170,7 +173,9 @@ const loadPendingInfo = async () => {
     email.value = info.email || ''
     providerName.value = info.provider_name
     
-    if (info.expires_at) {
+    if (info.is_expired) {
+      isExpired.value = true
+    } else if (info.expires_at) {
       expiresAt.value = new Date(info.expires_at)
       const now = new Date()
       if (expiresAt.value.getTime() <= now.getTime()) {

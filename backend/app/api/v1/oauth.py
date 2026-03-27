@@ -578,6 +578,7 @@ async def oauth_verify_email(
 ):
     from app.services.email_service import EmailService
     from app.models import User, OAuthTempToken
+    from app.utils.timezone import get_db_now
     
     temp_token_record = db.query(OAuthTempToken).filter(
         OAuthTempToken.temp_token == token
@@ -604,6 +605,14 @@ async def oauth_verify_email(
                 needs_email=False
             )
         raise HTTPException(status_code=400, detail="无效或过期的验证链接")
+    
+    if temp_token_record.expires_at:
+        now = get_db_now()
+        expires_at = temp_token_record.expires_at
+        if expires_at.tzinfo is not None:
+            expires_at = expires_at.replace(tzinfo=None)
+        if expires_at < now:
+            raise HTTPException(status_code=400, detail="验证链接已过期，请重新获取")
     
     user = db.query(User).filter(User.id == temp_token_record.user_id).first()
     if not user:
@@ -737,6 +746,7 @@ async def get_pending_verification_info(
     db: Session = Depends(get_db)
 ):
     from app.models import OAuthTempToken
+    from app.utils.timezone import get_db_now
     
     temp_token_record = db.query(OAuthTempToken).filter(
         OAuthTempToken.temp_token == temp_token
@@ -752,11 +762,21 @@ async def get_pending_verification_info(
     current_email = user.email
     has_email = current_email and not current_email.endswith('@oauth.local')
     
+    is_expired = False
+    if temp_token_record.expires_at:
+        now = get_db_now()
+        expires_at = temp_token_record.expires_at
+        if expires_at.tzinfo is not None:
+            expires_at = expires_at.replace(tzinfo=None)
+        if expires_at < now:
+            is_expired = True
+    
     return {
         "username": user.username,
         "has_email": has_email,
         "email": current_email if has_email else None,
         "is_verified": user.is_verified,
         "provider_name": temp_token_record.provider_name,
-        "expires_at": temp_token_record.expires_at.isoformat() if temp_token_record.expires_at else None
+        "expires_at": temp_token_record.expires_at.isoformat() if temp_token_record.expires_at else None,
+        "is_expired": is_expired
     }

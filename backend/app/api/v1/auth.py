@@ -229,7 +229,7 @@ async def verify_email(
     
     from app.utils.timezone import get_db_now
     from datetime import datetime
-    now = datetime.utcnow()
+    now = get_db_now()
     token_expires = user.verification_token_expires
     if token_expires:
         if token_expires.tzinfo is not None:
