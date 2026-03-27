@@ -662,7 +662,6 @@ async def resend_oauth_verification(
     from app.services.email_service import EmailService
     from app.models import OAuthTempToken
     from app.utils.timezone import get_db_now
-    from datetime import timedelta
     
     temp_token_record = db.query(OAuthTempToken).filter(
         OAuthTempToken.temp_token == data.temp_token
@@ -711,7 +710,6 @@ async def change_oauth_email(
     from app.services.email_service import EmailService
     from app.models import OAuthTempToken
     from app.utils.timezone import get_db_now
-    from datetime import timedelta
     
     temp_token_record = db.query(OAuthTempToken).filter(
         OAuthTempToken.temp_token == data.temp_token

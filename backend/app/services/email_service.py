@@ -1147,7 +1147,6 @@ class EmailService:
     ) -> str:
         from app.models import OAuthTempToken
         from app.utils.timezone import get_db_now
-        from datetime import timedelta
         
         existing_token = db.query(OAuthTempToken).filter(
             OAuthTempToken.user_id == user_id,
