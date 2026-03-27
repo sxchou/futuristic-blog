@@ -2,10 +2,9 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { authApi } from '@/api'
-import { useDialogStore, useAuthStore } from '@/stores'
+import { useDialogStore } from '@/stores'
 
 const dialog = useDialogStore()
-const authStore = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -24,28 +23,14 @@ onMounted(async () => {
   }
   
   try {
-    const response = await authApi.verifyEmail(token)
+    await authApi.verifyEmail(token)
     
     isVerified.value = true
     
-    if (response.access_token) {
-      authStore.setTokens(
-        response.access_token,
-        response.refresh_token,
-        response.expires_in
-      )
-      
-      if (response.user) {
-        authStore.setUser(response.user)
-      } else {
-        await authStore.fetchUser()
-      }
-    }
-    
-    await dialog.showSuccess('邮箱验证成功！', '欢迎加入我们')
+    await dialog.showSuccess('邮箱验证成功！', '请登录您的账户')
     
     setTimeout(() => {
-      router.push('/')
+      router.push('/login')
     }, 1500)
   } catch (error: any) {
     console.error('Verification failed:', error)
@@ -95,7 +80,7 @@ const goToLogin = () => {
               </svg>
             </div>
             <h1 class="text-xl font-bold text-gray-900 dark:text-white mb-4">邮箱验证成功！</h1>
-            <p class="text-gray-400 mb-6">正在跳转到首页...</p>
+            <p class="text-gray-400 mb-6">正在跳转到登录页面...</p>
           </div>
           
           <div v-else class="py-8">
