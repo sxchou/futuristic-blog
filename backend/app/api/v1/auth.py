@@ -104,7 +104,6 @@ async def login(
             fail_reason="邮箱未验证"
         )
         from app.utils.timezone import get_db_now
-        from datetime import timedelta
         
         now = get_db_now()
         token_expires = user.verification_token_expires
