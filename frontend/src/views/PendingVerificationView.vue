@@ -235,7 +235,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex items-center justify-center px-4 pt-8 pb-32">
+  <div class="flex items-center justify-center px-4 pb-32">
     <div class="w-full max-w-md">
       <div v-if="isLoading" class="text-center space-y-4">
         <div class="w-12 h-12 mx-auto border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
@@ -283,22 +283,6 @@ onUnmounted(() => {
               </p>
               <p class="text-sm text-blue-700 dark:text-blue-300">
                 验证完成后将自动跳转，无需刷新页面
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        <div v-if="!isExpired" class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 space-y-2">
-          <div class="flex items-start gap-3">
-            <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <div class="space-y-1">
-              <p class="text-sm font-medium text-amber-800 dark:text-amber-200">
-                您的邮箱地址尚未验证
-              </p>
-              <p class="text-sm text-amber-700 dark:text-amber-300">
-                请验证您的邮箱地址以完成账户设置。验证后您将能够使用所有功能。
               </p>
             </div>
           </div>
