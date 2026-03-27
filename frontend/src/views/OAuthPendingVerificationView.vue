@@ -24,8 +24,11 @@ const username = ref('')
 const hasEmail = ref(false)
 const email = ref('')
 const providerName = ref('')
+const expiresAt = ref<Date | null>(null)
+const isExpired = ref(false)
 
 let pollInterval: ReturnType<typeof setInterval> | null = null
+let countdownInterval: ReturnType<typeof setInterval> | null = null
 
 const providerDisplayName = computed(() => {
   const names: Record<string, string> = {
@@ -38,6 +41,55 @@ const providerDisplayName = computed(() => {
   }
   return names[providerName.value] || providerName.value
 })
+
+const countdownText = computed(() => {
+  if (!expiresAt.value || isExpired.value) return ''
+  
+  const now = new Date()
+  const diff = expiresAt.value.getTime() - now.getTime()
+  
+  if (diff <= 0) {
+    return ''
+  }
+  
+  const hours = Math.floor(diff / (1000 * 60 * 60))
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+  
+  if (hours > 0) {
+    return `${hours}小时${minutes}分钟${seconds}秒`
+  } else if (minutes > 0) {
+    return `${minutes}分钟${seconds}秒`
+  } else {
+    return `${seconds}秒`
+  }
+})
+
+const updateCountdown = () => {
+  if (!expiresAt.value) return
+  
+  const now = new Date()
+  const diff = expiresAt.value.getTime() - now.getTime()
+  
+  if (diff <= 0) {
+    isExpired.value = true
+    stopCountdown()
+    stopPolling()
+  }
+}
+
+const startCountdown = () => {
+  if (countdownInterval) return
+  
+  countdownInterval = setInterval(updateCountdown, 1000)
+}
+
+const stopCountdown = () => {
+  if (countdownInterval) {
+    clearInterval(countdownInterval)
+    countdownInterval = null
+  }
+}
 
 const checkVerificationStatus = async () => {
   if (!tempToken.value) return
@@ -118,12 +170,22 @@ const loadPendingInfo = async () => {
     email.value = info.email
     providerName.value = info.provider_name
     
+    if (info.expires_at) {
+      expiresAt.value = new Date(info.expires_at)
+      const now = new Date()
+      if (expiresAt.value.getTime() <= now.getTime()) {
+        isExpired.value = true
+      } else {
+        startCountdown()
+      }
+    }
+    
     setPendingState(token, info.username, info.provider_name, info.email)
     trackEvent('oauth_pending_verification_view', { provider: info.provider_name, hasEmail: info.has_email })
     
     if (info.is_verified) {
       await checkVerificationStatus()
-    } else {
+    } else if (!isExpired.value) {
       startPolling()
     }
   } catch (err: any) {
@@ -143,7 +205,7 @@ const handleResendVerification = async () => {
     const response = await oauthApi.resendVerification(tempToken.value)
     trackEvent('oauth_resend_verification', { provider: providerName.value })
     await dialog.showSuccess(
-      `验证邮件已发送到 ${response.masked_email}`,
+      `验证邮件已发送到 ${response.email}`,
       '请检查您的邮箱'
     )
   } catch (err: any) {
@@ -207,6 +269,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   stopPolling()
+  stopCountdown()
 })
 </script>
 
@@ -220,18 +283,35 @@ onUnmounted(() => {
       
       <div v-else class="space-y-6">
         <div class="text-center space-y-3">
-          <div class="w-16 h-16 mx-auto rounded-full bg-amber-500/10 flex items-center justify-center">
-            <svg class="w-8 h-8 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          <div class="w-16 h-16 mx-auto rounded-full flex items-center justify-center" :class="isExpired ? 'bg-red-500/10' : 'bg-amber-500/10'">
+            <svg class="w-8 h-8" :class="isExpired ? 'text-red-500' : 'text-amber-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path v-if="isExpired" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
           </div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">邮箱未验证</h1>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ isExpired ? '链接已失效' : '邮箱未验证' }}</h1>
           <p class="text-gray-500 dark:text-gray-400">
             您好，<span class="font-medium text-gray-700 dark:text-gray-300">{{ username }}</span>！
           </p>
         </div>
         
-        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+        <div v-if="isExpired" class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <div class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div class="space-y-1">
+              <p class="text-sm font-medium text-red-800 dark:text-red-200">
+                验证链接已失效
+              </p>
+              <p class="text-sm text-red-700 dark:text-red-300">
+                验证链接已过期，请重新发送验证邮件或更换邮箱地址。
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <div v-else class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
           <div class="flex items-start gap-3">
             <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -247,7 +327,7 @@ onUnmounted(() => {
           </div>
         </div>
         
-        <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 space-y-2">
+        <div v-if="!isExpired" class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 space-y-2">
           <div class="flex items-start gap-3">
             <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -276,6 +356,10 @@ onUnmounted(() => {
             <div class="flex items-center justify-between">
               <span class="text-sm text-gray-500 dark:text-gray-400">预计送达时间</span>
               <span class="text-sm font-medium text-gray-700 dark:text-gray-300">10秒内</span>
+            </div>
+            <div v-if="!isExpired && countdownText" class="flex items-center justify-between">
+              <span class="text-sm text-gray-500 dark:text-gray-400">链接有效期</span>
+              <span class="text-sm font-medium text-orange-600 dark:text-orange-400">{{ countdownText }}</span>
             </div>
           </div>
           

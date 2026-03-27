@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onUnmounted } from 'vue'
+import { ref, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore, useSiteConfigStore, useDialogStore } from '@/stores'
 import { authApi } from '@/api'
@@ -21,7 +21,59 @@ const errorMessage = ref('')
 const showSuccess = ref(false)
 const registeredEmail = ref('')
 const isVerifying = ref(false)
+const tokenExpiresAt = ref<Date | null>(null)
+const isExpired = ref(false)
 let pollingTimer: ReturnType<typeof setInterval> | null = null
+let countdownTimer: ReturnType<typeof setInterval> | null = null
+
+const countdownText = computed(() => {
+  if (!tokenExpiresAt.value || isExpired.value) return ''
+  
+  const now = new Date()
+  const diff = tokenExpiresAt.value.getTime() - now.getTime()
+  
+  if (diff <= 0) {
+    return ''
+  }
+  
+  const hours = Math.floor(diff / (1000 * 60 * 60))
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+  
+  if (hours > 0) {
+    return `${hours}小时${minutes}分钟${seconds}秒`
+  } else if (minutes > 0) {
+    return `${minutes}分钟${seconds}秒`
+  } else {
+    return `${seconds}秒`
+  }
+})
+
+const updateCountdown = () => {
+  if (!tokenExpiresAt.value) return
+  
+  const now = new Date()
+  const diff = tokenExpiresAt.value.getTime() - now.getTime()
+  
+  if (diff <= 0) {
+    isExpired.value = true
+    stopCountdown()
+    stopPolling()
+  }
+}
+
+const startCountdown = () => {
+  if (countdownTimer) return
+  
+  countdownTimer = setInterval(updateCountdown, 1000)
+}
+
+const stopCountdown = () => {
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+    countdownTimer = null
+  }
+}
 
 const startPolling = (email: string) => {
   pollingTimer = setInterval(async () => {
@@ -30,6 +82,7 @@ const startPolling = (email: string) => {
       
       if (response.is_verified && response.access_token) {
         stopPolling()
+        stopCountdown()
         isVerifying.value = true
         
         authStore.setTokens(
@@ -60,6 +113,7 @@ const stopPolling = () => {
 
 onUnmounted(() => {
   stopPolling()
+  stopCountdown()
 })
 
 const handleRegister = async () => {
@@ -82,14 +136,27 @@ const handleRegister = async () => {
   errorMessage.value = ''
 
   try {
-    await authStore.register({
+    const response = await authStore.register({
       username: form.value.username,
       email: form.value.email,
       password: form.value.password
     })
     registeredEmail.value = form.value.email
     showSuccess.value = true
-    startPolling(form.value.email)
+    
+    if (response && response.verification_token_expires) {
+      tokenExpiresAt.value = new Date(response.verification_token_expires)
+      const now = new Date()
+      if (tokenExpiresAt.value.getTime() > now.getTime()) {
+        startCountdown()
+      } else {
+        isExpired.value = true
+      }
+    }
+    
+    if (!isExpired.value) {
+      startPolling(form.value.email)
+    }
   } catch (error: any) {
     errorMessage.value = error.response?.data?.detail || '注册失败，请稍后重试'
   } finally {
@@ -202,23 +269,35 @@ const goToLogin = () => {
             <p class="text-gray-400 text-sm">验证成功，正在登录...</p>
           </div>
           <template v-else>
-            <div class="w-[76px] h-12 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-3">
-              <svg class="w-7 h-7 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            <div class="w-[76px] h-12 rounded-full flex items-center justify-center mx-auto mb-3" :class="isExpired ? 'bg-red-500/20' : 'bg-primary/20'">
+              <svg class="w-7 h-7" :class="isExpired ? 'text-red-500' : 'text-primary'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path v-if="isExpired" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             </div>
-            <h2 class="text-base font-bold text-gray-900 dark:text-white mb-2">注册成功！</h2>
+            <h2 class="text-base font-bold text-gray-900 dark:text-white mb-2">{{ isExpired ? '链接已失效' : '注册成功！' }}</h2>
             <p class="text-gray-400 text-xs mb-0.5">验证邮件已发送至</p>
             <p class="text-primary font-medium text-sm mb-3">{{ registeredEmail }}</p>
-            <p class="text-xs text-gray-500 mb-3">
-              请点击邮件中的链接验证邮箱
-            </p>
-            <div class="flex items-center justify-center gap-2 text-xs text-gray-400 mb-3">
-              <div class="w-3 h-3 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-              <span>等待验证中...</span>
+            
+            <div v-if="isExpired" class="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mb-3">
+              <p class="text-red-400 text-xs">验证链接已过期，请重新注册</p>
             </div>
+            
+            <template v-else>
+              <p class="text-xs text-gray-500 mb-2">
+                请点击邮件中的链接验证邮箱
+              </p>
+              <div v-if="countdownText" class="text-xs text-orange-500 mb-3">
+                链接有效期：{{ countdownText }}
+              </div>
+              <div class="flex items-center justify-center gap-2 text-xs text-gray-400 mb-3">
+                <div class="w-3 h-3 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                <span>等待验证中...</span>
+              </div>
+            </template>
+            
             <button @click="goToLogin" class="btn-primary w-full text-sm py-2">
-              前往登录
+              {{ isExpired ? '重新注册' : '前往登录' }}
             </button>
           </template>
         </div>

@@ -111,8 +111,8 @@ export const useAuthStore = defineStore('auth', () => {
   const register = async (data: { username: string; email: string; password: string }) => {
     loading.value = true
     try {
-      await authApi.register(data)
-      return true
+      const response = await authApi.register(data)
+      return response
     } catch (error) {
       console.error('Register failed:', error)
       throw error

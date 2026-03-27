@@ -27,6 +27,7 @@ export interface User {
   is_admin: boolean
   is_verified: boolean
   created_at: string
+  verification_token_expires?: string
 }
 
 export interface Category {

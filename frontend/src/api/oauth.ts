@@ -94,6 +94,7 @@ export interface PendingVerificationInfo {
   email?: string
   is_verified: boolean
   provider_name: string
+  expires_at?: string
 }
 
 export const oauthApi = {
