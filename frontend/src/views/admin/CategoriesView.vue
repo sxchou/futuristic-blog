@@ -61,7 +61,7 @@ const handleDelete = async (category: Category) => {
   
   try {
     await categoryApi.deleteCategory(category.id)
-    await blogStore.fetchCategories(true)
+    blogStore.removeCategory(category.id)
     await dialog.showSuccess('分类已删除', '成功')
   } catch (error: any) {
     console.error('Failed to delete category:', error)
@@ -73,15 +73,16 @@ const handleSubmit = async () => {
   if (!await requireAdmin('保存分类')) return
   
   try {
+    let savedCategory: Category
     if (editingCategory.value) {
-      await categoryApi.updateCategory(editingCategory.value.id, form.value)
+      savedCategory = await categoryApi.updateCategory(editingCategory.value.id, form.value)
     } else {
-      await categoryApi.createCategory(form.value)
+      savedCategory = await categoryApi.createCategory(form.value)
     }
+    blogStore.addCategory(savedCategory)
     showEditor.value = false
     editingCategory.value = null
     resetForm()
-    await blogStore.fetchCategories(true)
     await dialog.showSuccess('分类已保存', '成功')
   } catch (error: any) {
     console.error('Failed to save category:', error)

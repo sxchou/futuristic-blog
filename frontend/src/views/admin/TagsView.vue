@@ -55,7 +55,7 @@ const handleDelete = async (tag: Tag) => {
   
   try {
     await tagApi.deleteTag(tag.id)
-    await blogStore.fetchTags(true)
+    blogStore.removeTag(tag.id)
     await dialog.showSuccess('标签已删除', '成功')
   } catch (error: any) {
     console.error('Failed to delete tag:', error)
@@ -68,15 +68,16 @@ const handleSubmit = async () => {
   
   try {
     const isEditing = !!editingTag.value
+    let savedTag: Tag
     if (editingTag.value) {
-      await tagApi.updateTag(editingTag.value.id, form.value)
+      savedTag = await tagApi.updateTag(editingTag.value.id, form.value)
     } else {
-      await tagApi.createTag(form.value)
+      savedTag = await tagApi.createTag(form.value)
     }
+    blogStore.addTag(savedTag)
     showEditor.value = false
     editingTag.value = null
     resetForm()
-    await blogStore.fetchTags(true)
     await dialog.showSuccess(isEditing ? '标签已更新' : '标签已创建', '成功')
   } catch (error: any) {
     console.error('Failed to save tag:', error)

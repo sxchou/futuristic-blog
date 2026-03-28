@@ -4,8 +4,6 @@ import { articleApi, categoryApi, tagApi } from '@/api'
 import type { ArticleListItem, Category, Tag } from '@/types'
 
 let fetchArticlesController: AbortController | null = null
-let fetchCategoriesPromise: Promise<void> | null = null
-let fetchTagsPromise: Promise<void> | null = null
 
 export const useBlogStore = defineStore('blog', () => {
   const articles = ref<ArticleListItem[]>([])
@@ -67,21 +65,12 @@ export const useBlogStore = defineStore('blog', () => {
       return
     }
     
-    if (fetchCategoriesPromise) {
-      return fetchCategoriesPromise
+    try {
+      const data = await categoryApi.getCategories()
+      categories.value = data
+    } catch (error) {
+      console.error('Failed to fetch categories:', error)
     }
-    
-    fetchCategoriesPromise = (async () => {
-      try {
-        categories.value = await categoryApi.getCategories()
-      } catch (error) {
-        console.error('Failed to fetch categories:', error)
-      } finally {
-        fetchCategoriesPromise = null
-      }
-    })()
-    
-    return fetchCategoriesPromise
   }
 
   const fetchTags = async (force = false) => {
@@ -89,21 +78,51 @@ export const useBlogStore = defineStore('blog', () => {
       return
     }
     
-    if (fetchTagsPromise) {
-      return fetchTagsPromise
+    try {
+      const data = await tagApi.getTags()
+      tags.value = data
+    } catch (error) {
+      console.error('Failed to fetch tags:', error)
     }
-    
-    fetchTagsPromise = (async () => {
-      try {
-        tags.value = await tagApi.getTags()
-      } catch (error) {
-        console.error('Failed to fetch tags:', error)
-      } finally {
-        fetchTagsPromise = null
-      }
-    })()
-    
-    return fetchTagsPromise
+  }
+
+  const addCategory = (category: Category) => {
+    const existingIndex = categories.value.findIndex(c => c.id === category.id)
+    if (existingIndex >= 0) {
+      categories.value[existingIndex] = category
+    } else {
+      categories.value.push(category)
+    }
+  }
+
+  const removeCategory = (categoryId: number) => {
+    categories.value = categories.value.filter(c => c.id !== categoryId)
+  }
+
+  const addTag = (tag: Tag) => {
+    const existingIndex = tags.value.findIndex(t => t.id === tag.id)
+    if (existingIndex >= 0) {
+      tags.value[existingIndex] = tag
+    } else {
+      tags.value.push(tag)
+    }
+  }
+
+  const removeTag = (tagId: number) => {
+    tags.value = tags.value.filter(t => t.id !== tagId)
+  }
+
+  const addArticle = (article: ArticleListItem) => {
+    const existingIndex = articles.value.findIndex(a => a.id === article.id)
+    if (existingIndex >= 0) {
+      articles.value[existingIndex] = article
+    } else {
+      articles.value.unshift(article)
+    }
+  }
+
+  const removeArticle = (articleId: number) => {
+    articles.value = articles.value.filter(a => a.id !== articleId)
   }
 
   const getCategoryBySlug = (slug: string) => {
@@ -125,6 +144,12 @@ export const useBlogStore = defineStore('blog', () => {
     fetchArticles,
     fetchCategories,
     fetchTags,
+    addCategory,
+    removeCategory,
+    addTag,
+    removeTag,
+    addArticle,
+    removeArticle,
     getCategoryBySlug,
     getTagBySlug
   }

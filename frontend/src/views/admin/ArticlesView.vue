@@ -2,7 +2,7 @@
 import { ref, onMounted, watch, onUnmounted } from 'vue'
 import { useBlogStore, useDialogStore, useAuthStore } from '@/stores'
 import { articleApi, fileApi, categoryApi, tagApi, utilsApi } from '@/api'
-import type { ArticleListItem } from '@/types'
+import type { ArticleListItem, Article } from '@/types'
 import { useAdminCheck } from '@/composables/useAdminCheck'
 import { formatDateTime } from '@/utils/date'
 import MarkdownEditor from '@/components/admin/MarkdownEditor.vue'
@@ -180,7 +180,8 @@ const handleDelete = async (article: ArticleListItem) => {
   
   try {
     await articleApi.deleteArticle(article.id)
-    await fetchArticles()
+    blogStore.removeArticle(article.id)
+    articles.value = articles.value.filter(a => a.id !== article.id)
     await dialog.showSuccess('文章已删除', '成功')
   } catch (error: any) {
     console.error('Failed to delete article:', error)
@@ -202,16 +203,43 @@ const handleSubmit = async () => {
   }
   
   try {
+    let savedArticle: Article
     if (editingArticle.value) {
-      await articleApi.updateArticle(editingArticle.value.id, form.value)
+      savedArticle = await articleApi.updateArticle(editingArticle.value.id, form.value)
     } else {
-      await articleApi.createArticle(form.value)
+      savedArticle = await articleApi.createArticle(form.value)
+    }
+    
+    const articleListItem: ArticleListItem = {
+      id: savedArticle.id,
+      title: savedArticle.title,
+      slug: savedArticle.slug,
+      summary: savedArticle.summary,
+      cover_image: savedArticle.cover_image,
+      is_published: savedArticle.is_published,
+      is_featured: savedArticle.is_featured,
+      is_pinned: savedArticle.is_pinned,
+      view_count: savedArticle.view_count,
+      like_count: savedArticle.like_count,
+      comment_count: 0,
+      reading_time: savedArticle.reading_time,
+      created_at: savedArticle.created_at,
+      published_at: savedArticle.published_at,
+      category: savedArticle.category,
+      tags: savedArticle.tags
+    }
+    
+    blogStore.addArticle(articleListItem)
+    const existingIndex = articles.value.findIndex(a => a.id === savedArticle.id)
+    if (existingIndex >= 0) {
+      articles.value[existingIndex] = articleListItem
+    } else {
+      articles.value.unshift(articleListItem)
     }
     markdownEditorRef.value?.markAsSaved()
     showEditor.value = false
     editingArticle.value = null
     resetForm()
-    await fetchArticles()
   } catch (error: any) {
     console.error('Failed to save article:', error)
     await dialog.showError(error.response?.data?.detail || '保存失败', '错误')
@@ -303,7 +331,7 @@ const handleCreateCategory = async () => {
   isCreatingCategory.value = true
   try {
     const category = await categoryApi.createCategory(newCategory.value)
-    await blogStore.fetchCategories(true)
+    blogStore.addCategory(category)
     form.value.category_id = category.id
     showCategoryModal.value = false
     await dialog.showSuccess('分类创建成功', '成功')
@@ -324,7 +352,7 @@ const handleCreateTag = async () => {
   isCreatingTag.value = true
   try {
     const tag = await tagApi.createTag(newTag.value)
-    await blogStore.fetchTags(true)
+    blogStore.addTag(tag)
     if (!form.value.tag_ids.includes(tag.id)) {
       form.value.tag_ids.push(tag.id)
     }
