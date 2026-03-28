@@ -762,6 +762,137 @@ def generate_slug(text: str, max_length: int = 100) -> str:
     return slug.lower()
 
 
+def levenshtein_distance(s1: str, s2: str) -> int:
+    if len(s1) < len(s2):
+        return levenshtein_distance(s2, s1)
+    
+    if len(s2) == 0:
+        return len(s1)
+    
+    previous_row = range(len(s2) + 1)
+    for i, c1 in enumerate(s1):
+        current_row = [i + 1]
+        for j, c2 in enumerate(s2):
+            insertions = previous_row[j + 1] + 1
+            deletions = current_row[j] + 1
+            substitutions = previous_row[j] + (c1 != c2)
+            current_row.append(min(insertions, deletions, substitutions))
+        previous_row = current_row
+    
+    return previous_row[-1]
+
+
+def calculate_similarity_score(input_text: str, target_text: str) -> float:
+    if not input_text or not target_text:
+        return 0.0
+    
+    input_lower = input_text.lower().strip()
+    target_lower = target_text.lower().strip()
+    
+    if input_lower == target_lower:
+        return 1.0
+    
+    if input_lower in target_lower:
+        return 0.8 + (len(input_lower) / len(target_lower)) * 0.2
+    
+    if target_lower in input_lower:
+        return 0.7 + (len(target_lower) / len(input_lower)) * 0.2
+    
+    distance = levenshtein_distance(input_lower, target_lower)
+    max_len = max(len(input_lower), len(target_lower))
+    similarity = 1.0 - (distance / max_len)
+    
+    input_words = set(input_lower.split('-'))
+    target_words = set(target_lower.split('-'))
+    
+    if input_words and target_words:
+        common_words = input_words & target_words
+        word_overlap = len(common_words) / max(len(input_words), len(target_words))
+        similarity = similarity * 0.6 + word_overlap * 0.4
+    
+    return max(0.0, min(1.0, similarity))
+
+
+def find_similar_slug(
+    input_slug: str,
+    existing_slugs: List[str],
+    threshold: float = 0.6
+) -> Optional[str]:
+    if not input_slug or not existing_slugs:
+        return None
+    
+    input_lower = input_slug.lower().strip()
+    
+    exact_prefix_matches = [
+        slug for slug in existing_slugs
+        if slug.lower().startswith(input_lower)
+    ]
+    if exact_prefix_matches:
+        return sorted(exact_prefix_matches, key=len)[0]
+    
+    best_match = None
+    best_score = 0.0
+    
+    for slug in existing_slugs:
+        score = calculate_similarity_score(input_lower, slug.lower())
+        if score > best_score:
+            best_score = score
+            best_match = slug
+    
+    if best_score >= threshold:
+        return best_match
+    
+    return None
+
+
+def generate_slug_with_fallback(
+    text: str,
+    existing_slugs: List[str],
+    similarity_threshold: float = 0.6,
+    max_length: int = 100
+) -> dict:
+    if not text or not text.strip():
+        return {
+            'slug': 'untitled',
+            'source': 'default',
+            'similarity_score': 0.0,
+            'matched_slug': None
+        }
+    
+    text = text.strip()
+    generated_slug = generate_slug(text, max_length)
+    
+    if not generated_slug:
+        generated_slug = 'untitled'
+    
+    if generated_slug in [s.lower() for s in existing_slugs]:
+        return {
+            'slug': generated_slug,
+            'source': 'exact_match',
+            'similarity_score': 1.0,
+            'matched_slug': generated_slug
+        }
+    
+    similar_slug = find_similar_slug(generated_slug, existing_slugs, similarity_threshold)
+    
+    if similar_slug:
+        similarity = calculate_similarity_score(generated_slug, similar_slug)
+        return {
+            'slug': similar_slug,
+            'source': 'similar_match',
+            'similarity_score': similarity,
+            'matched_slug': similar_slug
+        }
+    
+    unique_slug = generate_unique_slug(generated_slug, existing_slugs)
+    return {
+        'slug': unique_slug,
+        'source': 'generated',
+        'similarity_score': 0.0,
+        'matched_slug': None
+    }
+
+
 def generate_unique_slug(base_slug: str, existing_slugs: List[str], max_attempts: int = 100) -> str:
     if not base_slug:
         base_slug = 'untitled'
