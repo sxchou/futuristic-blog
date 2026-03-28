@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models import Article, Category, Tag
 from app.utils import generate_slug
-from app.utils.helpers import generate_unique_slug
+from app.utils.helpers import generate_unique_slug, translate_to_english, generate_slug_from_text
 
 router = APIRouter(prefix="/utils", tags=["Utils"])
 
@@ -16,10 +16,17 @@ async def api_generate_slug(
     exclude_id: Optional[int] = Query(None, description="ID to exclude from uniqueness check"),
     db: Session = Depends(get_db)
 ):
-    base_slug = generate_slug(text)
+    import re
+    has_chinese = bool(re.search(r'[\u4e00-\u9fff]', text))
+    
+    if has_chinese:
+        translated = await translate_to_english(text)
+        base_slug = generate_slug_from_text(translated)
+    else:
+        base_slug = generate_slug_from_text(text)
     
     if not base_slug:
-        return {"slug": "untitled", "is_unique": True}
+        base_slug = "untitled"
     
     if not entity_type:
         return {"slug": base_slug, "is_unique": True}

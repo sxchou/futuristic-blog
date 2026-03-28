@@ -120,12 +120,22 @@ const generateSlug = async () => {
 }
 
 const handleSlugInput = () => {
-  slugManuallyEdited.value = true
+  if (!form.value.slug || form.value.slug.trim() === '') {
+    slugManuallyEdited.value = false
+  } else {
+    slugManuallyEdited.value = true
+  }
 }
 
 const handleNameBlur = () => {
   if (!slugManuallyEdited.value && form.value.name) {
     generateSlug()
+  }
+}
+
+const handleNameInput = () => {
+  if (!form.value.slug || form.value.slug.trim() === '') {
+    slugManuallyEdited.value = false
   }
 }
 
@@ -229,6 +239,7 @@ onMounted(fetchCategories)
               name="name"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
               placeholder="分类名称"
+              @input="handleNameInput"
               @blur="handleNameBlur"
             />
           </div>
