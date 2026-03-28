@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useDialogStore } from '@/stores'
-import { categoryApi } from '@/api'
+import { useDialogStore, useBlogStore } from '@/stores'
+import { categoryApi, utilsApi } from '@/api'
 import type { Category } from '@/types'
 import { useAdminCheck } from '@/composables/useAdminCheck'
 
 const dialog = useDialogStore()
+const blogStore = useBlogStore()
 const { requireAdmin } = useAdminCheck()
 
-const categories = ref<Category[]>([])
 const isLoading = ref(false)
 const showEditor = ref(false)
 const editingCategory = ref<Category | null>(null)
+const isGeneratingSlug = ref(false)
+const slugManuallyEdited = ref(false)
 
 const form = ref({
   name: '',
@@ -25,7 +27,7 @@ const form = ref({
 const fetchCategories = async () => {
   isLoading.value = true
   try {
-    categories.value = await categoryApi.getCategories()
+    await blogStore.fetchCategories(true)
   } catch (error) {
     console.error('Failed to fetch categories:', error)
   } finally {
@@ -44,6 +46,7 @@ const handleEdit = async (category: Category) => {
     color: category.color,
     order: category.order
   }
+  slugManuallyEdited.value = true
   showEditor.value = true
 }
 
@@ -58,7 +61,7 @@ const handleDelete = async (category: Category) => {
   
   try {
     await categoryApi.deleteCategory(category.id)
-    await fetchCategories()
+    await blogStore.fetchCategories(true)
     await dialog.showSuccess('分类已删除', '成功')
   } catch (error: any) {
     console.error('Failed to delete category:', error)
@@ -78,7 +81,7 @@ const handleSubmit = async () => {
     showEditor.value = false
     editingCategory.value = null
     resetForm()
-    await fetchCategories()
+    await blogStore.fetchCategories(true)
     await dialog.showSuccess('分类已保存', '成功')
   } catch (error: any) {
     console.error('Failed to save category:', error)
@@ -94,6 +97,35 @@ const resetForm = () => {
     icon: '',
     color: '#00d4ff',
     order: 0
+  }
+  slugManuallyEdited.value = false
+}
+
+const generateSlug = async () => {
+  if (!form.value.name.trim() || slugManuallyEdited.value) return
+  
+  isGeneratingSlug.value = true
+  try {
+    const result = await utilsApi.generateSlug(form.value.name, 'category', editingCategory.value?.id)
+    form.value.slug = result.slug
+  } catch (error) {
+    console.error('Failed to generate slug:', error)
+    form.value.slug = form.value.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+  } finally {
+    isGeneratingSlug.value = false
+  }
+}
+
+const handleSlugInput = () => {
+  slugManuallyEdited.value = true
+}
+
+const handleNameBlur = () => {
+  if (!slugManuallyEdited.value && form.value.name) {
+    generateSlug()
   }
 }
 
@@ -125,7 +157,7 @@ onMounted(fetchCategories)
 
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <div
-        v-for="category in categories"
+        v-for="category in blogStore.categories"
         :key="category.id"
         class="glass-card p-4"
       >
@@ -197,19 +229,32 @@ onMounted(fetchCategories)
               name="name"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
               placeholder="分类名称"
+              @blur="handleNameBlur"
             />
           </div>
 
           <div>
-            <label for="category-slug" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Slug</label>
-            <input
-              v-model="form.slug"
-              type="text"
-              id="category-slug"
-              name="slug"
-              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
-              placeholder="url-slug"
-            />
+            <label for="category-slug" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Slug (留空自动生成)</label>
+            <div class="relative">
+              <input
+                v-model="form.slug"
+                type="text"
+                id="category-slug"
+                name="slug"
+                class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none pr-8"
+                placeholder="留空自动生成"
+                @input="handleSlugInput"
+              />
+              <div 
+                v-if="isGeneratingSlug" 
+                class="absolute right-2 top-1/2 -translate-y-1/2"
+              >
+                <svg class="w-4 h-4 animate-spin text-gray-400" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </div>
+            </div>
           </div>
 
           <div>

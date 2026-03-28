@@ -6,6 +6,7 @@ from app.core.database import get_db
 from app.models import Category, Article
 from app.schemas import CategoryCreate, CategoryUpdate, CategoryResponse
 from app.utils import get_current_user
+from app.utils.helpers import generate_slug, generate_unique_slug
 from app.services.log_service import LogService
 from app.utils.cache import cache
 
@@ -77,13 +78,28 @@ async def create_category(
     if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="无权限创建分类")
     
-    existing = db.query(Category).filter(
-        (Category.name == category_data.name) | (Category.slug == category_data.slug)
-    ).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Category name or slug already exists")
+    existing_name = db.query(Category).filter(Category.name == category_data.name).first()
+    if existing_name:
+        raise HTTPException(status_code=400, detail="分类名称已存在")
     
-    new_category = Category(**category_data.model_dump())
+    slug = category_data.slug
+    if not slug or not slug.strip():
+        slug = generate_slug(category_data.name)
+        existing_slugs = [r[0] for r in db.query(Category.slug).all()]
+        slug = generate_unique_slug(slug, existing_slugs)
+    else:
+        existing_slug = db.query(Category).filter(Category.slug == slug).first()
+        if existing_slug:
+            raise HTTPException(status_code=400, detail="Slug已存在")
+    
+    new_category = Category(
+        name=category_data.name,
+        slug=slug,
+        description=category_data.description,
+        icon=category_data.icon,
+        color=category_data.color,
+        order=category_data.order
+    )
     db.add(new_category)
     db.commit()
     db.refresh(new_category)

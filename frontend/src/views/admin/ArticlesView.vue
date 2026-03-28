@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, onUnmounted } from 'vue'
 import { useBlogStore, useDialogStore, useAuthStore } from '@/stores'
-import { articleApi, fileApi } from '@/api'
+import { articleApi, fileApi, categoryApi, tagApi, utilsApi } from '@/api'
 import type { ArticleListItem } from '@/types'
 import { useAdminCheck } from '@/composables/useAdminCheck'
 import { formatDateTime } from '@/utils/date'
@@ -32,6 +32,27 @@ const articleFiles = ref<ArticleFile[]>([])
 const isUploading = ref(false)
 const uploadProgress = ref(0)
 const markdownEditorRef = ref<InstanceType<typeof MarkdownEditor> | null>(null)
+const isGeneratingSlug = ref(false)
+const slugManuallyEdited = ref(false)
+const showCategoryModal = ref(false)
+const showTagModal = ref(false)
+const isCreatingCategory = ref(false)
+const isCreatingTag = ref(false)
+
+const newCategory = ref({
+  name: '',
+  slug: '',
+  description: '',
+  icon: '',
+  color: '#3b82f6',
+  order: 0
+})
+
+const newTag = ref({
+  name: '',
+  slug: '',
+  color: '#10b981'
+})
 
 const form = ref({
   title: '',
@@ -210,14 +231,123 @@ const resetForm = () => {
     is_pinned: false
   }
   articleFiles.value = []
+  slugManuallyEdited.value = false
   clearFormDraft()
 }
 
-const generateSlug = () => {
-  form.value.slug = form.value.title
-    .toLowerCase()
-    .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
-    .replace(/^-|-$/g, '')
+const generateSlug = async () => {
+  if (!form.value.title.trim() || slugManuallyEdited.value) return
+  
+  isGeneratingSlug.value = true
+  try {
+    const result = await utilsApi.generateSlug(form.value.title, 'article', editingArticle.value?.id)
+    form.value.slug = result.slug
+  } catch (error) {
+    console.error('Failed to generate slug:', error)
+    form.value.slug = form.value.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+  } finally {
+    isGeneratingSlug.value = false
+  }
+}
+
+const handleSlugInput = () => {
+  slugManuallyEdited.value = true
+}
+
+const handleTitleBlur = () => {
+  if (!slugManuallyEdited.value && form.value.title) {
+    generateSlug()
+  }
+}
+
+const openCategoryModal = () => {
+  newCategory.value = {
+    name: '',
+    slug: '',
+    description: '',
+    icon: '',
+    color: '#3b82f6',
+    order: 0
+  }
+  showCategoryModal.value = true
+}
+
+const openTagModal = () => {
+  newTag.value = {
+    name: '',
+    slug: '',
+    color: '#10b981'
+  }
+  showTagModal.value = true
+}
+
+const handleCreateCategory = async () => {
+  if (!newCategory.value.name.trim()) {
+    await dialog.showError('请输入分类名称', '验证失败')
+    return
+  }
+  
+  isCreatingCategory.value = true
+  try {
+    const category = await categoryApi.createCategory(newCategory.value)
+    await blogStore.fetchCategories(true)
+    form.value.category_id = category.id
+    showCategoryModal.value = false
+    await dialog.showSuccess('分类创建成功', '成功')
+  } catch (error: any) {
+    console.error('Failed to create category:', error)
+    await dialog.showError(error.response?.data?.detail || '创建分类失败', '错误')
+  } finally {
+    isCreatingCategory.value = false
+  }
+}
+
+const handleCreateTag = async () => {
+  if (!newTag.value.name.trim()) {
+    await dialog.showError('请输入标签名称', '验证失败')
+    return
+  }
+  
+  isCreatingTag.value = true
+  try {
+    const tag = await tagApi.createTag(newTag.value)
+    await blogStore.fetchTags(true)
+    if (!form.value.tag_ids.includes(tag.id)) {
+      form.value.tag_ids.push(tag.id)
+    }
+    showTagModal.value = false
+    await dialog.showSuccess('标签创建成功', '成功')
+  } catch (error: any) {
+    console.error('Failed to create tag:', error)
+    await dialog.showError(error.response?.data?.detail || '创建标签失败', '错误')
+  } finally {
+    isCreatingTag.value = false
+  }
+}
+
+const generateCategorySlug = async () => {
+  if (!newCategory.value.name.trim()) return
+  
+  try {
+    const result = await utilsApi.generateSlug(newCategory.value.name, 'category')
+    newCategory.value.slug = result.slug
+  } catch (error) {
+    console.error('Failed to generate category slug:', error)
+  }
+}
+
+const generateTagSlug = async () => {
+  if (!newTag.value.name.trim()) return
+  
+  try {
+    const result = await utilsApi.generateSlug(newTag.value.name, 'tag')
+    newTag.value.slug = result.slug
+  } catch (error) {
+    console.error('Failed to generate tag slug:', error)
+  }
 }
 
 const formatDate = (date: string) => formatDateTime(date)
@@ -497,19 +627,31 @@ watch(form, () => {
                 name="title"
                 class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
                 placeholder="请输入文章标题"
-                @blur="generateSlug"
+                @blur="handleTitleBlur"
               />
             </div>
             <div>
               <label for="article-slug" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Slug</label>
-              <input
-                v-model="form.slug"
-                type="text"
-                id="article-slug"
-                name="slug"
-                class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
-                placeholder="url-slug"
-              />
+              <div class="relative">
+                <input
+                  v-model="form.slug"
+                  type="text"
+                  id="article-slug"
+                  name="slug"
+                  class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none pr-8"
+                  placeholder="留空自动生成"
+                  @input="handleSlugInput"
+                />
+                <div 
+                  v-if="isGeneratingSlug" 
+                  class="absolute right-2 top-1/2 -translate-y-1/2"
+                >
+                  <svg class="w-4 h-4 animate-spin text-gray-400" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -619,7 +761,16 @@ watch(form, () => {
 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">分类</label>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">分类</label>
+                <button
+                  type="button"
+                  @click="openCategoryModal"
+                  class="text-xs text-primary hover:text-primary/80"
+                >
+                  + 新建分类
+                </button>
+              </div>
               <select
                 v-model="form.category_id"
                 class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
@@ -635,8 +786,17 @@ watch(form, () => {
               </select>
             </div>
             <div>
-              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">标签</label>
-              <div class="flex flex-wrap gap-2 p-2 bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg">
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">标签</label>
+                <button
+                  type="button"
+                  @click="openTagModal"
+                  class="text-xs text-primary hover:text-primary/80"
+                >
+                  + 新建标签
+                </button>
+              </div>
+              <div class="flex flex-wrap gap-2 p-2 bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg max-h-32 overflow-y-auto">
                 <label
                   v-for="tag in blogStore.tags"
                   :key="tag.id"
@@ -703,6 +863,170 @@ watch(form, () => {
               class="btn-primary text-sm px-4 py-1.5"
             >
               保存
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div
+      v-if="showCategoryModal"
+      class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50"
+    >
+      <div class="glass-card w-full max-w-md m-4 p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-base font-bold text-gray-900 dark:text-white">新建分类</h3>
+          <button
+            @click="showCategoryModal = false"
+            class="text-gray-400 hover:text-gray-900 dark:hover:text-white"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <form @submit.prevent="handleCreateCategory" class="space-y-3">
+          <div>
+            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">名称</label>
+            <input
+              v-model="newCategory.name"
+              type="text"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
+              placeholder="分类名称"
+              @blur="generateCategorySlug"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Slug (留空自动生成)</label>
+            <input
+              v-model="newCategory.slug"
+              type="text"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
+              placeholder="url-slug"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">描述</label>
+            <textarea
+              v-model="newCategory.description"
+              rows="2"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none resize-none"
+              placeholder="分类描述（可选）"
+            />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">图标</label>
+              <input
+                v-model="newCategory.icon"
+                type="text"
+                class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
+                placeholder="icon-name"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">颜色</label>
+              <div class="flex gap-2">
+                <input
+                  v-model="newCategory.color"
+                  type="color"
+                  class="w-10 h-9 rounded cursor-pointer"
+                />
+                <input
+                  v-model="newCategory.color"
+                  type="text"
+                  class="flex-1 px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
+                  placeholder="#3b82f6"
+                />
+              </div>
+            </div>
+          </div>
+          <div class="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              @click="showCategoryModal = false"
+              class="px-4 py-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              :disabled="isCreatingCategory"
+              class="btn-primary text-sm px-4 py-1.5 disabled:opacity-50"
+            >
+              {{ isCreatingCategory ? '创建中...' : '创建' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div
+      v-if="showTagModal"
+      class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50"
+    >
+      <div class="glass-card w-full max-w-md m-4 p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-base font-bold text-gray-900 dark:text-white">新建标签</h3>
+          <button
+            @click="showTagModal = false"
+            class="text-gray-400 hover:text-gray-900 dark:hover:text-white"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <form @submit.prevent="handleCreateTag" class="space-y-3">
+          <div>
+            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">名称</label>
+            <input
+              v-model="newTag.name"
+              type="text"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
+              placeholder="标签名称"
+              @blur="generateTagSlug"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Slug (留空自动生成)</label>
+            <input
+              v-model="newTag.slug"
+              type="text"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
+              placeholder="url-slug"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">颜色</label>
+            <div class="flex gap-2">
+              <input
+                v-model="newTag.color"
+                type="color"
+                class="w-10 h-9 rounded cursor-pointer"
+              />
+              <input
+                v-model="newTag.color"
+                type="text"
+                class="flex-1 px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
+                placeholder="#10b981"
+              />
+            </div>
+          </div>
+          <div class="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              @click="showTagModal = false"
+              class="px-4 py-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              :disabled="isCreatingTag"
+              class="btn-primary text-sm px-4 py-1.5 disabled:opacity-50"
+            >
+              {{ isCreatingTag ? '创建中...' : '创建' }}
             </button>
           </div>
         </form>

@@ -6,6 +6,7 @@ from app.core.database import get_db
 from app.models import Tag, Article, article_tags
 from app.schemas import TagCreate, TagUpdate, TagResponse
 from app.utils import get_current_user
+from app.utils.helpers import generate_slug, generate_unique_slug
 from app.services.log_service import LogService
 from app.utils.cache import cache
 
@@ -75,13 +76,25 @@ async def create_tag(
     if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="无权限创建标签")
     
-    existing = db.query(Tag).filter(
-        (Tag.name == tag_data.name) | (Tag.slug == tag_data.slug)
-    ).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Tag name or slug already exists")
+    existing_name = db.query(Tag).filter(Tag.name == tag_data.name).first()
+    if existing_name:
+        raise HTTPException(status_code=400, detail="标签名称已存在")
     
-    new_tag = Tag(**tag_data.model_dump())
+    slug = tag_data.slug
+    if not slug or not slug.strip():
+        slug = generate_slug(tag_data.name)
+        existing_slugs = [r[0] for r in db.query(Tag.slug).all()]
+        slug = generate_unique_slug(slug, existing_slugs)
+    else:
+        existing_slug = db.query(Tag).filter(Tag.slug == slug).first()
+        if existing_slug:
+            raise HTTPException(status_code=400, detail="Slug已存在")
+    
+    new_tag = Tag(
+        name=tag_data.name,
+        slug=slug,
+        color=tag_data.color
+    )
     db.add(new_tag)
     db.commit()
     db.refresh(new_tag)

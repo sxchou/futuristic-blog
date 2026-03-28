@@ -9,6 +9,7 @@ from app.schemas import (
     CategoryResponse, TagResponse, PaginatedResponse
 )
 from app.utils import get_current_user, get_current_active_user, generate_slug, calculate_reading_time
+from app.utils.helpers import generate_unique_slug
 from app.services.log_service import LogService
 from app.services.baidu_push_service import baidu_push_service
 import asyncio
@@ -238,20 +239,27 @@ async def create_article(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_active_user)
 ):
-    existing = db.query(Article).filter(Article.slug == article_data.slug).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Article with this slug already exists")
+    slug = article_data.slug
+    if not slug or not slug.strip():
+        slug = generate_slug(article_data.title)
+        existing_slugs = [r[0] for r in db.query(Article.slug).all()]
+        slug = generate_unique_slug(slug, existing_slugs)
+    else:
+        existing = db.query(Article).filter(Article.slug == slug).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Article with this slug already exists")
     
     reading_time = calculate_reading_time(article_data.content)
     
     new_article = Article(
         title=article_data.title,
-        slug=article_data.slug,
+        slug=slug,
         summary=article_data.summary,
         content=article_data.content,
         cover_image=article_data.cover_image,
         is_published=article_data.is_published,
         is_featured=article_data.is_featured,
+        is_pinned=article_data.is_pinned or False,
         category_id=article_data.category_id,
         author_id=current_user.id,
         reading_time=reading_time
