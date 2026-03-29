@@ -229,20 +229,72 @@ async def get_public_url(
     if not db_file:
         raise HTTPException(status_code=404, detail="文件不存在")
     
-    ext = db_file.filename.split('.')[-1].lower() if db_file.filename else ''
-    is_image = ext in ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp']
-    folder = 'images' if is_image else 'articles'
-    
     from app.core.config import settings
     site_url = getattr(settings, 'SITE_URL', 'https://zhouzhouya.top')
+    
+    if db_file.file_path:
+        if '/images/' in db_file.file_path.replace('\\', '/'):
+            folder = 'images'
+        else:
+            folder = 'articles'
+    else:
+        ext = db_file.filename.split('.')[-1].lower() if db_file.filename else ''
+        is_image = ext in ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp']
+        folder = 'images' if is_image else 'articles'
+    
     public_url = f"{site_url}/uploads/{folder}/{db_file.filename}"
+    
+    file_exists = os.path.exists(db_file.file_path) if db_file.file_path else False
     
     return {
         "filename": db_file.filename,
         "public_url": public_url,
         "folder": folder,
-        "exists": os.path.exists(db_file.file_path),
-        "file_path": db_file.file_path
+        "exists": file_exists,
+        "file_path": db_file.file_path,
+        "file_size": db_file.file_size
+    }
+
+@router.get("/{file_id}/debug")
+async def debug_file_url(
+    file_id: int,
+    db: Session = Depends(get_db)
+):
+    db_file = db.query(ArticleFile).filter(ArticleFile.id == file_id).first()
+    if not db_file:
+        raise HTTPException(status_code=404, detail="文件不存在")
+    
+    from app.core.config import settings
+    site_url = getattr(settings, 'SITE_URL', 'https://zhouzhouya.top')
+    
+    if db_file.file_path:
+        if '/images/' in db_file.file_path.replace('\\', '/'):
+            folder = 'images'
+        else:
+            folder = 'articles'
+    else:
+        ext = db_file.filename.split('.')[-1].lower() if db_file.filename else ''
+        is_image = ext in ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp']
+        folder = 'images' if is_image else 'articles'
+    
+    public_url = f"{site_url}/uploads/{folder}/{db_file.filename}"
+    
+    file_exists = os.path.exists(db_file.file_path) if db_file.file_path else False
+    file_size_on_disk = os.path.getsize(db_file.file_path) if file_exists and db_file.file_path else 0
+    
+    return {
+        "file_id": file_id,
+        "filename": db_file.filename,
+        "original_filename": db_file.original_filename,
+        "mime_type": db_file.mime_type,
+        "file_size_db": db_file.file_size,
+        "file_size_disk": file_size_on_disk,
+        "file_path": db_file.file_path,
+        "folder": folder,
+        "public_url": public_url,
+        "exists": file_exists,
+        "site_url": site_url,
+        "office_online_url": f"https://view.officeapps.live.com/op/view.aspx?src={quote(public_url)}"
     }
 
 @router.options("/{file_id}/preview")
