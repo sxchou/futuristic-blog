@@ -563,13 +563,13 @@ const isPreviewable = (mimeType: string): boolean => {
 
 const getFileIcon = (fileType: string, mimeType: string): string => {
   if (fileType === 'image') return '🖼️'
-  if (mimeType.includes('pdf')) return '📄'
-  if (mimeType.includes('excel') || mimeType.includes('spreadsheet') || mimeType.includes('sheet')) return '�'
-  if (mimeType.includes('powerpoint') || mimeType.includes('presentation')) return '📽️'
-  if (mimeType.includes('word') || mimeType.includes('wordprocessing')) return '�'
+  if (mimeType.includes('pdf')) return '📕'
+  if (mimeType.includes('excel') || mimeType.includes('spreadsheet') || mimeType.includes('sheet')) return '📗'
+  if (mimeType.includes('powerpoint') || mimeType.includes('presentation')) return '📙'
+  if (mimeType.includes('word') || mimeType.includes('wordprocessing')) return '📘'
   if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('7z') || mimeType.includes('compressed')) return '📦'
-  if (mimeType.includes('text/plain') || mimeType.includes('text/markdown')) return '📃'
-  return '📎'
+  if (mimeType.includes('text/plain') || mimeType.includes('text/markdown')) return '📄'
+  return '📁'
 }
 
 const openCreateModal = async () => {
