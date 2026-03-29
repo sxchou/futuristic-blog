@@ -72,10 +72,6 @@ export const fileApi = {
     return `${apiClient.defaults.baseURL}/files/${fileId}/preview`
   },
 
-  getOfficePreviewUrl(_fileId: number, originalUrl: string): string {
-    return `https://docs.google.com/viewer?url=${encodeURIComponent(originalUrl)}&embedded=true`
-  },
-
   async previewFile(fileId: number): Promise<FilePreviewResponse> {
     const response = await apiClient.get<FilePreviewResponse>(`/files/${fileId}/preview`)
     return response.data
@@ -127,15 +123,8 @@ export const getFileIcon = (fileType: string, mimeType: string): string => {
   return '📁'
 }
 
-export const isPreviewable = (mimeType: string): boolean => {
-  const archiveTypes = [
-    'application/zip',
-    'application/x-rar-compressed',
-    'application/x-7z-compressed',
-    'application/gzip',
-    'application/x-tar',
-  ]
-  return !archiveTypes.includes(mimeType)
+export const isPreviewable = (_mimeType: string): boolean => {
+  return true
 }
 
 export const formatFileSize = (bytes: number): string => {

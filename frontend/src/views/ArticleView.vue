@@ -114,48 +114,13 @@ const formatFileSize = (bytes: number): string => {
   return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
 }
 
-const isPreviewable = (mimeType: string): boolean => {
-  const archiveTypes = [
-    'application/zip',
-    'application/x-rar-compressed',
-    'application/x-7z-compressed',
-    'application/gzip',
-    'application/x-tar',
-  ]
-  return !archiveTypes.includes(mimeType)
+const isPreviewable = (_mimeType: string): boolean => {
+  return true
 }
 
 const previewFile = (file: ArticleFile) => {
-  const officeTypes = [
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'application/vnd.ms-excel',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'application/vnd.ms-powerpoint',
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  ]
-  
-  const archiveTypes = [
-    'application/zip',
-    'application/x-rar-compressed',
-    'application/x-7z-compressed',
-    'application/gzip',
-    'application/x-tar',
-  ]
-  
-  if (archiveTypes.includes(file.mime_type)) {
-    alert('压缩文件不支持在线预览，请下载后查看')
-    return
-  }
-  
-  if (officeTypes.includes(file.mime_type)) {
-    const previewUrl = fileApi.getPreviewUrl(file.id)
-    const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(previewUrl)}&embedded=true`
-    window.open(viewerUrl, '_blank')
-  } else {
-    const url = fileApi.getPreviewUrl(file.id)
-    window.open(url, '_blank')
-  }
+  const url = fileApi.getPreviewUrl(file.id)
+  window.open(url, '_blank')
 }
 
 const downloadFile = (fileId: number) => {

@@ -532,38 +532,8 @@ const handleOrderChange = async (fileId: number, orderValue: string) => {
 }
 
 const handlePreviewFile = (file: ArticleFile) => {
-  const { mime_type } = file
-  
-  const officeTypes = [
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'application/vnd.ms-excel',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'application/vnd.ms-powerpoint',
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  ]
-  
-  const archiveTypes = [
-    'application/zip',
-    'application/x-rar-compressed',
-    'application/x-7z-compressed',
-    'application/gzip',
-    'application/x-tar',
-  ]
-  
-  if (archiveTypes.includes(mime_type)) {
-    alert('压缩文件不支持在线预览，请下载后查看')
-    return
-  }
-  
-  if (officeTypes.includes(mime_type)) {
-    const previewUrl = fileApi.getPreviewUrl(file.id)
-    const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(previewUrl)}&embedded=true`
-    window.open(viewerUrl, '_blank')
-  } else {
-    const previewUrl = fileApi.getPreviewUrl(file.id)
-    window.open(previewUrl, '_blank')
-  }
+  const previewUrl = fileApi.getPreviewUrl(file.id)
+  window.open(previewUrl, '_blank')
 }
 
 const formatFileDateTime = (dateStr: string): string => {
@@ -578,15 +548,8 @@ const formatFileDateTime = (dateStr: string): string => {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
 
-const isPreviewable = (mimeType: string): boolean => {
-  const archiveTypes = [
-    'application/zip',
-    'application/x-rar-compressed',
-    'application/x-7z-compressed',
-    'application/gzip',
-    'application/x-tar',
-  ]
-  return !archiveTypes.includes(mimeType)
+const isPreviewable = (_mimeType: string): boolean => {
+  return true
 }
 
 const openCreateModal = async () => {
