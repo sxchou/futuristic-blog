@@ -159,7 +159,13 @@ class CORSStaticFiles(StaticFiles):
             response.headers["Access-Control-Allow-Origin"] = "*"
             response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
             response.headers["Access-Control-Allow-Headers"] = "*"
-            response.headers["Cache-Control"] = "public, max-age=3600"
+            
+            ext = path.lower().split('.')[-1] if '.' in path else ''
+            office_extensions = ['xlsx', 'xls', 'docx', 'doc', 'pptx', 'ppt']
+            if ext in office_extensions:
+                response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            else:
+                response.headers["Cache-Control"] = "public, max-age=3600"
         return response
 
 try:
