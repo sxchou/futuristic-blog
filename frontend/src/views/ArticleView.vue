@@ -17,6 +17,8 @@ interface ArticleFile {
   mime_type: string
   is_image: boolean
   download_count: number
+  view_count: number
+  order: number
   created_at: string
 }
 
@@ -120,9 +122,40 @@ const getFileIcon = (fileType: string, mimeType: string): string => {
   return '📎'
 }
 
+const isPreviewable = (mimeType: string): boolean => {
+  const previewableTypes = [
+    'application/pdf',
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'image/svg+xml',
+    'text/plain',
+    'text/markdown',
+  ]
+  return previewableTypes.includes(mimeType)
+}
+
+const previewFile = (fileId: number) => {
+  const url = fileApi.getPreviewUrl(fileId)
+  window.open(url, '_blank')
+}
+
 const downloadFile = (fileId: number) => {
   const url = fileApi.getDownloadUrl(fileId)
   window.open(url, '_blank')
+}
+
+const formatFileDateTime = (dateStr: string): string => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const seconds = String(date.getSeconds()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
 
 const fetchArticleFiles = async (articleId: number) => {
@@ -306,24 +339,43 @@ onUnmounted(() => {
               :key="file.id"
               class="flex items-center justify-between p-4 bg-white dark:bg-dark-200 rounded-lg border border-gray-200 dark:border-white/5 hover:border-primary/30 transition-colors"
             >
-              <div class="flex items-center gap-3">
-                <span class="text-2xl">{{ getFileIcon(file.file_type, file.mime_type) }}</span>
-                <div>
-                  <div class="text-gray-900 dark:text-white font-medium">{{ file.original_filename }}</div>
-                  <div class="text-sm text-gray-500">
-                    {{ formatFileSize(file.file_size) }} · 下载 {{ file.download_count }} 次
+              <div class="flex items-center gap-3 flex-1 min-w-0">
+                <span class="text-2xl flex-shrink-0">{{ getFileIcon(file.file_type, file.mime_type) }}</span>
+                <div class="min-w-0 flex-1">
+                  <div class="text-gray-900 dark:text-white font-medium truncate">{{ file.original_filename }}</div>
+                  <div class="text-sm text-gray-500 flex flex-wrap gap-x-2">
+                    <span>{{ formatFileSize(file.file_size) }}</span>
+                    <span>·</span>
+                    <span>上传: {{ formatFileDateTime(file.created_at) }}</span>
+                    <span>·</span>
+                    <span>下载 {{ file.download_count }} 次</span>
+                    <span>·</span>
+                    <span>预览 {{ file.view_count }} 次</span>
                   </div>
                 </div>
               </div>
-              <button
-                @click="downloadFile(file.id)"
-                class="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                <span>下载</span>
-              </button>
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <button
+                  v-if="isPreviewable(file.mime_type)"
+                  @click="previewFile(file.id)"
+                  class="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-dark-100 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-50 transition-colors"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  <span>预览</span>
+                </button>
+                <button
+                  @click="downloadFile(file.id)"
+                  class="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span>下载</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

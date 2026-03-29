@@ -4,11 +4,11 @@ import aiofiles
 from datetime import datetime
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models import ArticleFile
-from app.schemas import ArticleFileResponse
+from app.schemas import ArticleFileResponse, ArticleFileUpdate
 from app.utils import get_current_active_user
 from app.utils.timezone import get_now
 from app.core.config import settings
@@ -29,10 +29,23 @@ ALLOWED_FILE_TYPES = [
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "application/vnd.ms-excel",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     "text/plain",
     "text/markdown",
 ]
 MAX_FILE_SIZE = 10 * 1024 * 1024
+
+PREVIEWABLE_TYPES = {
+    "application/pdf": "pdf",
+    "image/jpeg": "image",
+    "image/png": "image",
+    "image/gif": "image",
+    "image/webp": "image",
+    "image/svg+xml": "image",
+    "text/plain": "text",
+    "text/markdown": "text",
+}
 
 
 def ensure_upload_dir():
@@ -170,7 +183,7 @@ async def get_files(
     if file_type:
         query = query.filter(ArticleFile.file_type == file_type)
     
-    return query.order_by(ArticleFile.created_at.desc()).all()
+    return query.order_by(ArticleFile.order.asc(), ArticleFile.created_at.asc()).all()
 
 
 @router.get("/{file_id}", response_model=ArticleFileResponse)
@@ -181,7 +194,52 @@ async def get_file_info(
     db_file = db.query(ArticleFile).filter(ArticleFile.id == file_id).first()
     if not db_file:
         raise HTTPException(status_code=404, detail="文件不存在")
+    
+    db_file.view_count += 1
+    db.commit()
+    
     return db_file
+
+
+@router.get("/{file_id}/preview")
+async def preview_file(
+    file_id: int,
+    db: Session = Depends(get_db)
+):
+    db_file = db.query(ArticleFile).filter(ArticleFile.id == file_id).first()
+    if not db_file:
+        raise HTTPException(status_code=404, detail="文件不存在")
+    
+    if not os.path.exists(db_file.file_path):
+        raise HTTPException(status_code=404, detail="文件已被删除")
+    
+    preview_type = PREVIEWABLE_TYPES.get(db_file.mime_type)
+    
+    if not preview_type:
+        raise HTTPException(status_code=400, detail="该文件类型不支持预览")
+    
+    db_file.view_count += 1
+    db.commit()
+    
+    if preview_type == "text":
+        async with aiofiles.open(db_file.file_path, 'r', encoding='utf-8') as f:
+            content = await f.read()
+        return {
+            "type": "text",
+            "content": content,
+            "filename": db_file.original_filename
+        }
+    elif preview_type == "pdf":
+        return FileResponse(
+            path=db_file.file_path,
+            media_type="application/pdf",
+            filename=db_file.original_filename
+        )
+    else:
+        return FileResponse(
+            path=db_file.file_path,
+            media_type=db_file.mime_type
+        )
 
 
 @router.get("/{file_id}/download")
@@ -223,3 +281,41 @@ async def delete_file(
     db.commit()
     
     return {"message": "文件已删除"}
+
+
+@router.patch("/{file_id}", response_model=ArticleFileResponse)
+async def update_file(
+    file_id: int,
+    update_data: ArticleFileUpdate,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_active_user)
+):
+    db_file = db.query(ArticleFile).filter(ArticleFile.id == file_id).first()
+    if not db_file:
+        raise HTTPException(status_code=404, detail="文件不存在")
+    
+    if update_data.order is not None:
+        db_file.order = update_data.order
+    
+    db.commit()
+    db.refresh(db_file)
+    
+    return db_file
+
+
+@router.post("/batch-order")
+async def batch_update_order(
+    orders: List[dict],
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_active_user)
+):
+    for item in orders:
+        file_id = item.get("id")
+        order = item.get("order")
+        if file_id is not None and order is not None:
+            db_file = db.query(ArticleFile).filter(ArticleFile.id == file_id).first()
+            if db_file:
+                db_file.order = order
+    
+    db.commit()
+    return {"message": "排序已更新"}
