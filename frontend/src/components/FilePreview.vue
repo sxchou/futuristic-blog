@@ -29,22 +29,30 @@ const previewType = computed(() => {
       mimeType.includes('json') || 
       mimeType.includes('javascript') ||
       mimeType.includes('xml') ||
-      mimeType.includes('markdown')) return 'text'
+      mimeType.includes('markdown') ||
+      filename.endsWith('.txt') ||
+      filename.endsWith('.md') ||
+      filename.endsWith('.json') ||
+      filename.endsWith('.js') ||
+      filename.endsWith('.css') ||
+      filename.endsWith('.html') ||
+      filename.endsWith('.xml')) return 'text'
   if (mimeType.includes('excel') || mimeType.includes('spreadsheet') || 
       mimeType.includes('sheet') || filename.endsWith('.xlsx') || 
-      filename.endsWith('.xls')) return 'excel'
+      filename.endsWith('.xls') || filename.endsWith('.csv')) return 'excel'
   if (mimeType.includes('word') || mimeType.includes('document') ||
       filename.endsWith('.docx')) return 'word'
   if (mimeType.includes('powerpoint') || mimeType.includes('presentation') ||
-      filename.endsWith('.pptx') || filename.endsWith('.ppt')) return 'powerpoint'
+      filename.endsWith('.pptx')) return 'powerpoint'
   if (mimeType.includes('zip') || mimeType.includes('rar') || 
       mimeType.includes('7z') || mimeType.includes('compressed') ||
       mimeType.includes('tar') || mimeType.includes('gzip')) return 'archive'
   
-  return 'office'
+  return 'unsupported'
 })
 
 const textContent = ref('')
+const textEncoding = ref('UTF-8')
 const pdfDoc = ref<pdfjsLib.PDFDocumentProxy | null>(null)
 const currentPage = ref(1)
 const totalPages = ref(0)
@@ -54,12 +62,92 @@ const excelSheets = ref<string[]>([])
 const currentSheet = ref(0)
 const archiveFiles = ref<{ name: string; size: number; type: string }[]>([])
 const wordHtml = ref('')
+const pptSlides = ref<string[]>([])
+const currentSlide = ref(0)
 
 const imageUrl = computed(() => props.fileUrl)
-const officeViewerUrl = computed(() => {
-  const encodedUrl = encodeURIComponent(props.fileUrl)
-  return `https://view.officeapps.live.com/op/view.aspx?src=${encodedUrl}`
-})
+
+const detectEncoding = (buffer: ArrayBuffer): string => {
+  const uint8Array = new Uint8Array(buffer)
+  
+  if (uint8Array[0] === 0xEF && uint8Array[1] === 0xBB && uint8Array[2] === 0xBF) {
+    return 'UTF-8'
+  }
+  if (uint8Array[0] === 0xFF && uint8Array[1] === 0xFE) {
+    return 'UTF-16LE'
+  }
+  if (uint8Array[0] === 0xFE && uint8Array[1] === 0xFF) {
+    return 'UTF-16BE'
+  }
+  
+  let isUtf8 = true
+  for (let i = 0; i < buffer.byteLength && i < 10000; i++) {
+    const byte = uint8Array[i]
+    if (byte > 127) {
+      if (byte >= 0xC0 && byte <= 0xDF) {
+        if (i + 1 >= buffer.byteLength || (uint8Array[i + 1] & 0xC0) !== 0x80) {
+          isUtf8 = false
+          break
+        }
+        i++
+      } else if (byte >= 0xE0 && byte <= 0xEF) {
+        if (i + 2 >= buffer.byteLength || 
+            (uint8Array[i + 1] & 0xC0) !== 0x80 ||
+            (uint8Array[i + 2] & 0xC0) !== 0x80) {
+          isUtf8 = false
+          break
+        }
+        i += 2
+      } else if (byte >= 0xF0 && byte <= 0xF7) {
+        if (i + 3 >= buffer.byteLength ||
+            (uint8Array[i + 1] & 0xC0) !== 0x80 ||
+            (uint8Array[i + 2] & 0xC0) !== 0x80 ||
+            (uint8Array[i + 3] & 0xC0) !== 0x80) {
+          isUtf8 = false
+          break
+        }
+        i += 3
+      } else {
+        isUtf8 = false
+        break
+      }
+    }
+  }
+  
+  if (isUtf8) return 'UTF-8'
+  
+  const gbkCommonChars = new Set()
+  for (let i = 0x81; i <= 0xFE; i++) {
+    for (let j = 0x40; j <= 0xFE; j++) {
+      if (j !== 0x7F) {
+        gbkCommonChars.add((i << 8) | j)
+      }
+    }
+  }
+  
+  let gbkScore = 0
+  for (let i = 0; i < buffer.byteLength - 1 && i < 10000; i++) {
+    const byte1 = uint8Array[i]
+    const byte2 = uint8Array[i + 1]
+    if (byte1 >= 0x81 && byte1 <= 0xFE && byte2 >= 0x40 && byte2 <= 0xFE && byte2 !== 0x7F) {
+      gbkScore++
+    }
+  }
+  
+  if (gbkScore > 10) return 'GBK'
+  
+  return 'UTF-8'
+}
+
+const decodeBuffer = (buffer: ArrayBuffer, encoding: string): string => {
+  try {
+    const decoder = new TextDecoder(encoding)
+    return decoder.decode(buffer)
+  } catch {
+    const decoder = new TextDecoder('UTF-8')
+    return decoder.decode(buffer)
+  }
+}
 
 const loadPreview = async () => {
   loading.value = true
@@ -82,9 +170,13 @@ const loadPreview = async () => {
       case 'word':
         await loadWord()
         break
+      case 'powerpoint':
+        await loadPowerPoint()
+        break
       case 'image':
         break
       default:
+        error.value = '此文件类型暂不支持预览，请下载后查看'
         break
     }
   } catch (err) {
@@ -96,7 +188,11 @@ const loadPreview = async () => {
 }
 
 const loadPdf = async () => {
-  const loadingTask = pdfjsLib.getDocument(props.fileUrl)
+  const loadingTask = pdfjsLib.getDocument({
+    url: props.fileUrl,
+    cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
+    cMapPacked: true,
+  })
   pdfDoc.value = await loadingTask.promise
   totalPages.value = pdfDoc.value.numPages
   currentPage.value = 1
@@ -140,13 +236,28 @@ const nextPage = async () => {
 
 const loadText = async () => {
   const response = await fetch(props.fileUrl)
-  textContent.value = await response.text()
+  const buffer = await response.arrayBuffer()
+  
+  const encoding = detectEncoding(buffer)
+  textEncoding.value = encoding
+  
+  textContent.value = decodeBuffer(buffer, encoding)
 }
 
 const loadExcel = async () => {
   const response = await fetch(props.fileUrl)
   const arrayBuffer = await response.arrayBuffer()
-  const workbook = XLSX.read(arrayBuffer, { type: 'array' })
+  
+  const isCsv = props.filename.toLowerCase().endsWith('.csv')
+  
+  let workbook: XLSX.WorkBook
+  if (isCsv) {
+    const decoder = new TextDecoder('utf-8')
+    const text = decoder.decode(arrayBuffer)
+    workbook = XLSX.read(text, { type: 'string' })
+  } else {
+    workbook = XLSX.read(arrayBuffer, { type: 'array' })
+  }
   
   excelSheets.value = workbook.SheetNames
   currentSheet.value = 0
@@ -157,7 +268,7 @@ const loadExcel = async () => {
 const loadSheet = (workbook: XLSX.WorkBook, sheetIndex: number) => {
   const sheetName = workbook.SheetNames[sheetIndex]
   const worksheet = workbook.Sheets[sheetName]
-  const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as string[][]
+  const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' }) as string[][]
   excelData.value = data
 }
 
@@ -202,7 +313,44 @@ const loadWord = async () => {
   const response = await fetch(props.fileUrl)
   const arrayBuffer = await response.arrayBuffer()
   const result = await mammoth.convertToHtml({ arrayBuffer })
-  wordHtml.value = result.value
+  wordHtml.value = result.value || '<p>文档内容为空或无法解析</p>'
+}
+
+const loadPowerPoint = async () => {
+  const response = await fetch(props.fileUrl)
+  const arrayBuffer = await response.arrayBuffer()
+  const zip = await JSZip.loadAsync(arrayBuffer)
+  
+  const slides: string[] = []
+  
+  const slideFiles: string[] = []
+  zip.forEach((relativePath) => {
+    if (relativePath.match(/ppt\/slides\/slide\d+\.xml$/)) {
+      slideFiles.push(relativePath)
+    }
+  })
+  
+  slideFiles.sort((a, b) => {
+    const numA = parseInt(a.match(/slide(\d+)\.xml$/)?.[1] || '0')
+    const numB = parseInt(b.match(/slide(\d+)\.xml$/)?.[1] || '0')
+    return numA - numB
+  })
+  
+  for (const slideFile of slideFiles) {
+    const content = await zip.file(slideFile)?.async('string')
+    if (content) {
+      const textMatches = content.match(/<a:t>([^<]*)<\/a:t>/g)
+      if (textMatches) {
+        const texts = textMatches.map(m => m.replace(/<a:t>|<\/a:t>/g, '')).join(' ')
+        slides.push(texts)
+      } else {
+        slides.push('')
+      }
+    }
+  }
+  
+  pptSlides.value = slides
+  currentSlide.value = 0
 }
 
 const formatFileSize = (bytes: number): string => {
@@ -240,6 +388,9 @@ onMounted(() => {
           <span class="text-xs px-2 py-1 bg-gray-100 dark:bg-dark-100 text-gray-600 dark:text-gray-400 rounded">
             {{ mimeType }}
           </span>
+          <span v-if="textEncoding !== 'UTF-8'" class="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded">
+            {{ textEncoding }}
+          </span>
         </div>
         <div class="flex items-center gap-2">
           <button
@@ -272,6 +423,12 @@ onMounted(() => {
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
           <p>{{ error }}</p>
+          <button
+            @click="downloadFile"
+            class="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            下载文件
+          </button>
         </div>
         
         <template v-else>
@@ -307,7 +464,7 @@ onMounted(() => {
           </div>
           
           <div v-else-if="previewType === 'text'" class="bg-gray-50 dark:bg-dark-100 rounded-lg p-4 overflow-auto max-h-[70vh]">
-            <pre class="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap font-mono">{{ textContent }}</pre>
+            <pre class="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap font-mono break-all">{{ textContent }}</pre>
           </div>
           
           <div v-else-if="previewType === 'excel'" class="overflow-auto max-h-[70vh]">
@@ -350,6 +507,35 @@ onMounted(() => {
             <div v-html="wordHtml"></div>
           </div>
           
+          <div v-else-if="previewType === 'powerpoint'" class="max-h-[70vh] overflow-auto">
+            <div v-if="pptSlides.length > 1" class="sticky top-0 z-10 bg-white dark:bg-dark-200 py-2 mb-4 flex items-center justify-center gap-4">
+              <button
+                @click="currentSlide = Math.max(0, currentSlide - 1)"
+                :disabled="currentSlide <= 0"
+                class="p-2 rounded-lg bg-gray-100 dark:bg-dark-100 disabled:opacity-50 hover:bg-gray-200 dark:hover:bg-dark-50"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <span class="text-sm text-gray-600 dark:text-gray-400 min-w-[80px] text-center">
+                {{ currentSlide + 1 }} / {{ pptSlides.length }}
+              </span>
+              <button
+                @click="currentSlide = Math.min(pptSlides.length - 1, currentSlide + 1)"
+                :disabled="currentSlide >= pptSlides.length - 1"
+                class="p-2 rounded-lg bg-gray-100 dark:bg-dark-100 disabled:opacity-50 hover:bg-gray-200 dark:hover:bg-dark-50"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+            <div class="bg-gray-50 dark:bg-dark-100 rounded-lg p-6 min-h-[300px]">
+              <p class="text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{{ pptSlides[currentSlide] || '此幻灯片无文本内容' }}</p>
+            </div>
+          </div>
+          
           <div v-else-if="previewType === 'archive'" class="max-h-[70vh] overflow-auto">
             <div class="space-y-1">
               <div
@@ -371,13 +557,17 @@ onMounted(() => {
             </div>
           </div>
           
-          <div v-else class="flex flex-col h-full">
-            <p class="text-gray-500 dark:text-gray-400 mb-4 text-center">使用微软 Office Online 预览</p>
-            <iframe
-              :src="officeViewerUrl"
-              class="w-full flex-1 min-h-[60vh] border-0 rounded-lg"
-              sandbox="allow-scripts allow-same-origin"
-            ></iframe>
+          <div v-else class="flex flex-col items-center justify-center h-64 text-gray-500 dark:text-gray-400">
+            <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <p class="mb-4">此文件类型暂不支持在线预览</p>
+            <button
+              @click="downloadFile"
+              class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              下载文件
+            </button>
           </div>
         </template>
       </div>
