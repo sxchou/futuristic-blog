@@ -43,14 +43,14 @@ const newCategory = ref({
   name: '',
   slug: '',
   description: '',
-  color: '#3b82f6',
+  color: '#00d4ff',
   order: 0
 })
 
 const newTag = ref({
   name: '',
   slug: '',
-  color: '#10b981'
+  color: '#00d4ff'
 })
 
 const form = ref({
@@ -305,7 +305,7 @@ const openCategoryModal = () => {
     name: '',
     slug: '',
     description: '',
-    color: '#3b82f6',
+    color: '#00d4ff',
     order: 0
   }
   showCategoryModal.value = true
@@ -315,7 +315,7 @@ const openTagModal = () => {
   newTag.value = {
     name: '',
     slug: '',
-    color: '#10b981'
+    color: '#00d4ff'
   }
   showTagModal.value = true
 }
@@ -973,7 +973,7 @@ watch(form, () => {
                 id="new-category-color-text"
                 name="color-text"
                 class="flex-1 px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
-                placeholder="#3b82f6"
+                placeholder="#00d4ff"
               />
             </div>
           </div>
@@ -1053,7 +1053,7 @@ watch(form, () => {
                 id="new-tag-color-text"
                 name="color-text"
                 class="flex-1 px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
-                placeholder="#10b981"
+                placeholder="#00d4ff"
               />
             </div>
           </div>
