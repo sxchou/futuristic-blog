@@ -543,6 +543,19 @@ const handlePreviewFile = (file: ArticleFile) => {
     'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   ]
   
+  const archiveTypes = [
+    'application/zip',
+    'application/x-rar-compressed',
+    'application/x-7z-compressed',
+    'application/gzip',
+    'application/x-tar',
+  ]
+  
+  if (archiveTypes.includes(mime_type)) {
+    alert('压缩文件不支持在线预览，请下载后查看')
+    return
+  }
+  
   if (officeTypes.includes(mime_type)) {
     const previewUrl = fileApi.getPreviewUrl(file.id)
     const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(previewUrl)}&embedded=true`
@@ -565,8 +578,15 @@ const formatFileDateTime = (dateStr: string): string => {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
 
-const isPreviewable = (_mimeType: string): boolean => {
-  return true
+const isPreviewable = (mimeType: string): boolean => {
+  const archiveTypes = [
+    'application/zip',
+    'application/x-rar-compressed',
+    'application/x-7z-compressed',
+    'application/gzip',
+    'application/x-tar',
+  ]
+  return !archiveTypes.includes(mimeType)
 }
 
 const openCreateModal = async () => {

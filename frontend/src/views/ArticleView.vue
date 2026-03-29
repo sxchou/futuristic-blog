@@ -114,8 +114,15 @@ const formatFileSize = (bytes: number): string => {
   return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
 }
 
-const isPreviewable = (_mimeType: string): boolean => {
-  return true
+const isPreviewable = (mimeType: string): boolean => {
+  const archiveTypes = [
+    'application/zip',
+    'application/x-rar-compressed',
+    'application/x-7z-compressed',
+    'application/gzip',
+    'application/x-tar',
+  ]
+  return !archiveTypes.includes(mimeType)
 }
 
 const previewFile = (file: ArticleFile) => {
@@ -127,6 +134,19 @@ const previewFile = (file: ArticleFile) => {
     'application/vnd.ms-powerpoint',
     'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   ]
+  
+  const archiveTypes = [
+    'application/zip',
+    'application/x-rar-compressed',
+    'application/x-7z-compressed',
+    'application/gzip',
+    'application/x-tar',
+  ]
+  
+  if (archiveTypes.includes(file.mime_type)) {
+    alert('压缩文件不支持在线预览，请下载后查看')
+    return
+  }
   
   if (officeTypes.includes(file.mime_type)) {
     const previewUrl = fileApi.getPreviewUrl(file.id)

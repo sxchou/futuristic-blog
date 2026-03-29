@@ -127,8 +127,15 @@ export const getFileIcon = (fileType: string, mimeType: string): string => {
   return '📁'
 }
 
-export const isPreviewable = (_mimeType: string): boolean => {
-  return true
+export const isPreviewable = (mimeType: string): boolean => {
+  const archiveTypes = [
+    'application/zip',
+    'application/x-rar-compressed',
+    'application/x-7z-compressed',
+    'application/gzip',
+    'application/x-tar',
+  ]
+  return !archiveTypes.includes(mimeType)
 }
 
 export const formatFileSize = (bytes: number): string => {
