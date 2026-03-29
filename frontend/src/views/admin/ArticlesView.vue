@@ -548,18 +548,8 @@ const formatFileDateTime = (dateStr: string): string => {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
 
-const isPreviewable = (mimeType: string): boolean => {
-  const previewableTypes = [
-    'application/pdf',
-    'image/jpeg',
-    'image/png',
-    'image/gif',
-    'image/webp',
-    'image/svg+xml',
-    'text/plain',
-    'text/markdown',
-  ]
-  return previewableTypes.includes(mimeType)
+const isPreviewable = (_mimeType: string): boolean => {
+  return true
 }
 
 const openCreateModal = async () => {

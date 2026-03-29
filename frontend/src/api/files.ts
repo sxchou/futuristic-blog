@@ -123,18 +123,8 @@ export const getFileIcon = (fileType: string, mimeType: string): string => {
   return '📁'
 }
 
-export const isPreviewable = (mimeType: string): boolean => {
-  const previewableTypes = [
-    'application/pdf',
-    'image/jpeg',
-    'image/png',
-    'image/gif',
-    'image/webp',
-    'image/svg+xml',
-    'text/plain',
-    'text/markdown',
-  ]
-  return previewableTypes.includes(mimeType)
+export const isPreviewable = (_mimeType: string): boolean => {
+  return true
 }
 
 export const formatFileSize = (bytes: number): string => {

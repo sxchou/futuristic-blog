@@ -114,18 +114,8 @@ const formatFileSize = (bytes: number): string => {
   return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
 }
 
-const isPreviewable = (mimeType: string): boolean => {
-  const previewableTypes = [
-    'application/pdf',
-    'image/jpeg',
-    'image/png',
-    'image/gif',
-    'image/webp',
-    'image/svg+xml',
-    'text/plain',
-    'text/markdown',
-  ]
-  return previewableTypes.includes(mimeType)
+const isPreviewable = (_mimeType: string): boolean => {
+  return true
 }
 
 const previewFile = (fileId: number) => {

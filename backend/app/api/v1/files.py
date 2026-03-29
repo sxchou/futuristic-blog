@@ -43,8 +43,21 @@ PREVIEWABLE_TYPES = {
     "image/gif": "image",
     "image/webp": "image",
     "image/svg+xml": "image",
+    "image/bmp": "image",
+    "image/tiff": "image",
     "text/plain": "text",
     "text/markdown": "text",
+    "text/html": "text",
+    "text/css": "text",
+    "text/javascript": "text",
+    "application/json": "text",
+    "application/xml": "text",
+    "application/msword": "office",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "office",
+    "application/vnd.ms-excel": "office",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "office",
+    "application/vnd.ms-powerpoint": "office",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": "office",
 }
 
 
@@ -215,9 +228,6 @@ async def preview_file(
     
     preview_type = PREVIEWABLE_TYPES.get(db_file.mime_type)
     
-    if not preview_type:
-        raise HTTPException(status_code=400, detail="该文件类型不支持预览")
-    
     db_file.view_count += 1
     db.commit()
     
@@ -229,10 +239,10 @@ async def preview_file(
             "content": content,
             "filename": db_file.original_filename
         }
-    elif preview_type == "pdf":
+    elif preview_type == "office":
         return FileResponse(
             path=db_file.file_path,
-            media_type="application/pdf",
+            media_type=db_file.mime_type,
             filename=db_file.original_filename
         )
     else:
