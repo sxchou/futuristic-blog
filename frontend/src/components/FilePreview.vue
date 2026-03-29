@@ -21,7 +21,7 @@ const emit = defineEmits<{
 
 const loading = ref(true)
 const error = ref('')
-const previewMode = ref<'local' | 'online'>('online')
+const previewMode = ref<'local' | 'online'>('local')
 const publicUrl = ref<string | null>(null)
 
 const previewType = computed(() => {
@@ -192,30 +192,29 @@ const loadPreview = async () => {
   officePreviewError.value = ''
   
   if (isOfficeFile.value) {
-    if (isProduction.value) {
-      try {
-        const result = await fileApi.getPublicUrl(props.fileId)
-        if (result.exists) {
-          publicUrl.value = result.public_url
-          previewMode.value = 'online'
-          loading.value = false
-          return
-        } else {
-          error.value = '文件不存在或已被删除'
-          loading.value = false
-          return
+    try {
+      const result = await fileApi.getPublicUrl(props.fileId)
+      if (result.exists) {
+        publicUrl.value = result.public_url
+        if (previewMode.value === 'local') {
+          if (previewType.value === 'excel') {
+            await loadExcel()
+          } else if (previewType.value === 'word') {
+            await loadWord()
+          } else {
+            officePreviewError.value = '此文件类型暂不支持本地预览，请下载后查看'
+          }
         }
-      } catch (err) {
-        console.error('Failed to get public URL:', err)
-        error.value = '获取文件地址失败，请稍后重试'
-        loading.value = false
-        return
+      } else {
+        error.value = '文件不存在或已被删除'
       }
-    } else {
-      error.value = 'Office 文件在线预览需要部署到公网环境（HTTPS）。\n本地开发环境请下载文件后查看。'
+    } catch (err) {
+      console.error('Failed to get public URL:', err)
+      error.value = '获取文件地址失败，请稍后重试'
+    } finally {
       loading.value = false
-      return
     }
+    return
   }
   
   try {
@@ -270,27 +269,34 @@ const loadWord = async () => {
   wordContent.value = result.value
 }
 
-const handleOfficeOnlineError = () => {
-  officePreviewError.value = '在线预览服务暂时不可用，正在尝试本地预览...'
+const handleOfficeOnlineError = async () => {
+  officePreviewError.value = '在线预览服务暂时不可用，正在切换到本地预览...'
   previewMode.value = 'local'
   loading.value = true
   
-  setTimeout(async () => {
-    try {
-      if (previewType.value === 'excel') {
-        await loadExcel()
-      } else if (previewType.value === 'word') {
-        await loadWord()
-      } else {
-        officePreviewError.value = '此文件类型暂不支持本地预览，请下载后查看'
-      }
-    } catch (err) {
-      console.error('Local preview error:', err)
-      officePreviewError.value = '本地预览失败，请下载文件后查看'
-    } finally {
-      loading.value = false
+  try {
+    if (previewType.value === 'excel') {
+      await loadExcel()
+    } else if (previewType.value === 'word') {
+      await loadWord()
+    } else {
+      officePreviewError.value = '此文件类型暂不支持本地预览，请下载后查看'
     }
-  }, 100)
+  } catch (err) {
+    console.error('Local preview error:', err)
+    officePreviewError.value = '本地预览失败，请下载文件后查看'
+  } finally {
+    loading.value = false
+  }
+}
+
+const switchToOnlinePreview = () => {
+  if (!isProduction.value) {
+    error.value = 'Office 文件在线预览需要部署到公网环境（HTTPS）'
+    return
+  }
+  previewMode.value = 'online'
+  officePreviewError.value = ''
 }
 
 const loadPdf = async () => {
@@ -482,7 +488,7 @@ onMounted(() => {
         </div>
         
         <template v-else>
-          <div v-if="isOfficeFile && isProduction && previewMode === 'online'" class="h-full">
+          <div v-if="isOfficeFile && previewMode === 'online' && isProduction" class="h-full">
             <div v-if="officePreviewError" class="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
               <p class="text-sm text-yellow-700 dark:text-yellow-300">{{ officePreviewError }}</p>
             </div>
@@ -506,19 +512,28 @@ onMounted(() => {
               v-if="!officePreviewError"
               :src="officeOnlineUrl!"
               class="w-full h-[65vh] border-0 rounded-lg bg-white"
-              sandbox="allow-scripts allow-same-origin allow-popups"
+              sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-top-navigation"
               @error="handleOfficeOnlineError"
             ></iframe>
           </div>
           
           <div v-else-if="isOfficeFile && previewMode === 'local'" class="h-full">
-            <div class="mb-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center gap-2">
-              <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span class="text-sm text-green-700 dark:text-green-300">
-                本地预览模式
-              </span>
+            <div class="mb-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span class="text-sm text-green-700 dark:text-green-300">
+                  本地预览模式
+                </span>
+              </div>
+              <button
+                v-if="isProduction"
+                @click="switchToOnlinePreview"
+                class="text-sm text-green-600 dark:text-green-400 hover:underline"
+              >
+                切换到在线预览
+              </button>
             </div>
             
             <div v-if="loading" class="flex items-center justify-center h-64">
