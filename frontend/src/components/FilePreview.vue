@@ -85,14 +85,19 @@ const staticFileUrl = computed(() => {
 })
 
 const officeOnlineUrl = computed(() => {
-  if (!isProduction.value) return null
   const fileUrl = staticFileUrl.value || fullFileUrl.value
   console.log('=== Office Online Debug ===')
   console.log('filename:', props.filename)
   console.log('staticFileUrl:', staticFileUrl.value)
   console.log('fullFileUrl:', fullFileUrl.value)
-  console.log('origin:', window.location.origin)
+  console.log('origin:', typeof window !== 'undefined' ? window.location.origin : 'N/A')
   console.log('isProduction:', isProduction.value)
+  
+  if (!isProduction.value) {
+    console.log('Not production environment, Office Online disabled')
+    return null
+  }
+  
   const url = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(fileUrl)}`
   console.log('Final URL:', url)
   return url

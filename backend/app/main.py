@@ -1,9 +1,10 @@
 from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse, Response
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.staticfiles import StaticFiles
+from starlette.responses import FileResponse as StarletteFileResponse
 from app.core.config import settings
 from app.core.database import engine, Base, SessionLocal
 from app.api import router as api_router
@@ -149,8 +150,19 @@ def ensure_uploads_dir():
 
 
 uploads_dir = ensure_uploads_dir()
+
+class CORSStaticFiles(StaticFiles):
+    async def get_response(self, path: str, scope):
+        response = await super().get_response(path, scope)
+        if isinstance(response, StarletteFileResponse):
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+            response.headers["Access-Control-Allow-Headers"] = "*"
+            response.headers["Cache-Control"] = "public, max-age=3600"
+        return response
+
 try:
-    app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
+    app.mount("/uploads", CORSStaticFiles(directory=uploads_dir), name="uploads")
 except Exception as e:
     logger.warning(f"Failed to mount uploads directory: {e}")
 
