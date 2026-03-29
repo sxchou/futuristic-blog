@@ -504,6 +504,7 @@ class ProfileResponse(ProfileBase):
 class ArticleFileBase(BaseModel):
     filename: str
     original_filename: str
+    file_path: Optional[str] = None
     file_size: int
     file_type: str
     mime_type: str

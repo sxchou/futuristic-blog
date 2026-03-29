@@ -75,10 +75,27 @@ const fullFileUrl = computed(() => {
   return `${origin}${props.fileUrl}`
 })
 
+const staticFileUrl = computed(() => {
+  if (!props.filename) return null
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  const ext = props.filename.split('.').pop()?.toLowerCase()
+  const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes(ext || '')
+  const folder = isImage ? 'images' : 'articles'
+  return `${origin}/uploads/${folder}/${props.filename}`
+})
+
 const officeOnlineUrl = computed(() => {
   if (!isProduction.value) return null
-  console.log('Office Online URL:', fullFileUrl.value)
-  return `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(fullFileUrl.value)}`
+  const fileUrl = staticFileUrl.value || fullFileUrl.value
+  console.log('=== Office Online Debug ===')
+  console.log('filename:', props.filename)
+  console.log('staticFileUrl:', staticFileUrl.value)
+  console.log('fullFileUrl:', fullFileUrl.value)
+  console.log('origin:', window.location.origin)
+  console.log('isProduction:', isProduction.value)
+  const url = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(fileUrl)}`
+  console.log('Final URL:', url)
+  return url
 })
 
 const textContent = ref('')

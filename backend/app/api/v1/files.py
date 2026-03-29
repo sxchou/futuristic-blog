@@ -215,6 +215,18 @@ async def get_file_info(
     return db_file
 
 
+@router.options("/{file_id}/preview")
+async def preview_file_options():
+    return Response(
+        content="",
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+            "Access-Control-Max-Age": "86400"
+        }
+    )
+
 @router.get("/{file_id}/preview")
 async def preview_file(
     file_id: int,
