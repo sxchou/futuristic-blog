@@ -230,7 +230,7 @@ async def get_public_url(
         raise HTTPException(status_code=404, detail="文件不存在")
     
     from app.core.config import settings
-    site_url = getattr(settings, 'SITE_URL', 'https://zhouzhouya.top')
+    site_url = getattr(settings, 'SITE_URL', None) or 'https://zhouzhouya.top'
     
     if db_file.file_path:
         if '/images/' in db_file.file_path.replace('\\', '/'):
@@ -265,7 +265,7 @@ async def debug_file_url(
         raise HTTPException(status_code=404, detail="文件不存在")
     
     from app.core.config import settings
-    site_url = getattr(settings, 'SITE_URL', 'https://zhouzhouya.top')
+    site_url = getattr(settings, 'SITE_URL', None) or 'https://zhouzhouya.top'
     
     if db_file.file_path:
         if '/images/' in db_file.file_path.replace('\\', '/'):
