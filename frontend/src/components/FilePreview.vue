@@ -92,6 +92,8 @@ const currentPage = ref(1)
 const totalPages = ref(0)
 const pdfScale = ref(1.5)
 const archiveFiles = ref<{ name: string; size: number; type: string }[]>([])
+const officeLoading = ref(true)
+const officeError = ref(false)
 
 const imageUrl = computed(() => fullFileUrl.value)
 
@@ -171,6 +173,8 @@ const decodeBuffer = (buffer: ArrayBuffer, encoding: string): string => {
 const loadPreview = async () => {
   loading.value = true
   error.value = ''
+  officeLoading.value = true
+  officeError.value = false
   
   if (isOfficeFile.value) {
     if (!isProduction.value) {
@@ -179,6 +183,7 @@ const loadPreview = async () => {
       return
     }
     loading.value = false
+    checkOfficeTimeout()
     return
   }
   
@@ -322,6 +327,24 @@ const openInNewTab = () => {
   }
 }
 
+const onOfficeIframeLoad = () => {
+  officeLoading.value = false
+}
+
+const onOfficeIframeError = () => {
+  officeLoading.value = false
+  officeError.value = true
+}
+
+const checkOfficeTimeout = () => {
+  setTimeout(() => {
+    if (officeLoading.value) {
+      officeLoading.value = false
+      officeError.value = true
+    }
+  }, 15000)
+}
+
 watch(() => props.fileId, () => {
   loadPreview()
 })
@@ -394,11 +417,45 @@ onMounted(() => {
         </div>
         
         <template v-else>
-          <div v-if="isOfficeFile && isProduction" class="h-full">
+          <div v-if="isOfficeFile && isProduction" class="h-full relative">
+            <div v-if="officeLoading" class="absolute inset-0 flex flex-col items-center justify-center bg-white dark:bg-dark-200 z-10">
+              <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+              <p class="text-sm text-gray-600 dark:text-gray-400">正在加载 Office 预览...</p>
+              <p class="text-xs text-gray-500 dark:text-gray-500 mt-2">如果长时间未加载，请检查网络连接</p>
+            </div>
+            
+            <div v-if="officeError" class="flex flex-col items-center justify-center h-[80vh] text-gray-500 dark:text-gray-400">
+              <svg class="w-16 h-16 mb-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <p class="text-center mb-2 font-medium">Office 在线预览加载失败</p>
+              <p class="text-center text-xs mb-4 max-w-md">
+                可能原因：网络无法访问 Office Online 服务器<br>
+                建议：使用 VPN 或切换网络后重试，或下载文件到本地查看
+              </p>
+              <div class="flex gap-2">
+                <button
+                  @click="openInNewTab"
+                  class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                >
+                  新窗口打开
+                </button>
+                <button
+                  @click="downloadFile"
+                  class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm"
+                >
+                  下载文件
+                </button>
+              </div>
+            </div>
+            
             <iframe
+              v-show="!officeError"
               :src="officeOnlineUrl!"
               class="w-full h-[80vh] border-0 bg-white"
               sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-top-navigation"
+              @load="onOfficeIframeLoad"
+              @error="onOfficeIframeError"
             ></iframe>
           </div>
           
