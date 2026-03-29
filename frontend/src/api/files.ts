@@ -72,6 +72,11 @@ export const fileApi = {
     return `${apiClient.defaults.baseURL}/files/${fileId}/preview`
   },
 
+  async getPublicUrl(fileId: number): Promise<{ public_url: string; filename: string; exists: boolean }> {
+    const response = await apiClient.get<{ public_url: string; filename: string; exists: boolean }>(`/files/${fileId}/public-url`)
+    return response.data
+  },
+
   async previewFile(fileId: number): Promise<FilePreviewResponse> {
     const response = await apiClient.get<FilePreviewResponse>(`/files/${fileId}/preview`)
     return response.data

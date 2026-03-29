@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import * as pdfjsLib from 'pdfjs-dist'
 import JSZip from 'jszip'
+import { fileApi } from '@/api/files'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`
 
@@ -19,6 +20,7 @@ const emit = defineEmits<{
 const loading = ref(true)
 const error = ref('')
 const previewMode = ref<'local' | 'online'>('online')
+const publicUrl = ref<string | null>(null)
 
 const previewType = computed(() => {
   const { mimeType, filename } = props
@@ -68,6 +70,7 @@ const isProduction = computed(() => {
 })
 
 const fullFileUrl = computed(() => {
+  if (publicUrl.value) return publicUrl.value
   if (props.fileUrl.startsWith('http://') || props.fileUrl.startsWith('https://')) {
     return props.fileUrl
   }
@@ -76,6 +79,7 @@ const fullFileUrl = computed(() => {
 })
 
 const staticFileUrl = computed(() => {
+  if (publicUrl.value) return publicUrl.value
   if (!props.filename) return null
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
   const ext = props.filename.split('.').pop()?.toLowerCase()
@@ -86,21 +90,12 @@ const staticFileUrl = computed(() => {
 
 const officeOnlineUrl = computed(() => {
   const fileUrl = staticFileUrl.value || fullFileUrl.value
-  console.log('=== Office Online Debug ===')
-  console.log('filename:', props.filename)
-  console.log('staticFileUrl:', staticFileUrl.value)
-  console.log('fullFileUrl:', fullFileUrl.value)
-  console.log('origin:', typeof window !== 'undefined' ? window.location.origin : 'N/A')
-  console.log('isProduction:', isProduction.value)
   
   if (!isProduction.value) {
-    console.log('Not production environment, Office Online disabled')
     return null
   }
   
-  const url = `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(fileUrl)}`
-  console.log('Final URL:', url)
-  return url
+  return `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(fileUrl)}`
 })
 
 const textContent = ref('')
@@ -192,9 +187,24 @@ const loadPreview = async () => {
   
   if (isOfficeFile.value) {
     if (isProduction.value) {
-      previewMode.value = 'online'
-      loading.value = false
-      return
+      try {
+        const result = await fileApi.getPublicUrl(props.fileId)
+        if (result.exists) {
+          publicUrl.value = result.public_url
+          previewMode.value = 'online'
+          loading.value = false
+          return
+        } else {
+          error.value = '文件不存在或已被删除'
+          loading.value = false
+          return
+        }
+      } catch (err) {
+        console.error('Failed to get public URL:', err)
+        error.value = '获取文件地址失败，请稍后重试'
+        loading.value = false
+        return
+      }
     } else {
       error.value = 'Office 文件在线预览需要部署到公网环境（HTTPS）。\n本地开发环境请下载文件后查看。'
       loading.value = false

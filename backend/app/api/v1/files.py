@@ -17,7 +17,12 @@ from app.core.config import settings
 
 router = APIRouter(prefix="/files", tags=["Files"])
 
-UPLOAD_DIR = settings.AVATAR_STORAGE_PATH or os.getenv("RAILWAY_VOLUME_MOUNT_PATH") or os.getenv("AVATAR_STORAGE_PATH") or "uploads"
+UPLOAD_DIR = (
+    settings.AVATAR_STORAGE_PATH or 
+    os.getenv("AVATAR_STORAGE_PATH") or 
+    os.getenv("RAILWAY_VOLUME_MOUNT_PATH") or 
+    os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
+)
 ALLOWED_IMAGE_TYPES = [
     "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"
 ]
@@ -214,6 +219,31 @@ async def get_file_info(
     
     return db_file
 
+
+@router.get("/{file_id}/public-url")
+async def get_public_url(
+    file_id: int,
+    db: Session = Depends(get_db)
+):
+    db_file = db.query(ArticleFile).filter(ArticleFile.id == file_id).first()
+    if not db_file:
+        raise HTTPException(status_code=404, detail="文件不存在")
+    
+    ext = db_file.filename.split('.')[-1].lower() if db_file.filename else ''
+    is_image = ext in ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp']
+    folder = 'images' if is_image else 'articles'
+    
+    from app.core.config import settings
+    site_url = getattr(settings, 'SITE_URL', 'https://zhouzhouya.top')
+    public_url = f"{site_url}/uploads/{folder}/{db_file.filename}"
+    
+    return {
+        "filename": db_file.filename,
+        "public_url": public_url,
+        "folder": folder,
+        "exists": os.path.exists(db_file.file_path),
+        "file_path": db_file.file_path
+    }
 
 @router.options("/{file_id}/preview")
 async def preview_file_options():
