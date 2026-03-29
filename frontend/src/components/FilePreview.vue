@@ -59,16 +59,25 @@ const isOfficeFile = computed(() => {
 })
 
 const isProduction = computed(() => {
-  const url = props.fileUrl
-  return url.startsWith('https://') && 
-         !url.includes('localhost') && 
-         !url.includes('127.0.0.1') &&
-         !url.includes('0.0.0.0')
+  if (typeof window === 'undefined') return false
+  const origin = window.location.origin
+  return origin.startsWith('https://') && 
+         !origin.includes('localhost') && 
+         !origin.includes('127.0.0.1') &&
+         !origin.includes('0.0.0.0')
+})
+
+const fullFileUrl = computed(() => {
+  if (props.fileUrl.startsWith('http://') || props.fileUrl.startsWith('https://')) {
+    return props.fileUrl
+  }
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  return `${origin}${props.fileUrl}`
 })
 
 const officeOnlineUrl = computed(() => {
   if (!isProduction.value) return null
-  return `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(props.fileUrl)}}`
+  return `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(fullFileUrl.value)}`
 })
 
 const textContent = ref('')
@@ -79,7 +88,7 @@ const totalPages = ref(0)
 const pdfScale = ref(1.5)
 const archiveFiles = ref<{ name: string; size: number; type: string }[]>([])
 
-const imageUrl = computed(() => props.fileUrl)
+const imageUrl = computed(() => fullFileUrl.value)
 
 const detectEncoding = (buffer: ArrayBuffer): string => {
   const uint8Array = new Uint8Array(buffer)
@@ -197,7 +206,7 @@ const loadPreview = async () => {
 
 const loadPdf = async () => {
   const loadingTask = pdfjsLib.getDocument({
-    url: props.fileUrl,
+    url: fullFileUrl.value,
     cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
     cMapPacked: true,
   })
@@ -243,7 +252,7 @@ const nextPage = async () => {
 }
 
 const loadText = async () => {
-  const response = await fetch(props.fileUrl)
+  const response = await fetch(fullFileUrl.value)
   const buffer = await response.arrayBuffer()
   
   const encoding = detectEncoding(buffer)
@@ -253,7 +262,7 @@ const loadText = async () => {
 }
 
 const loadArchive = async () => {
-  const response = await fetch(props.fileUrl)
+  const response = await fetch(fullFileUrl.value)
   const arrayBuffer = await response.arrayBuffer()
   const zip = await JSZip.loadAsync(arrayBuffer)
   
@@ -299,7 +308,7 @@ const formatFileSize = (bytes: number): string => {
 
 const downloadFile = () => {
   const link = document.createElement('a')
-  link.href = props.fileUrl
+  link.href = fullFileUrl.value
   link.download = props.filename
   link.click()
 }
