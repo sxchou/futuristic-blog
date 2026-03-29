@@ -359,41 +359,41 @@ onMounted(() => {
 <template>
   <div class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" @click.self="emit('close')">
     <div class="bg-white dark:bg-dark-200 rounded-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
-      <div class="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-white/10">
+      <div class="flex items-center justify-between px-2 py-1 border-b border-gray-200 dark:border-white/10">
         <div class="flex items-center gap-2">
-          <h3 class="text-sm font-medium text-gray-900 dark:text-white truncate max-w-md">
+          <h3 class="text-xs font-medium text-gray-900 dark:text-white truncate max-w-md">
             {{ filename }}
           </h3>
-          <span v-if="textEncoding !== 'UTF-8'" class="text-xs px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded">
+          <span v-if="textEncoding !== 'UTF-8'" class="text-xs px-1 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded">
             {{ textEncoding }}
           </span>
         </div>
-        <div class="flex items-center gap-1">
+        <div class="flex items-center gap-0.5">
           <button
             v-if="isOfficeFile && isProduction"
             @click="openInNewTab"
-            class="p-2 text-gray-500 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
+            class="p-1.5 text-gray-500 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
             title="新窗口打开"
           >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
           </button>
           <button
             @click="downloadFile"
-            class="p-2 text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-primary transition-colors"
+            class="p-1.5 text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-primary transition-colors"
             title="下载文件"
           >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
           </button>
           <button
             @click="emit('close')"
-            class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+            class="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
             title="关闭"
           >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -422,7 +422,7 @@ onMounted(() => {
           <div v-if="isOfficeFile && isProduction" class="h-full">
             <iframe
               :src="officeOnlineUrl!"
-              class="w-full h-[75vh] border-0 bg-white"
+              class="w-full h-[80vh] border-0 bg-white"
               sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-top-navigation"
             ></iframe>
           </div>
@@ -455,14 +455,14 @@ onMounted(() => {
           </div>
           
           <div v-else-if="previewType === 'image'" class="flex items-center justify-center p-2">
-            <img :src="imageUrl" :alt="filename" class="max-w-full max-h-[75vh] object-contain" />
+            <img :src="imageUrl" :alt="filename" class="max-w-full max-h-[80vh] object-contain" />
           </div>
           
-          <div v-else-if="previewType === 'text'" class="bg-gray-50 dark:bg-dark-100 rounded-lg p-3 overflow-auto max-h-[75vh]">
+          <div v-else-if="previewType === 'text'" class="bg-gray-50 dark:bg-dark-100 rounded-lg p-3 overflow-auto max-h-[80vh]">
             <pre class="text-xs text-gray-800 dark:text-gray-200 whitespace-pre-wrap font-mono break-all">{{ textContent }}</pre>
           </div>
           
-          <div v-else-if="previewType === 'archive'" class="max-h-[75vh] overflow-auto p-2">
+          <div v-else-if="previewType === 'archive'" class="max-h-[80vh] overflow-auto p-2">
             <div class="space-y-0.5">
               <div
                 v-for="file in archiveFiles"
