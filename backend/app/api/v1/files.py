@@ -246,7 +246,11 @@ async def preview_file(
             path=db_file.file_path,
             media_type=db_file.mime_type,
             headers={
-                "Content-Disposition": f"inline; filename*=UTF-8''{encoded_filename}"
+                "Content-Disposition": f"inline; filename*=UTF-8''{encoded_filename}",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, OPTIONS",
+                "Access-Control-Allow-Headers": "*",
+                "Cache-Control": "public, max-age=3600"
             }
         )
 

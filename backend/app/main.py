@@ -36,15 +36,22 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         
         response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
+        
+        if '/files/' in request.url.path and '/preview' in request.url.path:
+            response.headers["X-Frame-Options"] = "ALLOW-FROM https://view.officeapps.live.com"
+            response.headers["Content-Security-Policy"] = "frame-ancestors 'self' https://view.officeapps.live.com https://*.officeapps.live.com"
+        else:
+            response.headers["X-Frame-Options"] = "DENY"
+        
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
         
         if request.url.path.startswith("/api"):
-            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate"
-            response.headers["Pragma"] = "no-cache"
-            response.headers["Expires"] = "0"
+            if '/files/' not in request.url.path:
+                response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate"
+                response.headers["Pragma"] = "no-cache"
+                response.headers["Expires"] = "0"
         
         return response
 

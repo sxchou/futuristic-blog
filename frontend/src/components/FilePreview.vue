@@ -77,6 +77,7 @@ const fullFileUrl = computed(() => {
 
 const officeOnlineUrl = computed(() => {
   if (!isProduction.value) return null
+  console.log('Office Online URL:', fullFileUrl.value)
   return `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(fullFileUrl.value)}`
 })
 
