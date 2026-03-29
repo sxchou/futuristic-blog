@@ -25,6 +25,15 @@ const previewType = computed(() => {
   
   if (mimeType.includes('pdf')) return 'pdf'
   if (mimeType.startsWith('image/')) return 'image'
+  
+  if (mimeType.includes('excel') || mimeType.includes('spreadsheet') || 
+      mimeType.includes('sheet') || filename.endsWith('.xlsx') || 
+      filename.endsWith('.xls') || filename.endsWith('.csv')) return 'excel'
+  if (mimeType.includes('word') || mimeType.includes('document') ||
+      filename.endsWith('.docx') || filename.endsWith('.doc')) return 'word'
+  if (mimeType.includes('powerpoint') || mimeType.includes('presentation') ||
+      filename.endsWith('.pptx') || filename.endsWith('.ppt')) return 'powerpoint'
+  
   if (mimeType.startsWith('text/') || 
       mimeType.includes('json') || 
       mimeType.includes('javascript') ||
@@ -37,13 +46,7 @@ const previewType = computed(() => {
       filename.endsWith('.css') ||
       filename.endsWith('.html') ||
       filename.endsWith('.xml')) return 'text'
-  if (mimeType.includes('excel') || mimeType.includes('spreadsheet') || 
-      mimeType.includes('sheet') || filename.endsWith('.xlsx') || 
-      filename.endsWith('.xls') || filename.endsWith('.csv')) return 'excel'
-  if (mimeType.includes('word') || mimeType.includes('document') ||
-      filename.endsWith('.docx') || filename.endsWith('.doc')) return 'word'
-  if (mimeType.includes('powerpoint') || mimeType.includes('presentation') ||
-      filename.endsWith('.pptx') || filename.endsWith('.ppt')) return 'powerpoint'
+  
   if (mimeType.includes('zip') || mimeType.includes('rar') || 
       mimeType.includes('7z') || mimeType.includes('compressed') ||
       mimeType.includes('tar') || mimeType.includes('gzip')) return 'archive'
