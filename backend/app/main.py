@@ -40,7 +40,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         
         if request.url.path.startswith('/uploads/'):
             response.headers["Content-Security-Policy"] = "frame-ancestors 'self' https://view.officeapps.live.com https://*.officeapps.live.com"
-        elif '/files/' in request.url.path and '/preview' in request.url.path:
+        elif '/files/' in request.url.path and ('/preview' in request.url.path or '/office-preview' in request.url.path):
             response.headers["Content-Security-Policy"] = "frame-ancestors 'self' https://view.officeapps.live.com https://*.officeapps.live.com"
         else:
             response.headers["X-Frame-Options"] = "DENY"

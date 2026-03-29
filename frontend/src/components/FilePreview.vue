@@ -2,7 +2,6 @@
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import * as pdfjsLib from 'pdfjs-dist'
 import JSZip from 'jszip'
-import { fileApi } from '@/api/files'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`
 
@@ -19,7 +18,6 @@ const emit = defineEmits<{
 
 const loading = ref(true)
 const error = ref('')
-const publicUrl = ref<string | null>(null)
 
 const previewType = computed(() => {
   const { mimeType, filename } = props
@@ -69,7 +67,6 @@ const isProduction = computed(() => {
 })
 
 const fullFileUrl = computed(() => {
-  if (publicUrl.value) return publicUrl.value
   if (props.fileUrl.startsWith('http://') || props.fileUrl.startsWith('https://')) {
     return props.fileUrl
   }
@@ -77,26 +74,15 @@ const fullFileUrl = computed(() => {
   return `${origin}${props.fileUrl}`
 })
 
-const staticFileUrl = computed(() => {
-  if (publicUrl.value) return publicUrl.value
-  if (!props.filename) return null
-  const origin = typeof window !== 'undefined' ? window.location.origin : ''
-  const ext = props.filename.split('.').pop()?.toLowerCase()
-  const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes(ext || '')
-  const folder = isImage ? 'images' : 'articles'
-  return `${origin}/uploads/${folder}/${props.filename}`
-})
-
 const officeOnlineUrl = computed(() => {
-  const fileUrl = publicUrl.value || staticFileUrl.value || fullFileUrl.value
-  
   if (!isProduction.value) {
     return null
   }
   
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
   const cacheBuster = Date.now()
-  const urlWithCache = `${fileUrl}?t=${cacheBuster}`
-  return `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(urlWithCache)}`
+  const apiFileUrl = `${origin}/api/v1/files/${props.fileId}/office-preview?t=${cacheBuster}`
+  return `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(apiFileUrl)}`
 })
 
 const textContent = ref('')
@@ -192,20 +178,7 @@ const loadPreview = async () => {
       loading.value = false
       return
     }
-    
-    try {
-      const result = await fileApi.getPublicUrl(props.fileId)
-      if (result.exists) {
-        publicUrl.value = result.public_url
-      } else {
-        error.value = '文件不存在或已被删除'
-      }
-    } catch (err) {
-      console.error('Failed to get public URL:', err)
-      error.value = '获取文件地址失败，请稍后重试'
-    } finally {
-      loading.value = false
-    }
+    loading.value = false
     return
   }
   

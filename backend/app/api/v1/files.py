@@ -297,6 +297,46 @@ async def debug_file_url(
         "office_online_url": f"https://view.officeapps.live.com/op/view.aspx?src={quote(public_url)}"
     }
 
+@router.options("/{file_id}/office-preview")
+async def office_preview_options():
+    return Response(
+        content="",
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+            "Access-Control-Max-Age": "86400"
+        }
+    )
+
+@router.get("/{file_id}/office-preview")
+async def office_preview_file(
+    file_id: int,
+    t: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    db_file = db.query(ArticleFile).filter(ArticleFile.id == file_id).first()
+    if not db_file:
+        raise HTTPException(status_code=404, detail="文件不存在")
+    
+    if not os.path.exists(db_file.file_path):
+        raise HTTPException(status_code=404, detail="文件已被删除")
+    
+    encoded_filename = quote(db_file.original_filename)
+    return FileResponse(
+        path=db_file.file_path,
+        media_type=db_file.mime_type,
+        headers={
+            "Content-Disposition": f"inline; filename*=UTF-8''{encoded_filename}",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
+
 @router.options("/{file_id}/preview")
 async def preview_file_options():
     return Response(
