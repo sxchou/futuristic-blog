@@ -361,7 +361,7 @@ onMounted(() => {
     <div class="bg-white dark:bg-dark-200 rounded-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
       <div class="flex items-center justify-between px-2 py-0.5 border-b border-gray-200 dark:border-white/10">
         <div class="flex items-center gap-2">
-          <h3 class="text-xs font-medium text-gray-900 dark:text-white truncate max-w-md leading-none">
+          <h3 class="text-xs font-medium text-gray-900 dark:text-white truncate max-w-md leading-none m-0">
             {{ filename }}
           </h3>
           <span v-if="textEncoding !== 'UTF-8'" class="text-xs px-1 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded">
