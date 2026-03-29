@@ -43,7 +43,6 @@ const newCategory = ref({
   name: '',
   slug: '',
   description: '',
-  icon: '',
   color: '#3b82f6',
   order: 0
 })
@@ -306,7 +305,6 @@ const openCategoryModal = () => {
     name: '',
     slug: '',
     description: '',
-    icon: '',
     color: '#3b82f6',
     order: 0
   }
@@ -926,58 +924,57 @@ watch(form, () => {
         </div>
         <form @submit.prevent="handleCreateCategory" class="space-y-3">
           <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">名称</label>
+            <label for="new-category-name" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">名称</label>
             <input
               v-model="newCategory.name"
               type="text"
-              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
+              id="new-category-name"
+              name="name"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
               placeholder="分类名称"
               @blur="generateCategorySlug"
             />
           </div>
           <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Slug (留空自动生成)</label>
+            <label for="new-category-slug" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Slug (留空自动生成)</label>
             <input
               v-model="newCategory.slug"
               type="text"
-              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
-              placeholder="url-slug"
+              id="new-category-slug"
+              name="slug"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              placeholder="留空自动生成"
             />
           </div>
           <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">描述</label>
+            <label for="new-category-description" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">描述</label>
             <textarea
               v-model="newCategory.description"
+              id="new-category-description"
+              name="description"
               rows="2"
-              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none resize-none"
-              placeholder="分类描述（可选）"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none resize-none"
+              placeholder="分类描述"
             />
           </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">图标</label>
+          <div>
+            <label for="new-category-color" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">颜色</label>
+            <div class="flex gap-2">
               <input
-                v-model="newCategory.icon"
-                type="text"
-                class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
-                placeholder="icon-name"
+                v-model="newCategory.color"
+                type="color"
+                id="new-category-color"
+                name="color"
+                class="w-10 h-10 rounded-lg cursor-pointer"
               />
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">颜色</label>
-              <div class="flex gap-2">
-                <input
-                  v-model="newCategory.color"
-                  type="color"
-                  class="w-10 h-9 rounded cursor-pointer"
-                />
-                <input
-                  v-model="newCategory.color"
-                  type="text"
-                  class="flex-1 px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
-                  placeholder="#3b82f6"
-                />
-              </div>
+              <input
+                v-model="newCategory.color"
+                type="text"
+                id="new-category-color-text"
+                name="color-text"
+                class="flex-1 px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+                placeholder="#3b82f6"
+              />
             </div>
           </div>
           <div class="flex justify-end gap-3 pt-2">
@@ -1018,36 +1015,44 @@ watch(form, () => {
         </div>
         <form @submit.prevent="handleCreateTag" class="space-y-3">
           <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">名称</label>
+            <label for="new-tag-name" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">名称</label>
             <input
               v-model="newTag.name"
               type="text"
-              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
+              id="new-tag-name"
+              name="name"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
               placeholder="标签名称"
               @blur="generateTagSlug"
             />
           </div>
           <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Slug (留空自动生成)</label>
+            <label for="new-tag-slug" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Slug (留空自动生成)</label>
             <input
               v-model="newTag.slug"
               type="text"
-              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
-              placeholder="url-slug"
+              id="new-tag-slug"
+              name="slug"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              placeholder="留空自动生成"
             />
           </div>
           <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">颜色</label>
+            <label for="new-tag-color" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">颜色</label>
             <div class="flex gap-2">
               <input
                 v-model="newTag.color"
                 type="color"
-                class="w-10 h-9 rounded cursor-pointer"
+                id="new-tag-color"
+                name="color"
+                class="w-10 h-10 rounded-lg cursor-pointer"
               />
               <input
                 v-model="newTag.color"
                 type="text"
-                class="flex-1 px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
+                id="new-tag-color-text"
+                name="color-text"
+                class="flex-1 px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
                 placeholder="#10b981"
               />
             </div>
