@@ -7,6 +7,7 @@ import { useAdminCheck } from '@/composables/useAdminCheck'
 import { formatDateTime } from '@/utils/date'
 import MarkdownEditor from '@/components/admin/MarkdownEditor.vue'
 import FileIcon from '@/components/FileIcon.vue'
+import FilePreview from '@/components/FilePreview.vue'
 
 interface ArticleFile {
   id: number
@@ -41,6 +42,8 @@ const showCategoryModal = ref(false)
 const showTagModal = ref(false)
 const isCreatingCategory = ref(false)
 const isCreatingTag = ref(false)
+const showFilePreview = ref(false)
+const previewFile = ref<ArticleFile | null>(null)
 
 const newCategory = ref({
   name: '',
@@ -532,8 +535,8 @@ const handleOrderChange = async (fileId: number, orderValue: string) => {
 }
 
 const handlePreviewFile = (file: ArticleFile) => {
-  const previewUrl = fileApi.getPreviewUrl(file.id)
-  window.open(previewUrl, '_blank')
+  previewFile.value = file
+  showFilePreview.value = true
 }
 
 const formatFileDateTime = (dateStr: string): string => {
@@ -1172,4 +1175,13 @@ watch(form, () => {
       </div>
     </div>
   </div>
+  
+  <FilePreview
+    v-if="showFilePreview && previewFile"
+    :file-id="previewFile.id"
+    :filename="previewFile.original_filename"
+    :mime-type="previewFile.mime_type"
+    :file-url="fileApi.getPreviewUrl(previewFile.id)"
+    @close="showFilePreview = false"
+  />
 </template>

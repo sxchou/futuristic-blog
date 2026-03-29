@@ -8,6 +8,7 @@ import { articleApi, likeApi, fileApi } from '@/api'
 import type { Article } from '@/types'
 import CommentSection from '@/components/comments/CommentSection.vue'
 import FileIcon from '@/components/FileIcon.vue'
+import FilePreview from '@/components/FilePreview.vue'
 
 interface ArticleFile {
   id: number
@@ -28,6 +29,8 @@ const article = ref<Article | null>(null)
 const loading = ref(true)
 const showCopySuccess = ref(false)
 const isLiked = ref(false)
+const showFilePreview = ref(false)
+const currentPreviewFile = ref<ArticleFile | null>(null)
 const likeCount = ref(0)
 const isLiking = ref(false)
 const articleFiles = ref<ArticleFile[]>([])
@@ -119,8 +122,8 @@ const isPreviewable = (_mimeType: string): boolean => {
 }
 
 const previewFile = (file: ArticleFile) => {
-  const url = fileApi.getPreviewUrl(file.id)
-  window.open(url, '_blank')
+  currentPreviewFile.value = file
+  showFilePreview.value = true
 }
 
 const downloadFile = (fileId: number) => {
@@ -446,6 +449,15 @@ onUnmounted(() => {
       </div>
     </div>
   </div>
+  
+  <FilePreview
+    v-if="showFilePreview && currentPreviewFile"
+    :file-id="currentPreviewFile.id"
+    :filename="currentPreviewFile.original_filename"
+    :mime-type="currentPreviewFile.mime_type"
+    :file-url="fileApi.getPreviewUrl(currentPreviewFile.id)"
+    @close="showFilePreview = false"
+  />
 </template>
 
 <style scoped>
