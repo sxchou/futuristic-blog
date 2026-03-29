@@ -94,7 +94,9 @@ const officeOnlineUrl = computed(() => {
     return null
   }
   
-  return `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(fileUrl)}`
+  const cacheBuster = Date.now()
+  const urlWithCache = `${fileUrl}?t=${cacheBuster}`
+  return `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(urlWithCache)}`
 })
 
 const textContent = ref('')
