@@ -7,6 +7,7 @@ import { useRoute } from 'vue-router'
 import { articleApi, likeApi, fileApi } from '@/api'
 import type { Article } from '@/types'
 import CommentSection from '@/components/comments/CommentSection.vue'
+import FileIcon from '@/components/FileIcon.vue'
 
 interface ArticleFile {
   id: number
@@ -111,17 +112,6 @@ const formatFileSize = (bytes: number): string => {
   if (bytes < 1024) return bytes + ' B'
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB'
   return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
-}
-
-const getFileIcon = (fileType: string, mimeType: string): string => {
-  if (fileType === 'image') return '🖼️'
-  if (mimeType.includes('pdf')) return '📕'
-  if (mimeType.includes('excel') || mimeType.includes('spreadsheet') || mimeType.includes('sheet')) return '📗'
-  if (mimeType.includes('powerpoint') || mimeType.includes('presentation')) return '📙'
-  if (mimeType.includes('word') || mimeType.includes('wordprocessing')) return '📘'
-  if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('7z') || mimeType.includes('compressed')) return '📦'
-  if (mimeType.includes('text/plain') || mimeType.includes('text/markdown')) return '📄'
-  return '📁'
 }
 
 const isPreviewable = (mimeType: string): boolean => {
@@ -342,7 +332,7 @@ onUnmounted(() => {
               class="flex items-center justify-between p-4 bg-white dark:bg-dark-200 rounded-lg border border-gray-200 dark:border-white/5 hover:border-primary/30 transition-colors"
             >
               <div class="flex items-center gap-3 flex-1 min-w-0">
-                <span class="text-2xl flex-shrink-0">{{ getFileIcon(file.file_type, file.mime_type) }}</span>
+                <FileIcon :file-type="file.file_type" :mime-type="file.mime_type" size="md" />
                 <div class="min-w-0 flex-1">
                   <div class="text-gray-900 dark:text-white font-medium truncate">{{ file.original_filename }}</div>
                   <div class="text-sm text-gray-500 flex flex-wrap gap-x-2">

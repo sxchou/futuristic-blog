@@ -6,6 +6,7 @@ import type { ArticleListItem, Article } from '@/types'
 import { useAdminCheck } from '@/composables/useAdminCheck'
 import { formatDateTime } from '@/utils/date'
 import MarkdownEditor from '@/components/admin/MarkdownEditor.vue'
+import FileIcon from '@/components/FileIcon.vue'
 
 interface ArticleFile {
   id: number
@@ -561,17 +562,6 @@ const isPreviewable = (mimeType: string): boolean => {
   return previewableTypes.includes(mimeType)
 }
 
-const getFileIcon = (fileType: string, mimeType: string): string => {
-  if (fileType === 'image') return '🖼️'
-  if (mimeType.includes('pdf')) return '📕'
-  if (mimeType.includes('excel') || mimeType.includes('spreadsheet') || mimeType.includes('sheet')) return '📗'
-  if (mimeType.includes('powerpoint') || mimeType.includes('presentation')) return '📙'
-  if (mimeType.includes('word') || mimeType.includes('wordprocessing')) return '📘'
-  if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('7z') || mimeType.includes('compressed')) return '📦'
-  if (mimeType.includes('text/plain') || mimeType.includes('text/markdown')) return '📄'
-  return '📁'
-}
-
 const openCreateModal = async () => {
   if (!await requireAdmin('新建文章')) return
   editingArticle.value = null
@@ -865,7 +855,7 @@ watch(form, () => {
                 @drop="handleDrop($event, index)"
               >
                 <div class="flex items-center gap-2 flex-1 min-w-0">
-                  <span class="text-lg flex-shrink-0">{{ getFileIcon(file.file_type, file.mime_type) }}</span>
+                  <FileIcon :file-type="file.file_type" :mime-type="file.mime_type" size="sm" />
                   <div class="min-w-0 flex-1">
                     <div class="text-sm text-gray-900 dark:text-white truncate">{{ file.original_filename }}</div>
                     <div class="text-xs text-gray-500 flex flex-wrap gap-x-2">
