@@ -148,10 +148,46 @@ except Exception as e:
     logger.warning(f"Failed to mount uploads directory: {e}")
 
 
+def run_migrations():
+    """Run database migrations for schema updates."""
+    from sqlalchemy import text
+    from app.core.database import is_sqlite
+    db = SessionLocal()
+    try:
+        if is_sqlite:
+            result = db.execute(text("""
+                SELECT name FROM pragma_table_info('article_files')
+            """))
+            existing_columns = [row[0] for row in result.fetchall()]
+        else:
+            result = db.execute(text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'article_files'
+            """))
+            existing_columns = [row[0] for row in result.fetchall()]
+        
+        if 'view_count' not in existing_columns:
+            logger.info("Adding view_count column to article_files...")
+            db.execute(text('ALTER TABLE article_files ADD COLUMN view_count INTEGER DEFAULT 0'))
+        
+        if 'order' not in existing_columns:
+            logger.info("Adding order column to article_files...")
+            db.execute(text('ALTER TABLE article_files ADD COLUMN "order" INTEGER DEFAULT 0'))
+        
+        db.commit()
+        logger.info("Database migrations completed")
+    except Exception as e:
+        db.rollback()
+        logger.warning(f"Migration check: {e}")
+    finally:
+        db.close()
+
 @app.on_event("startup")
 async def startup_event():
     try:
         Base.metadata.create_all(bind=engine)
+        run_migrations()
         init_database()
         asyncio.create_task(cleanup_expired_tokens_task())
         logger.info("Application started successfully")
