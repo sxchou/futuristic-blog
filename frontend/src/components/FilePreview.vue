@@ -88,7 +88,7 @@ const staticFileUrl = computed(() => {
 })
 
 const officeOnlineUrl = computed(() => {
-  const fileUrl = staticFileUrl.value || fullFileUrl.value
+  const fileUrl = publicUrl.value || staticFileUrl.value || fullFileUrl.value
   
   if (!isProduction.value) {
     return null
