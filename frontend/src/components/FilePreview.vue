@@ -2,8 +2,6 @@
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import * as pdfjsLib from 'pdfjs-dist'
 import JSZip from 'jszip'
-import * as XLSX from 'xlsx'
-import mammoth from 'mammoth'
 import { fileApi } from '@/api/files'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`
@@ -21,7 +19,6 @@ const emit = defineEmits<{
 
 const loading = ref(true)
 const error = ref('')
-const previewMode = ref<'local' | 'online'>('local')
 const publicUrl = ref<string | null>(null)
 
 const previewType = computed(() => {
@@ -107,9 +104,6 @@ const currentPage = ref(1)
 const totalPages = ref(0)
 const pdfScale = ref(1.5)
 const archiveFiles = ref<{ name: string; size: number; type: string }[]>([])
-const excelData = ref<{ headers: string[]; rows: Record<string, unknown>[] } | null>(null)
-const wordContent = ref<string>('')
-const officePreviewError = ref<string>('')
 
 const imageUrl = computed(() => fullFileUrl.value)
 
@@ -189,22 +183,18 @@ const decodeBuffer = (buffer: ArrayBuffer, encoding: string): string => {
 const loadPreview = async () => {
   loading.value = true
   error.value = ''
-  officePreviewError.value = ''
   
   if (isOfficeFile.value) {
+    if (!isProduction.value) {
+      error.value = 'Office 文件在线预览需要部署到公网环境（HTTPS）。\n本地开发环境请下载文件后查看。'
+      loading.value = false
+      return
+    }
+    
     try {
       const result = await fileApi.getPublicUrl(props.fileId)
       if (result.exists) {
         publicUrl.value = result.public_url
-        if (previewMode.value === 'local') {
-          if (previewType.value === 'excel') {
-            await loadExcel()
-          } else if (previewType.value === 'word') {
-            await loadWord()
-          } else {
-            officePreviewError.value = '此文件类型暂不支持本地预览，请下载后查看'
-          }
-        }
       } else {
         error.value = '文件不存在或已被删除'
       }
@@ -240,63 +230,6 @@ const loadPreview = async () => {
   } finally {
     loading.value = false
   }
-}
-
-const loadExcel = async () => {
-  const response = await fetch(fullFileUrl.value)
-  const arrayBuffer = await response.arrayBuffer()
-  const workbook = XLSX.read(arrayBuffer, { type: 'array' })
-  const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
-  const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 }) as unknown[][]
-  
-  if (jsonData.length > 0) {
-    const headers = jsonData[0] as string[]
-    const rows = jsonData.slice(1).map(row => {
-      const obj: Record<string, unknown> = {}
-      headers.forEach((header, index) => {
-        obj[header] = row[index]
-      })
-      return obj
-    })
-    excelData.value = { headers, rows }
-  }
-}
-
-const loadWord = async () => {
-  const response = await fetch(fullFileUrl.value)
-  const arrayBuffer = await response.arrayBuffer()
-  const result = await mammoth.convertToHtml({ arrayBuffer })
-  wordContent.value = result.value
-}
-
-const handleOfficeOnlineError = async () => {
-  officePreviewError.value = '在线预览服务暂时不可用，正在切换到本地预览...'
-  previewMode.value = 'local'
-  loading.value = true
-  
-  try {
-    if (previewType.value === 'excel') {
-      await loadExcel()
-    } else if (previewType.value === 'word') {
-      await loadWord()
-    } else {
-      officePreviewError.value = '此文件类型暂不支持本地预览，请下载后查看'
-    }
-  } catch (err) {
-    console.error('Local preview error:', err)
-    officePreviewError.value = '本地预览失败，请下载文件后查看'
-  } finally {
-    loading.value = false
-  }
-}
-
-const switchToOnlinePreview = () => {
-  if (!isProduction.value) {
-    error.value = 'Office 文件在线预览需要部署到公网环境（HTTPS）'
-    return
-  }
-  previewMode.value = 'online'
-  officePreviewError.value = ''
 }
 
 const loadPdf = async () => {
@@ -488,91 +421,20 @@ onMounted(() => {
         </div>
         
         <template v-else>
-          <div v-if="isOfficeFile && previewMode === 'online' && isProduction" class="h-full">
-            <div v-if="officePreviewError" class="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-              <p class="text-sm text-yellow-700 dark:text-yellow-300">{{ officePreviewError }}</p>
-            </div>
-            <div v-else class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span class="text-sm text-blue-700 dark:text-blue-300">
-                  使用微软 Office Online 预览，如需完整功能请点击"新窗口打开"
-                </span>
-              </div>
-              <button
-                @click="handleOfficeOnlineError"
-                class="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-              >
-                切换到本地预览
-              </button>
+          <div v-if="isOfficeFile && isProduction" class="h-full">
+            <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center gap-2">
+              <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span class="text-sm text-blue-700 dark:text-blue-300">
+                使用微软 Office Online 预览，如需完整功能请点击"新窗口打开"
+              </span>
             </div>
             <iframe
-              v-if="!officePreviewError"
               :src="officeOnlineUrl!"
               class="w-full h-[65vh] border-0 rounded-lg bg-white"
               sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-top-navigation"
-              @error="handleOfficeOnlineError"
             ></iframe>
-          </div>
-          
-          <div v-else-if="isOfficeFile && previewMode === 'local'" class="h-full">
-            <div class="mb-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span class="text-sm text-green-700 dark:text-green-300">
-                  本地预览模式
-                </span>
-              </div>
-              <button
-                v-if="isProduction"
-                @click="switchToOnlinePreview"
-                class="text-sm text-green-600 dark:text-green-400 hover:underline"
-              >
-                切换到在线预览
-              </button>
-            </div>
-            
-            <div v-if="loading" class="flex items-center justify-center h-64">
-              <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-            </div>
-            
-            <div v-else-if="excelData" class="overflow-auto max-h-[65vh]">
-              <table class="min-w-full border-collapse">
-                <thead class="sticky top-0 bg-gray-100 dark:bg-dark-100">
-                  <tr>
-                    <th v-for="header in excelData.headers" :key="header" class="px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
-                      {{ header }}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(row, index) in excelData.rows" :key="index" class="hover:bg-gray-50 dark:hover:bg-dark-100">
-                    <td v-for="header in excelData.headers" :key="header" class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 border-b border-gray-100 dark:border-gray-800">
-                      {{ row[header] ?? '' }}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            
-            <div v-else-if="wordContent" class="prose dark:prose-invert max-w-none p-4 bg-white dark:bg-dark-100 rounded-lg max-h-[65vh] overflow-auto" v-html="wordContent"></div>
-            
-            <div v-else-if="officePreviewError" class="flex flex-col items-center justify-center h-64 text-gray-500 dark:text-gray-400">
-              <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              <p class="text-center whitespace-pre-line mb-4">{{ officePreviewError }}</p>
-              <button
-                @click="downloadFile"
-                class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-              >
-                下载文件
-              </button>
-            </div>
           </div>
           
           <div v-else-if="previewType === 'pdf'" class="flex flex-col items-center">
