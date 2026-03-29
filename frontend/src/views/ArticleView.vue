@@ -118,9 +118,24 @@ const isPreviewable = (_mimeType: string): boolean => {
   return true
 }
 
-const previewFile = (fileId: number) => {
-  const url = fileApi.getPreviewUrl(fileId)
-  window.open(url, '_blank')
+const previewFile = (file: ArticleFile) => {
+  const officeTypes = [
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  ]
+  
+  if (officeTypes.includes(file.mime_type)) {
+    const previewUrl = fileApi.getPreviewUrl(file.id)
+    const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(previewUrl)}&embedded=true`
+    window.open(viewerUrl, '_blank')
+  } else {
+    const url = fileApi.getPreviewUrl(file.id)
+    window.open(url, '_blank')
+  }
 }
 
 const downloadFile = (fileId: number) => {
@@ -339,7 +354,7 @@ onUnmounted(() => {
               <div class="flex items-center gap-2 flex-shrink-0">
                 <button
                   v-if="isPreviewable(file.mime_type)"
-                  @click="previewFile(file.id)"
+                  @click="previewFile(file)"
                   class="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-dark-100 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-50 transition-colors"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

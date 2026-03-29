@@ -72,6 +72,10 @@ export const fileApi = {
     return `${apiClient.defaults.baseURL}/files/${fileId}/preview`
   },
 
+  getOfficePreviewUrl(_fileId: number, originalUrl: string): string {
+    return `https://docs.google.com/viewer?url=${encodeURIComponent(originalUrl)}&embedded=true`
+  },
+
   async previewFile(fileId: number): Promise<FilePreviewResponse> {
     const response = await apiClient.get<FilePreviewResponse>(`/files/${fileId}/preview`)
     return response.data

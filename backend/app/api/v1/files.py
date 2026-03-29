@@ -3,8 +3,9 @@ import uuid
 import aiofiles
 from datetime import datetime
 from typing import Optional, List
+from urllib.parse import quote
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse, Response
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models import ArticleFile
@@ -239,16 +240,14 @@ async def preview_file(
             "content": content,
             "filename": db_file.original_filename
         }
-    elif preview_type == "office":
+    else:
+        encoded_filename = quote(db_file.original_filename)
         return FileResponse(
             path=db_file.file_path,
             media_type=db_file.mime_type,
-            filename=db_file.original_filename
-        )
-    else:
-        return FileResponse(
-            path=db_file.file_path,
-            media_type=db_file.mime_type
+            headers={
+                "Content-Disposition": f"inline; filename*=UTF-8''{encoded_filename}"
+            }
         )
 
 
@@ -267,10 +266,13 @@ async def download_file(
     db_file.download_count += 1
     db.commit()
     
+    encoded_filename = quote(db_file.original_filename)
     return FileResponse(
         path=db_file.file_path,
-        filename=db_file.original_filename,
-        media_type=db_file.mime_type
+        media_type=db_file.mime_type,
+        headers={
+            "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"
+        }
     )
 
 

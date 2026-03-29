@@ -532,8 +532,25 @@ const handleOrderChange = async (fileId: number, orderValue: string) => {
 }
 
 const handlePreviewFile = (file: ArticleFile) => {
-  const previewUrl = fileApi.getPreviewUrl(file.id)
-  window.open(previewUrl, '_blank')
+  const { mime_type } = file
+  
+  const officeTypes = [
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  ]
+  
+  if (officeTypes.includes(mime_type)) {
+    const previewUrl = fileApi.getPreviewUrl(file.id)
+    const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(previewUrl)}&embedded=true`
+    window.open(viewerUrl, '_blank')
+  } else {
+    const previewUrl = fileApi.getPreviewUrl(file.id)
+    window.open(previewUrl, '_blank')
+  }
 }
 
 const formatFileDateTime = (dateStr: string): string => {
