@@ -2,6 +2,9 @@
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import * as pdfjsLib from 'pdfjs-dist'
 import JSZip from 'jszip'
+import * as XLSX from 'xlsx'
+import mammoth from 'mammoth'
+import { fileApi } from '@/api/files'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`
 
@@ -18,6 +21,8 @@ const emit = defineEmits<{
 
 const loading = ref(true)
 const error = ref('')
+const previewMode = ref<'local' | 'online'>('local')
+const publicUrl = ref<string | null>(null)
 
 const previewType = computed(() => {
   const { mimeType, filename } = props
@@ -67,6 +72,7 @@ const isProduction = computed(() => {
 })
 
 const fullFileUrl = computed(() => {
+  if (publicUrl.value) return publicUrl.value
   if (props.fileUrl.startsWith('http://') || props.fileUrl.startsWith('https://')) {
     return props.fileUrl
   }
@@ -74,15 +80,24 @@ const fullFileUrl = computed(() => {
   return `${origin}${props.fileUrl}`
 })
 
+const staticFileUrl = computed(() => {
+  if (publicUrl.value) return publicUrl.value
+  if (!props.filename) return null
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  const ext = props.filename.split('.').pop()?.toLowerCase()
+  const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'].includes(ext || '')
+  const folder = isImage ? 'images' : 'articles'
+  return `${origin}/uploads/${folder}/${props.filename}`
+})
+
 const officeOnlineUrl = computed(() => {
+  const fileUrl = staticFileUrl.value || fullFileUrl.value
+  
   if (!isProduction.value) {
     return null
   }
   
-  const origin = typeof window !== 'undefined' ? window.location.origin : ''
-  const cacheBuster = Date.now()
-  const apiFileUrl = `${origin}/api/v1/files/${props.fileId}/office-preview?t=${cacheBuster}`
-  return `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(apiFileUrl)}`
+  return `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(fileUrl)}`
 })
 
 const textContent = ref('')
@@ -92,8 +107,9 @@ const currentPage = ref(1)
 const totalPages = ref(0)
 const pdfScale = ref(1.5)
 const archiveFiles = ref<{ name: string; size: number; type: string }[]>([])
-const officeLoading = ref(true)
-const officeError = ref(false)
+const excelData = ref<{ headers: string[]; rows: Record<string, unknown>[] } | null>(null)
+const wordContent = ref<string>('')
+const officePreviewError = ref<string>('')
 
 const imageUrl = computed(() => fullFileUrl.value)
 
@@ -173,17 +189,31 @@ const decodeBuffer = (buffer: ArrayBuffer, encoding: string): string => {
 const loadPreview = async () => {
   loading.value = true
   error.value = ''
-  officeLoading.value = true
-  officeError.value = false
+  officePreviewError.value = ''
   
   if (isOfficeFile.value) {
-    if (!isProduction.value) {
-      error.value = 'Office 文件在线预览需要部署到公网环境（HTTPS）。\n本地开发环境请下载文件后查看。'
+    try {
+      const result = await fileApi.getPublicUrl(props.fileId)
+      if (result.exists) {
+        publicUrl.value = result.public_url
+        if (previewMode.value === 'local') {
+          if (previewType.value === 'excel') {
+            await loadExcel()
+          } else if (previewType.value === 'word') {
+            await loadWord()
+          } else {
+            officePreviewError.value = '此文件类型暂不支持本地预览，请下载后查看'
+          }
+        }
+      } else {
+        error.value = '文件不存在或已被删除'
+      }
+    } catch (err) {
+      console.error('Failed to get public URL:', err)
+      error.value = '获取文件地址失败，请稍后重试'
+    } finally {
       loading.value = false
-      return
     }
-    loading.value = false
-    checkOfficeTimeout()
     return
   }
   
@@ -210,6 +240,63 @@ const loadPreview = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const loadExcel = async () => {
+  const response = await fetch(fullFileUrl.value)
+  const arrayBuffer = await response.arrayBuffer()
+  const workbook = XLSX.read(arrayBuffer, { type: 'array' })
+  const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
+  const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 }) as unknown[][]
+  
+  if (jsonData.length > 0) {
+    const headers = jsonData[0] as string[]
+    const rows = jsonData.slice(1).map(row => {
+      const obj: Record<string, unknown> = {}
+      headers.forEach((header, index) => {
+        obj[header] = row[index]
+      })
+      return obj
+    })
+    excelData.value = { headers, rows }
+  }
+}
+
+const loadWord = async () => {
+  const response = await fetch(fullFileUrl.value)
+  const arrayBuffer = await response.arrayBuffer()
+  const result = await mammoth.convertToHtml({ arrayBuffer })
+  wordContent.value = result.value
+}
+
+const handleOfficeOnlineError = async () => {
+  officePreviewError.value = '在线预览服务暂时不可用，正在切换到本地预览...'
+  previewMode.value = 'local'
+  loading.value = true
+  
+  try {
+    if (previewType.value === 'excel') {
+      await loadExcel()
+    } else if (previewType.value === 'word') {
+      await loadWord()
+    } else {
+      officePreviewError.value = '此文件类型暂不支持本地预览，请下载后查看'
+    }
+  } catch (err) {
+    console.error('Local preview error:', err)
+    officePreviewError.value = '本地预览失败，请下载文件后查看'
+  } finally {
+    loading.value = false
+  }
+}
+
+const switchToOnlinePreview = () => {
+  if (!isProduction.value) {
+    error.value = 'Office 文件在线预览需要部署到公网环境（HTTPS）'
+    return
+  }
+  previewMode.value = 'online'
+  officePreviewError.value = ''
 }
 
 const loadPdf = async () => {
@@ -327,24 +414,6 @@ const openInNewTab = () => {
   }
 }
 
-const onOfficeIframeLoad = () => {
-  officeLoading.value = false
-}
-
-const onOfficeIframeError = () => {
-  officeLoading.value = false
-  officeError.value = true
-}
-
-const checkOfficeTimeout = () => {
-  setTimeout(() => {
-    if (officeLoading.value) {
-      officeLoading.value = false
-      officeError.value = true
-    }
-  }, 15000)
-}
-
 watch(() => props.fileId, () => {
   loadPreview()
 })
@@ -357,48 +426,50 @@ onMounted(() => {
 <template>
   <div class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" @click.self="emit('close')">
     <div class="bg-white dark:bg-dark-200 rounded-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
-      <div class="flex items-center justify-between px-2 py-0.5 border-b border-gray-200 dark:border-white/10">
-        <div class="flex items-center gap-2">
-          <h3 class="text-xs font-medium text-gray-900 dark:text-white truncate max-w-md leading-none m-0">
+      <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/10">
+        <div class="flex items-center gap-3">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white truncate max-w-md">
             {{ filename }}
           </h3>
-          <span v-if="textEncoding !== 'UTF-8'" class="text-xs px-1 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded">
+          <span class="text-xs px-2 py-1 bg-gray-100 dark:bg-dark-100 text-gray-600 dark:text-gray-400 rounded">
+            {{ mimeType }}
+          </span>
+          <span v-if="textEncoding !== 'UTF-8'" class="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded">
             {{ textEncoding }}
           </span>
         </div>
-        <div class="flex items-center gap-0.5">
+        <div class="flex items-center gap-2">
           <button
             v-if="isOfficeFile && isProduction"
             @click="openInNewTab"
-            class="p-1 text-gray-500 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
-            title="新窗口打开"
+            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
           >
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
+            新窗口打开
           </button>
           <button
             @click="downloadFile"
-            class="p-1 text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-primary transition-colors"
-            title="下载文件"
+            class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
           >
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
+            下载
           </button>
           <button
             @click="emit('close')"
-            class="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
-            title="关闭"
+            class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
           >
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
       </div>
       
-      <div class="flex-1 overflow-auto">
+      <div class="flex-1 overflow-auto p-4">
         <div v-if="loading" class="flex items-center justify-center h-64">
           <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
         </div>
@@ -407,78 +478,123 @@ onMounted(() => {
           <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <p class="text-center whitespace-pre-line mb-4 text-sm">{{ error }}</p>
+          <p class="text-center whitespace-pre-line mb-4">{{ error }}</p>
           <button
             @click="downloadFile"
-            class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm"
+            class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
           >
             下载文件
           </button>
         </div>
         
         <template v-else>
-          <div v-if="isOfficeFile && isProduction" class="h-full relative">
-            <div v-if="officeLoading" class="absolute inset-0 flex flex-col items-center justify-center bg-white dark:bg-dark-200 z-10">
-              <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-              <p class="text-sm text-gray-600 dark:text-gray-400">正在加载 Office 预览...</p>
-              <p class="text-xs text-gray-500 dark:text-gray-500 mt-2">如果长时间未加载，请检查网络连接</p>
+          <div v-if="isOfficeFile && previewMode === 'online' && isProduction" class="h-full">
+            <div v-if="officePreviewError" class="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+              <p class="text-sm text-yellow-700 dark:text-yellow-300">{{ officePreviewError }}</p>
             </div>
-            
-            <div v-if="officeError" class="flex flex-col items-center justify-center h-[80vh] text-gray-500 dark:text-gray-400">
-              <svg class="w-16 h-16 mb-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              <p class="text-center mb-2 font-medium">Office 在线预览加载失败</p>
-              <p class="text-center text-xs mb-4 max-w-md">
-                可能原因：网络无法访问 Office Online 服务器<br>
-                建议：使用 VPN 或切换网络后重试，或下载文件到本地查看
-              </p>
-              <div class="flex gap-2">
-                <button
-                  @click="openInNewTab"
-                  class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
-                >
-                  新窗口打开
-                </button>
-                <button
-                  @click="downloadFile"
-                  class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm"
-                >
-                  下载文件
-                </button>
+            <div v-else class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span class="text-sm text-blue-700 dark:text-blue-300">
+                  使用微软 Office Online 预览，如需完整功能请点击"新窗口打开"
+                </span>
               </div>
+              <button
+                @click="handleOfficeOnlineError"
+                class="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                切换到本地预览
+              </button>
             </div>
-            
             <iframe
-              v-show="!officeError"
+              v-if="!officePreviewError"
               :src="officeOnlineUrl!"
-              class="w-full h-[80vh] border-0 bg-white"
+              class="w-full h-[65vh] border-0 rounded-lg bg-white"
               sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-top-navigation"
-              @load="onOfficeIframeLoad"
-              @error="onOfficeIframeError"
+              @error="handleOfficeOnlineError"
             ></iframe>
           </div>
           
-          <div v-else-if="previewType === 'pdf'" class="flex flex-col items-center p-2">
-            <div v-if="totalPages > 1" class="sticky top-0 z-10 bg-white dark:bg-dark-200 py-1 mb-2 flex items-center justify-center gap-3">
+          <div v-else-if="isOfficeFile && previewMode === 'local'" class="h-full">
+            <div class="mb-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span class="text-sm text-green-700 dark:text-green-300">
+                  本地预览模式
+                </span>
+              </div>
+              <button
+                v-if="isProduction"
+                @click="switchToOnlinePreview"
+                class="text-sm text-green-600 dark:text-green-400 hover:underline"
+              >
+                切换到在线预览
+              </button>
+            </div>
+            
+            <div v-if="loading" class="flex items-center justify-center h-64">
+              <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+            
+            <div v-else-if="excelData" class="overflow-auto max-h-[65vh]">
+              <table class="min-w-full border-collapse">
+                <thead class="sticky top-0 bg-gray-100 dark:bg-dark-100">
+                  <tr>
+                    <th v-for="header in excelData.headers" :key="header" class="px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
+                      {{ header }}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(row, index) in excelData.rows" :key="index" class="hover:bg-gray-50 dark:hover:bg-dark-100">
+                    <td v-for="header in excelData.headers" :key="header" class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 border-b border-gray-100 dark:border-gray-800">
+                      {{ row[header] ?? '' }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
+            <div v-else-if="wordContent" class="prose dark:prose-invert max-w-none p-4 bg-white dark:bg-dark-100 rounded-lg max-h-[65vh] overflow-auto" v-html="wordContent"></div>
+            
+            <div v-else-if="officePreviewError" class="flex flex-col items-center justify-center h-64 text-gray-500 dark:text-gray-400">
+              <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <p class="text-center whitespace-pre-line mb-4">{{ officePreviewError }}</p>
+              <button
+                @click="downloadFile"
+                class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+              >
+                下载文件
+              </button>
+            </div>
+          </div>
+          
+          <div v-else-if="previewType === 'pdf'" class="flex flex-col items-center">
+            <div v-if="totalPages > 1" class="sticky top-0 z-10 bg-white dark:bg-dark-200 py-2 mb-4 flex items-center justify-center gap-4">
               <button
                 @click="prevPage"
                 :disabled="currentPage <= 1"
-                class="p-1.5 rounded-lg bg-gray-100 dark:bg-dark-100 disabled:opacity-50 hover:bg-gray-200 dark:hover:bg-dark-50"
+                class="p-2 rounded-lg bg-gray-100 dark:bg-dark-100 disabled:opacity-50 hover:bg-gray-200 dark:hover:bg-dark-50"
               >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-              <span class="text-xs text-gray-600 dark:text-gray-400 min-w-[60px] text-center">
+              <span class="text-sm text-gray-600 dark:text-gray-400 min-w-[80px] text-center">
                 {{ currentPage }} / {{ totalPages }}
               </span>
               <button
                 @click="nextPage"
                 :disabled="currentPage >= totalPages"
-                class="p-1.5 rounded-lg bg-gray-100 dark:bg-dark-100 disabled:opacity-50 hover:bg-gray-200 dark:hover:bg-dark-50"
+                class="p-2 rounded-lg bg-gray-100 dark:bg-dark-100 disabled:opacity-50 hover:bg-gray-200 dark:hover:bg-dark-50"
               >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
               </button>
@@ -486,28 +602,28 @@ onMounted(() => {
             <canvas id="pdf-canvas" class="max-w-full h-auto shadow-lg rounded-lg"></canvas>
           </div>
           
-          <div v-else-if="previewType === 'image'" class="flex items-center justify-center p-2">
-            <img :src="imageUrl" :alt="filename" class="max-w-full max-h-[80vh] object-contain" />
+          <div v-else-if="previewType === 'image'" class="flex items-center justify-center">
+            <img :src="imageUrl" :alt="filename" class="max-w-full max-h-[70vh] object-contain" />
           </div>
           
-          <div v-else-if="previewType === 'text'" class="bg-gray-50 dark:bg-dark-100 rounded-lg p-3 overflow-auto max-h-[80vh]">
-            <pre class="text-xs text-gray-800 dark:text-gray-200 whitespace-pre-wrap font-mono break-all">{{ textContent }}</pre>
+          <div v-else-if="previewType === 'text'" class="bg-gray-50 dark:bg-dark-100 rounded-lg p-4 overflow-auto max-h-[70vh]">
+            <pre class="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap font-mono break-all">{{ textContent }}</pre>
           </div>
           
-          <div v-else-if="previewType === 'archive'" class="max-h-[80vh] overflow-auto p-2">
-            <div class="space-y-0.5">
+          <div v-else-if="previewType === 'archive'" class="max-h-[70vh] overflow-auto">
+            <div class="space-y-1">
               <div
                 v-for="file in archiveFiles"
                 :key="file.name"
-                class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-dark-100"
+                class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-dark-100"
               >
-                <svg v-if="file.type === 'directory'" class="w-4 h-4 text-yellow-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <svg v-if="file.type === 'directory'" class="w-5 h-5 text-yellow-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
                 </svg>
-                <svg v-else class="w-4 h-4 text-gray-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <svg v-else class="w-5 h-5 text-gray-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2l5 5h-5V4z" />
                 </svg>
-                <span class="flex-1 text-xs text-gray-800 dark:text-gray-200 truncate">{{ file.name }}</span>
+                <span class="flex-1 text-sm text-gray-800 dark:text-gray-200 truncate">{{ file.name }}</span>
                 <span v-if="file.type !== 'directory'" class="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
                   {{ formatFileSize(file.size) }}
                 </span>
@@ -519,10 +635,10 @@ onMounted(() => {
             <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            <p class="mb-4 text-sm">此文件类型暂不支持在线预览</p>
+            <p class="mb-4">此文件类型暂不支持在线预览</p>
             <button
               @click="downloadFile"
-              class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm"
+              class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
             >
               下载文件
             </button>
