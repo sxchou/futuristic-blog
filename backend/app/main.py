@@ -32,21 +32,6 @@ app = FastAPI(
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-class PrefetchMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        response = await call_next(request)
-        
-        sec_purpose = request.headers.get('Sec-Purpose', '')
-        purpose = request.headers.get('Purpose', '')
-        
-        if 'prefetch' in sec_purpose.lower() or 'prefetch' in purpose.lower():
-            response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate'
-            response.headers['Vary'] = 'Sec-Purpose, Purpose'
-        
-        return response
-
-app.add_middleware(PrefetchMiddleware)
-
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
@@ -55,7 +40,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         
         if request.url.path.startswith('/uploads/'):
             response.headers["Content-Security-Policy"] = "frame-ancestors 'self' https://view.officeapps.live.com https://*.officeapps.live.com"
-        elif '/files/' in request.url.path and ('/preview' in request.url.path or '/office-preview' in request.url.path):
+        elif '/files/' in request.url.path and '/preview' in request.url.path:
             response.headers["Content-Security-Policy"] = "frame-ancestors 'self' https://view.officeapps.live.com https://*.officeapps.live.com"
         else:
             response.headers["X-Frame-Options"] = "DENY"
@@ -174,13 +159,7 @@ class CORSStaticFiles(StaticFiles):
             response.headers["Access-Control-Allow-Origin"] = "*"
             response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
             response.headers["Access-Control-Allow-Headers"] = "*"
-            
-            ext = path.lower().split('.')[-1] if '.' in path else ''
-            office_extensions = ['xlsx', 'xls', 'docx', 'doc', 'pptx', 'ppt']
-            if ext in office_extensions:
-                response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-            else:
-                response.headers["Cache-Control"] = "public, max-age=3600"
+            response.headers["Cache-Control"] = "public, max-age=3600"
         return response
 
 try:

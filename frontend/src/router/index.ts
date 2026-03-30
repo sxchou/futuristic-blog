@@ -3,7 +3,6 @@ import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore, useSiteConfigStore } from '@/stores'
 
 const CHUNK_LOAD_ERROR_KEY = 'chunk_load_error_reload'
-const PREFETCH_ERROR_KEY = 'prefetch_error_reload'
 
 const isChunkLoadError = (error: unknown): boolean => {
   if (error instanceof Error) {
@@ -13,16 +12,6 @@ const isChunkLoadError = (error: unknown): boolean => {
       error.message.includes('Loading CSS chunk') ||
       error.message.includes('Unable to preload CSS') ||
       error.name === 'ChunkLoadError'
-    )
-  }
-  return false
-}
-
-const isPrefetchCacheError = (error: unknown): boolean => {
-  if (error instanceof Error) {
-    return (
-      error.message.includes('503') ||
-      error.message.includes('Service Unavailable')
     )
   }
   return false
@@ -40,21 +29,6 @@ const handleChunkLoadError = (error: unknown): boolean => {
   }
   
   sessionStorage.removeItem(CHUNK_LOAD_ERROR_KEY)
-  return false
-}
-
-const handlePrefetchError = (error: unknown): boolean => {
-  if (!isPrefetchCacheError(error)) return false
-  
-  const reloadCount = parseInt(sessionStorage.getItem(PREFETCH_ERROR_KEY) || '0')
-  
-  if (reloadCount < 1) {
-    sessionStorage.setItem(PREFETCH_ERROR_KEY, String(reloadCount + 1))
-    window.location.reload()
-    return true
-  }
-  
-  sessionStorage.removeItem(PREFETCH_ERROR_KEY)
   return false
 }
 
@@ -334,9 +308,6 @@ router.beforeEach(async (to, _from, next) => {
 
 router.onError((error) => {
   if (handleChunkLoadError(error)) {
-    return
-  }
-  if (handlePrefetchError(error)) {
     return
   }
   console.error('Router error:', error)
