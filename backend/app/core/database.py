@@ -14,6 +14,8 @@ if "sqlite" in database_url:
     connect_args = {"check_same_thread": False}
 elif "planetscale.com" in database_url or "mysql" in database_url:
     connect_args = {"ssl": {"ssl_verify_cert": True}}
+elif "postgresql" in database_url:
+    connect_args = {"connect_timeout": 30}
 
 is_sqlite = "sqlite" in database_url
 
@@ -22,10 +24,10 @@ engine = create_engine(
     connect_args=connect_args,
     echo=False,
     pool_pre_ping=True,
-    pool_recycle=3600,
-    pool_size=5 if is_sqlite else 10,
-    max_overflow=10 if is_sqlite else 20,
-    pool_timeout=30,
+    pool_recycle=1800,
+    pool_size=5,
+    max_overflow=10,
+    pool_timeout=60,
     poolclass=QueuePool,
     pool_use_lifo=True,
 )

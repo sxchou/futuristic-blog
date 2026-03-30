@@ -151,14 +151,17 @@ except Exception as e:
 @app.on_event("startup")
 async def startup_event():
     logger.info("Application starting...")
+    asyncio.create_task(background_init())
+
+
+async def background_init():
     try:
         Base.metadata.create_all(bind=engine)
         init_database()
         asyncio.create_task(cleanup_expired_tokens_task())
-        logger.info("Application started successfully")
+        logger.info("Application initialized successfully")
     except Exception as e:
-        logger.error(f"Startup error: {e}")
-        raise
+        logger.error(f"Background init error: {e}")
 
 
 @app.get("/")
