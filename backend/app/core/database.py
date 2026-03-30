@@ -1,13 +1,15 @@
 from sqlalchemy import create_engine, event
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import QueuePool
+from sqlalchemy.pool import QueuePool, NullPool
 from app.core.config import settings
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
 database_url = settings.get_database_url
+is_production = os.getenv("RAILWAY_ENVIRONMENT") is not None
 
 connect_args = {}
 if "sqlite" in database_url:
@@ -15,22 +17,35 @@ if "sqlite" in database_url:
 elif "planetscale.com" in database_url or "mysql" in database_url:
     connect_args = {"ssl": {"ssl_verify_cert": True}}
 elif "postgresql" in database_url:
-    connect_args = {"connect_timeout": 30}
+    connect_args = {"connect_timeout": 10}
 
 is_sqlite = "sqlite" in database_url
 
-engine = create_engine(
-    database_url,
-    connect_args=connect_args,
-    echo=False,
-    pool_pre_ping=True,
-    pool_recycle=1800,
-    pool_size=5,
-    max_overflow=10,
-    pool_timeout=60,
-    poolclass=QueuePool,
-    pool_use_lifo=True,
-)
+if is_production and not is_sqlite:
+    engine = create_engine(
+        database_url,
+        connect_args=connect_args,
+        echo=False,
+        pool_pre_ping=True,
+        pool_recycle=1800,
+        pool_size=3,
+        max_overflow=5,
+        pool_timeout=30,
+        poolclass=QueuePool,
+    )
+else:
+    engine = create_engine(
+        database_url,
+        connect_args=connect_args,
+        echo=False,
+        pool_pre_ping=False,
+        pool_recycle=1800,
+        pool_size=5,
+        max_overflow=10,
+        pool_timeout=60,
+        poolclass=QueuePool,
+        pool_use_lifo=True,
+    )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
