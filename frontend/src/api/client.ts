@@ -23,19 +23,20 @@ const onTokenRefreshed = (token: string) => {
   refreshSubscribers = []
 }
 
-const pendingRequests = new Map<string, { controller: AbortController; count: number }>()
+const pendingRequests = new Map<string, { controller: AbortController; timestamp: number }>()
 
 const generateRequestKey = (config: InternalAxiosRequestConfig): string => {
-  const { method, url, params, data } = config
-  return [method, url, JSON.stringify(params), JSON.stringify(data)].join('&')
+  const { method, url, params } = config
+  return [method, url, JSON.stringify(params)].join('&')
 }
+
+const PENDING_REQUEST_TTL = 500
 
 const removePendingRequest = (config: InternalAxiosRequestConfig) => {
   const key = generateRequestKey(config)
   const pending = pendingRequests.get(key)
   if (pending) {
-    pending.count--
-    if (pending.count <= 0) {
+    if (Date.now() - pending.timestamp > PENDING_REQUEST_TTL) {
       pendingRequests.delete(key)
     }
   }
@@ -44,13 +45,12 @@ const removePendingRequest = (config: InternalAxiosRequestConfig) => {
 const addPendingRequest = (config: InternalAxiosRequestConfig) => {
   const key = generateRequestKey(config)
   const pending = pendingRequests.get(key)
-  if (pending) {
-    pending.count++
+  if (pending && Date.now() - pending.timestamp < PENDING_REQUEST_TTL) {
     config.signal = pending.controller.signal
   } else {
     const controller = new AbortController()
     config.signal = controller.signal
-    pendingRequests.set(key, { controller, count: 1 })
+    pendingRequests.set(key, { controller, timestamp: Date.now() })
   }
 }
 
@@ -171,7 +171,9 @@ apiClient.interceptors.response.use(
     }
     
     if (axios.isCancel(error)) {
-      return Promise.resolve({} as AxiosResponse)
+      const cancelError = new Error('请求已取消')
+      ;(cancelError as unknown as Record<string, unknown>).isCancel = true
+      return Promise.reject(cancelError)
     }
     
     if (error.response?.status === 401 && originalConfig && !originalConfig._retry) {

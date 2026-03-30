@@ -24,6 +24,7 @@ interface ArticleFile {
 const route = useRoute()
 const article = ref<Article | null>(null)
 const loading = ref(true)
+const error = ref<string | null>(null)
 const showCopySuccess = ref(false)
 const isLiked = ref(false)
 const likeCount = ref(0)
@@ -210,8 +211,22 @@ onMounted(async () => {
     requestAnimationFrame(() => {
       setupLazyLoading()
     })
-  } catch (error) {
-    console.error('Failed to fetch article:', error)
+  } catch (err: unknown) {
+    console.error('Failed to fetch article:', err)
+    if (err instanceof Error) {
+      if ((err as Record<string, unknown>).isCancel) {
+        return
+      }
+      if (err.message.includes('404')) {
+        error.value = '文章不存在'
+      } else if (err.message.includes('Network Error') || err.message.includes('timeout')) {
+        error.value = '网络连接失败，请检查网络后重试'
+      } else {
+        error.value = '加载文章失败，请稍后重试'
+      }
+    } else {
+      error.value = '加载文章失败，请稍后重试'
+    }
   } finally {
     loading.value = false
   }
@@ -436,10 +451,23 @@ onUnmounted(() => {
       </article>
 
       <div v-else class="text-center py-20">
-        <p class="text-gray-400 text-lg">文章不存在</p>
-        <router-link to="/" class="btn-primary mt-4 inline-block">
-          返回首页
-        </router-link>
+        <div class="max-w-md mx-auto">
+          <svg class="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p class="text-gray-400 text-lg mb-2">{{ error || '文章不存在' }}</p>
+          <p v-if="error && error.includes('网络')" class="text-gray-500 text-sm mb-4">
+            请检查您的网络连接或尝试刷新页面
+          </p>
+          <div class="flex gap-4 justify-center">
+            <button @click="location.reload()" class="btn-primary">
+              刷新页面
+            </button>
+            <router-link to="/" class="btn-secondary">
+              返回首页
+            </router-link>
+          </div>
+        </div>
       </div>
     </div>
   </div>
