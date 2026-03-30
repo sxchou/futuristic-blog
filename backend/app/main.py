@@ -150,6 +150,7 @@ except Exception as e:
 
 @app.on_event("startup")
 async def startup_event():
+    logger.info("Application starting...")
     try:
         Base.metadata.create_all(bind=engine)
         init_database()
@@ -157,6 +158,7 @@ async def startup_event():
         logger.info("Application started successfully")
     except Exception as e:
         logger.error(f"Startup error: {e}")
+        raise
 
 
 @app.get("/")
