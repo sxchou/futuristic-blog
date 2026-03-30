@@ -139,6 +139,10 @@ const closePreview = () => {
   previewFile.value = null
 }
 
+const refreshPage = () => {
+  window.location.reload()
+}
+
 const fetchArticleFiles = async (articleId: number) => {
   try {
     const files = await fileApi.getFiles(articleId)
@@ -214,7 +218,7 @@ onMounted(async () => {
   } catch (err: unknown) {
     console.error('Failed to fetch article:', err)
     if (err instanceof Error) {
-      if ((err as Record<string, unknown>).isCancel) {
+      if ((err as unknown as Record<string, unknown>)?.isCancel) {
         return
       }
       if (err.message.includes('404')) {
@@ -460,7 +464,7 @@ onUnmounted(() => {
             请检查您的网络连接或尝试刷新页面
           </p>
           <div class="flex gap-4 justify-center">
-            <button @click="location.reload()" class="btn-primary">
+            <button @click="refreshPage" class="btn-primary">
               刷新页面
             </button>
             <router-link to="/" class="btn-secondary">

@@ -50,7 +50,7 @@ export const useBlogStore = defineStore('blog', () => {
       }
       lastFetchTime.value = Date.now()
     } catch (error: unknown) {
-      if (error instanceof Error && (error.message === '请求已取消' || (error as Record<string, unknown>).isCancel)) {
+      if (error instanceof Error && (error.message === '请求已取消' || (error as unknown as Record<string, unknown>)?.isCancel)) {
         return
       }
       console.error('Failed to fetch articles:', error)
