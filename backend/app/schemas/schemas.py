@@ -504,7 +504,6 @@ class ProfileResponse(ProfileBase):
 class ArticleFileBase(BaseModel):
     filename: str
     original_filename: str
-    file_path: Optional[str] = None
     file_size: int
     file_type: str
     mime_type: str
@@ -515,8 +514,6 @@ class ArticleFileResponse(ArticleFileBase):
     id: int
     article_id: Optional[int] = None
     download_count: int
-    view_count: int = 0
-    order: int = 0
     created_at: Optional[str] = None
     
     @field_validator('created_at', mode='before')
@@ -526,10 +523,6 @@ class ArticleFileResponse(ArticleFileBase):
     
     class Config:
         from_attributes = True
-
-
-class ArticleFileUpdate(BaseModel):
-    order: Optional[int] = None
 
 
 class EmailConfigBase(BaseModel):

@@ -6,8 +6,6 @@ import type { ArticleListItem, Article } from '@/types'
 import { useAdminCheck } from '@/composables/useAdminCheck'
 import { formatDateTime } from '@/utils/date'
 import MarkdownEditor from '@/components/admin/MarkdownEditor.vue'
-import FileIcon from '@/components/FileIcon.vue'
-import FilePreview from '@/components/FilePreview.vue'
 
 interface ArticleFile {
   id: number
@@ -18,8 +16,6 @@ interface ArticleFile {
   mime_type: string
   is_image: boolean
   download_count: number
-  view_count: number
-  order: number
   created_at: string
 }
 
@@ -42,8 +38,6 @@ const showCategoryModal = ref(false)
 const showTagModal = ref(false)
 const isCreatingCategory = ref(false)
 const isCreatingTag = ref(false)
-const showFilePreview = ref(false)
-const previewFile = ref<ArticleFile | null>(null)
 
 const newCategory = ref({
   name: '',
@@ -485,74 +479,13 @@ const handleDeleteFile = async (fileId: number) => {
   }
 }
 
-const draggedIndex = ref<number | null>(null)
-
-const handleDragStart = (event: DragEvent, index: number) => {
-  draggedIndex.value = index
-  if (event.dataTransfer) {
-    event.dataTransfer.effectAllowed = 'move'
-  }
-}
-
-const handleDrop = async (_event: DragEvent, dropIndex: number) => {
-  if (draggedIndex.value === null || draggedIndex.value === dropIndex) {
-    draggedIndex.value = null
-    return
-  }
-  
-  const files = [...articleFiles.value]
-  const draggedFile = files[draggedIndex.value]
-  files.splice(draggedIndex.value, 1)
-  files.splice(dropIndex, 0, draggedFile)
-  
-  articleFiles.value = files
-  
-  const orders = files.map((f, i) => ({ id: f.id, order: i }))
-  
-  try {
-    await fileApi.batchUpdateOrder(orders)
-  } catch (error) {
-    console.error('Failed to update order:', error)
-    if (editingArticle.value) {
-      await fetchArticleFiles(editingArticle.value.id)
-    }
-  }
-  
-  draggedIndex.value = null
-}
-
-const handleOrderChange = async (fileId: number, orderValue: string) => {
-  const order = parseInt(orderValue) || 0
-  try {
-    await fileApi.updateFileOrder(fileId, order)
-    if (editingArticle.value) {
-      await fetchArticleFiles(editingArticle.value.id)
-    }
-  } catch (error) {
-    console.error('Failed to update order:', error)
-    await dialog.showError('排序更新失败', '错误')
-  }
-}
-
-const handlePreviewFile = (file: ArticleFile) => {
-  previewFile.value = file
-  showFilePreview.value = true
-}
-
-const formatFileDateTime = (dateStr: string): string => {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  const seconds = String(date.getSeconds()).padStart(2, '0')
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
-}
-
-const isPreviewable = (_mimeType: string): boolean => {
-  return true
+const getFileIcon = (fileType: string, mimeType: string): string => {
+  if (fileType === 'image') return '🖼️'
+  if (mimeType.includes('pdf')) return '📄'
+  if (mimeType.includes('word') || mimeType.includes('document')) return '📝'
+  if (mimeType.includes('excel') || mimeType.includes('sheet')) return '📊'
+  if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('7z')) return '📦'
+  return '📎'
 }
 
 const openCreateModal = async () => {
@@ -834,59 +767,28 @@ watch(form, () => {
             </div>
 
             <div v-if="articleFiles.length > 0" class="space-y-2">
-              <div class="flex items-center justify-between mb-1">
-                <div class="text-xs text-gray-500 dark:text-gray-400">已上传文件 (按上传时间正序)：</div>
-                <span class="text-xs text-gray-400">可拖拽排序</span>
-              </div>
+              <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">已上传文件：</div>
               <div 
-                v-for="(file, index) in articleFiles" 
+                v-for="file in articleFiles" 
                 :key="file.id"
-                class="flex items-center justify-between p-2 bg-white dark:bg-dark-200 rounded border border-gray-200 dark:border-white/5 hover:border-primary/30 transition-colors"
-                draggable="true"
-                @dragstart="handleDragStart($event, index)"
-                @dragover.prevent
-                @drop="handleDrop($event, index)"
+                class="flex items-center justify-between p-2 bg-white dark:bg-dark-200 rounded border border-gray-200 dark:border-white/5"
               >
-                <div class="flex items-center gap-2 flex-1 min-w-0">
-                  <FileIcon :file-type="file.file_type" :mime-type="file.mime_type" size="sm" />
-                  <div class="min-w-0 flex-1">
-                    <div class="text-sm text-gray-900 dark:text-white truncate">{{ file.original_filename }}</div>
-                    <div class="text-xs text-gray-500 flex flex-wrap gap-x-2">
-                      <span>{{ formatFileSize(file.file_size) }}</span>
-                      <span>·</span>
-                      <span>上传: {{ formatFileDateTime(file.created_at) }}</span>
-                      <span>·</span>
-                      <span>下载 {{ file.download_count }} 次</span>
-                      <span>·</span>
-                      <span>预览 {{ file.view_count }} 次</span>
+                <div class="flex items-center gap-2">
+                  <span class="text-lg">{{ getFileIcon(file.file_type, file.mime_type) }}</span>
+                  <div>
+                    <div class="text-sm text-gray-900 dark:text-white">{{ file.original_filename }}</div>
+                    <div class="text-xs text-gray-500">
+                      {{ formatFileSize(file.file_size) }} · 下载 {{ file.download_count }} 次
                     </div>
                   </div>
                 </div>
-                <div class="flex items-center gap-2 flex-shrink-0">
-                  <input
-                    type="number"
-                    :value="file.order"
-                    @change="handleOrderChange(file.id, ($event.target as HTMLInputElement).value)"
-                    class="w-12 px-1 py-0.5 text-xs text-center bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white"
-                    placeholder="排序"
-                    min="0"
-                  />
-                  <button
-                    v-if="isPreviewable(file.mime_type)"
-                    type="button"
-                    @click="handlePreviewFile(file)"
-                    class="text-primary hover:text-primary/80 text-xs"
-                  >
-                    预览
-                  </button>
-                  <button
-                    type="button"
-                    @click="handleDeleteFile(file.id)"
-                    class="text-red-400 hover:text-red-300 text-xs"
-                  >
-                    删除
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  @click="handleDeleteFile(file.id)"
+                  class="text-red-400 hover:text-red-300 text-xs"
+                >
+                  删除
+                </button>
               </div>
             </div>
             <div v-else-if="editingArticle" class="text-xs text-gray-400">
@@ -1175,13 +1077,4 @@ watch(form, () => {
       </div>
     </div>
   </div>
-  
-  <FilePreview
-    v-if="showFilePreview && previewFile"
-    :file-id="previewFile.id"
-    :filename="previewFile.original_filename"
-    :mime-type="previewFile.mime_type"
-    :file-url="fileApi.getPreviewUrl(previewFile.id)"
-    @close="showFilePreview = false"
-  />
 </template>

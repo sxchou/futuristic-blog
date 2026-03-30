@@ -3,13 +3,12 @@ import uuid
 import aiofiles
 from datetime import datetime
 from typing import Optional, List
-from urllib.parse import quote
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
-from fastapi.responses import FileResponse, StreamingResponse, Response
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models import ArticleFile
-from app.schemas import ArticleFileResponse, ArticleFileUpdate
+from app.schemas import ArticleFileResponse
 from app.utils import get_current_active_user
 from app.utils.timezone import get_now
 from app.core.config import settings
@@ -17,12 +16,7 @@ from app.core.config import settings
 
 router = APIRouter(prefix="/files", tags=["Files"])
 
-UPLOAD_DIR = (
-    settings.AVATAR_STORAGE_PATH or 
-    os.getenv("AVATAR_STORAGE_PATH") or 
-    os.getenv("RAILWAY_VOLUME_MOUNT_PATH") or 
-    os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "uploads")
-)
+UPLOAD_DIR = settings.AVATAR_STORAGE_PATH or os.getenv("RAILWAY_VOLUME_MOUNT_PATH") or os.getenv("AVATAR_STORAGE_PATH") or "uploads"
 ALLOWED_IMAGE_TYPES = [
     "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"
 ]
@@ -35,36 +29,10 @@ ALLOWED_FILE_TYPES = [
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "application/vnd.ms-excel",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "application/vnd.ms-powerpoint",
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     "text/plain",
     "text/markdown",
 ]
 MAX_FILE_SIZE = 10 * 1024 * 1024
-
-PREVIEWABLE_TYPES = {
-    "application/pdf": "pdf",
-    "image/jpeg": "image",
-    "image/png": "image",
-    "image/gif": "image",
-    "image/webp": "image",
-    "image/svg+xml": "image",
-    "image/bmp": "image",
-    "image/tiff": "image",
-    "text/plain": "text",
-    "text/markdown": "text",
-    "text/html": "text",
-    "text/css": "text",
-    "text/javascript": "text",
-    "application/json": "text",
-    "application/xml": "text",
-    "application/msword": "office",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "office",
-    "application/vnd.ms-excel": "office",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "office",
-    "application/vnd.ms-powerpoint": "office",
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation": "office",
-}
 
 
 def ensure_upload_dir():
@@ -202,7 +170,7 @@ async def get_files(
     if file_type:
         query = query.filter(ArticleFile.file_type == file_type)
     
-    return query.order_by(ArticleFile.order.asc(), ArticleFile.created_at.asc()).all()
+    return query.order_by(ArticleFile.created_at.desc()).all()
 
 
 @router.get("/{file_id}", response_model=ArticleFileResponse)
@@ -213,140 +181,7 @@ async def get_file_info(
     db_file = db.query(ArticleFile).filter(ArticleFile.id == file_id).first()
     if not db_file:
         raise HTTPException(status_code=404, detail="文件不存在")
-    
-    db_file.view_count += 1
-    db.commit()
-    
     return db_file
-
-
-@router.get("/{file_id}/public-url")
-async def get_public_url(
-    file_id: int,
-    db: Session = Depends(get_db)
-):
-    db_file = db.query(ArticleFile).filter(ArticleFile.id == file_id).first()
-    if not db_file:
-        raise HTTPException(status_code=404, detail="文件不存在")
-    
-    from app.core.config import settings
-    site_url = getattr(settings, 'SITE_URL', None) or 'https://zhouzhouya.top'
-    
-    if db_file.file_path:
-        if '/images/' in db_file.file_path.replace('\\', '/'):
-            folder = 'images'
-        else:
-            folder = 'articles'
-    else:
-        ext = db_file.filename.split('.')[-1].lower() if db_file.filename else ''
-        is_image = ext in ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp']
-        folder = 'images' if is_image else 'articles'
-    
-    public_url = f"{site_url}/uploads/{folder}/{db_file.filename}"
-    
-    file_exists = os.path.exists(db_file.file_path) if db_file.file_path else False
-    
-    return {
-        "filename": db_file.filename,
-        "public_url": public_url,
-        "folder": folder,
-        "exists": file_exists,
-        "file_path": db_file.file_path,
-        "file_size": db_file.file_size
-    }
-
-@router.get("/{file_id}/debug")
-async def debug_file_url(
-    file_id: int,
-    db: Session = Depends(get_db)
-):
-    db_file = db.query(ArticleFile).filter(ArticleFile.id == file_id).first()
-    if not db_file:
-        raise HTTPException(status_code=404, detail="文件不存在")
-    
-    from app.core.config import settings
-    site_url = getattr(settings, 'SITE_URL', None) or 'https://zhouzhouya.top'
-    
-    if db_file.file_path:
-        if '/images/' in db_file.file_path.replace('\\', '/'):
-            folder = 'images'
-        else:
-            folder = 'articles'
-    else:
-        ext = db_file.filename.split('.')[-1].lower() if db_file.filename else ''
-        is_image = ext in ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp']
-        folder = 'images' if is_image else 'articles'
-    
-    public_url = f"{site_url}/uploads/{folder}/{db_file.filename}"
-    
-    file_exists = os.path.exists(db_file.file_path) if db_file.file_path else False
-    file_size_on_disk = os.path.getsize(db_file.file_path) if file_exists and db_file.file_path else 0
-    
-    return {
-        "file_id": file_id,
-        "filename": db_file.filename,
-        "original_filename": db_file.original_filename,
-        "mime_type": db_file.mime_type,
-        "file_size_db": db_file.file_size,
-        "file_size_disk": file_size_on_disk,
-        "file_path": db_file.file_path,
-        "folder": folder,
-        "public_url": public_url,
-        "exists": file_exists,
-        "site_url": site_url,
-        "office_online_url": f"https://view.officeapps.live.com/op/view.aspx?src={quote(public_url)}"
-    }
-
-@router.options("/{file_id}/preview")
-async def preview_file_options():
-    return Response(
-        content="",
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, OPTIONS",
-            "Access-Control-Allow-Headers": "*",
-            "Access-Control-Max-Age": "86400"
-        }
-    )
-
-@router.get("/{file_id}/preview")
-async def preview_file(
-    file_id: int,
-    db: Session = Depends(get_db)
-):
-    db_file = db.query(ArticleFile).filter(ArticleFile.id == file_id).first()
-    if not db_file:
-        raise HTTPException(status_code=404, detail="文件不存在")
-    
-    if not os.path.exists(db_file.file_path):
-        raise HTTPException(status_code=404, detail="文件已被删除")
-    
-    preview_type = PREVIEWABLE_TYPES.get(db_file.mime_type)
-    
-    db_file.view_count += 1
-    db.commit()
-    
-    if preview_type == "text":
-        async with aiofiles.open(db_file.file_path, 'r', encoding='utf-8') as f:
-            content = await f.read()
-        return {
-            "type": "text",
-            "content": content,
-            "filename": db_file.original_filename
-        }
-    else:
-        encoded_filename = quote(db_file.original_filename)
-        return FileResponse(
-            path=db_file.file_path,
-            media_type=db_file.mime_type,
-            headers={
-                "Content-Disposition": f"inline; filename*=UTF-8''{encoded_filename}",
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "GET, OPTIONS",
-                "Access-Control-Allow-Headers": "*",
-                "Cache-Control": "public, max-age=3600"
-            }
-        )
 
 
 @router.get("/{file_id}/download")
@@ -364,13 +199,10 @@ async def download_file(
     db_file.download_count += 1
     db.commit()
     
-    encoded_filename = quote(db_file.original_filename)
     return FileResponse(
         path=db_file.file_path,
-        media_type=db_file.mime_type,
-        headers={
-            "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"
-        }
+        filename=db_file.original_filename,
+        media_type=db_file.mime_type
     )
 
 
@@ -391,41 +223,3 @@ async def delete_file(
     db.commit()
     
     return {"message": "文件已删除"}
-
-
-@router.patch("/{file_id}", response_model=ArticleFileResponse)
-async def update_file(
-    file_id: int,
-    update_data: ArticleFileUpdate,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_active_user)
-):
-    db_file = db.query(ArticleFile).filter(ArticleFile.id == file_id).first()
-    if not db_file:
-        raise HTTPException(status_code=404, detail="文件不存在")
-    
-    if update_data.order is not None:
-        db_file.order = update_data.order
-    
-    db.commit()
-    db.refresh(db_file)
-    
-    return db_file
-
-
-@router.post("/batch-order")
-async def batch_update_order(
-    orders: List[dict],
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_active_user)
-):
-    for item in orders:
-        file_id = item.get("id")
-        order = item.get("order")
-        if file_id is not None and order is not None:
-            db_file = db.query(ArticleFile).filter(ArticleFile.id == file_id).first()
-            if db_file:
-                db_file.order = order
-    
-    db.commit()
-    return {"message": "排序已更新"}

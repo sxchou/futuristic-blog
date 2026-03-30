@@ -1,10 +1,9 @@
 from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse, Response
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.staticfiles import StaticFiles
-from starlette.responses import FileResponse as StarletteFileResponse
 from app.core.config import settings
 from app.core.database import engine, Base, SessionLocal
 from app.api import router as api_router
@@ -37,23 +36,15 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         
         response.headers["X-Content-Type-Options"] = "nosniff"
-        
-        if request.url.path.startswith('/uploads/'):
-            response.headers["Content-Security-Policy"] = "frame-ancestors 'self' https://view.officeapps.live.com https://*.officeapps.live.com"
-        elif '/files/' in request.url.path and '/preview' in request.url.path:
-            response.headers["Content-Security-Policy"] = "frame-ancestors 'self' https://view.officeapps.live.com https://*.officeapps.live.com"
-        else:
-            response.headers["X-Frame-Options"] = "DENY"
-        
+        response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
         
         if request.url.path.startswith("/api"):
-            if '/files/' not in request.url.path:
-                response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate"
-                response.headers["Pragma"] = "no-cache"
-                response.headers["Expires"] = "0"
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
         
         return response
 
@@ -151,63 +142,16 @@ def ensure_uploads_dir():
 
 
 uploads_dir = ensure_uploads_dir()
-
-class CORSStaticFiles(StaticFiles):
-    async def get_response(self, path: str, scope):
-        response = await super().get_response(path, scope)
-        if isinstance(response, StarletteFileResponse):
-            response.headers["Access-Control-Allow-Origin"] = "*"
-            response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
-            response.headers["Access-Control-Allow-Headers"] = "*"
-            response.headers["Cache-Control"] = "public, max-age=3600"
-        return response
-
 try:
-    app.mount("/uploads", CORSStaticFiles(directory=uploads_dir), name="uploads")
+    app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 except Exception as e:
     logger.warning(f"Failed to mount uploads directory: {e}")
 
-
-def run_migrations():
-    """Run database migrations for schema updates."""
-    from sqlalchemy import text
-    from app.core.database import is_sqlite
-    db = SessionLocal()
-    try:
-        if is_sqlite:
-            result = db.execute(text("""
-                SELECT name FROM pragma_table_info('article_files')
-            """))
-            existing_columns = [row[0] for row in result.fetchall()]
-        else:
-            result = db.execute(text("""
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_name = 'article_files'
-            """))
-            existing_columns = [row[0] for row in result.fetchall()]
-        
-        if 'view_count' not in existing_columns:
-            logger.info("Adding view_count column to article_files...")
-            db.execute(text('ALTER TABLE article_files ADD COLUMN view_count INTEGER DEFAULT 0'))
-        
-        if 'order' not in existing_columns:
-            logger.info("Adding order column to article_files...")
-            db.execute(text('ALTER TABLE article_files ADD COLUMN "order" INTEGER DEFAULT 0'))
-        
-        db.commit()
-        logger.info("Database migrations completed")
-    except Exception as e:
-        db.rollback()
-        logger.warning(f"Migration check: {e}")
-    finally:
-        db.close()
 
 @app.on_event("startup")
 async def startup_event():
     try:
         Base.metadata.create_all(bind=engine)
-        run_migrations()
         init_database()
         asyncio.create_task(cleanup_expired_tokens_task())
         logger.info("Application started successfully")
