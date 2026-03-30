@@ -18,21 +18,51 @@ router = APIRouter(prefix="/files", tags=["Files"])
 
 UPLOAD_DIR = settings.AVATAR_STORAGE_PATH or os.getenv("RAILWAY_VOLUME_MOUNT_PATH") or os.getenv("AVATAR_STORAGE_PATH") or "uploads"
 ALLOWED_IMAGE_TYPES = [
-    "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"
+    "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml", "image/bmp", "image/x-icon"
 ]
 ALLOWED_FILE_TYPES = [
     "application/pdf",
     "application/zip",
     "application/x-rar-compressed",
+    "application/x-rar",
     "application/x-7z-compressed",
+    "application/x-tar",
+    "application/gzip",
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "application/vnd.ms-excel",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     "text/plain",
     "text/markdown",
+    "text/csv",
+    "application/json",
+    "text/xml",
+    "text/html",
+    "text/css",
+    "text/javascript",
+    "application/javascript",
 ]
-MAX_FILE_SIZE = 10 * 1024 * 1024
+ALLOWED_AUDIO_TYPES = [
+    "audio/mpeg",
+    "audio/wav",
+    "audio/ogg",
+    "audio/flac",
+    "audio/aac",
+    "audio/mp4",
+    "audio/x-ms-wma",
+]
+ALLOWED_VIDEO_TYPES = [
+    "video/mp4",
+    "video/webm",
+    "video/x-msvideo",
+    "video/quicktime",
+    "video/x-ms-wmv",
+    "video/x-flv",
+    "video/x-matroska",
+]
+MAX_FILE_SIZE = 50 * 1024 * 1024
 
 
 def ensure_upload_dir():
@@ -46,11 +76,23 @@ def ensure_upload_dir():
     images_dir = os.path.join(UPLOAD_DIR, "images")
     if not os.path.exists(images_dir):
         os.makedirs(images_dir)
+    
+    audio_dir = os.path.join(UPLOAD_DIR, "audio")
+    if not os.path.exists(audio_dir):
+        os.makedirs(audio_dir)
+    
+    videos_dir = os.path.join(UPLOAD_DIR, "videos")
+    if not os.path.exists(videos_dir):
+        os.makedirs(videos_dir)
 
 
 def get_file_type(mime_type: str) -> str:
     if mime_type in ALLOWED_IMAGE_TYPES:
         return "image"
+    elif mime_type in ALLOWED_AUDIO_TYPES:
+        return "audio"
+    elif mime_type in ALLOWED_VIDEO_TYPES:
+        return "video"
     elif mime_type in ALLOWED_FILE_TYPES:
         return "document"
     else:
@@ -82,14 +124,43 @@ async def upload_file(
     
     mime_type = file.content_type or "application/octet-stream"
     is_image = mime_type in ALLOWED_IMAGE_TYPES
+    is_audio = mime_type in ALLOWED_AUDIO_TYPES
+    is_video = mime_type in ALLOWED_VIDEO_TYPES
+    is_allowed = (
+        is_image or 
+        is_audio or 
+        is_video or 
+        mime_type in ALLOWED_FILE_TYPES or
+        mime_type.startswith('text/')
+    )
+    
+    if not is_allowed:
+        allowed_types = (
+            ALLOWED_IMAGE_TYPES + 
+            ALLOWED_FILE_TYPES + 
+            ALLOWED_AUDIO_TYPES + 
+            ALLOWED_VIDEO_TYPES
+        )
+        raise HTTPException(
+            status_code=400, 
+            detail=f"不支持的文件类型: {mime_type}。支持的类型: {', '.join(allowed_types[:10])}..."
+        )
     
     file_ext = os.path.splitext(file.filename)[1] if file.filename else ""
     unique_filename = f"{get_now().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:8]}{file_ext}"
     
     if is_image:
         file_path = os.path.join(UPLOAD_DIR, "images", unique_filename)
+    elif is_audio:
+        file_path = os.path.join(UPLOAD_DIR, "audio", unique_filename)
+    elif is_video:
+        file_path = os.path.join(UPLOAD_DIR, "videos", unique_filename)
     else:
         file_path = os.path.join(UPLOAD_DIR, "articles", unique_filename)
+    
+    dir_path = os.path.dirname(file_path)
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
     
     async with aiofiles.open(file_path, 'wb') as f:
         await f.write(content)
