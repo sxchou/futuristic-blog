@@ -32,6 +32,21 @@ app = FastAPI(
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
+class PrefetchMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        
+        sec_purpose = request.headers.get('Sec-Purpose', '')
+        purpose = request.headers.get('Purpose', '')
+        
+        if 'prefetch' in sec_purpose.lower() or 'prefetch' in purpose.lower():
+            response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate'
+            response.headers['Vary'] = 'Sec-Purpose, Purpose'
+        
+        return response
+
+app.add_middleware(PrefetchMiddleware)
+
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
