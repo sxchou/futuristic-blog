@@ -19,7 +19,13 @@ import logging
 from contextlib import contextmanager
 from datetime import datetime
 
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
+
+logger.info("Initializing FastAPI application...")
 
 app = FastAPI(
     title="Futuristic Blog API",
@@ -28,6 +34,8 @@ app = FastAPI(
     docs_url="/api/docs",
     redoc_url="/api/redoc"
 )
+
+logger.info("FastAPI application created")
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
@@ -150,18 +158,26 @@ except Exception as e:
 
 @app.on_event("startup")
 async def startup_event():
-    logger.info("Application starting...")
+    logger.info("=== Application startup event triggered ===")
+    logger.info(f"Database URL: {str(engine.url)[:50]}...")
     asyncio.create_task(background_init())
 
 
 async def background_init():
+    logger.info("Starting background initialization...")
     try:
+        logger.info("Creating database tables...")
         Base.metadata.create_all(bind=engine)
+        logger.info("Database tables created")
+        
+        logger.info("Initializing database data...")
         init_database()
+        logger.info("Database data initialized")
+        
         asyncio.create_task(cleanup_expired_tokens_task())
-        logger.info("Application initialized successfully")
+        logger.info("=== Application initialized successfully ===")
     except Exception as e:
-        logger.error(f"Background init error: {e}")
+        logger.error(f"Background init error: {e}", exc_info=True)
 
 
 @app.get("/")
@@ -175,7 +191,8 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"}
+    logger.debug("Health check requested")
+    return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
 
 
 @app.get("/sitemap.xml")
