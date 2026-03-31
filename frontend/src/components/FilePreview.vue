@@ -129,7 +129,7 @@ const getFileIconComponent = computed(() => {
       svg: `<svg viewBox="0 0 32 32" fill="currentColor">
         <path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill-opacity="0.3"/>
         <path d="M18 2v8h8" stroke="currentColor" stroke-width="2" fill="none"/>
-        <path d="M8 18h2v6H8zm4 0h2v6h-2zm4 0h2v3h-2z"/>
+        <text x="6" y="23" font-size="10" fill="currentColor" font-weight="bold" font-family="Arial, sans-serif">PDF</text>
       </svg>`
     }
   }
@@ -141,7 +141,7 @@ const getFileIconComponent = computed(() => {
       svg: `<svg viewBox="0 0 32 32" fill="currentColor">
         <path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill-opacity="0.3"/>
         <path d="M18 2v8h8" stroke="currentColor" stroke-width="2" fill="none"/>
-        <path d="M9 15h14v2H9zm0 4h10v2H9zm0 4h12v2H9z"/>
+        <text x="10" y="24" font-size="14" fill="currentColor" font-weight="bold" font-family="Arial, sans-serif">W</text>
       </svg>`
     }
   }
@@ -153,7 +153,7 @@ const getFileIconComponent = computed(() => {
       svg: `<svg viewBox="0 0 32 32" fill="currentColor">
         <path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill-opacity="0.3"/>
         <path d="M18 2v8h8" stroke="currentColor" stroke-width="2" fill="none"/>
-        <path d="M8 14h6v4H8zm8 0h6v4h-6zm-8 6h6v4H8zm8 0h6v4h-6z"/>
+        <text x="10" y="24" font-size="14" fill="currentColor" font-weight="bold" font-family="Arial, sans-serif">X</text>
       </svg>`
     }
   }
@@ -165,8 +165,7 @@ const getFileIconComponent = computed(() => {
       svg: `<svg viewBox="0 0 32 32" fill="currentColor">
         <path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill-opacity="0.3"/>
         <path d="M18 2v8h8" stroke="currentColor" stroke-width="2" fill="none"/>
-        <rect x="8" y="14" width="10" height="8" rx="1"/>
-        <circle cx="22" cy="16" r="3"/>
+        <text x="10" y="24" font-size="14" fill="currentColor" font-weight="bold" font-family="Arial, sans-serif">P</text>
       </svg>`
     }
   }
