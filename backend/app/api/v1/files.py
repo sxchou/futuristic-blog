@@ -339,14 +339,14 @@ async def get_storage_info(
     db_file_paths = {f.file_path for f in db_files}
     db_file_map = {f.file_path: f for f in db_files}
     
-    EXCLUDED_DIRS = {'avatars'}
+    PROTECTED_DIRS = {'avatars'}
     
     if os.path.exists(UPLOAD_DIR):
         for root, dirs, files in os.walk(UPLOAD_DIR):
             rel_path = os.path.relpath(root, UPLOAD_DIR)
             dir_name = rel_path if rel_path != "." else "root"
             
-            dirs[:] = [d for d in dirs if d not in EXCLUDED_DIRS]
+            is_protected = dir_name in PROTECTED_DIRS or dir_name.startswith('avatars/')
             
             dir_size = 0
             dir_files = []
@@ -369,11 +369,12 @@ async def get_storage_info(
                         "path": file_path,
                         "size": file_size,
                         "size_formatted": format_file_size(file_size),
-                        "modified": datetime.fromtimestamp(file_stat.st_mtime).isoformat()
+                        "modified": datetime.fromtimestamp(file_stat.st_mtime).isoformat(),
+                        "is_avatar": dir_name == 'avatars' or dir_name.startswith('avatars/')
                     }
                     dir_files.append(file_info)
                     
-                    if file_path not in db_file_paths:
+                    if file_path not in db_file_paths and not is_protected:
                         result["orphan_files"].append(file_info)
                         
                 except Exception as e:
@@ -383,7 +384,8 @@ async def get_storage_info(
                 "size": dir_size,
                 "size_formatted": format_file_size(dir_size),
                 "file_count": len(dir_files),
-                "files": dir_files[:20]
+                "files": dir_files[:20],
+                "is_protected": is_protected
             }
     
     result["total_size_formatted"] = format_file_size(result["total_size"])

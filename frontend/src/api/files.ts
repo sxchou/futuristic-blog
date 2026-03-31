@@ -22,6 +22,7 @@ export interface StorageFileInfo {
   size: number
   size_formatted: string
   modified: string
+  is_avatar: boolean
 }
 
 export interface StorageDirectoryInfo {
@@ -29,6 +30,7 @@ export interface StorageDirectoryInfo {
   size_formatted: string
   file_count: number
   files: StorageFileInfo[]
+  is_protected: boolean
 }
 
 export interface StorageInfo {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { fileApi, type StorageInfo } from '@/api/files'
+import { ref, onMounted, computed } from 'vue'
+import { fileApi, type StorageInfo, type StorageFileInfo } from '@/api/files'
 import { useAdminCheck } from '@/composables/useAdminCheck'
 
 const { requireAdmin } = useAdminCheck()
@@ -10,6 +10,8 @@ const storageInfo = ref<StorageInfo | null>(null)
 const expandedDirs = ref<Set<string>>(new Set())
 const showOrphanFiles = ref(false)
 const deletingOrphans = ref(false)
+
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
 
 const fetchStorageInfo = async () => {
   if (!await requireAdmin('查看存储信息')) return
@@ -36,8 +38,21 @@ const formatDate = (dateStr: string) => {
   return new Date(dateStr).toLocaleString('zh-CN')
 }
 
-const getFileIconInfo = (filename: string): { bg: string; svg: string } => {
-  const ext = filename.split('.').pop()?.toLowerCase() || ''
+const getAvatarUrl = (file: StorageFileInfo): string => {
+  if (!file.is_avatar) return ''
+  const filename = file.name
+  return `${API_BASE}/files/avatars/${filename}`
+}
+
+const getFileIconInfo = (file: StorageFileInfo): { bg: string; svg: string } => {
+  if (file.is_avatar) {
+    return {
+      bg: '',
+      svg: ''
+    }
+  }
+  
+  const ext = file.display_name.split('.').pop()?.toLowerCase() || ''
   
   const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico']
   const docExts = ['doc', 'docx', 'rtf']
@@ -132,7 +147,7 @@ onMounted(fetchStorageInfo)
           <line x1="12" y1="16" x2="12" y2="12"/>
           <line x1="12" y1="8" x2="12.01" y2="8"/>
         </svg>
-        <span>头像目录 (avatars) 已被排除在孤立文件检测之外，不会被删除</span>
+        <span>头像目录 (avatars) 显示但受保护，不会被清理孤立文件时删除</span>
       </div>
     </div>
     
@@ -272,10 +287,17 @@ onMounted(fetchStorageInfo)
             class="flex items-center justify-between p-2 bg-yellow-500/10 rounded-lg"
           >
             <div class="flex items-center gap-2 min-w-0 flex-1">
+              <img 
+                v-if="file.is_avatar"
+                :src="getAvatarUrl(file)"
+                :alt="file.display_name"
+                class="w-7 h-7 rounded-full object-cover flex-shrink-0"
+              />
               <span 
+                v-else
                 class="w-7 h-7 flex items-center justify-center rounded flex-shrink-0"
-                :class="getFileIconInfo(file.display_name).bg"
-                v-html="getFileIconInfo(file.display_name).svg"
+                :class="getFileIconInfo(file).bg"
+                v-html="getFileIconInfo(file).svg"
               ></span>
               <div class="min-w-0">
                 <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ file.display_name }}</p>
@@ -350,10 +372,17 @@ onMounted(fetchStorageInfo)
                 class="flex items-center justify-between p-2 bg-gray-50 dark:bg-white/5 rounded-lg"
               >
                 <div class="flex items-center gap-2 min-w-0 flex-1">
+                  <img 
+                    v-if="file.is_avatar"
+                    :src="getAvatarUrl(file)"
+                    :alt="file.display_name"
+                    class="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                  />
                   <span 
+                    v-else
                     class="w-6 h-6 flex items-center justify-center rounded flex-shrink-0"
-                    :class="getFileIconInfo(file.display_name).bg"
-                    v-html="getFileIconInfo(file.display_name).svg"
+                    :class="getFileIconInfo(file).bg"
+                    v-html="getFileIconInfo(file).svg"
                   ></span>
                   <span class="text-sm text-gray-900 dark:text-white truncate">{{ file.display_name }}</span>
                 </div>

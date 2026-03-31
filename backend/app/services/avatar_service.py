@@ -33,15 +33,17 @@ class AvatarFileService:
         
         try:
             if avatar_url.startswith("/uploads/avatars/"):
-                relative_path = avatar_url[len("/uploads/avatars/"):]
-            elif avatar_url.startswith("/uploads/"):
-                relative_path = avatar_url[len("/uploads/"):]
-            elif avatar_url.startswith("uploads/"):
-                relative_path = avatar_url[len("uploads/"):]
+                filename = avatar_url[len("/uploads/avatars/"):]
+            elif avatar_url.startswith("uploads/avatars/"):
+                filename = avatar_url[len("uploads/avatars/"):]
+            elif avatar_url.startswith("/avatars/"):
+                filename = avatar_url[len("/avatars/"):]
+            elif avatar_url.startswith("avatars/"):
+                filename = avatar_url[len("avatars/"):]
             else:
-                relative_path = avatar_url
+                filename = avatar_url
             
-            full_path = cls.get_avatar_base_path().parent / relative_path
+            full_path = cls.get_avatar_base_path() / filename
             
             return full_path.resolve() if full_path.exists() else None
         except Exception as e:
