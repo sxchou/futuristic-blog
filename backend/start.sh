@@ -14,4 +14,5 @@ fi
 echo "Will listen on port: ${PORT}"
 echo "========================================"
 
-exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --log-level info
+echo "Starting uvicorn..."
+exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --log-level info 2>&1
