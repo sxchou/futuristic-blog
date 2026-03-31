@@ -386,10 +386,9 @@ onUnmounted(() => {
 
         <div v-if="articleFiles.length > 0" class="mt-6 p-3 bg-gray-50 dark:bg-dark-100/50 rounded-lg border border-gray-200 dark:border-white/10">
           <h3 class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-1.5">
-            <span class="w-4 h-4 flex items-center justify-center rounded bg-gradient-to-br from-gray-400 to-gray-600 text-white p-0.5">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="currentColor" fill-opacity="0.3"/>
-                <path d="M14 2v6h6"/>
+            <span class="w-4 h-4 flex items-center justify-center rounded bg-gradient-to-br from-primary to-blue-600 text-white p-0.5">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
               </svg>
             </span>
             <span>附件下载</span>
@@ -407,7 +406,7 @@ onUnmounted(() => {
                   v-html="getFileIconInfo(file.file_type, file.mime_type, file.original_filename).svg"
                 ></span>
                 <div class="min-w-0 flex-1">
-                  <div class="text-xs text-gray-900 dark:text-white truncate">{{ file.original_filename }}</div>
+                  <div class="text-xs text-gray-900 dark:text-white break-all">{{ file.original_filename }}</div>
                   <div class="text-[10px] text-gray-500">
                     {{ formatFileSize(file.file_size) }} · {{ file.download_count }} 次下载
                   </div>
@@ -416,7 +415,7 @@ onUnmounted(() => {
               <div class="flex items-center gap-1 flex-shrink-0 ml-2">
                 <button
                   @click="openPreview(file)"
-                  class="w-7 h-7 flex items-center justify-center text-accent hover:bg-accent/10 rounded transition-colors"
+                  class="w-7 h-7 flex items-center justify-center text-emerald-500 hover:bg-emerald-500/10 rounded transition-colors"
                   title="预览"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

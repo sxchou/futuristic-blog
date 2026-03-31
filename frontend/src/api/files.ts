@@ -11,6 +11,7 @@ export interface FileUploadResponse {
   is_image: boolean
   article_id: number | null
   download_count: number
+  order: number
   created_at: string
 }
 
@@ -62,5 +63,9 @@ export const fileApi = {
 
   async deleteFile(fileId: number): Promise<void> {
     await apiClient.delete(`/files/${fileId}`)
+  },
+
+  async updateFileOrder(orders: { id: number; order: number }[]): Promise<void> {
+    await apiClient.put('/files/order', { orders })
   }
 }

@@ -13,6 +13,7 @@ from app.utils.helpers import generate_unique_slug
 from app.services.log_service import LogService
 from app.services.baidu_push_service import baidu_push_service
 import asyncio
+import os
 
 router = APIRouter(prefix="/articles", tags=["Articles"])
 
@@ -361,6 +362,14 @@ async def delete_article(
     article_title = article.title
     
     try:
+        files = db.query(ArticleFile).filter(ArticleFile.article_id == article_id).all()
+        for file in files:
+            if file.file_path and os.path.exists(file.file_path):
+                try:
+                    os.remove(file.file_path)
+                except Exception as e:
+                    pass
+        
         db.query(Comment).filter(Comment.article_id == article_id).delete()
         db.query(ArticleLike).filter(ArticleLike.article_id == article_id).delete()
         db.query(ArticleFile).filter(ArticleFile.article_id == article_id).delete()

@@ -23,6 +23,7 @@ const isSyncingScroll = ref(false)
 const previewContent = ref('')
 const isFullscreen = ref(false)
 const showLangSelector = ref(false)
+const showMarkdownHelp = ref(false)
 const hasUnsavedChanges = ref(false)
 const originalValue = ref('')
 
@@ -390,6 +391,14 @@ defineExpose({
       
       <button
         type="button"
+        @click="showMarkdownHelp = !showMarkdownHelp"
+        title="Markdown 语法帮助"
+        class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/5 rounded transition-colors"
+      >
+        ?
+      </button>
+      <button
+        type="button"
         @click="togglePreview"
         :title="showPreview ? '隐藏预览' : '显示预览'"
         class="px-2 py-1 text-xs font-medium rounded transition-colors"
@@ -405,6 +414,115 @@ defineExpose({
       >
         ⛶
       </button>
+    </div>
+    
+    <div 
+      v-if="showMarkdownHelp" 
+      class="mb-2 p-3 bg-gray-50 dark:bg-dark-200/50 border border-gray-200 dark:border-white/10 rounded-lg text-xs text-gray-600 dark:text-gray-400"
+    >
+      <div class="flex justify-between items-center mb-3">
+        <span class="font-medium text-gray-700 dark:text-gray-300">Markdown 语法参考</span>
+        <button @click="showMarkdownHelp = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-2">
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">**粗体**</code>
+          <span class="text-gray-400">→</span>
+          <strong class="truncate">粗体</strong>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">*斜体*</code>
+          <span class="text-gray-400">→</span>
+          <em class="truncate">斜体</em>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">~~删除线~~</code>
+          <span class="text-gray-400">→</span>
+          <del class="truncate">删除线</del>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">`代码`</code>
+          <span class="text-gray-400">→</span>
+          <code class="bg-gray-200 dark:bg-dark-100 px-1 rounded truncate">代码</code>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">[文字](url)</code>
+          <span class="text-gray-400">→</span>
+          <span class="text-primary truncate">链接</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">![图片](url)</code>
+          <span class="text-gray-400">→</span>
+          <span class="truncate">图片</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0"># 标题</code>
+          <span class="text-gray-400">→</span>
+          <span class="font-bold truncate">H1标题</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">## 标题</code>
+          <span class="text-gray-400">→</span>
+          <span class="font-semibold truncate">H2标题</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">- 列表</code>
+          <span class="text-gray-400">→</span>
+          <span class="truncate">无序列表</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">1. 列表</code>
+          <span class="text-gray-400">→</span>
+          <span class="truncate">有序列表</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">- [ ] 任务</code>
+          <span class="text-gray-400">→</span>
+          <span class="truncate">任务列表</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">> 引用</code>
+          <span class="text-gray-400">→</span>
+          <span class="truncate">引用块</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">---</code>
+          <span class="text-gray-400">→</span>
+          <span class="truncate">分隔线</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">```代码块```</code>
+          <span class="text-gray-400">→</span>
+          <span class="truncate">代码块</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">| 表格 |</code>
+          <span class="text-gray-400">→</span>
+          <span class="truncate">表格</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">[^脚注]</code>
+          <span class="text-gray-400">→</span>
+          <span class="truncate">脚注</span>
+        </div>
+      </div>
+      <div class="mt-3 pt-2 border-t border-gray-200 dark:border-white/10">
+        <a 
+          href="https://markdown.com.cn/basic-syntax/" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-1 text-primary hover:underline"
+        >
+          <span>查看完整 Markdown 语法文档</span>
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        </a>
+      </div>
     </div>
     
     <div class="editor-container flex" :style="editorContainerStyle">

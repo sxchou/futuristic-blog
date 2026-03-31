@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models import ArticleFile
-from app.schemas import ArticleFileResponse
+from app.schemas import ArticleFileResponse, FileOrderUpdate
 from app.utils import get_current_active_user
 from app.utils.timezone import get_now
 from app.core.config import settings
@@ -241,7 +241,7 @@ async def get_files(
     if file_type:
         query = query.filter(ArticleFile.file_type == file_type)
     
-    return query.order_by(ArticleFile.created_at.desc()).all()
+    return query.order_by(ArticleFile.order.asc(), ArticleFile.created_at.desc()).all()
 
 
 @router.get("/{file_id}", response_model=ArticleFileResponse)
@@ -287,10 +287,31 @@ async def delete_file(
     if not db_file:
         raise HTTPException(status_code=404, detail="文件不存在")
     
-    if os.path.exists(db_file.file_path):
-        os.remove(db_file.file_path)
+    file_path = db_file.file_path
+    filename = db_file.original_filename
+    
+    try:
+        if file_path and os.path.exists(file_path):
+            os.remove(file_path)
+    except Exception as e:
+        pass
     
     db.delete(db_file)
     db.commit()
     
     return {"message": "文件已删除"}
+
+
+@router.put("/order")
+async def update_file_order(
+    data: FileOrderUpdate,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_active_user)
+):
+    for item in data.orders:
+        db_file = db.query(ArticleFile).filter(ArticleFile.id == item.id).first()
+        if db_file:
+            db_file.order = item.order
+    
+    db.commit()
+    return {"message": "排序已更新"}

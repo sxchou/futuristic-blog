@@ -514,6 +514,7 @@ class ArticleFileResponse(ArticleFileBase):
     id: int
     article_id: Optional[int] = None
     download_count: int
+    order: int = 0
     created_at: Optional[str] = None
     
     @field_validator('created_at', mode='before')
@@ -523,6 +524,15 @@ class ArticleFileResponse(ArticleFileBase):
     
     class Config:
         from_attributes = True
+
+
+class FileOrderItem(BaseModel):
+    id: int
+    order: int
+
+
+class FileOrderUpdate(BaseModel):
+    orders: List[FileOrderItem]
 
 
 class EmailConfigBase(BaseModel):

@@ -68,6 +68,14 @@ def run_database_migrations():
                 conn.commit()
                 print("Migration: Added 'oauth_avatar_url' column to user_profiles table")
             
+            cursor.execute("PRAGMA table_info(article_files)")
+            file_columns = [column[1] for column in cursor.fetchall()]
+            
+            if 'order' not in file_columns:
+                cursor.execute("ALTER TABLE article_files ADD COLUMN 'order' INTEGER DEFAULT 0")
+                conn.commit()
+                print("Migration: Added 'order' column to article_files table")
+            
             conn.close()
         elif "postgresql" in db_url:
             db = SessionLocal()
@@ -101,6 +109,12 @@ def run_database_migrations():
                     db.execute(text("ALTER TABLE user_profiles ADD COLUMN oauth_avatar_url VARCHAR(500)"))
                     db.commit()
                     print("Migration: Added 'oauth_avatar_url' column to user_profiles table")
+                
+                result = db.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'article_files' AND column_name = 'order'"))
+                if not result.fetchone():
+                    db.execute(text("ALTER TABLE article_files ADD COLUMN \"order\" INTEGER DEFAULT 0"))
+                    db.commit()
+                    print("Migration: Added 'order' column to article_files table")
             except Exception as e:
                 print(f"PostgreSQL migration error: {e}")
                 db.rollback()

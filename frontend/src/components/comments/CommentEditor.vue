@@ -398,6 +398,8 @@ defineExpose({
       
       <div class="w-px h-4 bg-gray-200 dark:bg-white/10 mx-1 hidden sm:block"></div>
       
+      <EmojiPicker position="bottom" @select="insertEmoji" />
+      
       <button
         type="button"
         @click="showMarkdownHelp = !showMarkdownHelp"

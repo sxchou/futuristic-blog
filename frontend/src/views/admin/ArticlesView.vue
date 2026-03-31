@@ -6,6 +6,7 @@ import type { ArticleListItem, Article } from '@/types'
 import { useAdminCheck } from '@/composables/useAdminCheck'
 import { formatDateTime } from '@/utils/date'
 import MarkdownEditor from '@/components/admin/MarkdownEditor.vue'
+import FilePreview from '@/components/FilePreview.vue'
 
 interface ArticleFile {
   id: number
@@ -16,6 +17,7 @@ interface ArticleFile {
   mime_type: string
   is_image: boolean
   download_count: number
+  order: number
   created_at: string
 }
 
@@ -38,6 +40,10 @@ const showCategoryModal = ref(false)
 const showTagModal = ref(false)
 const isCreatingCategory = ref(false)
 const isCreatingTag = ref(false)
+const showPreview = ref(false)
+const previewFile = ref<ArticleFile | null>(null)
+const draggedFileIndex = ref<number | null>(null)
+const dragOverIndex = ref<number | null>(null)
 
 const newCategory = ref({
   name: '',
@@ -460,6 +466,21 @@ const handleImageUpload = async (event: Event) => {
   }
 }
 
+const openPreview = (file: ArticleFile) => {
+  previewFile.value = file
+  showPreview.value = true
+}
+
+const closePreview = () => {
+  showPreview.value = false
+  previewFile.value = null
+}
+
+const downloadFile = (fileId: number) => {
+  const url = fileApi.getDownloadUrl(fileId)
+  window.open(url, '_blank')
+}
+
 const handleDeleteFile = async (fileId: number) => {
   const confirmed = await dialog.showConfirm({
     title: '确认删除',
@@ -476,6 +497,108 @@ const handleDeleteFile = async (fileId: number) => {
   } catch (error: any) {
     console.error('Failed to delete file:', error)
     await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
+  }
+}
+
+const handleDragStart = (e: DragEvent, index: number) => {
+  draggedFileIndex.value = index
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', String(index))
+  }
+}
+
+const handleDragOver = (e: DragEvent, index: number) => {
+  e.preventDefault()
+  if (e.dataTransfer) {
+    e.dataTransfer.dropEffect = 'move'
+  }
+  if (draggedFileIndex.value !== null && draggedFileIndex.value !== index) {
+    dragOverIndex.value = index
+  }
+}
+
+const handleDragLeave = () => {
+  dragOverIndex.value = null
+}
+
+const handleDrop = async (e: DragEvent, targetIndex: number) => {
+  e.preventDefault()
+  
+  if (draggedFileIndex.value === null || draggedFileIndex.value === targetIndex) {
+    draggedFileIndex.value = null
+    dragOverIndex.value = null
+    return
+  }
+  
+  const files = [...articleFiles.value]
+  const [draggedFile] = files.splice(draggedFileIndex.value, 1)
+  files.splice(targetIndex, 0, draggedFile)
+  
+  articleFiles.value = files
+  
+  const orders = files.map((f, idx) => ({
+    id: f.id,
+    order: idx
+  }))
+  
+  try {
+    await fileApi.updateFileOrder(orders)
+  } catch (error) {
+    console.error('Failed to update file order:', error)
+    if (editingArticle.value) {
+      await fetchArticleFiles(editingArticle.value.id)
+    }
+  }
+  
+  draggedFileIndex.value = null
+  dragOverIndex.value = null
+}
+
+const handleDragEnd = () => {
+  draggedFileIndex.value = null
+  dragOverIndex.value = null
+}
+
+const sortFilesAsc = async () => {
+  const files = [...articleFiles.value].sort((a, b) => 
+    a.original_filename.localeCompare(b.original_filename, 'zh-CN')
+  )
+  articleFiles.value = files
+  
+  const orders = files.map((f, idx) => ({
+    id: f.id,
+    order: idx
+  }))
+  
+  try {
+    await fileApi.updateFileOrder(orders)
+  } catch (error) {
+    console.error('Failed to update file order:', error)
+    if (editingArticle.value) {
+      await fetchArticleFiles(editingArticle.value.id)
+    }
+  }
+}
+
+const sortFilesDesc = async () => {
+  const files = [...articleFiles.value].sort((a, b) => 
+    b.original_filename.localeCompare(a.original_filename, 'zh-CN')
+  )
+  articleFiles.value = files
+  
+  const orders = files.map((f, idx) => ({
+    id: f.id,
+    order: idx
+  }))
+  
+  try {
+    await fileApi.updateFileOrder(orders)
+  } catch (error) {
+    console.error('Failed to update file order:', error)
+    if (editingArticle.value) {
+      await fetchArticleFiles(editingArticle.value.id)
+    }
   }
 }
 
@@ -834,33 +957,116 @@ watch(form, () => {
               💡 请先保存文章后再上传附件文件
             </div>
 
-            <div v-if="articleFiles.length > 0" class="space-y-2">
-              <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">已上传文件：</div>
+            <div v-if="articleFiles.length > 0" class="space-y-1.5">
+              <div class="flex items-center justify-between mb-1">
+                <div class="flex items-center gap-1.5 text-xs">
+                  <span class="text-gray-700 dark:text-gray-300 font-medium">已上传文件：</span>
+                  <div class="flex items-center gap-1 text-primary">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                    </svg>
+                    <span>可拖拽排序</span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-1">
+                  <button
+                    type="button"
+                    @click="sortFilesAsc"
+                    class="px-2 py-0.5 text-xs text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors flex items-center gap-1"
+                    title="按名称升序 (A-Z)"
+                  >
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                    </svg>
+                    升序
+                  </button>
+                  <button
+                    type="button"
+                    @click="sortFilesDesc"
+                    class="px-2 py-0.5 text-xs text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors flex items-center gap-1"
+                    title="按名称降序 (Z-A)"
+                  >
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
+                    </svg>
+                    降序
+                  </button>
+                </div>
+              </div>
               <div 
-                v-for="file in articleFiles" 
+                v-for="(file, index) in articleFiles" 
                 :key="file.id"
-                class="flex items-center justify-between p-2 bg-white dark:bg-dark-200 rounded border border-gray-200 dark:border-white/5"
+                draggable="true"
+                @dragstart="handleDragStart($event, index)"
+                @dragover="handleDragOver($event, index)"
+                @dragleave="handleDragLeave"
+                @drop="handleDrop($event, index)"
+                @dragend="handleDragEnd"
+                class="flex items-center justify-between p-2 bg-white dark:bg-dark-200 rounded border transition-all duration-200 cursor-move"
+                :class="[
+                  draggedFileIndex === index 
+                    ? 'border-primary bg-primary/5 opacity-50 scale-[0.98]' 
+                    : dragOverIndex === index 
+                      ? 'border-primary border-dashed bg-primary/5' 
+                      : 'border-gray-200 dark:border-white/5 hover:border-gray-300 dark:hover:border-white/10'
+                ]"
               >
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 min-w-0 flex-1">
+                  <div class="flex-shrink-0 text-gray-300 dark:text-gray-600 cursor-grab active:cursor-grabbing">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <circle cx="9" cy="6" r="1.5"/>
+                      <circle cx="15" cy="6" r="1.5"/>
+                      <circle cx="9" cy="12" r="1.5"/>
+                      <circle cx="15" cy="12" r="1.5"/>
+                      <circle cx="9" cy="18" r="1.5"/>
+                      <circle cx="15" cy="18" r="1.5"/>
+                    </svg>
+                  </div>
                   <span 
-                    class="w-6 h-6 flex items-center justify-center rounded p-1"
+                    class="w-6 h-6 flex items-center justify-center rounded p-1 flex-shrink-0"
                     :class="[getFileIconInfo(file.file_type, file.mime_type, file.original_filename).bg, getFileIconInfo(file.file_type, file.mime_type, file.original_filename).color]"
                     v-html="getFileIconInfo(file.file_type, file.mime_type, file.original_filename).svg"
                   ></span>
-                  <div>
-                    <div class="text-sm text-gray-900 dark:text-white">{{ file.original_filename }}</div>
-                    <div class="text-xs text-gray-500">
-                      {{ formatFileSize(file.file_size) }} · 下载 {{ file.download_count }} 次
+                  <div class="min-w-0 flex-1">
+                    <div class="text-xs text-gray-900 dark:text-white truncate">{{ file.original_filename }}</div>
+                    <div class="text-[10px] text-gray-500">
+                      {{ formatFileSize(file.file_size) }} · {{ file.download_count }} 次下载
                     </div>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  @click="handleDeleteFile(file.id)"
-                  class="text-red-400 hover:text-red-300 text-xs"
-                >
-                  删除
-                </button>
+                <div class="flex items-center gap-1 flex-shrink-0 ml-2">
+                  <button
+                    type="button"
+                    @click="openPreview(file)"
+                    class="w-6 h-6 flex items-center justify-center text-emerald-500 hover:bg-emerald-500/10 rounded transition-colors"
+                    title="预览"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    @click="downloadFile(file.id)"
+                    class="w-6 h-6 flex items-center justify-center text-primary hover:bg-primary/10 rounded transition-colors"
+                    title="下载"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    @click="handleDeleteFile(file.id)"
+                    class="w-6 h-6 flex items-center justify-center text-red-400 hover:bg-red-500/10 rounded transition-colors"
+                    title="删除"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
             <div v-else-if="editingArticle" class="text-xs text-gray-400">
@@ -1149,4 +1355,10 @@ watch(form, () => {
       </div>
     </div>
   </div>
+
+  <FilePreview
+    v-if="showPreview && previewFile"
+    :file="previewFile"
+    @close="closePreview"
+  />
 </template>

@@ -115,6 +115,7 @@ class ArticleFile(Base):
     mime_type = Column(String(100), nullable=True)
     is_image = Column(Boolean, default=False)
     download_count = Column(Integer, default=0)
+    order = Column(Integer, default=0)
     article_id = Column(Integer, ForeignKey('articles.id', ondelete='CASCADE'), nullable=True)
     uploaded_by = Column(Integer, ForeignKey('users.id'), nullable=True)
     created_at = Column(DateTime, default=get_db_now)
