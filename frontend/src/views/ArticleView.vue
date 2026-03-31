@@ -387,7 +387,7 @@ onUnmounted(() => {
         <div v-if="articleFiles.length > 0" class="mt-6 p-3 bg-gray-50 dark:bg-dark-100/50 rounded-lg border border-gray-200 dark:border-white/10">
           <h3 class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-1.5">
             <span class="w-4 h-4 flex items-center justify-center rounded bg-gradient-to-br from-primary to-blue-600 text-white p-0.5">
-              <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="white" stroke-width="2.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
               </svg>
             </span>
