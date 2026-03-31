@@ -126,10 +126,10 @@ const getFileIconComponent = computed(() => {
     return {
       color: 'text-white',
       bg: 'bg-gradient-to-br from-red-500 to-red-700',
-      svg: `<svg viewBox="0 0 32 32" fill="none">
-        <path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10z" fill="currentColor" fill-opacity="0.3"/>
-        <path d="M18 2v8h8" stroke="currentColor" stroke-width="2"/>
-        <text x="6" y="23" font-size="10" fill="currentColor" font-weight="bold" font-family="Arial">PDF</text>
+      svg: `<svg viewBox="0 0 32 32" fill="currentColor">
+        <path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill-opacity="0.3"/>
+        <path d="M18 2v8h8" stroke="currentColor" stroke-width="2" fill="none"/>
+        <path d="M8 18h2v6H8zm4 0h2v6h-2zm4 0h2v3h-2z"/>
       </svg>`
     }
   }
@@ -138,10 +138,10 @@ const getFileIconComponent = computed(() => {
     return {
       color: 'text-white',
       bg: 'bg-gradient-to-br from-blue-500 to-blue-700',
-      svg: `<svg viewBox="0 0 32 32" fill="none">
-        <path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10z" fill="currentColor" fill-opacity="0.3"/>
-        <path d="M18 2v8h8" stroke="currentColor" stroke-width="2"/>
-        <text x="9" y="24" font-size="14" fill="currentColor" font-weight="bold" font-family="Arial">W</text>
+      svg: `<svg viewBox="0 0 32 32" fill="currentColor">
+        <path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill-opacity="0.3"/>
+        <path d="M18 2v8h8" stroke="currentColor" stroke-width="2" fill="none"/>
+        <path d="M9 15h14v2H9zm0 4h10v2H9zm0 4h12v2H9z"/>
       </svg>`
     }
   }
@@ -150,10 +150,10 @@ const getFileIconComponent = computed(() => {
     return {
       color: 'text-white',
       bg: 'bg-gradient-to-br from-emerald-500 to-emerald-700',
-      svg: `<svg viewBox="0 0 32 32" fill="none">
-        <path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10z" fill="currentColor" fill-opacity="0.3"/>
-        <path d="M18 2v8h8" stroke="currentColor" stroke-width="2"/>
-        <text x="9" y="24" font-size="14" fill="currentColor" font-weight="bold" font-family="Arial">X</text>
+      svg: `<svg viewBox="0 0 32 32" fill="currentColor">
+        <path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill-opacity="0.3"/>
+        <path d="M18 2v8h8" stroke="currentColor" stroke-width="2" fill="none"/>
+        <path d="M8 14h6v4H8zm8 0h6v4h-6zm-8 6h6v4H8zm8 0h6v4h-6z"/>
       </svg>`
     }
   }
@@ -162,10 +162,11 @@ const getFileIconComponent = computed(() => {
     return {
       color: 'text-white',
       bg: 'bg-gradient-to-br from-orange-500 to-orange-700',
-      svg: `<svg viewBox="0 0 32 32" fill="none">
-        <path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10z" fill="currentColor" fill-opacity="0.3"/>
-        <path d="M18 2v8h8" stroke="currentColor" stroke-width="2"/>
-        <text x="9" y="24" font-size="14" fill="currentColor" font-weight="bold" font-family="Arial">P</text>
+      svg: `<svg viewBox="0 0 32 32" fill="currentColor">
+        <path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill-opacity="0.3"/>
+        <path d="M18 2v8h8" stroke="currentColor" stroke-width="2" fill="none"/>
+        <rect x="8" y="14" width="10" height="8" rx="1"/>
+        <circle cx="22" cy="16" r="3"/>
       </svg>`
     }
   }
@@ -175,9 +176,9 @@ const getFileIconComponent = computed(() => {
       color: 'text-white',
       bg: 'bg-gradient-to-br from-slate-500 to-slate-700',
       svg: `<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10z" fill="currentColor" fill-opacity="0.3"/>
+        <path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill="currentColor" fill-opacity="0.3"/>
         <path d="M18 2v8h8"/>
-        <path d="M10 17h12M10 22h8" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M9 16h14M9 21h10" stroke-width="2.5" stroke-linecap="round"/>
       </svg>`
     }
   }
@@ -199,7 +200,7 @@ const getFileIconComponent = computed(() => {
       color: 'text-white',
       bg: 'bg-gradient-to-br from-pink-500 to-pink-700',
       svg: `<svg viewBox="0 0 32 32" fill="currentColor">
-        <rect x="2" y="5" width="28" height="22" rx="3" fill="currentColor" fill-opacity="0.3"/>
+        <rect x="2" y="5" width="28" height="22" rx="3" fill-opacity="0.3"/>
         <polygon points="13,10 22,16 13,22"/>
       </svg>`
     }
@@ -222,7 +223,7 @@ const getFileIconComponent = computed(() => {
     color: 'text-white',
     bg: 'bg-gradient-to-br from-gray-400 to-gray-600',
     svg: `<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10z" fill="currentColor" fill-opacity="0.3"/>
+      <path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill="currentColor" fill-opacity="0.3"/>
       <path d="M18 2v8h8"/>
     </svg>`
   }

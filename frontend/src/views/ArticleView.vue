@@ -129,28 +129,28 @@ const getFileIconInfo = (fileType: string, mimeType: string, filename: string): 
     return {
       color: 'text-white',
       bg: 'bg-gradient-to-br from-red-500 to-red-700',
-      svg: `<svg viewBox="0 0 32 32" fill="none"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10z" fill="currentColor" fill-opacity="0.3"/><path d="M18 2v8h8" stroke="currentColor" stroke-width="2"/><text x="6" y="23" font-size="10" fill="currentColor" font-weight="bold" font-family="Arial">PDF</text></svg>`
+      svg: `<svg viewBox="0 0 32 32" fill="currentColor"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill-opacity="0.3"/><path d="M18 2v8h8" stroke="currentColor" stroke-width="2" fill="none"/><path d="M8 18h2v6H8zm4 0h2v6h-2zm4 0h2v3h-2z"/></svg>`
     }
   }
   if (['doc', 'docx', 'rtf'].includes(ext) || mimeType.includes('word') || mimeType === 'application/msword' || mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
     return {
       color: 'text-white',
       bg: 'bg-gradient-to-br from-blue-500 to-blue-700',
-      svg: `<svg viewBox="0 0 32 32" fill="none"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10z" fill="currentColor" fill-opacity="0.3"/><path d="M18 2v8h8" stroke="currentColor" stroke-width="2"/><text x="9" y="24" font-size="14" fill="currentColor" font-weight="bold" font-family="Arial">W</text></svg>`
+      svg: `<svg viewBox="0 0 32 32" fill="currentColor"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill-opacity="0.3"/><path d="M18 2v8h8" stroke="currentColor" stroke-width="2" fill="none"/><path d="M9 15h14v2H9zm0 4h10v2H9zm0 4h12v2H9z"/></svg>`
     }
   }
   if (['xls', 'xlsx', 'csv'].includes(ext) || mimeType.includes('excel') || mimeType.includes('spreadsheet') || mimeType === 'application/vnd.ms-excel' || mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
     return {
       color: 'text-white',
       bg: 'bg-gradient-to-br from-emerald-500 to-emerald-700',
-      svg: `<svg viewBox="0 0 32 32" fill="none"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10z" fill="currentColor" fill-opacity="0.3"/><path d="M18 2v8h8" stroke="currentColor" stroke-width="2"/><text x="9" y="24" font-size="14" fill="currentColor" font-weight="bold" font-family="Arial">X</text></svg>`
+      svg: `<svg viewBox="0 0 32 32" fill="currentColor"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill-opacity="0.3"/><path d="M18 2v8h8" stroke="currentColor" stroke-width="2" fill="none"/><path d="M8 14h6v4H8zm8 0h6v4h-6zm-8 6h6v4H8zm8 0h6v4h-6z"/></svg>`
     }
   }
   if (['ppt', 'pptx'].includes(ext) || mimeType.includes('powerpoint') || mimeType === 'application/vnd.ms-powerpoint' || mimeType === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') {
     return {
       color: 'text-white',
       bg: 'bg-gradient-to-br from-orange-500 to-orange-700',
-      svg: `<svg viewBox="0 0 32 32" fill="none"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10z" fill="currentColor" fill-opacity="0.3"/><path d="M18 2v8h8" stroke="currentColor" stroke-width="2"/><text x="9" y="24" font-size="14" fill="currentColor" font-weight="bold" font-family="Arial">P</text></svg>`
+      svg: `<svg viewBox="0 0 32 32" fill="currentColor"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill-opacity="0.3"/><path d="M18 2v8h8" stroke="currentColor" stroke-width="2" fill="none"/><rect x="8" y="14" width="10" height="8" rx="1"/><circle cx="22" cy="16" r="3"/></svg>`
     }
   }
   if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext) || mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('7z') || mimeType.includes('compressed')) {
@@ -171,13 +171,13 @@ const getFileIconInfo = (fileType: string, mimeType: string, filename: string): 
     return {
       color: 'text-white',
       bg: 'bg-gradient-to-br from-pink-500 to-pink-700',
-      svg: `<svg viewBox="0 0 32 32" fill="currentColor"><rect x="2" y="5" width="28" height="22" rx="3" fill="currentColor" fill-opacity="0.3"/><polygon points="13,10 22,16 13,22"/></svg>`
+      svg: `<svg viewBox="0 0 32 32" fill="currentColor"><rect x="2" y="5" width="28" height="22" rx="3" fill-opacity="0.3"/><polygon points="13,10 22,16 13,22"/></svg>`
     }
   }
   return {
     color: 'text-white',
     bg: 'bg-gradient-to-br from-gray-400 to-gray-600',
-    svg: `<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10z" fill="currentColor" fill-opacity="0.3"/><path d="M18 2v8h8"/></svg>`
+    svg: `<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill="currentColor" fill-opacity="0.3"/><path d="M18 2v8h8"/></svg>`
   }
 }
 
