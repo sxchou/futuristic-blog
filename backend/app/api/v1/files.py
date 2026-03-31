@@ -315,3 +315,69 @@ async def update_file_order(
     
     db.commit()
     return {"message": "排序已更新"}
+
+
+@router.get("/admin/storage-info")
+async def get_storage_info(
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_active_user)
+):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="需要管理员权限")
+    
+    result = {
+        "upload_dir": UPLOAD_DIR,
+        "total_size": 0,
+        "total_files": 0,
+        "directories": {},
+        "orphan_files": [],
+        "db_files_count": 0
+    }
+    
+    db_files = db.query(ArticleFile).all()
+    result["db_files_count"] = len(db_files)
+    db_file_paths = {f.file_path for f in db_files}
+    
+    if os.path.exists(UPLOAD_DIR):
+        for root, dirs, files in os.walk(UPLOAD_DIR):
+            rel_path = os.path.relpath(root, UPLOAD_DIR)
+            dir_name = rel_path if rel_path != "." else "root"
+            
+            dir_size = 0
+            dir_files = []
+            
+            for file in files:
+                file_path = os.path.join(root, file)
+                try:
+                    file_size = os.path.getsize(file_path)
+                    file_stat = os.stat(file_path)
+                    dir_size += file_size
+                    result["total_size"] += file_size
+                    result["total_files"] += 1
+                    
+                    file_info = {
+                        "name": file,
+                        "path": file_path,
+                        "size": file_size,
+                        "size_formatted": format_file_size(file_size),
+                        "modified": datetime.fromtimestamp(file_stat.st_mtime).isoformat()
+                    }
+                    dir_files.append(file_info)
+                    
+                    if file_path not in db_file_paths:
+                        result["orphan_files"].append(file_info)
+                        
+                except Exception as e:
+                    pass
+            
+            result["directories"][dir_name] = {
+                "size": dir_size,
+                "size_formatted": format_file_size(dir_size),
+                "file_count": len(dir_files),
+                "files": dir_files[:20]
+            }
+    
+    result["total_size_formatted"] = format_file_size(result["total_size"])
+    result["orphan_count"] = len(result["orphan_files"])
+    
+    return result
