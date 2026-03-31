@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { fileApi, type StorageInfo, type StorageFileInfo } from '@/api/files'
+import { fileApi, type StorageInfo } from '@/api/files'
 import { useAdminCheck } from '@/composables/useAdminCheck'
 
 const { requireAdmin } = useAdminCheck()
