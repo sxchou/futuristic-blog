@@ -122,7 +122,7 @@ const getFileIconInfo = (fileType: string, mimeType: string, filename: string): 
     return {
       color: 'text-white',
       bg: 'bg-gradient-to-br from-green-400 to-green-600',
-      svg: `<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="26" height="26" rx="3" fill="currentColor" fill-opacity="0.2"/><circle cx="11" cy="11" r="3" fill="currentColor"/><path d="M29 20l-7-7L7 29" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32"><rect x="3" y="3" width="26" height="26" rx="3" fill="rgba(255,255,255,0.2)"/><circle cx="11" cy="11" r="3" fill="white"/><path d="M29 20l-7-7L7 29" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`
     }
   }
   if (mimeType.includes('pdf') || ext === 'pdf') {
@@ -157,27 +157,27 @@ const getFileIconInfo = (fileType: string, mimeType: string, filename: string): 
     return {
       color: 'text-white',
       bg: 'bg-gradient-to-br from-amber-500 to-amber-700',
-      svg: `<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2"><path d="M28 10v18H4V10" fill="currentColor" fill-opacity="0.3"/><path d="M30 4H2v6h28V4z" fill="currentColor" fill-opacity="0.5"/><rect x="13" y="14" width="6" height="5" fill="currentColor" rx="1"/><rect x="13" y="21" width="6" height="4" fill="currentColor" fill-opacity="0.5" rx="1"/></svg>`
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32"><path d="M28 10v18H4V10" fill="rgba(255,255,255,0.3)"/><path d="M30 4H2v6h28V4z" fill="rgba(255,255,255,0.5)"/><rect x="13" y="14" width="6" height="5" fill="white" rx="1"/><rect x="13" y="21" width="6" height="4" fill="rgba(255,255,255,0.5)" rx="1"/></svg>`
     }
   }
   if (['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a'].includes(ext) || mimeType.includes('audio')) {
     return {
       color: 'text-white',
       bg: 'bg-gradient-to-br from-purple-500 to-purple-700',
-      svg: `<svg viewBox="0 0 32 32" fill="currentColor"><path d="M12 24V6l16-3v18"/><circle cx="8" cy="24" r="4"/><circle cx="24" cy="21" r="4"/></svg>`
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32"><path d="M12 24V6l16-3v18" fill="rgba(255,255,255,0.5)"/><circle cx="8" cy="24" r="4" fill="white"/><circle cx="24" cy="21" r="4" fill="white"/></svg>`
     }
   }
   if (['mp4', 'webm', 'avi', 'mov', 'mkv'].includes(ext) || mimeType.includes('video')) {
     return {
       color: 'text-white',
       bg: 'bg-gradient-to-br from-pink-500 to-pink-700',
-      svg: `<svg viewBox="0 0 32 32" fill="currentColor"><rect x="2" y="5" width="28" height="22" rx="3" fill-opacity="0.3"/><polygon points="13,10 22,16 13,22"/></svg>`
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32"><rect x="2" y="5" width="28" height="22" rx="3" fill="rgba(255,255,255,0.3)"/><polygon points="13,10 22,16 13,22" fill="white"/></svg>`
     }
   }
   return {
     color: 'text-white',
     bg: 'bg-gradient-to-br from-gray-400 to-gray-600',
-    svg: `<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill="currentColor" fill-opacity="0.3"/><path d="M18 2v8h8"/></svg>`
+    svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill="rgba(255,255,255,0.3)"/><path d="M18 2v8h8" stroke="white" stroke-width="2" fill="none"/></svg>`
   }
 }
 
