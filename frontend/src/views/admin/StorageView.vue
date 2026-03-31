@@ -11,8 +11,16 @@ const expandedDirs = ref<Set<string>>(new Set())
 const showOrphanFiles = ref(false)
 const deletingOrphans = ref(false)
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
-const STATIC_BASE = API_BASE.replace('/api/v1', '')
+const getAvatarUrl = (file: StorageFileInfo): string => {
+  if (!file.is_avatar) return ''
+  const filename = file.name
+  if (import.meta.env.PROD) {
+    return `/uploads/avatars/${filename}`
+  }
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
+  const STATIC_BASE = API_BASE.replace('/api/v1', '')
+  return `${STATIC_BASE}/uploads/avatars/${filename}`
+}
 
 const fetchStorageInfo = async () => {
   if (!await requireAdmin('查看存储信息')) return
@@ -37,12 +45,6 @@ const toggleDir = (dirName: string) => {
 
 const formatDate = (dateStr: string) => {
   return new Date(dateStr).toLocaleString('zh-CN')
-}
-
-const getAvatarUrl = (file: StorageFileInfo): string => {
-  if (!file.is_avatar) return ''
-  const filename = file.name
-  return `${STATIC_BASE}/uploads/avatars/${filename}`
 }
 
 const getFileIconInfo = (file: StorageFileInfo): { bg: string; svg: string } => {
