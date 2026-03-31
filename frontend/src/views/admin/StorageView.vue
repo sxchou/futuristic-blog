@@ -36,6 +36,71 @@ const formatDate = (dateStr: string) => {
   return new Date(dateStr).toLocaleString('zh-CN')
 }
 
+const getFileIconInfo = (filename: string): { bg: string; svg: string } => {
+  const ext = filename.split('.').pop()?.toLowerCase() || ''
+  
+  const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico']
+  const docExts = ['doc', 'docx', 'rtf']
+  const xlsExts = ['xls', 'xlsx', 'csv']
+  const pptExts = ['ppt', 'pptx']
+  const archiveExts = ['zip', 'rar', '7z', 'tar', 'gz']
+  const audioExts = ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a']
+  const videoExts = ['mp4', 'webm', 'avi', 'mov', 'mkv']
+  
+  if (imageExts.includes(ext)) {
+    return {
+      bg: 'bg-gradient-to-br from-green-400 to-green-600',
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="24" height="24"><rect x="3" y="3" width="26" height="26" rx="3" fill="rgba(255,255,255,0.2)"/><circle cx="11" cy="11" r="3" fill="white"/><path d="M29 20l-7-7L7 29" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+    }
+  }
+  if (ext === 'pdf') {
+    return {
+      bg: 'bg-gradient-to-br from-red-500 to-red-700',
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="24" height="24"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill="rgba(255,255,255,0.3)"/><path d="M18 2v8h8" stroke="white" stroke-width="2" fill="none"/><foreignObject x="4" y="16" width="24" height="12"><div xmlns="http://www.w3.org/1999/xhtml" style="color: white; font-size: 9px; font-weight: bold; font-family: -apple-system, BlinkMacSystemFont, sans-serif; text-align: center; line-height: 12px;">PDF</div></foreignObject></svg>`
+    }
+  }
+  if (docExts.includes(ext)) {
+    return {
+      bg: 'bg-gradient-to-br from-blue-500 to-blue-700',
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="24" height="24"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill="rgba(255,255,255,0.3)"/><path d="M18 2v8h8" stroke="white" stroke-width="2" fill="none"/><foreignObject x="4" y="16" width="24" height="16"><div xmlns="http://www.w3.org/1999/xhtml" style="color: white; font-size: 14px; font-weight: bold; font-family: -apple-system, BlinkMacSystemFont, sans-serif; text-align: center; line-height: 16px;">W</div></foreignObject></svg>`
+    }
+  }
+  if (xlsExts.includes(ext)) {
+    return {
+      bg: 'bg-gradient-to-br from-emerald-500 to-emerald-700',
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="24" height="24"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill="rgba(255,255,255,0.3)"/><path d="M18 2v8h8" stroke="white" stroke-width="2" fill="none"/><foreignObject x="4" y="16" width="24" height="16"><div xmlns="http://www.w3.org/1999/xhtml" style="color: white; font-size: 14px; font-weight: bold; font-family: -apple-system, BlinkMacSystemFont, sans-serif; text-align: center; line-height: 16px;">X</div></foreignObject></svg>`
+    }
+  }
+  if (pptExts.includes(ext)) {
+    return {
+      bg: 'bg-gradient-to-br from-orange-500 to-orange-700',
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="24" height="24"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill="rgba(255,255,255,0.3)"/><path d="M18 2v8h8" stroke="white" stroke-width="2" fill="none"/><foreignObject x="4" y="16" width="24" height="16"><div xmlns="http://www.w3.org/1999/xhtml" style="color: white; font-size: 14px; font-weight: bold; font-family: -apple-system, BlinkMacSystemFont, sans-serif; text-align: center; line-height: 16px;">P</div></foreignObject></svg>`
+    }
+  }
+  if (archiveExts.includes(ext)) {
+    return {
+      bg: 'bg-gradient-to-br from-amber-500 to-amber-700',
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="24" height="24"><path d="M28 10v18H4V10" fill="rgba(255,255,255,0.3)"/><path d="M30 4H2v6h28V4z" fill="rgba(255,255,255,0.5)"/><rect x="13" y="14" width="6" height="5" fill="white" rx="1"/><rect x="13" y="21" width="6" height="4" fill="rgba(255,255,255,0.5)" rx="1"/></svg>`
+    }
+  }
+  if (audioExts.includes(ext)) {
+    return {
+      bg: 'bg-gradient-to-br from-purple-500 to-purple-700',
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="24" height="24"><path d="M12 24V6l16-3v18" fill="rgba(255,255,255,0.5)"/><circle cx="8" cy="24" r="4" fill="white"/><circle cx="24" cy="21" r="4" fill="white"/></svg>`
+    }
+  }
+  if (videoExts.includes(ext)) {
+    return {
+      bg: 'bg-gradient-to-br from-pink-500 to-pink-700',
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="24" height="24"><rect x="2" y="5" width="28" height="22" rx="3" fill="rgba(255,255,255,0.3)"/><polygon points="13,10 22,16 13,22" fill="white"/></svg>`
+    }
+  }
+  return {
+    bg: 'bg-gradient-to-br from-gray-400 to-gray-600',
+    svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="24" height="24"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill="rgba(255,255,255,0.3)"/><path d="M18 2v8h8" stroke="white" stroke-width="2" fill="none"/></svg>`
+  }
+}
+
 const handleDeleteOrphanFiles = async () => {
   if (!storageInfo.value || storageInfo.value.orphan_count === 0) return
   
@@ -195,9 +260,16 @@ onMounted(fetchStorageInfo)
             :key="file.path"
             class="flex items-center justify-between p-2 bg-yellow-500/10 rounded-lg"
           >
-            <div class="min-w-0 flex-1">
-              <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ file.display_name }}</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ file.path }}</p>
+            <div class="flex items-center gap-2 min-w-0 flex-1">
+              <span 
+                class="w-7 h-7 flex items-center justify-center rounded flex-shrink-0"
+                :class="getFileIconInfo(file.display_name).bg"
+                v-html="getFileIconInfo(file.display_name).svg"
+              ></span>
+              <div class="min-w-0">
+                <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ file.display_name }}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ file.path }}</p>
+              </div>
             </div>
             <div class="text-right flex-shrink-0 ml-2">
               <p class="text-sm text-gray-900 dark:text-white">{{ file.size_formatted }}</p>
@@ -267,10 +339,11 @@ onMounted(fetchStorageInfo)
                 class="flex items-center justify-between p-2 bg-gray-50 dark:bg-white/5 rounded-lg"
               >
                 <div class="flex items-center gap-2 min-w-0 flex-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-400 flex-shrink-0">
-                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                    <polyline points="14,2 14,8 20,8"/>
-                  </svg>
+                  <span 
+                    class="w-6 h-6 flex items-center justify-center rounded flex-shrink-0"
+                    :class="getFileIconInfo(file.display_name).bg"
+                    v-html="getFileIconInfo(file.display_name).svg"
+                  ></span>
                   <span class="text-sm text-gray-900 dark:text-white truncate">{{ file.display_name }}</span>
                 </div>
                 <div class="text-right flex-shrink-0 ml-2">
