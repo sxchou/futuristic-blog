@@ -126,10 +126,12 @@ const getFileIconComponent = computed(() => {
     return {
       color: 'text-white',
       bg: 'bg-gradient-to-br from-red-500 to-red-700',
-      svg: `<svg viewBox="0 0 32 32" fill="currentColor">
-        <path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill-opacity="0.3"/>
-        <path d="M18 2v8h8" stroke="currentColor" stroke-width="2" fill="none"/>
-        <text x="6" y="23" font-size="10" fill="currentColor" font-weight="bold" font-family="Arial, sans-serif">PDF</text>
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+        <path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill="rgba(255,255,255,0.3)"/>
+        <path d="M18 2v8h8" stroke="white" stroke-width="2" fill="none"/>
+        <foreignObject x="4" y="16" width="24" height="12">
+          <div xmlns="http://www.w3.org/1999/xhtml" style="color: white; font-size: 9px; font-weight: bold; font-family: -apple-system, BlinkMacSystemFont, sans-serif; text-align: center; line-height: 12px;">PDF</div>
+        </foreignObject>
       </svg>`
     }
   }
@@ -138,10 +140,12 @@ const getFileIconComponent = computed(() => {
     return {
       color: 'text-white',
       bg: 'bg-gradient-to-br from-blue-500 to-blue-700',
-      svg: `<svg viewBox="0 0 32 32" fill="currentColor">
-        <path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill-opacity="0.3"/>
-        <path d="M18 2v8h8" stroke="currentColor" stroke-width="2" fill="none"/>
-        <text x="10" y="24" font-size="14" fill="currentColor" font-weight="bold" font-family="Arial, sans-serif">W</text>
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+        <path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill="rgba(255,255,255,0.3)"/>
+        <path d="M18 2v8h8" stroke="white" stroke-width="2" fill="none"/>
+        <foreignObject x="4" y="16" width="24" height="16">
+          <div xmlns="http://www.w3.org/1999/xhtml" style="color: white; font-size: 14px; font-weight: bold; font-family: -apple-system, BlinkMacSystemFont, sans-serif; text-align: center; line-height: 16px;">W</div>
+        </foreignObject>
       </svg>`
     }
   }
@@ -150,10 +154,12 @@ const getFileIconComponent = computed(() => {
     return {
       color: 'text-white',
       bg: 'bg-gradient-to-br from-emerald-500 to-emerald-700',
-      svg: `<svg viewBox="0 0 32 32" fill="currentColor">
-        <path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill-opacity="0.3"/>
-        <path d="M18 2v8h8" stroke="currentColor" stroke-width="2" fill="none"/>
-        <text x="10" y="24" font-size="14" fill="currentColor" font-weight="bold" font-family="Arial, sans-serif">X</text>
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+        <path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill="rgba(255,255,255,0.3)"/>
+        <path d="M18 2v8h8" stroke="white" stroke-width="2" fill="none"/>
+        <foreignObject x="4" y="16" width="24" height="16">
+          <div xmlns="http://www.w3.org/1999/xhtml" style="color: white; font-size: 14px; font-weight: bold; font-family: -apple-system, BlinkMacSystemFont, sans-serif; text-align: center; line-height: 16px;">X</div>
+        </foreignObject>
       </svg>`
     }
   }
@@ -162,10 +168,12 @@ const getFileIconComponent = computed(() => {
     return {
       color: 'text-white',
       bg: 'bg-gradient-to-br from-orange-500 to-orange-700',
-      svg: `<svg viewBox="0 0 32 32" fill="currentColor">
-        <path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill-opacity="0.3"/>
-        <path d="M18 2v8h8" stroke="currentColor" stroke-width="2" fill="none"/>
-        <text x="10" y="24" font-size="14" fill="currentColor" font-weight="bold" font-family="Arial, sans-serif">P</text>
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+        <path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill="rgba(255,255,255,0.3)"/>
+        <path d="M18 2v8h8" stroke="white" stroke-width="2" fill="none"/>
+        <foreignObject x="4" y="16" width="24" height="16">
+          <div xmlns="http://www.w3.org/1999/xhtml" style="color: white; font-size: 14px; font-weight: bold; font-family: -apple-system, BlinkMacSystemFont, sans-serif; text-align: center; line-height: 16px;">P</div>
+        </foreignObject>
       </svg>`
     }
   }
