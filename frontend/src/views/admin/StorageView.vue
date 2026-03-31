@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { fileApi, type StorageInfo, type StorageFileInfo } from '@/api/files'
 import { useAdminCheck } from '@/composables/useAdminCheck'
 
