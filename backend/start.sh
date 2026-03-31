@@ -1,6 +1,17 @@
 #!/bin/sh
-echo "Starting application..."
-echo "PORT environment variable: ${PORT:-not set}"
-echo "Using port: ${PORT:-8000}"
+set -e
 
-exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}" --log-level info
+echo "========================================"
+echo "Starting application..."
+echo "PORT environment variable: '${PORT}'"
+echo "RAILWAY_ENVIRONMENT: '${RAILWAY_ENVIRONMENT}'"
+
+if [ -z "$PORT" ]; then
+    echo "WARNING: PORT is not set, using default 8000"
+    PORT=8000
+fi
+
+echo "Will listen on port: ${PORT}"
+echo "========================================"
+
+exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --log-level info

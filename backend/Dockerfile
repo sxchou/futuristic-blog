@@ -20,6 +20,4 @@ RUN mkdir -p /app/uploads/avatars && \
     chmod -R 755 /app/uploads && \
     chmod +x /app/start.sh
 
-EXPOSE 8000
-
 CMD ["/app/start.sh"]
