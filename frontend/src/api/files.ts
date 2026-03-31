@@ -98,5 +98,10 @@ export const fileApi = {
   async getStorageInfo(): Promise<StorageInfo> {
     const response = await apiClient.get<StorageInfo>('/files/admin/storage-info')
     return response.data
+  },
+
+  async deleteOrphanFiles(): Promise<{ deleted_count: number; deleted_size_formatted: string; errors: { path: string; error: string }[] }> {
+    const response = await apiClient.delete('/files/admin/orphan-files')
+    return response.data
   }
 }

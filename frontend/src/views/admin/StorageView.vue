@@ -9,6 +9,7 @@ const loading = ref(true)
 const storageInfo = ref<StorageInfo | null>(null)
 const expandedDirs = ref<Set<string>>(new Set())
 const showOrphanFiles = ref(false)
+const deletingOrphans = ref(false)
 
 const fetchStorageInfo = async () => {
   if (!await requireAdmin('查看存储信息')) return
@@ -33,6 +34,25 @@ const toggleDir = (dirName: string) => {
 
 const formatDate = (dateStr: string) => {
   return new Date(dateStr).toLocaleString('zh-CN')
+}
+
+const handleDeleteOrphanFiles = async () => {
+  if (!storageInfo.value || storageInfo.value.orphan_count === 0) return
+  
+  const confirmed = confirm(`确定要删除 ${storageInfo.value.orphan_count} 个孤立文件吗？此操作不可恢复。`)
+  if (!confirmed) return
+  
+  deletingOrphans.value = true
+  try {
+    const result = await fileApi.deleteOrphanFiles()
+    alert(`成功删除 ${result.deleted_count} 个文件，释放空间 ${result.deleted_size_formatted}${result.errors.length > 0 ? `\n${result.errors.length} 个文件删除失败` : ''}`)
+    await fetchStorageInfo()
+  } catch (error) {
+    console.error('Failed to delete orphan files:', error)
+    alert('删除失败，请稍后重试')
+  } finally {
+    deletingOrphans.value = false
+  }
 }
 
 onMounted(fetchStorageInfo)
@@ -144,16 +164,29 @@ onMounted(fetchStorageInfo)
                 发现 {{ storageInfo.orphan_count }} 个孤立文件
               </p>
               <p class="text-xs text-gray-500 dark:text-gray-400">
-                这些文件在磁盘上存在，但数据库中没有记录
+                这些文件在磁盘上存在，但数据库中没有记录，不会被网站使用
               </p>
             </div>
           </div>
-          <button
-            @click="showOrphanFiles = !showOrphanFiles"
-            class="px-3 py-1.5 text-xs bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 rounded-lg hover:bg-yellow-500/30 transition-colors"
-          >
-            {{ showOrphanFiles ? '隐藏' : '查看详情' }}
-          </button>
+          <div class="flex items-center gap-2">
+            <button
+              @click="showOrphanFiles = !showOrphanFiles"
+              class="px-3 py-1.5 text-xs bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 rounded-lg hover:bg-yellow-500/30 transition-colors"
+            >
+              {{ showOrphanFiles ? '隐藏' : '查看详情' }}
+            </button>
+            <button
+              @click="handleDeleteOrphanFiles"
+              :disabled="deletingOrphans"
+              class="px-3 py-1.5 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+            >
+              <svg v-if="deletingOrphans" class="animate-spin w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              {{ deletingOrphans ? '删除中...' : '全部删除' }}
+            </button>
+          </div>
         </div>
         
         <div v-if="showOrphanFiles" class="mt-4 space-y-2 max-h-60 overflow-y-auto">

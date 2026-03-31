@@ -381,3 +381,47 @@ async def get_storage_info(
     result["orphan_count"] = len(result["orphan_files"])
     
     return result
+
+
+@router.delete("/admin/orphan-files")
+async def delete_orphan_files(
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_active_user)
+):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="需要管理员权限")
+    
+    db_files = db.query(ArticleFile).all()
+    db_file_paths = {f.file_path for f in db_files}
+    
+    deleted_files = []
+    deleted_size = 0
+    errors = []
+    
+    if os.path.exists(UPLOAD_DIR):
+        for root, dirs, files in os.walk(UPLOAD_DIR):
+            for file in files:
+                file_path = os.path.join(root, file)
+                if file_path not in db_file_paths:
+                    try:
+                        file_size = os.path.getsize(file_path)
+                        os.remove(file_path)
+                        deleted_files.append({
+                            "path": file_path,
+                            "name": file,
+                            "size": file_size
+                        })
+                        deleted_size += file_size
+                    except Exception as e:
+                        errors.append({
+                            "path": file_path,
+                            "error": str(e)
+                        })
+    
+    return {
+        "deleted_count": len(deleted_files),
+        "deleted_size": deleted_size,
+        "deleted_size_formatted": format_file_size(deleted_size),
+        "deleted_files": deleted_files,
+        "errors": errors
+    }
