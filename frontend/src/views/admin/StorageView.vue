@@ -12,6 +12,7 @@ const showOrphanFiles = ref(false)
 const deletingOrphans = ref(false)
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
+const STATIC_BASE = API_BASE.replace('/api/v1', '')
 
 const fetchStorageInfo = async () => {
   if (!await requireAdmin('查看存储信息')) return
@@ -41,7 +42,7 @@ const formatDate = (dateStr: string) => {
 const getAvatarUrl = (file: StorageFileInfo): string => {
   if (!file.is_avatar) return ''
   const filename = file.name
-  return `${API_BASE}/files/avatars/${filename}`
+  return `${STATIC_BASE}/uploads/avatars/${filename}`
 }
 
 const getFileIconInfo = (file: StorageFileInfo): { bg: string; svg: string } => {
