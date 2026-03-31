@@ -107,19 +107,126 @@ const formatFileSize = (bytes: number): string => {
   return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
 }
 
-const getFileIcon = (): string => {
-  const icons: Record<string, string> = {
-    image: '🖼️',
-    pdf: '📄',
-    office: '📝',
-    text: '📃',
-    audio: '🎵',
-    video: '🎬',
-    archive: '📦',
-    unsupported: '📎'
+const getFileIconComponent = computed(() => {
+  const ext = fileExtension.value
+  
+  if (isImageFile.value) {
+    return {
+      color: 'text-white',
+      bg: 'bg-gradient-to-br from-green-400 to-green-600',
+      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="3" width="18" height="18" rx="2" fill="currentColor" fill-opacity="0.2"/>
+        <circle cx="8.5" cy="8.5" r="2" fill="currentColor"/>
+        <path d="M21 15l-5-5L5 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>`
+    }
   }
-  return icons[previewType.value] || '📎'
-}
+  
+  if (isPdfFile.value) {
+    return {
+      color: 'text-white',
+      bg: 'bg-gradient-to-br from-red-500 to-red-700',
+      svg: `<svg viewBox="0 0 24 24" fill="none">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="currentColor" fill-opacity="0.3"/>
+        <path d="M14 2v6h6" stroke="currentColor" stroke-width="1.5"/>
+        <text x="7" y="17" font-size="7" fill="currentColor" font-weight="bold" font-family="Arial">PDF</text>
+      </svg>`
+    }
+  }
+  
+  if (['doc', 'docx'].includes(ext)) {
+    return {
+      color: 'text-white',
+      bg: 'bg-gradient-to-br from-blue-500 to-blue-700',
+      svg: `<svg viewBox="0 0 24 24" fill="none">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="currentColor" fill-opacity="0.3"/>
+        <path d="M14 2v6h6" stroke="currentColor" stroke-width="1.5"/>
+        <text x="7" y="17" font-size="8" fill="currentColor" font-weight="bold" font-family="Arial">W</text>
+      </svg>`
+    }
+  }
+  
+  if (['xls', 'xlsx'].includes(ext)) {
+    return {
+      color: 'text-white',
+      bg: 'bg-gradient-to-br from-emerald-500 to-emerald-700',
+      svg: `<svg viewBox="0 0 24 24" fill="none">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="currentColor" fill-opacity="0.3"/>
+        <path d="M14 2v6h6" stroke="currentColor" stroke-width="1.5"/>
+        <text x="7" y="17" font-size="8" fill="currentColor" font-weight="bold" font-family="Arial">X</text>
+      </svg>`
+    }
+  }
+  
+  if (['ppt', 'pptx'].includes(ext)) {
+    return {
+      color: 'text-white',
+      bg: 'bg-gradient-to-br from-orange-500 to-orange-700',
+      svg: `<svg viewBox="0 0 24 24" fill="none">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="currentColor" fill-opacity="0.3"/>
+        <path d="M14 2v6h6" stroke="currentColor" stroke-width="1.5"/>
+        <text x="7" y="17" font-size="8" fill="currentColor" font-weight="bold" font-family="Arial">P</text>
+      </svg>`
+    }
+  }
+  
+  if (isTextFile.value) {
+    return {
+      color: 'text-white',
+      bg: 'bg-gradient-to-br from-slate-500 to-slate-700',
+      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="currentColor" fill-opacity="0.3"/>
+        <path d="M14 2v6h6"/>
+        <path d="M8 13h8M8 17h5" stroke-width="2" stroke-linecap="round"/>
+      </svg>`
+    }
+  }
+  
+  if (isAudioFile.value) {
+    return {
+      color: 'text-white',
+      bg: 'bg-gradient-to-br from-purple-500 to-purple-700',
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M9 18V5l12-2v13"/>
+        <circle cx="6" cy="18" r="3"/>
+        <circle cx="18" cy="16" r="3"/>
+      </svg>`
+    }
+  }
+  
+  if (isVideoFile.value) {
+    return {
+      color: 'text-white',
+      bg: 'bg-gradient-to-br from-pink-500 to-pink-700',
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor">
+        <rect x="2" y="4" width="20" height="16" rx="2" fill="currentColor" fill-opacity="0.3"/>
+        <polygon points="10,8 16,12 10,16"/>
+      </svg>`
+    }
+  }
+  
+  if (isArchiveFile.value) {
+    return {
+      color: 'text-white',
+      bg: 'bg-gradient-to-br from-amber-500 to-amber-700',
+      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M21 8v13H3V8" fill="currentColor" fill-opacity="0.3"/>
+        <path d="M23 3H1v5h22V3z" fill="currentColor" fill-opacity="0.5"/>
+        <rect x="10" y="11" width="4" height="3" fill="currentColor"/>
+        <rect x="10" y="15" width="4" height="2" fill="currentColor" fill-opacity="0.5"/>
+      </svg>`
+    }
+  }
+  
+  return {
+    color: 'text-white',
+    bg: 'bg-gradient-to-br from-gray-400 to-gray-600',
+    svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="currentColor" fill-opacity="0.3"/>
+      <path d="M14 2v6h6"/>
+    </svg>`
+  }
+})
 
 const getArchiveInfo = (): { type: string; description: string } => {
   const archiveTypes: Record<string, { type: string; description: string }> = {
@@ -219,33 +326,35 @@ onUnmounted(() => {
       @click.self="emit('close')"
     >
       <div class="relative w-full h-full max-w-7xl max-h-[95vh] m-4 flex flex-col bg-gray-900 dark:bg-dark-300 rounded-xl overflow-hidden shadow-2xl">
-        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-700 dark:border-white/10">
-          <div class="flex items-center gap-3">
-            <span class="text-2xl">{{ getFileIcon() }}</span>
-            <div>
-              <h3 class="text-lg font-semibold text-white truncate max-w-md">
-                {{ file.original_filename }}
-              </h3>
-              <p class="text-sm text-gray-400">
-                {{ formatFileSize(file.file_size) }} · {{ file.mime_type }}
-              </p>
-            </div>
+        <div class="flex items-center justify-between px-3 py-1 border-b border-gray-700 dark:border-white/10 bg-gray-800/50">
+          <div class="flex items-center gap-2 min-w-0 flex-1">
+            <span 
+              class="w-5 h-5 flex-shrink-0 flex items-center justify-center rounded p-0.5"
+              :class="[getFileIconComponent.bg, getFileIconComponent.color]"
+              v-html="getFileIconComponent.svg"
+            ></span>
+            <h3 class="text-xs font-medium text-white break-all leading-tight m-0">
+              {{ file.original_filename }}
+            </h3>
+            <span class="text-[10px] text-gray-500 flex-shrink-0">
+              {{ formatFileSize(file.file_size) }}
+            </span>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1 flex-shrink-0 ml-2">
             <button
               @click="handleDownload"
-              class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
+              title="下载"
+              class="p-1 text-gray-400 hover:text-primary hover:bg-gray-700/50 rounded transition-colors"
             >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
-              <span>下载</span>
             </button>
             <button
               @click="emit('close')"
-              class="p-2 text-gray-400 hover:text-white transition-colors"
+              class="p-1 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded transition-colors"
             >
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -301,7 +410,16 @@ onUnmounted(() => {
             />
             <div v-else class="flex items-center justify-center h-full p-8">
               <div class="text-center max-w-md">
-                <div class="text-6xl mb-6">📝</div>
+                <div 
+                  class="w-20 h-20 mx-auto mb-6 flex items-center justify-center rounded-xl"
+                  :class="[getFileIconComponent.bg]"
+                >
+                  <span 
+                    class="w-12 h-12"
+                    :class="getFileIconComponent.color"
+                    v-html="getFileIconComponent.svg"
+                  ></span>
+                </div>
                 <h4 class="text-xl font-semibold text-white mb-2">{{ file.original_filename }}</h4>
                 <div class="bg-gray-800 dark:bg-dark-400 rounded-lg p-6 mt-4">
                   <div class="flex items-center justify-between mb-3">
@@ -332,7 +450,16 @@ onUnmounted(() => {
 
           <div v-else-if="previewType === 'audio'" class="flex items-center justify-center h-full p-8">
             <div class="text-center">
-              <div class="text-6xl mb-6">🎵</div>
+              <div 
+                class="w-20 h-20 mx-auto mb-6 flex items-center justify-center rounded-xl"
+                :class="[getFileIconComponent.bg]"
+              >
+                <span 
+                  class="w-12 h-12"
+                  :class="getFileIconComponent.color"
+                  v-html="getFileIconComponent.svg"
+                ></span>
+              </div>
               <h4 class="text-xl font-semibold text-white mb-4">{{ file.original_filename }}</h4>
               <audio
                 :src="downloadUrl"
@@ -356,7 +483,16 @@ onUnmounted(() => {
 
           <div v-else-if="previewType === 'archive'" class="flex items-center justify-center h-full p-8">
             <div class="text-center max-w-md">
-              <div class="text-6xl mb-6">📦</div>
+              <div 
+                class="w-20 h-20 mx-auto mb-6 flex items-center justify-center rounded-xl"
+                :class="[getFileIconComponent.bg]"
+              >
+                <span 
+                  class="w-12 h-12"
+                  :class="getFileIconComponent.color"
+                  v-html="getFileIconComponent.svg"
+                ></span>
+              </div>
               <h4 class="text-xl font-semibold text-white mb-2">{{ file.original_filename }}</h4>
               <div class="bg-gray-800 dark:bg-dark-400 rounded-lg p-6 mt-4">
                 <div class="flex items-center justify-between mb-3">
@@ -386,7 +522,16 @@ onUnmounted(() => {
 
           <div v-else-if="previewType === 'unsupported'" class="flex items-center justify-center h-full p-8">
             <div class="text-center">
-              <div class="text-6xl mb-6">📎</div>
+              <div 
+                class="w-20 h-20 mx-auto mb-6 flex items-center justify-center rounded-xl"
+                :class="[getFileIconComponent.bg]"
+              >
+                <span 
+                  class="w-12 h-12"
+                  :class="getFileIconComponent.color"
+                  v-html="getFileIconComponent.svg"
+                ></span>
+              </div>
               <h4 class="text-xl font-semibold text-white mb-2">{{ file.original_filename }}</h4>
               <p class="text-gray-400 mb-6">
                 此文件类型暂不支持在线预览

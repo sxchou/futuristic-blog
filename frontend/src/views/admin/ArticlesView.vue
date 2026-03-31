@@ -479,13 +479,70 @@ const handleDeleteFile = async (fileId: number) => {
   }
 }
 
-const getFileIcon = (fileType: string, mimeType: string): string => {
-  if (fileType === 'image') return '🖼️'
-  if (mimeType.includes('pdf')) return '📄'
-  if (mimeType.includes('word') || mimeType.includes('document')) return '📝'
-  if (mimeType.includes('excel') || mimeType.includes('sheet')) return '📊'
-  if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('7z')) return '📦'
-  return '📎'
+const getFileIconInfo = (fileType: string, mimeType: string, filename: string): { color: string; bg: string; svg: string } => {
+  const ext = filename.split('.').pop()?.toLowerCase() || ''
+  
+  if (fileType === 'image') {
+    return {
+      color: 'text-white',
+      bg: 'bg-gradient-to-br from-green-400 to-green-600',
+      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" fill="currentColor" fill-opacity="0.2"/><circle cx="8.5" cy="8.5" r="2" fill="currentColor"/><path d="M21 15l-5-5L5 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+    }
+  }
+  if (mimeType.includes('pdf') || ext === 'pdf') {
+    return {
+      color: 'text-white',
+      bg: 'bg-gradient-to-br from-red-500 to-red-700',
+      svg: `<svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="currentColor" fill-opacity="0.3"/><path d="M14 2v6h6" stroke="currentColor" stroke-width="1.5"/><text x="7" y="17" font-size="7" fill="currentColor" font-weight="bold" font-family="Arial">PDF</text></svg>`
+    }
+  }
+  if (['doc', 'docx', 'rtf'].includes(ext) || mimeType.includes('word') || mimeType === 'application/msword' || mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+    return {
+      color: 'text-white',
+      bg: 'bg-gradient-to-br from-blue-500 to-blue-700',
+      svg: `<svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="currentColor" fill-opacity="0.3"/><path d="M14 2v6h6" stroke="currentColor" stroke-width="1.5"/><text x="7" y="17" font-size="8" fill="currentColor" font-weight="bold" font-family="Arial">W</text></svg>`
+    }
+  }
+  if (['xls', 'xlsx', 'csv'].includes(ext) || mimeType.includes('excel') || mimeType.includes('spreadsheet') || mimeType === 'application/vnd.ms-excel' || mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+    return {
+      color: 'text-white',
+      bg: 'bg-gradient-to-br from-emerald-500 to-emerald-700',
+      svg: `<svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="currentColor" fill-opacity="0.3"/><path d="M14 2v6h6" stroke="currentColor" stroke-width="1.5"/><text x="7" y="17" font-size="8" fill="currentColor" font-weight="bold" font-family="Arial">X</text></svg>`
+    }
+  }
+  if (['ppt', 'pptx'].includes(ext) || mimeType.includes('powerpoint') || mimeType === 'application/vnd.ms-powerpoint' || mimeType === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') {
+    return {
+      color: 'text-white',
+      bg: 'bg-gradient-to-br from-orange-500 to-orange-700',
+      svg: `<svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="currentColor" fill-opacity="0.3"/><path d="M14 2v6h6" stroke="currentColor" stroke-width="1.5"/><text x="7" y="17" font-size="8" fill="currentColor" font-weight="bold" font-family="Arial">P</text></svg>`
+    }
+  }
+  if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext) || mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('7z') || mimeType.includes('compressed')) {
+    return {
+      color: 'text-white',
+      bg: 'bg-gradient-to-br from-amber-500 to-amber-700',
+      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 8v13H3V8" fill="currentColor" fill-opacity="0.3"/><path d="M23 3H1v5h22V3z" fill="currentColor" fill-opacity="0.5"/><rect x="10" y="11" width="4" height="3" fill="currentColor"/></svg>`
+    }
+  }
+  if (['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a'].includes(ext) || mimeType.includes('audio')) {
+    return {
+      color: 'text-white',
+      bg: 'bg-gradient-to-br from-purple-500 to-purple-700',
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`
+    }
+  }
+  if (['mp4', 'webm', 'avi', 'mov', 'mkv'].includes(ext) || mimeType.includes('video')) {
+    return {
+      color: 'text-white',
+      bg: 'bg-gradient-to-br from-pink-500 to-pink-700',
+      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="4" width="20" height="16" rx="2" fill="currentColor" fill-opacity="0.3"/><polygon points="10,8 16,12 10,16"/></svg>`
+    }
+  }
+  return {
+    color: 'text-white',
+    bg: 'bg-gradient-to-br from-gray-400 to-gray-600',
+    svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="currentColor" fill-opacity="0.3"/><path d="M14 2v6h6"/></svg>`
+  }
 }
 
 const openCreateModal = async () => {
@@ -726,8 +783,14 @@ watch(form, () => {
                     class="hidden"
                     :disabled="isUploading"
                   />
-                  <span class="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors">
-                    <span>🖼️</span>
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-sm">
+                    <span class="w-4 h-4">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
+                        <path d="M21 15l-5-5L5 21"/>
+                      </svg>
+                    </span>
                     上传图片
                   </span>
                 </label>
@@ -740,10 +803,15 @@ watch(form, () => {
                     :disabled="isUploading || !editingArticle"
                   />
                   <span 
-                    class="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-primary/20 text-primary rounded-lg hover:bg-primary/30 transition-colors"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gradient-to-r from-primary to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all shadow-sm"
                     :class="{ 'opacity-50 cursor-not-allowed': !editingArticle }"
                   >
-                    <span>📎</span>
+                    <span class="w-4 h-4">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                        <path d="M14 2v6h6"/>
+                      </svg>
+                    </span>
                     上传附件
                   </span>
                 </label>
@@ -774,7 +842,11 @@ watch(form, () => {
                 class="flex items-center justify-between p-2 bg-white dark:bg-dark-200 rounded border border-gray-200 dark:border-white/5"
               >
                 <div class="flex items-center gap-2">
-                  <span class="text-lg">{{ getFileIcon(file.file_type, file.mime_type) }}</span>
+                  <span 
+                    class="w-6 h-6 flex items-center justify-center rounded p-1"
+                    :class="[getFileIconInfo(file.file_type, file.mime_type, file.original_filename).bg, getFileIconInfo(file.file_type, file.mime_type, file.original_filename).color]"
+                    v-html="getFileIconInfo(file.file_type, file.mime_type, file.original_filename).svg"
+                  ></span>
                   <div>
                     <div class="text-sm text-gray-900 dark:text-white">{{ file.original_filename }}</div>
                     <div class="text-xs text-gray-500">
