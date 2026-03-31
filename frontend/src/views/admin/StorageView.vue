@@ -196,7 +196,7 @@ onMounted(fetchStorageInfo)
             class="flex items-center justify-between p-2 bg-yellow-500/10 rounded-lg"
           >
             <div class="min-w-0 flex-1">
-              <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ file.name }}</p>
+              <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ file.display_name }}</p>
               <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ file.path }}</p>
             </div>
             <div class="text-right flex-shrink-0 ml-2">
@@ -271,7 +271,7 @@ onMounted(fetchStorageInfo)
                     <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
                     <polyline points="14,2 14,8 20,8"/>
                   </svg>
-                  <span class="text-sm text-gray-900 dark:text-white truncate">{{ file.name }}</span>
+                  <span class="text-sm text-gray-900 dark:text-white truncate">{{ file.display_name }}</span>
                 </div>
                 <div class="text-right flex-shrink-0 ml-2">
                   <span class="text-xs text-gray-500 dark:text-gray-400">{{ file.size_formatted }}</span>

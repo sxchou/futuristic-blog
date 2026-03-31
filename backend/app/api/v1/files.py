@@ -337,6 +337,7 @@ async def get_storage_info(
     db_files = db.query(ArticleFile).all()
     result["db_files_count"] = len(db_files)
     db_file_paths = {f.file_path for f in db_files}
+    db_file_map = {f.file_path: f for f in db_files}
     
     if os.path.exists(UPLOAD_DIR):
         for root, dirs, files in os.walk(UPLOAD_DIR):
@@ -355,8 +356,12 @@ async def get_storage_info(
                     result["total_size"] += file_size
                     result["total_files"] += 1
                     
+                    db_file = db_file_map.get(file_path)
+                    display_name = db_file.original_filename if db_file else file
+                    
                     file_info = {
                         "name": file,
+                        "display_name": display_name,
                         "path": file_path,
                         "size": file_size,
                         "size_formatted": format_file_size(file_size),

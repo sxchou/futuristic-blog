@@ -17,6 +17,7 @@ export interface FileUploadResponse {
 
 export interface StorageFileInfo {
   name: string
+  display_name: string
   path: string
   size: number
   size_formatted: string
