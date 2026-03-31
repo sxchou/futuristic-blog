@@ -190,8 +190,8 @@ async def root():
 
 
 @app.get("/health")
-async def health_check():
-    logger.debug("Health check requested")
+async def health_check(request: Request):
+    logger.info(f"Health check requested from: {request.headers.get('host', 'unknown')}")
     return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
 
 
