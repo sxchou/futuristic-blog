@@ -122,62 +122,62 @@ const getFileIconInfo = (fileType: string, mimeType: string, filename: string): 
     return {
       color: 'text-white',
       bg: 'bg-gradient-to-br from-green-400 to-green-600',
-      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" fill="currentColor" fill-opacity="0.2"/><circle cx="8.5" cy="8.5" r="2" fill="currentColor"/><path d="M21 15l-5-5L5 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+      svg: `<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="26" height="26" rx="3" fill="currentColor" fill-opacity="0.2"/><circle cx="11" cy="11" r="3" fill="currentColor"/><path d="M29 20l-7-7L7 29" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`
     }
   }
   if (mimeType.includes('pdf') || ext === 'pdf') {
     return {
       color: 'text-white',
       bg: 'bg-gradient-to-br from-red-500 to-red-700',
-      svg: `<svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="currentColor" fill-opacity="0.3"/><path d="M14 2v6h6" stroke="currentColor" stroke-width="1.5"/><text x="7" y="17" font-size="7" fill="currentColor" font-weight="bold" font-family="Arial">PDF</text></svg>`
+      svg: `<svg viewBox="0 0 32 32" fill="none"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10z" fill="currentColor" fill-opacity="0.3"/><path d="M18 2v8h8" stroke="currentColor" stroke-width="2"/><text x="6" y="23" font-size="10" fill="currentColor" font-weight="bold" font-family="Arial">PDF</text></svg>`
     }
   }
   if (['doc', 'docx', 'rtf'].includes(ext) || mimeType.includes('word') || mimeType === 'application/msword' || mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
     return {
       color: 'text-white',
       bg: 'bg-gradient-to-br from-blue-500 to-blue-700',
-      svg: `<svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="currentColor" fill-opacity="0.3"/><path d="M14 2v6h6" stroke="currentColor" stroke-width="1.5"/><text x="7" y="17" font-size="8" fill="currentColor" font-weight="bold" font-family="Arial">W</text></svg>`
+      svg: `<svg viewBox="0 0 32 32" fill="none"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10z" fill="currentColor" fill-opacity="0.3"/><path d="M18 2v8h8" stroke="currentColor" stroke-width="2"/><text x="9" y="24" font-size="14" fill="currentColor" font-weight="bold" font-family="Arial">W</text></svg>`
     }
   }
   if (['xls', 'xlsx', 'csv'].includes(ext) || mimeType.includes('excel') || mimeType.includes('spreadsheet') || mimeType === 'application/vnd.ms-excel' || mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
     return {
       color: 'text-white',
       bg: 'bg-gradient-to-br from-emerald-500 to-emerald-700',
-      svg: `<svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="currentColor" fill-opacity="0.3"/><path d="M14 2v6h6" stroke="currentColor" stroke-width="1.5"/><text x="7" y="17" font-size="8" fill="currentColor" font-weight="bold" font-family="Arial">X</text></svg>`
+      svg: `<svg viewBox="0 0 32 32" fill="none"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10z" fill="currentColor" fill-opacity="0.3"/><path d="M18 2v8h8" stroke="currentColor" stroke-width="2"/><text x="9" y="24" font-size="14" fill="currentColor" font-weight="bold" font-family="Arial">X</text></svg>`
     }
   }
   if (['ppt', 'pptx'].includes(ext) || mimeType.includes('powerpoint') || mimeType === 'application/vnd.ms-powerpoint' || mimeType === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') {
     return {
       color: 'text-white',
       bg: 'bg-gradient-to-br from-orange-500 to-orange-700',
-      svg: `<svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="currentColor" fill-opacity="0.3"/><path d="M14 2v6h6" stroke="currentColor" stroke-width="1.5"/><text x="7" y="17" font-size="8" fill="currentColor" font-weight="bold" font-family="Arial">P</text></svg>`
+      svg: `<svg viewBox="0 0 32 32" fill="none"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10z" fill="currentColor" fill-opacity="0.3"/><path d="M18 2v8h8" stroke="currentColor" stroke-width="2"/><text x="9" y="24" font-size="14" fill="currentColor" font-weight="bold" font-family="Arial">P</text></svg>`
     }
   }
   if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext) || mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('7z') || mimeType.includes('compressed')) {
     return {
       color: 'text-white',
       bg: 'bg-gradient-to-br from-amber-500 to-amber-700',
-      svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 8v13H3V8" fill="currentColor" fill-opacity="0.3"/><path d="M23 3H1v5h22V3z" fill="currentColor" fill-opacity="0.5"/><rect x="10" y="11" width="4" height="3" fill="currentColor"/></svg>`
+      svg: `<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2"><path d="M28 10v18H4V10" fill="currentColor" fill-opacity="0.3"/><path d="M30 4H2v6h28V4z" fill="currentColor" fill-opacity="0.5"/><rect x="13" y="14" width="6" height="5" fill="currentColor" rx="1"/><rect x="13" y="21" width="6" height="4" fill="currentColor" fill-opacity="0.5" rx="1"/></svg>`
     }
   }
   if (['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a'].includes(ext) || mimeType.includes('audio')) {
     return {
       color: 'text-white',
       bg: 'bg-gradient-to-br from-purple-500 to-purple-700',
-      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`
+      svg: `<svg viewBox="0 0 32 32" fill="currentColor"><path d="M12 24V6l16-3v18"/><circle cx="8" cy="24" r="4"/><circle cx="24" cy="21" r="4"/></svg>`
     }
   }
   if (['mp4', 'webm', 'avi', 'mov', 'mkv'].includes(ext) || mimeType.includes('video')) {
     return {
       color: 'text-white',
       bg: 'bg-gradient-to-br from-pink-500 to-pink-700',
-      svg: `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="4" width="20" height="16" rx="2" fill="currentColor" fill-opacity="0.3"/><polygon points="10,8 16,12 10,16"/></svg>`
+      svg: `<svg viewBox="0 0 32 32" fill="currentColor"><rect x="2" y="5" width="28" height="22" rx="3" fill="currentColor" fill-opacity="0.3"/><polygon points="13,10 22,16 13,22"/></svg>`
     }
   }
   return {
     color: 'text-white',
     bg: 'bg-gradient-to-br from-gray-400 to-gray-600',
-    svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="currentColor" fill-opacity="0.3"/><path d="M14 2v6h6"/></svg>`
+    svg: `<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10z" fill="currentColor" fill-opacity="0.3"/><path d="M18 2v8h8"/></svg>`
   }
 }
 
@@ -401,7 +401,7 @@ onUnmounted(() => {
             >
               <div class="flex items-center gap-2 min-w-0 flex-1">
                 <span 
-                  class="w-6 h-6 flex items-center justify-center rounded p-1 flex-shrink-0"
+                  class="w-8 h-8 flex items-center justify-center rounded flex-shrink-0"
                   :class="[getFileIconInfo(file.file_type, file.mime_type, file.original_filename).bg, getFileIconInfo(file.file_type, file.mime_type, file.original_filename).color]"
                   v-html="getFileIconInfo(file.file_type, file.mime_type, file.original_filename).svg"
                 ></span>
@@ -415,20 +415,20 @@ onUnmounted(() => {
               <div class="flex items-center gap-1 flex-shrink-0 ml-2">
                 <button
                   @click="openPreview(file)"
-                  class="w-7 h-7 flex items-center justify-center text-emerald-500 hover:bg-emerald-500/10 rounded transition-colors"
+                  class="w-8 h-8 flex items-center justify-center text-emerald-500 hover:bg-emerald-500/10 rounded transition-colors"
                   title="预览"
                 >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                   </svg>
                 </button>
                 <button
                   @click="downloadFile(file.id)"
-                  class="w-7 h-7 flex items-center justify-center text-primary hover:bg-primary/10 rounded transition-colors"
+                  class="w-8 h-8 flex items-center justify-center text-primary hover:bg-primary/10 rounded transition-colors"
                   title="下载"
                 >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>
                 </button>
