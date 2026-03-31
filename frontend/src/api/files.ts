@@ -15,6 +15,32 @@ export interface FileUploadResponse {
   created_at: string
 }
 
+export interface StorageFileInfo {
+  name: string
+  path: string
+  size: number
+  size_formatted: string
+  modified: string
+}
+
+export interface StorageDirectoryInfo {
+  size: number
+  size_formatted: string
+  file_count: number
+  files: StorageFileInfo[]
+}
+
+export interface StorageInfo {
+  upload_dir: string
+  total_size: number
+  total_size_formatted: string
+  total_files: number
+  directories: Record<string, StorageDirectoryInfo>
+  orphan_files: StorageFileInfo[]
+  orphan_count: number
+  db_files_count: number
+}
+
 export const fileApi = {
   async uploadFile(file: File, articleId?: number): Promise<FileUploadResponse> {
     const formData = new FormData()
@@ -67,5 +93,10 @@ export const fileApi = {
 
   async updateFileOrder(orders: { id: number; order: number }[]): Promise<void> {
     await apiClient.put('/files/order', { orders })
+  },
+
+  async getStorageInfo(): Promise<StorageInfo> {
+    const response = await apiClient.get<StorageInfo>('/files/admin/storage-info')
+    return response.data
   }
 }

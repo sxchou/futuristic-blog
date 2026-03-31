@@ -229,6 +229,12 @@ const routes: RouteRecordRaw[] = [
         name: 'AdminOAuth',
         component: () => import('@/views/admin/OAuthView.vue'),
         meta: { title: '授权管理' }
+      },
+      {
+        path: 'storage',
+        name: 'AdminStorage',
+        component: () => import('@/views/admin/StorageView.vue'),
+        meta: { title: '存储管理' }
       }
     ]
   },

@@ -24,6 +24,7 @@ const menuItems = [
   { name: '日志管理', path: '/admin/logs', icon: 'logs' },
   { name: '网站设置', path: '/admin/settings', icon: 'settings' },
   { name: '授权管理', path: '/admin/oauth', icon: 'oauth' },
+  { name: '存储管理', path: '/admin/storage', icon: 'storage' },
   { name: '我的资料', path: '/admin/my-profile', icon: 'profile' },
   { name: '网站资料', path: '/admin/profile', icon: 'site-profile' },
 ]
@@ -154,6 +155,9 @@ onMounted(() => {
             </svg>
             <svg v-else-if="item.icon === 'oauth'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+            </svg>
+            <svg v-else-if="item.icon === 'storage'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
             </svg>
             <span>{{ item.name }}</span>
           </router-link>
