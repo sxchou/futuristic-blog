@@ -1,7 +1,14 @@
 from pydantic_settings import BaseSettings
 from typing import Optional, List
 import os
-from zoneinfo import ZoneInfo
+import logging
+
+logger = logging.getLogger(__name__)
+
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    from backports.zoneinfo import ZoneInfo
 
 
 class Settings(BaseSettings):
@@ -9,7 +16,7 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
     SECRET_KEY: str = "your-super-secret-key-change-in-production-please"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 43200  # 30 days
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 43200
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     ADMIN_USERNAME: str = "admin"
     ADMIN_PASSWORD: str = "admin123"
@@ -38,7 +45,7 @@ class Settings(BaseSettings):
     BAIDU_PUSH_TOKEN: str = ""
     
     @property
-    def tz(self) -> ZoneInfo:
+    def tz(self) -> "ZoneInfo":
         return ZoneInfo(self.TIMEZONE)
     
     @property
@@ -65,3 +72,4 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+logger.info(f"Settings loaded. Database: {settings.get_database_url[:30]}...")

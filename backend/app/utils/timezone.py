@@ -1,14 +1,29 @@
 from datetime import datetime
-from zoneinfo import ZoneInfo
+import logging
+
+logger = logging.getLogger(__name__)
+
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    try:
+        from backports.zoneinfo import ZoneInfo
+    except ImportError:
+        ZoneInfo = None
+
 from app.core.config import settings
 
 
 def get_now() -> datetime:
-    return datetime.now(settings.tz)
+    if ZoneInfo:
+        return datetime.now(settings.tz)
+    return datetime.now()
 
 
 def get_utc_now() -> datetime:
-    return datetime.now(ZoneInfo("UTC"))
+    if ZoneInfo:
+        return datetime.now(ZoneInfo("UTC"))
+    return datetime.utcnow()
 
 
 def get_db_now() -> datetime:
@@ -18,6 +33,8 @@ def get_db_now() -> datetime:
 def to_local(dt: datetime) -> datetime:
     if dt is None:
         return None
+    if ZoneInfo is None:
+        return dt
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=ZoneInfo("UTC"))
     return dt.astimezone(settings.tz)
@@ -26,6 +43,8 @@ def to_local(dt: datetime) -> datetime:
 def to_utc(dt: datetime) -> datetime:
     if dt is None:
         return None
+    if ZoneInfo is None:
+        return dt
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=settings.tz)
     return dt.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
