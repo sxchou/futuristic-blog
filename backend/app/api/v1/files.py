@@ -339,10 +339,14 @@ async def get_storage_info(
     db_file_paths = {f.file_path for f in db_files}
     db_file_map = {f.file_path: f for f in db_files}
     
+    EXCLUDED_DIRS = {'avatars'}
+    
     if os.path.exists(UPLOAD_DIR):
         for root, dirs, files in os.walk(UPLOAD_DIR):
             rel_path = os.path.relpath(root, UPLOAD_DIR)
             dir_name = rel_path if rel_path != "." else "root"
+            
+            dirs[:] = [d for d in dirs if d not in EXCLUDED_DIRS]
             
             dir_size = 0
             dir_files = []
@@ -399,12 +403,16 @@ async def delete_orphan_files(
     db_files = db.query(ArticleFile).all()
     db_file_paths = {f.file_path for f in db_files}
     
+    EXCLUDED_DIRS = {'avatars'}
+    
     deleted_files = []
     deleted_size = 0
     errors = []
     
     if os.path.exists(UPLOAD_DIR):
         for root, dirs, files in os.walk(UPLOAD_DIR):
+            dirs[:] = [d for d in dirs if d not in EXCLUDED_DIRS]
+            
             for file in files:
                 file_path = os.path.join(root, file)
                 if file_path not in db_file_paths:
