@@ -44,6 +44,8 @@ const showPreview = ref(false)
 const previewFile = ref<ArticleFile | null>(null)
 const draggedFileIndex = ref<number | null>(null)
 const dragOverIndex = ref<number | null>(null)
+const selectedFileIds = ref<Set<number>>(new Set())
+const isBatchDeleting = ref(false)
 
 const newCategory = ref({
   name: '',
@@ -264,6 +266,7 @@ const resetForm = () => {
     is_pinned: false
   }
   articleFiles.value = []
+  selectedFileIds.value.clear()
   slugManuallyEdited.value = false
   clearFormDraft()
 }
@@ -585,6 +588,142 @@ const sortFilesDesc = async () => {
   const files = [...articleFiles.value].sort((a, b) => 
     b.original_filename.localeCompare(a.original_filename, 'zh-CN')
   )
+  articleFiles.value = files
+  
+  const orders = files.map((f, idx) => ({
+    id: f.id,
+    order: idx
+  }))
+  
+  try {
+    await fileApi.updateFileOrder(orders)
+  } catch (error) {
+    console.error('Failed to update file order:', error)
+    if (editingArticle.value) {
+      await fetchArticleFiles(editingArticle.value.id)
+    }
+  }
+}
+
+const toggleSelectAll = () => {
+  if (selectedFileIds.value.size === articleFiles.value.length) {
+    selectedFileIds.value.clear()
+  } else {
+    selectedFileIds.value = new Set(articleFiles.value.map(f => f.id))
+  }
+}
+
+const toggleFileSelection = (fileId: number) => {
+  if (selectedFileIds.value.has(fileId)) {
+    selectedFileIds.value.delete(fileId)
+  } else {
+    selectedFileIds.value.add(fileId)
+  }
+}
+
+const handleBatchDelete = async () => {
+  if (selectedFileIds.value.size === 0) return
+  
+  const confirmed = await dialog.showConfirm({
+    title: '批量删除确认',
+    message: `确定要删除选中的 ${selectedFileIds.value.size} 个文件吗？此操作不可恢复。`
+  })
+  if (!confirmed) return
+  
+  isBatchDeleting.value = true
+  let successCount = 0
+  let failCount = 0
+  
+  try {
+    for (const fileId of selectedFileIds.value) {
+      try {
+        await fileApi.deleteFile(fileId)
+        successCount++
+      } catch {
+        failCount++
+      }
+    }
+    
+    if (editingArticle.value) {
+      await fetchArticleFiles(editingArticle.value.id)
+    }
+    
+    selectedFileIds.value.clear()
+    
+    if (failCount === 0) {
+      await dialog.showSuccess(`成功删除 ${successCount} 个文件`, '成功')
+    } else {
+      await dialog.showError(`成功删除 ${successCount} 个文件，失败 ${failCount} 个`, '部分完成')
+    }
+  } catch (error: any) {
+    console.error('Failed to batch delete files:', error)
+    await dialog.showError('批量删除失败', '错误')
+  } finally {
+    isBatchDeleting.value = false
+  }
+}
+
+const moveFileUp = async (index: number) => {
+  if (index <= 0) return
+  
+  const files = [...articleFiles.value]
+  const temp = files[index]
+  files[index] = files[index - 1]
+  files[index - 1] = temp
+  
+  articleFiles.value = files
+  
+  const orders = files.map((f, idx) => ({
+    id: f.id,
+    order: idx
+  }))
+  
+  try {
+    await fileApi.updateFileOrder(orders)
+  } catch (error) {
+    console.error('Failed to update file order:', error)
+    if (editingArticle.value) {
+      await fetchArticleFiles(editingArticle.value.id)
+    }
+  }
+}
+
+const moveFileDown = async (index: number) => {
+  if (index >= articleFiles.value.length - 1) return
+  
+  const files = [...articleFiles.value]
+  const temp = files[index]
+  files[index] = files[index + 1]
+  files[index + 1] = temp
+  
+  articleFiles.value = files
+  
+  const orders = files.map((f, idx) => ({
+    id: f.id,
+    order: idx
+  }))
+  
+  try {
+    await fileApi.updateFileOrder(orders)
+  } catch (error) {
+    console.error('Failed to update file order:', error)
+    if (editingArticle.value) {
+      await fetchArticleFiles(editingArticle.value.id)
+    }
+  }
+}
+
+const updateFileOrderNumber = async (fileId: number, newOrder: number) => {
+  const files = [...articleFiles.value]
+  const fileIndex = files.findIndex(f => f.id === fileId)
+  if (fileIndex === -1) return
+  
+  const clampedOrder = Math.max(0, Math.min(newOrder, files.length - 1))
+  if (clampedOrder === fileIndex) return
+  
+  const [file] = files.splice(fileIndex, 1)
+  files.splice(clampedOrder, 0, file)
+  
   articleFiles.value = files
   
   const orders = files.map((f, idx) => ({
@@ -959,8 +1098,19 @@ watch(form, () => {
 
             <div v-if="articleFiles.length > 0" class="space-y-1.5">
               <div class="flex items-center justify-between mb-1">
-                <div class="flex items-center gap-1.5 text-xs">
-                  <span class="text-gray-700 dark:text-gray-300 font-medium">已上传文件：</span>
+                <div class="flex items-center gap-2 text-xs">
+                  <label class="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      :checked="selectedFileIds.size === articleFiles.length && articleFiles.length > 0"
+                      :indeterminate="selectedFileIds.size > 0 && selectedFileIds.size < articleFiles.length"
+                      @change="toggleSelectAll"
+                      class="w-3.5 h-3.5 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <span class="text-gray-700 dark:text-gray-300 font-medium">全选</span>
+                  </label>
+                  <span class="text-gray-400">|</span>
+                  <span class="text-gray-500">{{ articleFiles.length }} 个文件</span>
                   <div class="flex items-center gap-1 text-primary">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
@@ -969,6 +1119,22 @@ watch(form, () => {
                   </div>
                 </div>
                 <div class="flex items-center gap-1">
+                  <button
+                    v-if="selectedFileIds.size > 0"
+                    type="button"
+                    @click="handleBatchDelete"
+                    :disabled="isBatchDeleting"
+                    class="px-2 py-0.5 text-xs bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded transition-colors flex items-center gap-1"
+                  >
+                    <svg v-if="isBatchDeleting" class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <svg v-else class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    删除选中 ({{ selectedFileIds.size }})
+                  </button>
                   <button
                     type="button"
                     @click="sortFilesAsc"
@@ -1002,16 +1168,24 @@ watch(form, () => {
                 @dragleave="handleDragLeave"
                 @drop="handleDrop($event, index)"
                 @dragend="handleDragEnd"
-                class="flex items-center justify-between p-2 bg-white dark:bg-dark-200 rounded border transition-all duration-200 cursor-move"
+                class="flex items-center justify-between p-2 bg-white dark:bg-dark-200 rounded border transition-all duration-200"
                 :class="[
-                  draggedFileIndex === index 
-                    ? 'border-primary bg-primary/5 opacity-50 scale-[0.98]' 
-                    : dragOverIndex === index 
-                      ? 'border-primary border-dashed bg-primary/5' 
-                      : 'border-gray-200 dark:border-white/5 hover:border-gray-300 dark:hover:border-white/10'
+                  selectedFileIds.has(file.id) 
+                    ? 'border-primary bg-primary/5' 
+                    : draggedFileIndex === index 
+                      ? 'border-primary bg-primary/5 opacity-50 scale-[0.98]' 
+                      : dragOverIndex === index 
+                        ? 'border-primary border-dashed bg-primary/5' 
+                        : 'border-gray-200 dark:border-white/5 hover:border-gray-300 dark:hover:border-white/10'
                 ]"
               >
                 <div class="flex items-center gap-2 min-w-0 flex-1">
+                  <input
+                    type="checkbox"
+                    :checked="selectedFileIds.has(file.id)"
+                    @change="toggleFileSelection(file.id)"
+                    class="w-3.5 h-3.5 rounded border-gray-300 text-primary focus:ring-primary flex-shrink-0"
+                  />
                   <div class="flex-shrink-0 text-gray-300 dark:text-gray-600 cursor-grab active:cursor-grabbing">
                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                       <circle cx="9" cy="6" r="1.5"/>
@@ -1023,7 +1197,7 @@ watch(form, () => {
                     </svg>
                   </div>
                   <span 
-                    class="w-8 h-8 flex items-center justify-center rounded flex-shrink-0"
+                    class="w-7 h-7 flex items-center justify-center rounded flex-shrink-0"
                     :class="[getFileIconInfo(file.file_type, file.mime_type, file.original_filename).bg, getFileIconInfo(file.file_type, file.mime_type, file.original_filename).color]"
                     v-html="getFileIconInfo(file.file_type, file.mime_type, file.original_filename).svg"
                   ></span>
@@ -1034,14 +1208,46 @@ watch(form, () => {
                     </div>
                   </div>
                 </div>
-                <div class="flex items-center gap-1 flex-shrink-0 ml-2">
+                <div class="flex items-center gap-0.5 flex-shrink-0 ml-2">
+                  <input
+                    type="number"
+                    :value="index + 1"
+                    @change="(e) => updateFileOrderNumber(file.id, parseInt((e.target as HTMLInputElement).value) - 1)"
+                    min="1"
+                    :max="articleFiles.length"
+                    class="w-8 px-1 py-0.5 text-xs text-center bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
+                    title="输入序号排序"
+                  />
+                  <button
+                    type="button"
+                    @click="moveFileUp(index)"
+                    :disabled="index === 0"
+                    class="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="上移"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    @click="moveFileDown(index)"
+                    :disabled="index === articleFiles.length - 1"
+                    class="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="下移"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  <div class="w-px h-4 bg-gray-200 dark:bg-white/10 mx-0.5"></div>
                   <button
                     type="button"
                     @click="openPreview(file)"
-                    class="w-7 h-7 flex items-center justify-center text-emerald-500 hover:bg-emerald-500/10 rounded transition-colors"
+                    class="w-6 h-6 flex items-center justify-center text-emerald-500 hover:bg-emerald-500/10 rounded transition-colors"
                     title="预览"
                   >
-                    <svg class="w-4 h-4" fill="none" stroke="#10b981" viewBox="0 0 24 24">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
@@ -1049,20 +1255,20 @@ watch(form, () => {
                   <button
                     type="button"
                     @click="downloadFile(file.id)"
-                    class="w-7 h-7 flex items-center justify-center text-primary hover:bg-primary/10 rounded transition-colors"
+                    class="w-6 h-6 flex items-center justify-center text-primary hover:bg-primary/10 rounded transition-colors"
                     title="下载"
                   >
-                    <svg class="w-4 h-4" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
                   </button>
                   <button
                     type="button"
                     @click="handleDeleteFile(file.id)"
-                    class="w-7 h-7 flex items-center justify-center text-red-400 hover:bg-red-500/10 rounded transition-colors"
+                    class="w-6 h-6 flex items-center justify-center text-red-400 hover:bg-red-500/10 rounded transition-colors"
                     title="删除"
                   >
-                    <svg class="w-4 h-4" fill="none" stroke="#f87171" viewBox="0 0 24 24">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                   </button>
