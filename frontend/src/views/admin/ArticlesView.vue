@@ -621,6 +621,29 @@ const toggleFileSelection = (fileId: number) => {
   }
 }
 
+const handleBatchDownload = async () => {
+  if (selectedFileIds.value.size === 0) return
+  
+  const selectedFiles = articleFiles.value.filter(f => selectedFileIds.value.has(f.id))
+  
+  for (const file of selectedFiles) {
+    try {
+      const response = await fileApi.downloadFile(file.id)
+      const url = window.URL.createObjectURL(new Blob([response.data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', file.original_filename)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+      await new Promise(resolve => setTimeout(resolve, 300))
+    } catch (error) {
+      console.error(`Failed to download file ${file.original_filename}:`, error)
+    }
+  }
+}
+
 const handleBatchDelete = async () => {
   if (selectedFileIds.value.size === 0) return
   
@@ -1119,6 +1142,17 @@ watch(form, () => {
                   </div>
                 </div>
                 <div class="flex items-center gap-1">
+                  <button
+                    v-if="selectedFileIds.size > 0"
+                    type="button"
+                    @click="handleBatchDownload"
+                    class="px-2 py-0.5 text-xs bg-primary/10 text-primary hover:bg-primary/20 rounded transition-colors flex items-center gap-1"
+                  >
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    下载选中 ({{ selectedFileIds.size }})
+                  </button>
                   <button
                     v-if="selectedFileIds.size > 0"
                     type="button"

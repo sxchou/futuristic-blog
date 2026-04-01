@@ -90,6 +90,13 @@ export const fileApi = {
     return `${apiClient.defaults.baseURL}/files/${fileId}/download`
   },
 
+  async downloadFile(fileId: number): Promise<{ data: Blob }> {
+    const response = await apiClient.get(`/files/${fileId}/download`, {
+      responseType: 'blob'
+    })
+    return response
+  },
+
   async deleteFile(fileId: number): Promise<void> {
     await apiClient.delete(`/files/${fileId}`)
   },

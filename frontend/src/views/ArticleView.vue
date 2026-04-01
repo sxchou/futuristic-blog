@@ -32,6 +32,7 @@ const isLiking = ref(false)
 const articleFiles = ref<ArticleFile[]>([])
 const previewFile = ref<ArticleFile | null>(null)
 const showPreview = ref(false)
+const selectedFileIds = ref<Set<number>>(new Set())
 
 const renderer = new marked.Renderer()
 
@@ -184,6 +185,45 @@ const getFileIconInfo = (fileType: string, mimeType: string, filename: string): 
 const downloadFile = (fileId: number) => {
   const url = fileApi.getDownloadUrl(fileId)
   window.open(url, '_blank')
+}
+
+const toggleSelectAll = () => {
+  if (selectedFileIds.value.size === articleFiles.value.length) {
+    selectedFileIds.value.clear()
+  } else {
+    selectedFileIds.value = new Set(articleFiles.value.map(f => f.id))
+  }
+}
+
+const toggleFileSelection = (fileId: number) => {
+  if (selectedFileIds.value.has(fileId)) {
+    selectedFileIds.value.delete(fileId)
+  } else {
+    selectedFileIds.value.add(fileId)
+  }
+}
+
+const handleBatchDownload = async () => {
+  if (selectedFileIds.value.size === 0) return
+  
+  const selectedFiles = articleFiles.value.filter(f => selectedFileIds.value.has(f.id))
+  
+  for (const file of selectedFiles) {
+    try {
+      const response = await fileApi.downloadFile(file.id)
+      const url = window.URL.createObjectURL(new Blob([response.data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', file.original_filename)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+      await new Promise(resolve => setTimeout(resolve, 300))
+    } catch (error) {
+      console.error(`Failed to download file ${file.original_filename}:`, error)
+    }
+  }
 }
 
 const openPreview = (file: ArticleFile) => {
@@ -385,23 +425,58 @@ onUnmounted(() => {
         />
 
         <div v-if="articleFiles.length > 0" class="mt-6 p-3 bg-gray-50 dark:bg-dark-100/50 rounded-lg border border-gray-200 dark:border-white/10">
-          <h3 class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-1.5">
-            <span class="w-4 h-4 flex items-center justify-center rounded bg-gradient-to-br from-primary to-blue-600 text-white p-0.5">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="white" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-              </svg>
-            </span>
-            <span>附件下载</span>
-          </h3>
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-xs font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1.5">
+              <span class="w-4 h-4 flex items-center justify-center rounded bg-gradient-to-br from-primary to-blue-600 text-white p-0.5">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="white" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+              </span>
+              <span>附件下载</span>
+            </h3>
+            <div class="flex items-center gap-2">
+              <label class="flex items-center gap-1.5 cursor-pointer text-xs text-gray-600 dark:text-gray-400">
+                <input
+                  type="checkbox"
+                  :checked="selectedFileIds.size === articleFiles.length && articleFiles.length > 0"
+                  :indeterminate="selectedFileIds.size > 0 && selectedFileIds.size < articleFiles.length"
+                  @change="toggleSelectAll"
+                  class="w-3.5 h-3.5 rounded border-gray-300 text-primary focus:ring-primary"
+                />
+                <span>全选</span>
+              </label>
+              <button
+                v-if="selectedFileIds.size > 0"
+                @click="handleBatchDownload"
+                class="px-2 py-0.5 text-xs bg-primary/10 text-primary hover:bg-primary/20 rounded transition-colors flex items-center gap-1"
+              >
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                下载选中 ({{ selectedFileIds.size }})
+              </button>
+            </div>
+          </div>
           <div class="space-y-1.5">
             <div
               v-for="file in articleFiles"
               :key="file.id"
-              class="flex items-center justify-between p-2 bg-white dark:bg-dark-200 rounded border border-gray-200 dark:border-white/5 hover:border-primary/30 transition-colors"
+              class="flex items-center justify-between p-2 bg-white dark:bg-dark-200 rounded border transition-colors"
+              :class="[
+                selectedFileIds.has(file.id) 
+                  ? 'border-primary bg-primary/5' 
+                  : 'border-gray-200 dark:border-white/5 hover:border-primary/30'
+              ]"
             >
               <div class="flex items-center gap-2 min-w-0 flex-1">
+                <input
+                  type="checkbox"
+                  :checked="selectedFileIds.has(file.id)"
+                  @change="toggleFileSelection(file.id)"
+                  class="w-3.5 h-3.5 rounded border-gray-300 text-primary focus:ring-primary flex-shrink-0"
+                />
                 <span 
-                  class="w-8 h-8 flex items-center justify-center rounded flex-shrink-0"
+                  class="w-7 h-7 flex items-center justify-center rounded flex-shrink-0"
                   :class="[getFileIconInfo(file.file_type, file.mime_type, file.original_filename).bg, getFileIconInfo(file.file_type, file.mime_type, file.original_filename).color]"
                   v-html="getFileIconInfo(file.file_type, file.mime_type, file.original_filename).svg"
                 ></span>
@@ -412,23 +487,23 @@ onUnmounted(() => {
                   </div>
                 </div>
               </div>
-              <div class="flex items-center gap-1 flex-shrink-0 ml-2">
+              <div class="flex items-center gap-0.5 flex-shrink-0 ml-2">
                 <button
                   @click="openPreview(file)"
-                  class="w-8 h-8 flex items-center justify-center text-emerald-500 hover:bg-emerald-500/10 rounded transition-colors"
+                  class="w-7 h-7 flex items-center justify-center text-emerald-500 hover:bg-emerald-500/10 rounded transition-colors"
                   title="预览"
                 >
-                  <svg class="w-5 h-5" fill="none" stroke="#10b981" viewBox="0 0 24 24">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                   </svg>
                 </button>
                 <button
                   @click="downloadFile(file.id)"
-                  class="w-8 h-8 flex items-center justify-center text-primary hover:bg-primary/10 rounded transition-colors"
+                  class="w-7 h-7 flex items-center justify-center text-primary hover:bg-primary/10 rounded transition-colors"
                   title="下载"
                 >
-                  <svg class="w-5 h-5" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>
                 </button>
