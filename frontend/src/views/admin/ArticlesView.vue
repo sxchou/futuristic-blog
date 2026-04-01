@@ -1215,7 +1215,7 @@ watch(form, () => {
                     @change="(e) => updateFileOrderNumber(file.id, parseInt((e.target as HTMLInputElement).value) - 1)"
                     min="1"
                     :max="articleFiles.length"
-                    class="w-10 px-1 py-0.5 text-xs text-center bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
+                    class="w-10 px-1 py-0.5 text-xs text-center bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     title="输入序号排序"
                   />
                   <button
