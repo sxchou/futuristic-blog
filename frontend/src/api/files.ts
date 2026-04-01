@@ -55,7 +55,10 @@ export const fileApi = {
     const response = await apiClient.post<FileUploadResponse>('/files/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
-      }
+      },
+      timeout: 300000,
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity
     })
     return response.data
   },
@@ -67,7 +70,10 @@ export const fileApi = {
     const response = await apiClient.post<FileUploadResponse>('/files/upload-image', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
-      }
+      },
+      timeout: 300000,
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity
     })
     return response.data
   },

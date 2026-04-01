@@ -3,7 +3,7 @@ import type { AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig, Axi
 
 const config: AxiosRequestConfig = {
   baseURL: '/api/v1',
-  timeout: 15000,
+  timeout: 120000,
   headers: {
     'Content-Type': 'application/json'
   }
