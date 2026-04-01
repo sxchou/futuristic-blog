@@ -1186,16 +1186,6 @@ watch(form, () => {
                     @change="toggleFileSelection(file.id)"
                     class="w-3.5 h-3.5 rounded border-gray-300 text-primary focus:ring-primary flex-shrink-0"
                   />
-                  <div class="flex-shrink-0 text-gray-300 dark:text-gray-600 cursor-grab active:cursor-grabbing">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                      <circle cx="9" cy="6" r="1.5"/>
-                      <circle cx="15" cy="6" r="1.5"/>
-                      <circle cx="9" cy="12" r="1.5"/>
-                      <circle cx="15" cy="12" r="1.5"/>
-                      <circle cx="9" cy="18" r="1.5"/>
-                      <circle cx="15" cy="18" r="1.5"/>
-                    </svg>
-                  </div>
                   <span 
                     class="w-7 h-7 flex items-center justify-center rounded flex-shrink-0"
                     :class="[getFileIconInfo(file.file_type, file.mime_type, file.original_filename).bg, getFileIconInfo(file.file_type, file.mime_type, file.original_filename).color]"
@@ -1218,28 +1208,30 @@ watch(form, () => {
                     class="w-10 px-1 py-0.5 text-xs text-center bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     title="输入序号排序"
                   />
-                  <button
-                    type="button"
-                    @click="moveFileUp(index)"
-                    :disabled="index === 0"
-                    class="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                    title="上移"
-                  >
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                    </svg>
-                  </button>
-                  <button
-                    type="button"
-                    @click="moveFileDown(index)"
-                    :disabled="index === articleFiles.length - 1"
-                    class="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                    title="下移"
-                  >
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
+                  <div class="flex flex-col gap-0.5">
+                    <button
+                      type="button"
+                      @click="moveFileUp(index)"
+                      :disabled="index === 0"
+                      class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="上移"
+                    >
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      @click="moveFileDown(index)"
+                      :disabled="index === articleFiles.length - 1"
+                      class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="下移"
+                    >
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                  </div>
                   <div class="w-px h-4 bg-gray-200 dark:bg-white/10 mx-0.5"></div>
                   <button
                     type="button"
