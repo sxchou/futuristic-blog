@@ -62,7 +62,7 @@ ALLOWED_VIDEO_TYPES = [
     "video/x-flv",
     "video/x-matroska",
 ]
-MAX_FILE_SIZE = 50 * 1024 * 1024
+MAX_FILE_SIZE = 100 * 1024 * 1024
 
 
 def ensure_upload_dir():
