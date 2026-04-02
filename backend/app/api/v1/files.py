@@ -1,11 +1,15 @@
 import os
 import uuid
 import aiofiles
+import zipfile
+import tarfile
+import gzip
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 from app.core.database import get_db
 from app.models import ArticleFile
 from app.schemas import ArticleFileResponse, FileOrderUpdate
@@ -13,16 +17,68 @@ from app.utils import get_current_active_user
 from app.utils.timezone import get_now
 from app.core.config import settings
 
+try:
+    import rarfile
+    HAS_RARFILE = True
+except ImportError:
+    HAS_RARFILE = False
+
+try:
+    import py7zr
+    HAS_PY7ZR = True
+except ImportError:
+    HAS_PY7ZR = False
+
+
+def decode_filename(filename_bytes: bytes) -> str:
+    """
+    尝试多种编码解码文件名，确保中文和4字节字符正确显示
+    """
+    if isinstance(filename_bytes, str):
+        return filename_bytes
+    
+    encodings = ['utf-8', 'gb18030', 'gbk', 'gb2312', 'cp437', 'latin-1']
+    
+    for encoding in encodings:
+        try:
+            decoded = filename_bytes.decode(encoding)
+            if all(ord(c) < 0xD800 or ord(c) > 0xDFFF for c in decoded):
+                return decoded
+        except (UnicodeDecodeError, UnicodeEncodeError):
+            continue
+    
+    return filename_bytes.decode('utf-8', errors='replace')
+
+
+def safe_filename(filename: str) -> str:
+    """
+    确保文件名是有效的 UTF-8 字符串
+    """
+    if not filename:
+        return ""
+    
+    try:
+        if isinstance(filename, bytes):
+            return decode_filename(filename)
+        
+        filename.encode('utf-8')
+        return filename
+    except UnicodeEncodeError:
+        return filename.encode('utf-8', errors='replace').decode('utf-8')
+
 
 router = APIRouter(prefix="/files", tags=["Files"])
 
 UPLOAD_DIR = settings.AVATAR_STORAGE_PATH or os.getenv("RAILWAY_VOLUME_MOUNT_PATH") or os.getenv("AVATAR_STORAGE_PATH") or "uploads"
+
 ALLOWED_IMAGE_TYPES = [
     "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml", "image/bmp", "image/x-icon"
 ]
 ALLOWED_FILE_TYPES = [
     "application/pdf",
     "application/zip",
+    "application/x-zip-compressed",
+    "application/x-zip",
     "application/x-rar-compressed",
     "application/x-rar",
     "application/x-7z-compressed",
@@ -62,7 +118,52 @@ ALLOWED_VIDEO_TYPES = [
     "video/x-flv",
     "video/x-matroska",
 ]
+
+ALLOWED_EXTENSIONS = {
+    'image': ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp', '.ico'],
+    'audio': ['.mp3', '.wav', '.ogg', '.flac', '.aac', '.m4a', '.wma'],
+    'video': ['.mp4', '.webm', '.avi', '.mov', '.wmv', '.flv', '.mkv'],
+    'document': [
+        '.pdf', 
+        '.zip', '.rar', '.7z', '.tar', '.gz',
+        '.doc', '.docx', 
+        '.xls', '.xlsx', 
+        '.ppt', '.pptx',
+        '.txt', '.md', '.csv', '.json', '.xml', '.html', '.css', '.js'
+    ]
+}
+
 MAX_FILE_SIZE = 100 * 1024 * 1024
+
+
+def get_file_category_by_extension(filename: str) -> Optional[str]:
+    if not filename:
+        return None
+    ext = os.path.splitext(filename)[1].lower()
+    for category, extensions in ALLOWED_EXTENSIONS.items():
+        if ext in extensions:
+            return category
+    return None
+
+
+def is_allowed_file(filename: str, mime_type: str) -> tuple[bool, str]:
+    ext_category = get_file_category_by_extension(filename)
+    
+    if ext_category:
+        return True, ext_category
+    
+    if mime_type in ALLOWED_IMAGE_TYPES:
+        return True, 'image'
+    if mime_type in ALLOWED_AUDIO_TYPES:
+        return True, 'audio'
+    if mime_type in ALLOWED_VIDEO_TYPES:
+        return True, 'video'
+    if mime_type in ALLOWED_FILE_TYPES:
+        return True, 'document'
+    if mime_type.startswith('text/'):
+        return True, 'document'
+    
+    return False, ''
 
 
 def ensure_upload_dir():
@@ -123,28 +224,21 @@ async def upload_file(
         raise HTTPException(status_code=400, detail=f"文件大小超过限制 (最大 {format_file_size(MAX_FILE_SIZE)})")
     
     mime_type = file.content_type or "application/octet-stream"
-    is_image = mime_type in ALLOWED_IMAGE_TYPES
-    is_audio = mime_type in ALLOWED_AUDIO_TYPES
-    is_video = mime_type in ALLOWED_VIDEO_TYPES
-    is_allowed = (
-        is_image or 
-        is_audio or 
-        is_video or 
-        mime_type in ALLOWED_FILE_TYPES or
-        mime_type.startswith('text/')
-    )
+    
+    is_allowed, file_category = is_allowed_file(file.filename or "", mime_type)
     
     if not is_allowed:
-        allowed_types = (
-            ALLOWED_IMAGE_TYPES + 
-            ALLOWED_FILE_TYPES + 
-            ALLOWED_AUDIO_TYPES + 
-            ALLOWED_VIDEO_TYPES
-        )
+        all_extensions = []
+        for exts in ALLOWED_EXTENSIONS.values():
+            all_extensions.extend(exts)
         raise HTTPException(
             status_code=400, 
-            detail=f"不支持的文件类型: {mime_type}。支持的类型: {', '.join(allowed_types[:10])}..."
+            detail=f"不支持的文件类型。支持的扩展名: {', '.join(all_extensions[:20])}..."
         )
+    
+    is_image = file_category == 'image'
+    is_audio = file_category == 'audio'
+    is_video = file_category == 'video'
     
     file_ext = os.path.splitext(file.filename)[1] if file.filename else ""
     unique_filename = f"{get_now().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:8]}{file_ext}"
@@ -193,8 +287,10 @@ async def upload_image(
     ensure_upload_dir()
     
     mime_type = file.content_type or ""
-    if mime_type not in ALLOWED_IMAGE_TYPES:
-        raise HTTPException(status_code=400, detail="只支持图片文件 (JPEG, PNG, GIF, WebP)")
+    ext_category = get_file_category_by_extension(file.filename or "")
+    
+    if ext_category != 'image' and mime_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(status_code=400, detail="只支持图片文件 (JPEG, PNG, GIF, WebP, SVG, BMP, ICO)")
     
     content = await file.read()
     file_size = len(content)
@@ -275,6 +371,28 @@ async def download_file(
         filename=db_file.original_filename,
         media_type=db_file.mime_type
     )
+
+
+@router.post("/{file_id}/preview")
+async def preview_file(
+    file_id: int,
+    db: Session = Depends(get_db)
+):
+    db_file = db.query(ArticleFile).filter(ArticleFile.id == file_id).first()
+    if not db_file:
+        raise HTTPException(status_code=404, detail="文件不存在")
+    
+    try:
+        db_file.preview_count += 1
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"Failed to update preview count: {e}")
+    
+    return {
+        "preview_count": db_file.preview_count,
+        "file_id": file_id
+    }
 
 
 @router.delete("/{file_id}")
@@ -440,3 +558,300 @@ async def delete_orphan_files(
         "deleted_files": deleted_files,
         "errors": errors
     }
+
+
+class ArchiveEntry(BaseModel):
+    name: str
+    path: str
+    is_dir: bool
+    size: int
+    compressed_size: int
+    modified: Optional[str] = None
+
+class ArchiveContent(BaseModel):
+    format: str
+    total_files: int
+    total_dirs: int
+    total_size: int
+    compressed_size: int
+    entries: List[ArchiveEntry]
+    tree: Dict[str, Any]
+
+
+def build_tree(entries: List[Dict[str, Any]]) -> Dict[str, Any]:
+    root = {"name": "", "children": {}, "is_dir": True, "size": 0}
+    
+    for entry in entries:
+        parts = entry["path"].split("/")
+        current = root
+        
+        for i, part in enumerate(parts):
+            if not part:
+                continue
+                
+            if part not in current["children"]:
+                is_dir = i < len(parts) - 1 or entry["is_dir"]
+                current["children"][part] = {
+                    "name": part,
+                    "children": {} if is_dir else None,
+                    "is_dir": is_dir,
+                    "size": entry["size"] if not is_dir else 0,
+                    "path": "/".join(parts[:i+1])
+                }
+            
+            current = current["children"][part]
+    
+    def sort_children(node):
+        if node["children"]:
+            sorted_children = dict(
+                sorted(
+                    node["children"].items(),
+                    key=lambda x: (not x[1]["is_dir"], x[0].lower())
+                )
+            )
+            for child in sorted_children.values():
+                sort_children(child)
+            node["children"] = sorted_children
+    
+    sort_children(root)
+    return root
+
+
+def parse_zip(file_path: str) -> Dict[str, Any]:
+    entries = []
+    total_size = 0
+    compressed_size = 0
+    
+    with zipfile.ZipFile(file_path, 'r') as zf:
+        for info in zf.infolist():
+            is_dir = info.is_dir()
+            
+            filename = info.filename
+            if info.flag_bits & 0x800:
+                try:
+                    if isinstance(filename, bytes):
+                        filename = filename.decode('utf-8')
+                except:
+                    pass
+            else:
+                try:
+                    if isinstance(filename, bytes):
+                        filename = decode_filename(filename)
+                    else:
+                        try:
+                            filename.encode('cp437')
+                            try:
+                                filename = filename.encode('cp437').decode('gb18030')
+                            except:
+                                try:
+                                    filename = filename.encode('cp437').decode('utf-8')
+                                except:
+                                    pass
+                        except:
+                            pass
+                except:
+                    pass
+            
+            filename = safe_filename(filename)
+            
+            entries.append({
+                "name": os.path.basename(filename.rstrip('/')) or filename,
+                "path": filename.rstrip('/'),
+                "is_dir": is_dir,
+                "size": info.file_size,
+                "compressed_size": info.compress_size,
+                "modified": datetime(*info.date_time).isoformat() if info.date_time else None
+            })
+            if not is_dir:
+                total_size += info.file_size
+                compressed_size += info.compress_size
+    
+    return {
+        "format": "ZIP",
+        "total_files": sum(1 for e in entries if not e["is_dir"]),
+        "total_dirs": sum(1 for e in entries if e["is_dir"]),
+        "total_size": total_size,
+        "compressed_size": compressed_size,
+        "entries": entries,
+        "tree": build_tree(entries)
+    }
+
+
+def parse_tar(file_path: str, mode: str = 'r') -> Dict[str, Any]:
+    entries = []
+    total_size = 0
+    compressed_size = 0
+    
+    with tarfile.open(file_path, mode, encoding='utf-8', errors='replace') as tf:
+        for member in tf.getmembers():
+            name = safe_filename(member.name)
+            entries.append({
+                "name": os.path.basename(name.rstrip('/')) or name,
+                "path": name.rstrip('/'),
+                "is_dir": member.isdir(),
+                "size": member.size,
+                "compressed_size": member.size,
+                "modified": datetime.fromtimestamp(member.mtime).isoformat() if member.mtime else None
+            })
+            if member.isfile():
+                total_size += member.size
+                compressed_size += member.size
+    
+    return {
+        "format": "TAR" if mode == 'r' else "TAR.GZ",
+        "total_files": sum(1 for e in entries if not e["is_dir"]),
+        "total_dirs": sum(1 for e in entries if e["is_dir"]),
+        "total_size": total_size,
+        "compressed_size": compressed_size,
+        "entries": entries,
+        "tree": build_tree(entries)
+    }
+
+
+def parse_rar(file_path: str) -> Dict[str, Any]:
+    if not HAS_RARFILE:
+        return {"error": "RAR 支持未安装", "format": "RAR", "entries": [], "tree": {}}
+    
+    entries = []
+    total_size = 0
+    compressed_size = 0
+    
+    with rarfile.RarFile(file_path, 'r') as rf:
+        for info in rf.infolist():
+            is_dir = info.isdir()
+            filename = safe_filename(info.filename)
+            entries.append({
+                "name": os.path.basename(filename.rstrip('/')) or filename,
+                "path": filename.rstrip('/'),
+                "is_dir": is_dir,
+                "size": info.file_size,
+                "compressed_size": info.compress_size,
+                "modified": datetime.fromtimestamp(info.mtime).isoformat() if info.mtime else None
+            })
+            if not is_dir:
+                total_size += info.file_size
+                compressed_size += info.compress_size
+    
+    return {
+        "format": "RAR",
+        "total_files": sum(1 for e in entries if not e["is_dir"]),
+        "total_dirs": sum(1 for e in entries if e["is_dir"]),
+        "total_size": total_size,
+        "compressed_size": compressed_size,
+        "entries": entries,
+        "tree": build_tree(entries)
+    }
+
+
+def parse_7z(file_path: str) -> Dict[str, Any]:
+    if not HAS_PY7ZR:
+        return {"error": "7z 支持未安装", "format": "7Z", "entries": [], "tree": {}}
+    
+    entries = []
+    total_size = 0
+    compressed_size = 0
+    
+    with py7zr.SevenZipFile(file_path, 'r') as szf:
+        for name, info in szf.readall().items():
+            is_dir = info.is_directory if hasattr(info, 'is_directory') else False
+            safe_name = safe_filename(name)
+            entries.append({
+                "name": os.path.basename(safe_name.rstrip('/')) or safe_name,
+                "path": safe_name.rstrip('/'),
+                "is_dir": is_dir,
+                "size": info.uncompressed if hasattr(info, 'uncompressed') else 0,
+                "compressed_size": info.compressed if hasattr(info, 'compressed') else 0,
+                "modified": None
+            })
+            if not is_dir:
+                total_size += info.uncompressed if hasattr(info, 'uncompressed') else 0
+                compressed_size += info.compressed if hasattr(info, 'compressed') else 0
+    
+    return {
+        "format": "7Z",
+        "total_files": sum(1 for e in entries if not e["is_dir"]),
+        "total_dirs": sum(1 for e in entries if e["is_dir"]),
+        "total_size": total_size,
+        "compressed_size": compressed_size,
+        "entries": entries,
+        "tree": build_tree(entries)
+    }
+
+
+def parse_gz(file_path: str) -> Dict[str, Any]:
+    entries = []
+    total_size = 0
+    compressed_size = os.path.getsize(file_path)
+    
+    with gzip.open(file_path, 'rb') as gf:
+        try:
+            content = gf.read()
+            total_size = len(content)
+            original_name = os.path.basename(file_path)
+            if original_name.endswith('.gz'):
+                original_name = original_name[:-3]
+            
+            original_name = safe_filename(original_name)
+            
+            entries.append({
+                "name": original_name,
+                "path": original_name,
+                "is_dir": False,
+                "size": total_size,
+                "compressed_size": compressed_size,
+                "modified": None
+            })
+        except Exception:
+            pass
+    
+    return {
+        "format": "GZIP",
+        "total_files": 1,
+        "total_dirs": 0,
+        "total_size": total_size,
+        "compressed_size": compressed_size,
+        "entries": entries,
+        "tree": build_tree(entries)
+    }
+
+
+@router.get("/{file_id}/archive-content", response_model=ArchiveContent)
+async def get_archive_content(
+    file_id: int,
+    db: Session = Depends(get_db)
+):
+    db_file = db.query(ArticleFile).filter(ArticleFile.id == file_id).first()
+    if not db_file:
+        raise HTTPException(status_code=404, detail="文件不存在")
+    
+    if not os.path.exists(db_file.file_path):
+        raise HTTPException(status_code=404, detail="文件不存在")
+    
+    ext = os.path.splitext(db_file.original_filename)[1].lower()
+    
+    try:
+        if ext == '.zip':
+            result = parse_zip(db_file.file_path)
+        elif ext == '.tar':
+            result = parse_tar(db_file.file_path, 'r')
+        elif ext in ['.tar.gz', '.tgz']:
+            result = parse_tar(db_file.file_path, 'r:gz')
+        elif ext in ['.tar.bz2', '.tbz2']:
+            result = parse_tar(db_file.file_path, 'r:bz2')
+        elif ext == '.rar':
+            result = parse_rar(db_file.file_path)
+        elif ext == '.7z':
+            result = parse_7z(db_file.file_path)
+        elif ext == '.gz':
+            result = parse_gz(db_file.file_path)
+        else:
+            raise HTTPException(status_code=400, detail="不支持的压缩格式")
+        
+        if "error" in result:
+            raise HTTPException(status_code=500, detail=result["error"])
+        
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"解析压缩文件失败: {str(e)}")

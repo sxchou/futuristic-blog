@@ -26,6 +26,10 @@ const showLangSelector = ref(false)
 const showMarkdownHelp = ref(false)
 const hasUnsavedChanges = ref(false)
 const originalValue = ref('')
+const showLinkDialog = ref(false)
+const linkUrl = ref('')
+const linkText = ref('')
+const linkTarget = ref<'_blank' | '_self'>('_blank')
 
 const programmingLanguages = [
   { code: 'javascript', label: 'JavaScript' },
@@ -100,10 +104,7 @@ const clearDraft = () => {
 }
 
 const updatePreview = (value: string) => {
-  if (debounceTimer) clearTimeout(debounceTimer)
-  debounceTimer = setTimeout(() => {
-    previewContent.value = value
-  }, 300)
+  previewContent.value = value
 }
 
 const handleInput = (e: Event) => {
@@ -253,6 +254,55 @@ const insertCodeBlock = (lang: string) => {
   })
 }
 
+const openLinkDialog = () => {
+  if (!editorRef.value) return
+  
+  const textarea = editorRef.value
+  const start = textarea.selectionStart
+  const end = textarea.selectionEnd
+  const selectedText = props.modelValue.substring(start, end)
+  
+  linkText.value = selectedText || ''
+  linkUrl.value = ''
+  linkTarget.value = '_blank'
+  showLinkDialog.value = true
+}
+
+const insertLink = () => {
+  if (!linkUrl.value.trim()) {
+    showLinkDialog.value = false
+    return
+  }
+  
+  const url = linkUrl.value.trim()
+  const text = linkText.value.trim() || url
+  const target = linkTarget.value
+  
+  let linkMarkdown: string
+  if (target === '_blank') {
+    linkMarkdown = `<a href="${url}" target="_blank" class="text-primary hover:underline">${text}</a>`
+  } else {
+    linkMarkdown = `[${text}](${url})`
+  }
+  
+  if (editorRef.value) {
+    const textarea = editorRef.value
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    
+    const newText = props.modelValue.substring(0, start) + linkMarkdown + props.modelValue.substring(end)
+    emit('update:modelValue', newText)
+    
+    nextTick(() => {
+      textarea.focus({ preventScroll: true })
+    })
+  }
+  
+  showLinkDialog.value = false
+  linkUrl.value = ''
+  linkText.value = ''
+}
+
 const handleClickOutside = (e: MouseEvent) => {
   const target = e.target as HTMLElement
   if (!target.closest('.lang-selector-container')) {
@@ -279,7 +329,7 @@ const toolbarActions = [
   { icon: '1.', title: '有序列表', action: () => insertText('1. ', '', true) },
   { icon: '□', title: '任务列表', action: () => insertText('- [ ] ', '', true) },
   { divider: true },
-  { icon: '🔗', title: '链接', action: () => insertText('[', '](url)') },
+  { icon: '🔗', title: '链接', action: openLinkDialog },
   { icon: '🖼', title: '图片', action: () => insertText('![alt](', ')') },
   { icon: '</>', title: '行内代码', action: () => insertText('`', '`') },
   { divider: true },
@@ -289,10 +339,8 @@ const toolbarActions = [
 ]
 
 watch(() => props.modelValue, (newVal) => {
-  if (showPreview.value) {
-    previewContent.value = newVal
-  }
-})
+  previewContent.value = newVal
+}, { immediate: true })
 
 const editorContainerStyle = computed(() => ({
   height: isFullscreen.value ? 'calc(100vh - 120px)' : '400px'
@@ -554,6 +602,88 @@ defineExpose({
           :content="previewContent"
           @scroll="handlePreviewScroll"
         />
+      </div>
+    </div>
+    
+    <div
+      v-if="showLinkDialog"
+      class="fixed inset-0 z-[300] flex items-center justify-center bg-black/50"
+      @click="showLinkDialog = false"
+    >
+      <div class="bg-white dark:bg-dark-200 rounded-lg shadow-xl p-4 w-80 max-w-[90vw]" @click.stop>
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-medium text-gray-900 dark:text-white">插入链接</h3>
+          <button
+            @click="showLinkDialog = false"
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">链接文字</label>
+            <input
+              v-model="linkText"
+              type="text"
+              placeholder="显示的文字（可选）"
+              class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:outline-none"
+            />
+          </div>
+          
+          <div>
+            <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">链接地址</label>
+            <input
+              v-model="linkUrl"
+              type="text"
+              placeholder="https://example.com"
+              class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:outline-none"
+              @keyup.enter="insertLink"
+            />
+          </div>
+          
+          <div>
+            <label class="block text-xs text-gray-600 dark:text-gray-400 mb-2">打开方式</label>
+            <div class="flex gap-2">
+              <button
+                type="button"
+                @click.stop="linkTarget = '_blank'"
+                class="flex-1 px-3 py-2 text-xs rounded-lg transition-colors"
+                :class="linkTarget === '_blank' ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-dark-100 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-50'"
+              >
+                新窗口打开
+              </button>
+              <button
+                type="button"
+                @click.stop="linkTarget = '_self'"
+                class="flex-1 px-3 py-2 text-xs rounded-lg transition-colors"
+                :class="linkTarget === '_self' ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-dark-100 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-50'"
+              >
+                当前窗口打开
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="flex gap-2 mt-4">
+          <button
+            type="button"
+            @click.stop="showLinkDialog = false"
+            class="flex-1 px-3 py-2 text-xs bg-gray-100 dark:bg-dark-100 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-50 transition-colors"
+          >
+            取消
+          </button>
+          <button
+            type="button"
+            @click.stop="insertLink"
+            class="flex-1 px-3 py-2 text-xs bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
+          >
+            插入
+          </button>
+        </div>
       </div>
     </div>
   </div>

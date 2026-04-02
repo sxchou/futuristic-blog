@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import { fileApi } from '@/api'
+import { fileApi, type ArchiveContent } from '@/api'
 
 interface ArticleFile {
   id: number
@@ -26,6 +26,21 @@ const loading = ref(true)
 const error = ref('')
 const textContent = ref('')
 const imageLoaded = ref(false)
+const archiveContent = ref<ArchiveContent | null>(null)
+const archiveLoading = ref(false)
+const expandedDirs = ref<Set<string>>(new Set())
+const searchQuery = ref('')
+const sortField = ref<'name' | 'size' | 'type'>('name')
+const sortDirection = ref<'asc' | 'desc'>('asc')
+
+const imageScale = ref(1)
+const imageTranslateX = ref(0)
+const imageTranslateY = ref(0)
+const isDragging = ref(false)
+const dragStartX = ref(0)
+const dragStartY = ref(0)
+const lastTranslateX = ref(0)
+const lastTranslateY = ref(0)
 
 const getFileExtension = (filename: string): string => {
   return filename.split('.').pop()?.toLowerCase() || ''
@@ -247,6 +262,130 @@ const getArchiveInfo = (): { type: string; description: string } => {
   return archiveTypes[fileExtension.value] || { type: '压缩包', description: '压缩文件' }
 }
 
+const fetchArchiveContent = async () => {
+  if (previewType.value !== 'archive') return
+  
+  archiveLoading.value = true
+  error.value = ''
+  
+  try {
+    archiveContent.value = await fileApi.getArchiveContent(props.file.id)
+  } catch (err: any) {
+    console.error('Failed to load archive content:', err)
+    error.value = err.response?.data?.detail || '无法加载压缩包内容'
+  } finally {
+    archiveLoading.value = false
+  }
+}
+
+const toggleDir = (path: string) => {
+  if (expandedDirs.value.has(path)) {
+    expandedDirs.value.delete(path)
+  } else {
+    expandedDirs.value.add(path)
+  }
+}
+
+const isExpanded = (path: string) => expandedDirs.value.has(path)
+
+const getFileIcon = (name: string, isDir: boolean): string => {
+  if (isDir) {
+    return `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+    </svg>`
+  }
+  
+  const ext = name.split('.').pop()?.toLowerCase() || ''
+  const iconColors: Record<string, string> = {
+    'jpg': 'text-green-400', 'jpeg': 'text-green-400', 'png': 'text-green-400', 'gif': 'text-green-400', 'webp': 'text-green-400', 'svg': 'text-green-400',
+    'pdf': 'text-red-400',
+    'doc': 'text-blue-400', 'docx': 'text-blue-400',
+    'xls': 'text-emerald-400', 'xlsx': 'text-emerald-400',
+    'ppt': 'text-orange-400', 'pptx': 'text-orange-400',
+    'zip': 'text-amber-400', 'rar': 'text-amber-400', '7z': 'text-amber-400',
+    'mp3': 'text-purple-400', 'wav': 'text-purple-400', 'flac': 'text-purple-400',
+    'mp4': 'text-pink-400', 'avi': 'text-pink-400', 'mkv': 'text-pink-400',
+    'txt': 'text-gray-400', 'md': 'text-gray-400',
+    'js': 'text-yellow-400', 'ts': 'text-blue-300',
+    'html': 'text-orange-400', 'css': 'text-blue-400',
+    'json': 'text-yellow-400', 'xml': 'text-orange-400'
+  }
+  
+  const color = iconColors[ext] || 'text-gray-400'
+  
+  return `<svg class="w-4 h-4 ${color}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+  </svg>`
+}
+
+const filteredEntries = computed(() => {
+  if (!archiveContent.value || !searchQuery.value) return null
+  
+  const query = searchQuery.value.toLowerCase()
+  return archiveContent.value.entries.filter(entry => 
+    entry.name.toLowerCase().includes(query) || 
+    entry.path.toLowerCase().includes(query)
+  )
+})
+
+const renderTree = (node: any, depth: number = 0): any[] => {
+  if (!node.children) return []
+  
+  const result: any[] = []
+  let children = Object.values(node.children) as any[]
+  
+  children = children.sort((a, b) => {
+    if (a.is_dir !== b.is_dir) {
+      return a.is_dir ? -1 : 1
+    }
+    
+    let comparison = 0
+    if (sortField.value === 'name') {
+      comparison = a.name.localeCompare(b.name, 'zh-CN')
+    } else if (sortField.value === 'size') {
+      comparison = (a.size || 0) - (b.size || 0)
+    } else if (sortField.value === 'type') {
+      const extA = a.name.split('.').pop()?.toLowerCase() || ''
+      const extB = b.name.split('.').pop()?.toLowerCase() || ''
+      comparison = extA.localeCompare(extB)
+    }
+    
+    return sortDirection.value === 'asc' ? comparison : -comparison
+  })
+  
+  for (const child of children) {
+    if (searchQuery.value && filteredEntries.value) {
+      const matches = filteredEntries.value.some(e => e.path.startsWith(child.path))
+      if (!matches) continue
+    }
+    
+    result.push({
+      ...child,
+      depth
+    })
+    
+    if (child.is_dir && isExpanded(child.path)) {
+      result.push(...renderTree(child, depth + 1))
+    }
+  }
+  
+  return result
+}
+
+const flattenTree = computed(() => {
+  if (!archiveContent.value) return []
+  return renderTree(archiveContent.value.tree)
+})
+
+const toggleSort = (field: 'name' | 'size' | 'type') => {
+  if (sortField.value === field) {
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortField.value = field
+    sortDirection.value = 'asc'
+  }
+}
+
 const fetchTextContent = async () => {
   if (previewType.value !== 'text') return
   
@@ -282,6 +421,55 @@ const handleImageError = () => {
   error.value = '图片加载失败'
 }
 
+const zoomIn = () => {
+  if (imageScale.value < 5) {
+    imageScale.value = Math.min(5, imageScale.value + 0.25)
+  }
+}
+
+const zoomOut = () => {
+  if (imageScale.value > 0.25) {
+    imageScale.value = Math.max(0.25, imageScale.value - 0.25)
+  }
+}
+
+const resetZoom = () => {
+  imageScale.value = 1
+  imageTranslateX.value = 0
+  imageTranslateY.value = 0
+}
+
+const handleWheel = (e: WheelEvent) => {
+  e.preventDefault()
+  const delta = e.deltaY > 0 ? -0.1 : 0.1
+  const newScale = Math.max(0.25, Math.min(5, imageScale.value + delta))
+  imageScale.value = newScale
+}
+
+const handleMouseDown = (e: MouseEvent) => {
+  if (e.button !== 0) return
+  isDragging.value = true
+  dragStartX.value = e.clientX
+  dragStartY.value = e.clientY
+  lastTranslateX.value = imageTranslateX.value
+  lastTranslateY.value = imageTranslateY.value
+  e.preventDefault()
+}
+
+const handleMouseMove = (e: MouseEvent) => {
+  if (!isDragging.value) return
+  
+  const deltaX = e.clientX - dragStartX.value
+  const deltaY = e.clientY - dragStartY.value
+  
+  imageTranslateX.value = lastTranslateX.value + deltaX
+  imageTranslateY.value = lastTranslateY.value + deltaY
+}
+
+const handleMouseUp = () => {
+  isDragging.value = false
+}
+
 const handleIframeLoad = () => {
   loading.value = false
 }
@@ -306,10 +494,20 @@ watch(() => props.file, () => {
   error.value = ''
   textContent.value = ''
   imageLoaded.value = false
+  archiveContent.value = null
+  expandedDirs.value.clear()
+  searchQuery.value = ''
+  imageScale.value = 1
+  imageTranslateX.value = 0
+  imageTranslateY.value = 0
+  isDragging.value = false
   
   if (previewType.value === 'text') {
     fetchTextContent()
-  } else if (previewType.value === 'audio' || previewType.value === 'video' || previewType.value === 'archive' || previewType.value === 'unsupported') {
+  } else if (previewType.value === 'archive') {
+    loading.value = false
+    fetchArchiveContent()
+  } else if (previewType.value === 'audio' || previewType.value === 'video' || previewType.value === 'unsupported') {
     loading.value = false
   } else if (previewType.value === 'office' && isLocalhost.value) {
     loading.value = false
@@ -389,14 +587,63 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <div v-if="previewType === 'image'" class="flex items-center justify-center h-full p-4">
-            <img
-              :src="downloadUrl"
-              :alt="file.original_filename"
-              class="max-w-full max-h-full object-contain rounded-lg shadow-lg"
-              @load="handleImageLoad"
-              @error="handleImageError"
-            />
+          <div v-if="previewType === 'image'" class="relative h-full flex flex-col">
+            <div class="absolute top-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 bg-gray-800/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg">
+              <button
+                @click="zoomOut"
+                :disabled="imageScale <= 0.25"
+                class="p-1.5 text-gray-300 hover:text-white hover:bg-gray-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="缩小"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
+                </svg>
+              </button>
+              <div class="flex items-center gap-2 px-2">
+                <span class="text-sm text-gray-300 min-w-[60px] text-center">{{ Math.round(imageScale * 100) }}%</span>
+                <button
+                  @click="resetZoom"
+                  class="p-1 text-gray-400 hover:text-white transition-colors"
+                  title="重置"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
+              </div>
+              <button
+                @click="zoomIn"
+                :disabled="imageScale >= 5"
+                class="p-1.5 text-gray-300 hover:text-white hover:bg-gray-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="放大"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
+                </svg>
+              </button>
+            </div>
+            
+            <div 
+              class="flex-1 overflow-hidden cursor-move relative"
+              @wheel="handleWheel"
+              @mousedown="handleMouseDown"
+              @mousemove="handleMouseMove"
+              @mouseup="handleMouseUp"
+              @mouseleave="handleMouseUp"
+            >
+              <img
+                :src="downloadUrl"
+                :alt="file.original_filename"
+                class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-lg shadow-lg transition-transform duration-75"
+                :style="{
+                  transform: `translate(calc(-50% + ${imageTranslateX}px), calc(-50% + ${imageTranslateY}px)) scale(${imageScale})`,
+                  cursor: isDragging ? 'grabbing' : 'grab'
+                }"
+                @load="handleImageLoad"
+                @error="handleImageError"
+                draggable="false"
+              />
+            </div>
           </div>
 
           <div v-else-if="previewType === 'pdf'" class="h-full">
@@ -489,42 +736,179 @@ onUnmounted(() => {
             </video>
           </div>
 
-          <div v-else-if="previewType === 'archive'" class="flex items-center justify-center h-full p-8">
-            <div class="text-center max-w-md">
-              <div 
-                class="w-20 h-20 mx-auto mb-6 flex items-center justify-center rounded-xl"
-                :class="[getFileIconComponent.bg]"
-              >
-                <span 
-                  class="w-12 h-12"
-                  :class="getFileIconComponent.color"
-                  v-html="getFileIconComponent.svg"
-                ></span>
+          <div v-else-if="previewType === 'archive'" class="h-full flex flex-col">
+            <div v-if="archiveLoading" class="flex-1 flex items-center justify-center">
+              <div class="flex flex-col items-center gap-4">
+                <div class="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+                <p class="text-gray-400">正在解析压缩包...</p>
               </div>
-              <h4 class="text-xl font-semibold text-white mb-2">{{ file.original_filename }}</h4>
-              <div class="bg-gray-800 dark:bg-dark-400 rounded-lg p-6 mt-4">
-                <div class="flex items-center justify-between mb-3">
-                  <span class="text-gray-400">类型:</span>
-                  <span class="text-white font-medium">{{ getArchiveInfo().type }}</span>
+            </div>
+            
+            <div v-else-if="error && !archiveContent" class="flex-1 flex items-center justify-center p-8">
+              <div class="text-center">
+                <p class="text-red-400 mb-4">{{ error }}</p>
+                <button
+                  @click="fetchArchiveContent"
+                  class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
+                >
+                  重试
+                </button>
+              </div>
+            </div>
+            
+            <div v-else-if="archiveContent" class="flex-1 flex flex-col overflow-hidden">
+              <div class="px-4 py-3 border-b border-gray-700 dark:border-white/10 bg-gray-800/50 flex-shrink-0">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center gap-3">
+                    <span class="px-2 py-0.5 text-xs font-medium bg-amber-500/20 text-amber-400 rounded">
+                      {{ archiveContent.format }}
+                    </span>
+                    <span class="text-xs text-gray-400">
+                      {{ archiveContent.total_files }} 个文件, {{ archiveContent.total_dirs }} 个文件夹
+                    </span>
+                  </div>
+                  <div class="text-xs text-gray-400">
+                    原始大小: {{ formatFileSize(archiveContent.total_size) }} | 
+                    压缩后: {{ formatFileSize(archiveContent.compressed_size) }}
+                    <span v-if="archiveContent.total_size > 0" class="text-green-400 ml-1">
+                      ({{ Math.round((1 - archiveContent.compressed_size / archiveContent.total_size) * 100) }}% 压缩率)
+                    </span>
+                  </div>
                 </div>
-                <div class="flex items-center justify-between mb-3">
-                  <span class="text-gray-400">大小:</span>
-                  <span class="text-white font-medium">{{ formatFileSize(file.file_size) }}</span>
+                <div class="relative">
+                  <input
+                    v-model="searchQuery"
+                    type="text"
+                    placeholder="搜索文件..."
+                    class="w-full px-3 py-1.5 text-sm bg-gray-700 dark:bg-dark-400 border border-gray-600 dark:border-white/10 rounded-lg text-white placeholder-gray-400 focus:border-primary focus:outline-none"
+                  />
+                  <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
                 </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-gray-400">描述:</span>
-                  <span class="text-white font-medium">{{ getArchiveInfo().description }}</span>
+                
+                <div class="flex items-center gap-1 mt-2">
+                  <span class="text-xs text-gray-400 mr-1">排序:</span>
+                  <button
+                    @click="toggleSort('name')"
+                    class="px-2 py-1 text-xs rounded transition-colors flex items-center gap-1"
+                    :class="sortField === 'name' ? 'bg-primary/20 text-primary' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'"
+                  >
+                    名称
+                    <svg v-if="sortField === 'name'" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path v-if="sortDirection === 'asc'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                      <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  <button
+                    @click="toggleSort('size')"
+                    class="px-2 py-1 text-xs rounded transition-colors flex items-center gap-1"
+                    :class="sortField === 'size' ? 'bg-primary/20 text-primary' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'"
+                  >
+                    大小
+                    <svg v-if="sortField === 'size'" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path v-if="sortDirection === 'asc'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                      <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  <button
+                    @click="toggleSort('type')"
+                    class="px-2 py-1 text-xs rounded transition-colors flex items-center gap-1"
+                    :class="sortField === 'type' ? 'bg-primary/20 text-primary' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'"
+                  >
+                    类型
+                    <svg v-if="sortField === 'type'" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path v-if="sortDirection === 'asc'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                      <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
                 </div>
               </div>
-              <p class="text-gray-400 mt-4 text-sm">
-                压缩包文件需要下载后解压查看
-              </p>
-              <button
-                @click="handleDownload"
-                class="mt-6 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
-              >
-                下载文件
-              </button>
+              
+              <div class="flex-1 overflow-auto p-2">
+                <div class="space-y-0.5">
+                  <div
+                    v-for="item in flattenTree"
+                    :key="item.path"
+                    class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-700/50 dark:hover:bg-white/5 cursor-default group"
+                    :style="{ paddingLeft: `${item.depth * 16 + 8}px` }"
+                  >
+                    <button
+                      v-if="item.is_dir"
+                      @click="toggleDir(item.path)"
+                      class="w-4 h-4 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+                    >
+                      <svg 
+                        class="w-3 h-3 transition-transform" 
+                        :class="{ 'rotate-90': isExpanded(item.path) }"
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                    <span v-else class="w-4"></span>
+                    
+                    <span 
+                      class="flex-shrink-0"
+                      :class="item.is_dir ? 'text-amber-400' : ''"
+                      v-html="getFileIcon(item.name, item.is_dir)"
+                    ></span>
+                    
+                    <span 
+                      class="flex-1 text-sm truncate"
+                      :class="item.is_dir ? 'text-gray-200 font-medium' : 'text-gray-300'"
+                    >
+                      {{ item.name }}
+                    </span>
+                    
+                    <span v-if="!item.is_dir" class="text-xs text-gray-500 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {{ formatFileSize(item.size) }}
+                    </span>
+                  </div>
+                </div>
+                
+                <div v-if="flattenTree.length === 0 && searchQuery" class="text-center py-8 text-gray-400">
+                  未找到匹配的文件
+                </div>
+              </div>
+            </div>
+            
+            <div v-else class="flex-1 flex items-center justify-center p-8">
+              <div class="text-center max-w-md">
+                <div 
+                  class="w-20 h-20 mx-auto mb-6 flex items-center justify-center rounded-xl"
+                  :class="[getFileIconComponent.bg]"
+                >
+                  <span 
+                    class="w-12 h-12"
+                    :class="getFileIconComponent.color"
+                    v-html="getFileIconComponent.svg"
+                  ></span>
+                </div>
+                <h4 class="text-xl font-semibold text-white mb-2">{{ file.original_filename }}</h4>
+                <div class="bg-gray-800 dark:bg-dark-400 rounded-lg p-6 mt-4">
+                  <div class="flex items-center justify-between mb-3">
+                    <span class="text-gray-400">类型:</span>
+                    <span class="text-white font-medium">{{ getArchiveInfo().type }}</span>
+                  </div>
+                  <div class="flex items-center justify-between mb-3">
+                    <span class="text-gray-400">大小:</span>
+                    <span class="text-white font-medium">{{ formatFileSize(file.file_size) }}</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-gray-400">描述:</span>
+                    <span class="text-white font-medium">{{ getArchiveInfo().description }}</span>
+                  </div>
+                </div>
+                <button
+                  @click="fetchArchiveContent"
+                  class="mt-6 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
+                >
+                  查看内容
+                </button>
+              </div>
             </div>
           </div>
 

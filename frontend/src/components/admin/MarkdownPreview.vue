@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { marked } from 'marked'
 import hljs from 'highlight.js'
 import DOMPurify from 'dompurify'
@@ -14,6 +14,7 @@ const emit = defineEmits<{
 
 const previewRef = ref<HTMLElement | null>(null)
 const isRendering = ref(false)
+const renderedHtml = ref('')
 
 const renderer = new marked.Renderer()
 
@@ -61,7 +62,21 @@ renderer.heading = (text: string, level: number, _raw: string) => {
 
 renderer.link = (href: string, title: string | null | undefined, text: string) => {
   const titleAttr = title ? ` title="${title}"` : ''
-  return `<a href="${href}"${titleAttr} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">${text}</a>`
+  
+  const hasBlankTarget = text.includes('{:target="_blank"}')
+  const cleanText = text.replace('{:target="_blank"}', '').trim()
+  
+  const isInternal = href.startsWith('/') || href.startsWith('#') || href.startsWith(window.location.origin)
+  
+  if (hasBlankTarget) {
+    return `<a href="${href}"${titleAttr} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">${cleanText}</a>`
+  }
+  
+  if (isInternal) {
+    return `<a href="${href}"${titleAttr} class="text-primary hover:underline">${cleanText}</a>`
+  }
+  
+  return `<a href="${href}"${titleAttr} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">${cleanText}</a>`
 }
 
 renderer.image = (href: string, title: string | null | undefined, text: string) => {
@@ -94,16 +109,33 @@ marked.setOptions({
   breaks: true
 })
 
-const renderedContent = computed(() => {
-  if (!props.content) return ''
+const renderMarkdown = () => {
+  if (!props.content) {
+    renderedHtml.value = ''
+    return
+  }
+  
   isRendering.value = true
+  
+  try {
+    const rawHtml = marked.parse(props.content, { async: false }) as string
+    renderedHtml.value = DOMPurify.sanitize(rawHtml, {
+      ADD_ATTR: ['target', 'rel', 'loading', 'class'],
+      ADD_TAGS: ['iframe']
+    })
+  } catch (error) {
+    console.error('Markdown render error:', error)
+    renderedHtml.value = ''
+  }
   
   nextTick(() => {
     isRendering.value = false
   })
-  
-  return DOMPurify.sanitize(marked.parse(props.content, { async: false }) as string)
-})
+}
+
+watch(() => props.content, () => {
+  renderMarkdown()
+}, { immediate: true })
 
 const handleScroll = (e: Event) => {
   const target = e.target as HTMLElement
@@ -169,7 +201,7 @@ defineExpose({
       ref="previewRef"
       class="preview-content flex-1 overflow-auto p-4 prose prose-invert max-w-none"
       @scroll="handleScroll"
-      v-html="renderedContent"
+      v-html="renderedHtml"
     />
   </div>
 </template>

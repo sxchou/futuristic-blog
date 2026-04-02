@@ -18,6 +18,7 @@ interface ArticleFile {
   mime_type: string
   is_image: boolean
   download_count: number
+  preview_count: number
   created_at: string
 }
 
@@ -48,6 +49,19 @@ renderer.code = (code: string, infostring: string | undefined, _escaped: boolean
   </div>`
 }
 
+renderer.link = (href: string, title: string | null | undefined, text: string) => {
+  const titleAttr = title ? ` title="${title}"` : ''
+  
+  const currentOrigin = typeof window !== 'undefined' ? window.location.origin : ''
+  const isInternal = href.startsWith('/') || href.startsWith('#') || (currentOrigin && href.startsWith(currentOrigin))
+  
+  if (isInternal) {
+    return `<a href="${href}"${titleAttr} class="text-primary hover:underline">${text}</a>`
+  }
+  
+  return `<a href="${href}"${titleAttr} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">${text}</a>`
+}
+
 marked.setOptions({
   renderer,
   gfm: true,
@@ -56,7 +70,11 @@ marked.setOptions({
 
 const renderedContent = computed(() => {
   if (!article.value?.content) return ''
-  return DOMPurify.sanitize(marked.parse(article.value.content, { async: false }) as string)
+  const rawHtml = marked.parse(article.value.content, { async: false }) as string
+  return DOMPurify.sanitize(rawHtml, {
+    ADD_ATTR: ['target', 'rel', 'loading', 'class'],
+    ADD_TAGS: ['iframe']
+  })
 })
 
 const formatDate = (date: string) => {
@@ -226,9 +244,19 @@ const handleBatchDownload = async () => {
   }
 }
 
-const openPreview = (file: ArticleFile) => {
+const openPreview = async (file: ArticleFile) => {
   previewFile.value = file
   showPreview.value = true
+  
+  try {
+    const result = await fileApi.previewFile(file.id)
+    const fileIndex = articleFiles.value.findIndex(f => f.id === file.id)
+    if (fileIndex !== -1) {
+      articleFiles.value[fileIndex].preview_count = result.preview_count
+    }
+  } catch (error) {
+    console.error('Failed to update preview count:', error)
+  }
 }
 
 const closePreview = () => {
@@ -243,7 +271,7 @@ const refreshPage = () => {
 const fetchArticleFiles = async (articleId: number) => {
   try {
     const files = await fileApi.getFiles(articleId)
-    articleFiles.value = files.filter(f => !f.is_image)
+    articleFiles.value = files
   } catch (error) {
     console.error('Failed to fetch article files:', error)
     articleFiles.value = []
@@ -483,7 +511,7 @@ onUnmounted(() => {
                 <div class="min-w-0 flex-1">
                   <div class="text-xs text-gray-900 dark:text-white break-all">{{ file.original_filename }}</div>
                   <div class="text-[10px] text-gray-500">
-                    {{ formatFileSize(file.file_size) }} · {{ file.download_count }} 次下载
+                    {{ formatFileSize(file.file_size) }} · {{ file.preview_count || 0 }} 次预览 · {{ file.download_count }} 次下载
                   </div>
                 </div>
               </div>

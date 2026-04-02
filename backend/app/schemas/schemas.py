@@ -514,6 +514,7 @@ class ArticleFileResponse(ArticleFileBase):
     id: int
     article_id: Optional[int] = None
     download_count: int
+    preview_count: int = 0
     order: int = 0
     created_at: Optional[str] = None
     

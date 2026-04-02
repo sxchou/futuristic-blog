@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, onUnmounted } from 'vue'
 import { useBlogStore, useDialogStore, useAuthStore } from '@/stores'
-import { articleApi, fileApi, categoryApi, tagApi, utilsApi } from '@/api'
+import { articleApi, fileApi, categoryApi, tagApi, utilsApi, parseUploadError } from '@/api'
 import type { ArticleListItem, Article } from '@/types'
 import { useAdminCheck } from '@/composables/useAdminCheck'
 import { formatDateTime } from '@/utils/date'
@@ -17,6 +17,7 @@ interface ArticleFile {
   mime_type: string
   is_image: boolean
   download_count: number
+  preview_count: number
   order: number
   created_at: string
 }
@@ -46,6 +47,29 @@ const draggedFileIndex = ref<number | null>(null)
 const dragOverIndex = ref<number | null>(null)
 const selectedFileIds = ref<Set<number>>(new Set())
 const isBatchDeleting = ref(false)
+
+interface UploadFileInfo {
+  name: string
+  size: number
+  progress: number
+  loaded: number
+}
+
+interface UploadErrorInfo {
+  fileName: string
+  type: 'network' | 'timeout' | 'size_limit' | 'server' | 'unknown'
+  message: string
+  suggestion: string
+}
+
+const currentUploadingFile = ref<UploadFileInfo | null>(null)
+const overallUploadProgress = ref(0)
+const totalUploadSize = ref(0)
+const uploadedSize = ref(0)
+const uploadError = ref<UploadErrorInfo | null>(null)
+const uploadAbortController = ref<AbortController | null>(null)
+const pendingFiles = ref<File[]>([])
+const currentFileIndex = ref(0)
 
 const newCategory = ref({
   name: '',
@@ -403,6 +427,93 @@ const formatFileSize = (bytes: number): string => {
   return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
 }
 
+const cancelUpload = () => {
+  if (uploadAbortController.value) {
+    uploadAbortController.value.abort()
+    uploadAbortController.value = null
+  }
+  resetUploadState()
+}
+
+const resetUploadState = () => {
+  isUploading.value = false
+  currentUploadingFile.value = null
+  overallUploadProgress.value = 0
+  uploadProgress.value = 0
+  totalUploadSize.value = 0
+  uploadedSize.value = 0
+  uploadError.value = null
+  pendingFiles.value = []
+  currentFileIndex.value = 0
+}
+
+const retryUpload = async () => {
+  if (pendingFiles.value.length === 0 || !editingArticle.value) return
+  
+  uploadError.value = null
+  isUploading.value = true
+  
+  await processUploadQueue()
+}
+
+const processUploadQueue = async () => {
+  if (!editingArticle.value) return
+  
+  for (let i = currentFileIndex.value; i < pendingFiles.value.length; i++) {
+    if (!isUploading.value) break
+    
+    const file = pendingFiles.value[i]
+    currentFileIndex.value = i
+    
+    currentUploadingFile.value = {
+      name: file.name,
+      size: file.size,
+      progress: 0,
+      loaded: 0
+    }
+    
+    uploadAbortController.value = new AbortController()
+    
+    try {
+      await fileApi.uploadFile(
+        file,
+        editingArticle.value.id,
+        (progressEvent) => {
+          if (currentUploadingFile.value) {
+            currentUploadingFile.value.progress = progressEvent.progress
+            currentUploadingFile.value.loaded = progressEvent.loaded
+            
+            const totalUploaded = uploadedSize.value + progressEvent.loaded
+            overallUploadProgress.value = Math.round((totalUploaded / totalUploadSize.value) * 100)
+            uploadProgress.value = overallUploadProgress.value
+          }
+        },
+        uploadAbortController.value.signal
+      )
+      
+      uploadedSize.value += file.size
+    } catch (error: any) {
+      if (error.name === 'AbortError' || error.name === 'CanceledError') {
+        resetUploadState()
+        return
+      }
+      
+      const parsedError = parseUploadError(error)
+      
+      uploadError.value = {
+        fileName: file.name,
+        ...parsedError
+      }
+      isUploading.value = false
+      return
+    }
+  }
+  
+  await fetchArticleFiles(editingArticle.value.id)
+  await dialog.showSuccess('文件上传成功', '成功')
+  resetUploadState()
+}
+
 const handleFileUpload = async (event: Event) => {
   const target = event.target as HTMLInputElement
   const files = target.files
@@ -413,25 +524,30 @@ const handleFileUpload = async (event: Event) => {
     return
   }
   
+  const fileArray = Array.from(files)
+  
+  const oversizedFiles = fileArray.filter(f => f.size > 100 * 1024 * 1024)
+  if (oversizedFiles.length > 0) {
+    await dialog.showError(
+      `以下文件超过100MB限制：\n${oversizedFiles.map(f => f.name).join('\n')}`,
+      '文件大小超限'
+    )
+    target.value = ''
+    return
+  }
+  
+  pendingFiles.value = fileArray
+  currentFileIndex.value = 0
+  totalUploadSize.value = fileArray.reduce((sum, f) => sum + f.size, 0)
+  uploadedSize.value = 0
+  uploadError.value = null
   isUploading.value = true
+  overallUploadProgress.value = 0
   uploadProgress.value = 0
   
-  try {
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i]
-      uploadProgress.value = ((i + 1) / files.length) * 100
-      await fileApi.uploadFile(file, editingArticle.value.id)
-    }
-    await fetchArticleFiles(editingArticle.value.id)
-    await dialog.showSuccess('文件上传成功', '成功')
-  } catch (error: any) {
-    console.error('Failed to upload file:', error)
-    await dialog.showError(error.response?.data?.detail || '文件上传失败', '错误')
-  } finally {
-    isUploading.value = false
-    uploadProgress.value = 0
-    target.value = ''
-  }
+  await processUploadQueue()
+  
+  target.value = ''
 }
 
 const handleImageUpload = async (event: Event) => {
@@ -439,10 +555,34 @@ const handleImageUpload = async (event: Event) => {
   const file = target.files?.[0]
   if (!file) return
   
+  if (file.size > 100 * 1024 * 1024) {
+    await dialog.showError('图片大小不能超过100MB', '文件大小超限')
+    target.value = ''
+    return
+  }
+  
   isUploading.value = true
+  currentUploadingFile.value = {
+    name: file.name,
+    size: file.size,
+    progress: 0,
+    loaded: 0
+  }
+  uploadProgress.value = 0
+  uploadAbortController.value = new AbortController()
   
   try {
-    const response = await fileApi.uploadImage(file)
+    const response = await fileApi.uploadImage(
+      file,
+      (progressEvent) => {
+        if (currentUploadingFile.value) {
+          currentUploadingFile.value.progress = progressEvent.progress
+          currentUploadingFile.value.loaded = progressEvent.loaded
+          uploadProgress.value = progressEvent.progress
+        }
+      },
+      uploadAbortController.value.signal
+    )
     const imageUrl = `/uploads/images/${response.filename}`
     const markdown = `![${file.name}](${imageUrl})`
     
@@ -461,10 +601,21 @@ const handleImageUpload = async (event: Event) => {
       form.value.content += `\n${markdown}\n`
     }
   } catch (error: any) {
-    console.error('Failed to upload image:', error)
-    await dialog.showError(error.response?.data?.detail || '图片上传失败', '错误')
+    if (error.name === 'AbortError' || error.name === 'CanceledError') {
+      return
+    }
+    
+    const parsedError = parseUploadError(error)
+    
+    uploadError.value = {
+      fileName: file.name,
+      ...parsedError
+    }
   } finally {
     isUploading.value = false
+    currentUploadingFile.value = null
+    uploadProgress.value = 0
+    uploadAbortController.value = null
     target.value = ''
   }
 }
@@ -1103,15 +1254,86 @@ watch(form, () => {
               </div>
             </div>
             
-            <div v-if="isUploading" class="mb-3">
-              <div class="flex items-center gap-2">
-                <div class="flex-1 h-2 bg-gray-200 dark:bg-dark-200 rounded-full overflow-hidden">
-                  <div 
-                    class="h-full bg-primary transition-all duration-300"
-                    :style="{ width: uploadProgress + '%' }"
-                  />
+            <div v-if="uploadError" class="mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <div class="flex items-start gap-2">
+                <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-medium text-red-800 dark:text-red-200">{{ uploadError.message }}</div>
+                  <div class="text-xs text-red-600 dark:text-red-400 mt-0.5">{{ uploadError.suggestion }}</div>
+                  <div v-if="uploadError.fileName" class="text-xs text-red-500 dark:text-red-500 mt-1 truncate">
+                    文件: {{ uploadError.fileName }}
+                  </div>
                 </div>
-                <span class="text-xs text-gray-500">{{ Math.round(uploadProgress) }}%</span>
+              </div>
+              <div class="flex items-center gap-2 mt-2">
+                <button
+                  type="button"
+                  @click="retryUpload"
+                  class="px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors flex items-center gap-1"
+                >
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  重试
+                </button>
+                <button
+                  type="button"
+                  @click="resetUploadState"
+                  class="px-3 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors"
+                >
+                  取消
+                </button>
+              </div>
+            </div>
+            
+            <div v-if="isUploading && currentUploadingFile" class="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2 min-w-0 flex-1">
+                  <svg class="w-4 h-4 text-blue-500 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span class="text-xs text-blue-700 dark:text-blue-300 truncate">{{ currentUploadingFile.name }}</span>
+                </div>
+                <button
+                  type="button"
+                  @click="cancelUpload"
+                  class="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 flex-shrink-0 ml-2"
+                >
+                  取消
+                </button>
+              </div>
+              
+              <div class="space-y-2">
+                <div>
+                  <div class="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
+                    <span>当前文件</span>
+                    <span>{{ formatFileSize(currentUploadingFile.loaded) }} / {{ formatFileSize(currentUploadingFile.size) }}</span>
+                  </div>
+                  <div class="h-2 bg-blue-200 dark:bg-blue-900 rounded-full overflow-hidden">
+                    <div 
+                      class="h-full bg-blue-500 transition-all duration-150"
+                      :style="{ width: currentUploadingFile.progress + '%' }"
+                    />
+                  </div>
+                  <div class="text-xs text-blue-600 dark:text-blue-400 text-right mt-0.5">{{ currentUploadingFile.progress }}%</div>
+                </div>
+                
+                <div v-if="pendingFiles.length > 1">
+                  <div class="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
+                    <span>整体进度 ({{ currentFileIndex + 1 }}/{{ pendingFiles.length }})</span>
+                    <span>{{ formatFileSize(uploadedSize + currentUploadingFile.loaded) }} / {{ formatFileSize(totalUploadSize) }}</span>
+                  </div>
+                  <div class="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div 
+                      class="h-full bg-gradient-to-r from-primary to-blue-500 transition-all duration-150"
+                      :style="{ width: overallUploadProgress + '%' }"
+                    />
+                  </div>
+                  <div class="text-xs text-gray-500 dark:text-gray-400 text-right mt-0.5">{{ overallUploadProgress }}%</div>
+                </div>
               </div>
             </div>
 
@@ -1228,7 +1450,7 @@ watch(form, () => {
                   <div class="min-w-0 flex-1">
                     <div class="text-xs text-gray-900 dark:text-white break-all">{{ file.original_filename }}</div>
                     <div class="text-[10px] text-gray-500">
-                      {{ formatFileSize(file.file_size) }} · {{ file.download_count }} 次下载
+                      {{ formatFileSize(file.file_size) }} · {{ file.preview_count || 0 }} 次预览 · {{ file.download_count }} 次下载
                     </div>
                   </div>
                 </div>

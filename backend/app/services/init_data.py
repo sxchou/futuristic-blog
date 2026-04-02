@@ -76,6 +76,11 @@ def run_database_migrations():
                 conn.commit()
                 print("Migration: Added 'order' column to article_files table")
             
+            if 'preview_count' not in file_columns:
+                cursor.execute("ALTER TABLE article_files ADD COLUMN preview_count INTEGER DEFAULT 0")
+                conn.commit()
+                print("Migration: Added 'preview_count' column to article_files table")
+            
             conn.close()
         elif "postgresql" in db_url:
             db = SessionLocal()
@@ -115,6 +120,12 @@ def run_database_migrations():
                     db.execute(text("ALTER TABLE article_files ADD COLUMN \"order\" INTEGER DEFAULT 0"))
                     db.commit()
                     print("Migration: Added 'order' column to article_files table")
+                
+                result = db.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'article_files' AND column_name = 'preview_count'"))
+                if not result.fetchone():
+                    db.execute(text("ALTER TABLE article_files ADD COLUMN preview_count INTEGER DEFAULT 0"))
+                    db.commit()
+                    print("Migration: Added 'preview_count' column to article_files table")
             except Exception as e:
                 print(f"PostgreSQL migration error: {e}")
                 db.rollback()

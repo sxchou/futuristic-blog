@@ -73,6 +73,14 @@ const createRenderer = () => {
 
   renderer.link = (href: string, title: string | null | undefined, text: string) => {
     const titleAttr = title ? ` title="${title}"` : ''
+    
+    const currentOrigin = typeof window !== 'undefined' ? window.location.origin : ''
+    const isInternal = href.startsWith('/') || href.startsWith('#') || (currentOrigin && href.startsWith(currentOrigin))
+    
+    if (isInternal) {
+      return `<a href="${href}"${titleAttr} class="text-primary hover:underline">${text}</a>`
+    }
+    
     return `<a href="${href}"${titleAttr} target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">${text}</a>`
   }
 
@@ -139,7 +147,7 @@ const renderedContent = computed(() => {
   const rawHtml = marked.parse(props.content, { renderer, gfm: true, breaks: true, async: false }) as string
   
   const html = DOMPurify.sanitize(rawHtml, {
-    ADD_ATTR: ['target', 'rel', 'loading'],
+    ADD_ATTR: ['target', 'rel', 'loading', 'class'],
     ADD_TAGS: ['iframe'],
   })
   
