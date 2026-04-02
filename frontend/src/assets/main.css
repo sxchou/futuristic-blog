@@ -285,3 +285,26 @@ hr {
     background-color: transparent;
   }
 }
+
+.search-highlight {
+  background-color: rgba(250, 204, 21, 0.4) !important;
+  color: #fbbf24 !important;
+  padding: 2px 4px !important;
+  border-radius: 3px !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.3);
+}
+
+.dark .search-highlight {
+  background-color: rgba(250, 204, 21, 0.5) !important;
+  color: #fde047 !important;
+  box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.4);
+}
+
+mark.search-highlight {
+  background-color: rgba(250, 204, 21, 0.4) !important;
+  color: #fbbf24 !important;
+  padding: 2px 4px !important;
+  border-radius: 3px !important;
+  font-weight: 700 !important;
+}

@@ -234,6 +234,9 @@ class ArticleListItem(BaseModel):
     category: Optional[CategoryResponse] = None
     tags: List[TagResponse] = []
     is_liked: bool = False
+    highlighted_title: Optional[str] = None
+    highlighted_summary: Optional[str] = None
+    match_type: Optional[str] = None
     
     @field_validator('created_at', 'published_at', mode='before')
     @classmethod

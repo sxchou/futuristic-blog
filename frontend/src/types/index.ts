@@ -93,6 +93,9 @@ export interface ArticleListItem {
   category?: Category
   tags: Tag[]
   is_liked?: boolean
+  highlighted_title?: string
+  highlighted_summary?: string
+  match_type?: string
 }
 
 export interface LikeResponse {

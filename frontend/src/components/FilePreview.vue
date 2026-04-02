@@ -288,6 +288,27 @@ const toggleDir = (path: string) => {
 
 const isExpanded = (path: string) => expandedDirs.value.has(path)
 
+const highlightText = (text: string, query: string): string => {
+  if (!query) return text
+  
+  if (query.includes('*') || query.includes('?')) {
+    try {
+      const pattern = query
+        .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+        .replace(/\*/g, '.*')
+        .replace(/\?/g, '.')
+      
+      const regex = new RegExp(`(${pattern})`, 'gi')
+      return text.replace(regex, '<mark class="bg-yellow-400/40 text-yellow-100 rounded px-0.5">$1</mark>')
+    } catch (e) {
+      return text
+    }
+  }
+  
+  const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
+  return text.replace(regex, '<mark class="bg-yellow-400/40 text-yellow-100 rounded px-0.5">$1</mark>')
+}
+
 const getFileIcon = (name: string, isDir: boolean): string => {
   if (isDir) {
     return `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -321,10 +342,31 @@ const getFileIcon = (name: string, isDir: boolean): string => {
 const filteredEntries = computed(() => {
   if (!archiveContent.value || !searchQuery.value) return null
   
-  const query = searchQuery.value.toLowerCase()
+  const query = searchQuery.value
+  
+  if (query.includes('*') || query.includes('?')) {
+    try {
+      const pattern = query
+        .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+        .replace(/\*/g, '.*')
+        .replace(/\?/g, '.')
+      
+      const regex = new RegExp(pattern, 'i')
+      
+      return archiveContent.value.entries.filter(entry => 
+        regex.test(entry.name) || regex.test(entry.path)
+      )
+    } catch (e) {
+      return archiveContent.value.entries.filter(entry => 
+        entry.name.toLowerCase().includes(query.toLowerCase()) || 
+        entry.path.toLowerCase().includes(query.toLowerCase())
+      )
+    }
+  }
+  
   return archiveContent.value.entries.filter(entry => 
-    entry.name.toLowerCase().includes(query) || 
-    entry.path.toLowerCase().includes(query)
+    entry.name.toLowerCase().includes(query.toLowerCase()) || 
+    entry.path.toLowerCase().includes(query.toLowerCase())
   )
 })
 
@@ -757,17 +799,17 @@ onUnmounted(() => {
             </div>
             
             <div v-else-if="archiveContent" class="flex-1 flex flex-col overflow-hidden">
-              <div class="px-4 py-3 border-b border-gray-700 dark:border-white/10 bg-gray-800/50 flex-shrink-0">
-                <div class="flex items-center justify-between mb-2">
-                  <div class="flex items-center gap-3">
-                    <span class="px-2 py-0.5 text-xs font-medium bg-amber-500/20 text-amber-400 rounded">
+              <div class="px-3 py-2 border-b border-gray-700 dark:border-white/10 bg-gray-800/50 flex-shrink-0">
+                <div class="flex flex-col gap-1.5 mb-2">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="px-1.5 py-0.5 text-[10px] font-medium bg-amber-500/20 text-amber-400 rounded">
                       {{ archiveContent.format }}
                     </span>
-                    <span class="text-xs text-gray-400">
+                    <span class="text-[10px] text-gray-400">
                       {{ archiveContent.total_files }} 个文件, {{ archiveContent.total_dirs }} 个文件夹
                     </span>
                   </div>
-                  <div class="text-xs text-gray-400">
+                  <div class="text-[10px] text-gray-400 break-all">
                     原始大小: {{ formatFileSize(archiveContent.total_size) }} | 
                     压缩后: {{ formatFileSize(archiveContent.compressed_size) }}
                     <span v-if="archiveContent.total_size > 0" class="text-green-400 ml-1">
@@ -779,45 +821,45 @@ onUnmounted(() => {
                   <input
                     v-model="searchQuery"
                     type="text"
-                    placeholder="搜索文件..."
-                    class="w-full px-3 py-1.5 text-sm bg-gray-700 dark:bg-dark-400 border border-gray-600 dark:border-white/10 rounded-lg text-white placeholder-gray-400 focus:border-primary focus:outline-none"
+                    placeholder="搜索文件（支持 * 和 ? 通配符）..."
+                    class="w-full px-2 py-1 text-xs bg-gray-700 dark:bg-dark-400 border border-gray-600 dark:border-white/10 rounded text-white placeholder-gray-400 focus:border-primary focus:outline-none"
                   />
-                  <svg class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
                 
-                <div class="flex items-center gap-1 mt-2">
-                  <span class="text-xs text-gray-400 mr-1">排序:</span>
+                <div class="flex items-center gap-1 mt-1.5 flex-wrap">
+                  <span class="text-[10px] text-gray-400">排序:</span>
                   <button
                     @click="toggleSort('name')"
-                    class="px-2 py-1 text-xs rounded transition-colors flex items-center gap-1"
+                    class="px-1.5 py-0.5 text-[10px] rounded transition-colors flex items-center gap-0.5"
                     :class="sortField === 'name' ? 'bg-primary/20 text-primary' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'"
                   >
                     名称
-                    <svg v-if="sortField === 'name'" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg v-if="sortField === 'name'" class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path v-if="sortDirection === 'asc'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
                       <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
                   <button
                     @click="toggleSort('size')"
-                    class="px-2 py-1 text-xs rounded transition-colors flex items-center gap-1"
+                    class="px-1.5 py-0.5 text-[10px] rounded transition-colors flex items-center gap-0.5"
                     :class="sortField === 'size' ? 'bg-primary/20 text-primary' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'"
                   >
                     大小
-                    <svg v-if="sortField === 'size'" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg v-if="sortField === 'size'" class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path v-if="sortDirection === 'asc'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
                       <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
                   <button
                     @click="toggleSort('type')"
-                    class="px-2 py-1 text-xs rounded transition-colors flex items-center gap-1"
+                    class="px-1.5 py-0.5 text-[10px] rounded transition-colors flex items-center gap-0.5"
                     :class="sortField === 'type' ? 'bg-primary/20 text-primary' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'"
                   >
                     类型
-                    <svg v-if="sortField === 'type'" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg v-if="sortField === 'type'" class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path v-if="sortDirection === 'asc'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
                       <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
@@ -830,16 +872,17 @@ onUnmounted(() => {
                   <div
                     v-for="item in flattenTree"
                     :key="item.path"
-                    class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-700/50 dark:hover:bg-white/5 cursor-default group"
-                    :style="{ paddingLeft: `${item.depth * 16 + 8}px` }"
+                    class="flex items-center gap-1.5 px-1.5 py-1 rounded hover:bg-gray-700/50 dark:hover:bg-white/5 cursor-default group"
+                    :class="{ 'cursor-pointer': item.is_dir }"
+                    :style="{ paddingLeft: `${item.depth * 12 + 6}px` }"
+                    @click="item.is_dir && toggleDir(item.path)"
                   >
-                    <button
+                    <span
                       v-if="item.is_dir"
-                      @click="toggleDir(item.path)"
-                      class="w-4 h-4 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+                      class="w-3 h-3 flex items-center justify-center text-gray-400"
                     >
                       <svg 
-                        class="w-3 h-3 transition-transform" 
+                        class="w-2.5 h-2.5 transition-transform" 
                         :class="{ 'rotate-90': isExpanded(item.path) }"
                         fill="none" 
                         stroke="currentColor" 
@@ -847,8 +890,8 @@ onUnmounted(() => {
                       >
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                       </svg>
-                    </button>
-                    <span v-else class="w-4"></span>
+                    </span>
+                    <span v-else class="w-3"></span>
                     
                     <span 
                       class="flex-shrink-0"
@@ -857,13 +900,12 @@ onUnmounted(() => {
                     ></span>
                     
                     <span 
-                      class="flex-1 text-sm truncate"
+                      class="flex-1 text-xs break-all"
                       :class="item.is_dir ? 'text-gray-200 font-medium' : 'text-gray-300'"
-                    >
-                      {{ item.name }}
-                    </span>
+                      v-html="highlightText(item.name, searchQuery)"
+                    ></span>
                     
-                    <span v-if="!item.is_dir" class="text-xs text-gray-500 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span v-if="!item.is_dir" class="text-xs text-gray-500 flex-shrink-0">
                       {{ formatFileSize(item.size) }}
                     </span>
                   </div>

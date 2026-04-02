@@ -1,7 +1,7 @@
 from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session, joinedload, selectinload
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from app.core.database import get_db
 from app.models import Article, Category, Tag, Comment, ArticleLike, ArticleFile
 from app.schemas import (
@@ -14,8 +14,141 @@ from app.services.log_service import LogService
 from app.services.baidu_push_service import baidu_push_service
 import asyncio
 import os
+import re
+from pypinyin import lazy_pinyin, Style
+from functools import lru_cache
 
 router = APIRouter(prefix="/articles", tags=["Articles"])
+
+
+@lru_cache(maxsize=1000)
+def get_pinyin_variants(text: str) -> tuple:
+    if not text:
+        return ()
+    
+    variants = []
+    
+    full_pinyin = ''.join(lazy_pinyin(text, style=Style.NORMAL))
+    variants.append(full_pinyin.lower())
+    
+    first_letters = ''.join([p[0] if p else '' for p in lazy_pinyin(text, style=Style.NORMAL)])
+    variants.append(first_letters.lower())
+    
+    return tuple(variants)
+
+
+def contains_chinese(text: str) -> bool:
+    return bool(re.search(r'[\u4e00-\u9fff]', text))
+
+
+def wildcard_to_regex(pattern: str) -> str:
+    regex = re.escape(pattern)
+    regex = regex.replace(r'\*', '.*')
+    regex = regex.replace(r'\?', '.')
+    return regex
+
+
+def highlight_text(text: str, search_term: str, max_length: int = 200) -> str:
+    if not text or not search_term:
+        return text[:max_length] if text else ""
+    
+    if '*' in search_term or '?' in search_term:
+        try:
+            pattern = wildcard_to_regex(search_term)
+            regex = re.compile(pattern, re.IGNORECASE)
+        except:
+            regex = re.compile(re.escape(search_term), re.IGNORECASE)
+    else:
+        regex = re.compile(re.escape(search_term), re.IGNORECASE)
+    
+    match = regex.search(text)
+    if match:
+        start = max(0, match.start() - 50)
+        end = min(len(text), match.end() + 150)
+        snippet = text[start:end]
+        
+        if start > 0:
+            snippet = "..." + snippet
+        if end < len(text):
+            snippet = snippet + "..."
+        
+        highlighted = regex.sub(r'<mark class="search-highlight">\g<0></mark>', snippet)
+        return highlighted
+    else:
+        return text[:max_length] + "..." if len(text) > max_length else text
+
+
+def search_articles(db: Session, search: str, page: int = 1, page_size: int = 10) -> tuple:
+    articles = db.query(Article).options(
+        joinedload(Article.category),
+        selectinload(Article.tags)
+    ).filter(Article.is_published == True).all()
+    
+    matched_articles = []
+    search_lower = search.lower()
+    has_wildcard = '*' in search or '?' in search
+    
+    if has_wildcard:
+        try:
+            pattern = wildcard_to_regex(search)
+            search_regex = re.compile(pattern, re.IGNORECASE)
+        except:
+            search_regex = None
+    else:
+        search_regex = None
+    
+    for article in articles:
+        title_lower = article.title.lower() if article.title else ""
+        summary_lower = article.summary.lower() if article.summary else ""
+        content_lower = article.content.lower() if article.content else ""
+        
+        matched = False
+        match_type = None
+        
+        if has_wildcard and search_regex:
+            if search_regex.search(article.title or ""):
+                matched = True
+                match_type = "title_wildcard"
+            elif search_regex.search(article.summary or ""):
+                matched = True
+                match_type = "summary_wildcard"
+            elif search_regex.search(article.content or ""):
+                matched = True
+                match_type = "content_wildcard"
+        
+        if not matched:
+            if search_lower in title_lower:
+                matched = True
+                match_type = "title"
+            elif search_lower in summary_lower:
+                matched = True
+                match_type = "summary"
+            elif search_lower in content_lower:
+                matched = True
+                match_type = "content"
+        
+        if matched:
+            highlighted_title = highlight_text(article.title, search, max_length=100)
+            highlighted_summary = highlight_text(article.summary, search, max_length=200)
+            
+            article_dict = {
+                'article': article,
+                'highlighted_title': highlighted_title,
+                'highlighted_summary': highlighted_summary,
+                'match_type': match_type
+            }
+            matched_articles.append(article_dict)
+    
+    matched_articles.sort(key=lambda x: x['article'].created_at, reverse=True)
+    
+    total = len(matched_articles)
+    total_pages = (total + page_size - 1) // page_size if total > 0 else 0
+    
+    start = (page - 1) * page_size
+    end = start + page_size
+    paginated = matched_articles[start:end]
+    
+    return paginated, total, total_pages
 
 
 @router.get("", response_model=PaginatedResponse)
@@ -28,6 +161,56 @@ async def get_articles(
     search: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
+    if search:
+        matched_articles, total, total_pages = search_articles(db, search, page, page_size)
+        
+        comment_counts = {}
+        if matched_articles:
+            article_ids = [item['article'].id for item in matched_articles]
+            comment_query = db.query(
+                Comment.article_id,
+                func.count(Comment.id).label('count')
+            ).filter(
+                Comment.article_id.in_(article_ids),
+                Comment.status == 'approved',
+                Comment.is_deleted == False
+            ).group_by(Comment.article_id).all()
+            
+            comment_counts = {c.article_id: c.count for c in comment_query}
+        
+        items = []
+        for item in matched_articles:
+            article = item['article']
+            items.append(ArticleListItem(
+                id=article.id,
+                title=article.title,
+                slug=article.slug,
+                summary=article.summary,
+                cover_image=article.cover_image,
+                is_published=article.is_published,
+                is_featured=article.is_featured,
+                is_pinned=article.is_pinned or False,
+                view_count=article.view_count,
+                like_count=article.like_count or 0,
+                comment_count=comment_counts.get(article.id, 0),
+                reading_time=article.reading_time,
+                created_at=article.created_at,
+                published_at=article.published_at,
+                category=CategoryResponse.model_validate(article.category) if article.category else None,
+                tags=[TagResponse.model_validate(tag) for tag in article.tags],
+                highlighted_title=item.get('highlighted_title'),
+                highlighted_summary=item.get('highlighted_summary'),
+                match_type=item.get('match_type')
+            ))
+        
+        return PaginatedResponse(
+            items=items,
+            total=total,
+            page=page,
+            page_size=page_size,
+            total_pages=total_pages
+        )
+    
     query = db.query(Article).options(
         joinedload(Article.category),
         selectinload(Article.tags)
@@ -39,12 +222,6 @@ async def get_articles(
         query = query.join(Article.tags).filter(Tag.id == tag_id)
     if is_featured is not None:
         query = query.filter(Article.is_featured == is_featured)
-    if search:
-        search_term = f"%{search}%"
-        query = query.filter(
-            (Article.title.ilike(search_term)) | 
-            (Article.summary.ilike(search_term))
-        )
     
     total = query.count()
     total_pages = (total + page_size - 1) // page_size

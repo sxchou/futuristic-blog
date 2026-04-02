@@ -3,6 +3,7 @@ import { ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBlogStore } from '@/stores'
 import ArticleCard from '@/components/home/ArticleCard.vue'
+import Pagination from '@/components/common/Pagination.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -10,13 +11,22 @@ const blogStore = useBlogStore()
 
 const searchQuery = ref('')
 const isSearching = ref(false)
+let currentSearchKeyword = ''
 
-const performSearch = async () => {
-  if (!searchQuery.value.trim()) return
+const performSearch = async (page: number = 1) => {
+  const keyword = currentSearchKeyword || searchQuery.value.trim()
+  
+  if (!keyword) {
+    return
+  }
   
   isSearching.value = true
   try {
-    await blogStore.fetchArticles({ search: searchQuery.value })
+    await blogStore.fetchArticles({ 
+      search: keyword,
+      page: page,
+      page_size: 8
+    })
   } finally {
     isSearching.value = false
   }
@@ -24,23 +34,35 @@ const performSearch = async () => {
 
 watch(() => route.query.q, (newQuery) => {
   if (newQuery) {
-    searchQuery.value = newQuery as string
-    performSearch()
+    const keyword = newQuery as string
+    searchQuery.value = keyword
+    currentSearchKeyword = keyword
+    performSearch(1)
   }
 }, { immediate: true })
 
 onMounted(() => {
-  if (route.query.q) {
-    searchQuery.value = route.query.q as string
-    performSearch()
+  const query = route.query.q as string
+  if (query) {
+    searchQuery.value = query
+    currentSearchKeyword = query
   }
 })
 
 const handleSearch = () => {
   if (searchQuery.value.trim()) {
+    currentSearchKeyword = searchQuery.value.trim()
     router.push({ path: '/search', query: { q: searchQuery.value } })
-    performSearch()
   }
+}
+
+const handlePageChange = (page: number) => {
+  performSearch(page)
+  
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  })
 }
 </script>
 
@@ -56,7 +78,7 @@ const handleSearch = () => {
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="输入关键词搜索..."
+            placeholder="输入关键词搜索（支持 * 和 ? 通配符）..."
             class="input-cyber text-lg py-4 pl-12 pr-4"
             @keyup.enter="handleSearch"
           />
@@ -98,6 +120,17 @@ const handleSearch = () => {
             v-for="article in blogStore.articles"
             :key="article.id"
             :article="article"
+            :highlight-keyword="currentSearchKeyword"
+          />
+        </div>
+
+        <div v-if="blogStore.pagination.totalPages > 1" class="mt-8">
+          <Pagination
+            :current-page="blogStore.pagination.page"
+            :total-pages="blogStore.pagination.totalPages"
+            :total-items="blogStore.pagination.total"
+            :page-size="8"
+            @page-change="handlePageChange"
           />
         </div>
       </div>

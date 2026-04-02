@@ -720,13 +720,24 @@ def parse_rar(file_path: str) -> Dict[str, Any]:
         for info in rf.infolist():
             is_dir = info.isdir()
             filename = safe_filename(info.filename)
+            
+            modified = None
+            if info.mtime:
+                if isinstance(info.mtime, datetime):
+                    modified = info.mtime.isoformat()
+                else:
+                    try:
+                        modified = datetime.fromtimestamp(info.mtime).isoformat()
+                    except (TypeError, OSError):
+                        modified = None
+            
             entries.append({
                 "name": os.path.basename(filename.rstrip('/')) or filename,
                 "path": filename.rstrip('/'),
                 "is_dir": is_dir,
                 "size": info.file_size,
                 "compressed_size": info.compress_size,
-                "modified": datetime.fromtimestamp(info.mtime).isoformat() if info.mtime else None
+                "modified": modified
             })
             if not is_dir:
                 total_size += info.file_size
@@ -752,20 +763,27 @@ def parse_7z(file_path: str) -> Dict[str, Any]:
     compressed_size = 0
     
     with py7zr.SevenZipFile(file_path, 'r') as szf:
-        for name, info in szf.readall().items():
-            is_dir = info.is_directory if hasattr(info, 'is_directory') else False
-            safe_name = safe_filename(name)
+        file_list = szf.list()
+        
+        for info in file_list:
+            is_dir = info.is_directory
+            safe_name = safe_filename(info.filename)
+            
+            file_size = info.uncompressed if info.uncompressed is not None else 0
+            compressed = info.compressed if info.compressed is not None else 0
+            
             entries.append({
                 "name": os.path.basename(safe_name.rstrip('/')) or safe_name,
                 "path": safe_name.rstrip('/'),
                 "is_dir": is_dir,
-                "size": info.uncompressed if hasattr(info, 'uncompressed') else 0,
-                "compressed_size": info.compressed if hasattr(info, 'compressed') else 0,
-                "modified": None
+                "size": file_size,
+                "compressed_size": compressed,
+                "modified": info.creationtime.isoformat() if info.creationtime else None
             })
+            
             if not is_dir:
-                total_size += info.uncompressed if hasattr(info, 'uncompressed') else 0
-                compressed_size += info.compressed if hasattr(info, 'compressed') else 0
+                total_size += file_size
+                compressed_size += compressed
     
     return {
         "format": "7Z",

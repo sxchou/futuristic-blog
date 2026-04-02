@@ -34,6 +34,20 @@ const articleFiles = ref<ArticleFile[]>([])
 const previewFile = ref<ArticleFile | null>(null)
 const showPreview = ref(false)
 const selectedFileIds = ref<Set<number>>(new Set())
+const highlightKeyword = ref('')
+
+const highlightText = (text: string, keyword: string): string => {
+  if (!keyword || !text) return text
+  
+  const escapeRegExp = (str: string) => {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  }
+  
+  const pattern = escapeRegExp(keyword)
+  const regex = new RegExp(`(${pattern})`, 'gi')
+  
+  return text.replace(regex, '<mark class="search-highlight">$1</mark>')
+}
 
 const renderer = new marked.Renderer()
 
@@ -71,10 +85,39 @@ marked.setOptions({
 const renderedContent = computed(() => {
   if (!article.value?.content) return ''
   const rawHtml = marked.parse(article.value.content, { async: false }) as string
-  return DOMPurify.sanitize(rawHtml, {
+  let sanitizedHtml = DOMPurify.sanitize(rawHtml, {
     ADD_ATTR: ['target', 'rel', 'loading', 'class'],
-    ADD_TAGS: ['iframe']
+    ADD_TAGS: ['iframe', 'mark']
   })
+  
+  if (highlightKeyword.value) {
+    const tempDiv = document.createElement('div')
+    tempDiv.innerHTML = sanitizedHtml
+    
+    const walkAndHighlight = (node: Node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const text = node.textContent || ''
+        if (text.trim()) {
+          const highlighted = highlightText(text, highlightKeyword.value)
+          if (highlighted !== text) {
+            const span = document.createElement('span')
+            span.innerHTML = highlighted
+            node.parentNode?.replaceChild(span, node)
+          }
+        }
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        const element = node as Element
+        if (element.tagName !== 'CODE' && element.tagName !== 'PRE') {
+          Array.from(node.childNodes).forEach(walkAndHighlight)
+        }
+      }
+    }
+    
+    walkAndHighlight(tempDiv)
+    sanitizedHtml = tempDiv.innerHTML
+  }
+  
+  return sanitizedHtml
 })
 
 const formatDate = (date: string) => {
@@ -327,6 +370,11 @@ const scrollToComment = (commentId: number) => {
 
 onMounted(async () => {
   document.addEventListener('click', handleCopyCode)
+  
+  const highlight = route.query.highlight as string
+  if (highlight) {
+    highlightKeyword.value = highlight
+  }
   
   const slug = route.params.slug as string
   try {

@@ -7,6 +7,7 @@ import { formatDateShort } from '@/utils/date'
 
 const props = defineProps<{
   article: ArticleListItem
+  highlightKeyword?: string
 }>()
 
 const router = useRouter()
@@ -39,11 +40,19 @@ const goToComments = (e: Event) => {
   e.stopPropagation()
   router.push(`/article/${props.article.slug}#comments`)
 }
+
+const getArticleLink = () => {
+  const link: any = { path: `/article/${props.article.slug}` }
+  if (props.highlightKeyword) {
+    link.query = { highlight: props.highlightKeyword }
+  }
+  return link
+}
 </script>
 
 <template>
   <router-link
-    :to="`/article/${article.slug}`"
+    :to="getArticleLink()"
     class="group glass-card-hover p-4 flex flex-col h-full"
   >
     <div v-if="article.cover_image" class="relative mb-3 overflow-hidden rounded-lg">
@@ -56,11 +65,21 @@ const goToComments = (e: Event) => {
     </div>
 
     <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1 group-hover:text-primary transition-colors line-clamp-2">
-      {{ article.title }}
+      <template v-if="article.highlighted_title">
+        <span v-html="article.highlighted_title"></span>
+      </template>
+      <template v-else>
+        {{ article.title }}
+      </template>
     </h3>
 
-    <p v-if="article.summary" class="text-gray-500 dark:text-gray-400 text-sm mb-2 line-clamp-2 flex-grow">
-      {{ article.summary }}
+    <p v-if="article.summary || article.highlighted_summary" class="text-gray-500 dark:text-gray-400 text-sm mb-2 line-clamp-2 flex-grow">
+      <template v-if="article.highlighted_summary">
+        <span v-html="article.highlighted_summary"></span>
+      </template>
+      <template v-else>
+        {{ article.summary }}
+      </template>
     </p>
 
     <div v-if="article.category" class="mb-2">

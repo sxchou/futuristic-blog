@@ -11,6 +11,19 @@ const searchQuery = ref('')
 const searchResults = ref<any[]>([])
 const isSearching = ref(false)
 
+const highlightText = (text: string, keyword: string): string => {
+  if (!keyword || !text) return text
+  
+  const escapeRegExp = (str: string) => {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  }
+  
+  const pattern = escapeRegExp(keyword)
+  const regex = new RegExp(`(${pattern})`, 'gi')
+  
+  return text.replace(regex, '<mark class="search-highlight">$1</mark>')
+}
+
 const filteredResults = computed(() => {
   if (!searchQuery.value) return []
   const query = searchQuery.value.toLowerCase()
@@ -43,9 +56,22 @@ const handleKeydown = (e: KeyboardEvent) => {
   }
 }
 
+const handleEnter = () => {
+  if (searchQuery.value.trim()) {
+    const keyword = searchQuery.value.trim()
+    closeSearch()
+    router.push({ path: '/search', query: { q: keyword } })
+  }
+}
+
 const goToArticle = (slug: string) => {
+  const keyword = searchQuery.value.trim()
   closeSearch()
-  router.push(`/article/${slug}`)
+  if (keyword) {
+    router.push({ path: `/article/${slug}`, query: { highlight: keyword } })
+  } else {
+    router.push(`/article/${slug}`)
+  }
 }
 
 const performSearch = async () => {
@@ -53,7 +79,11 @@ const performSearch = async () => {
   
   isSearching.value = true
   try {
-    await blogStore.fetchArticles({ search: searchQuery.value })
+    await blogStore.fetchArticles({ 
+      search: searchQuery.value,
+      page: 1,
+      page_size: 8
+    })
     searchResults.value = blogStore.articles
   } finally {
     isSearching.value = false
@@ -99,9 +129,10 @@ onUnmounted(() => {
               data-search-input
               v-model="searchQuery"
               type="text"
-              placeholder="搜索文章、标签、分类..."
+              placeholder="搜索文章、标签、分类...（按回车查看全部结果）"
               class="flex-1 bg-transparent text-white text-lg outline-none placeholder-gray-500"
               @input="performSearch"
+              @keyup.enter="handleEnter"
             />
             <kbd class="px-2 py-1 bg-dark-200 rounded text-xs text-gray-400">ESC</kbd>
           </div>
@@ -121,14 +152,20 @@ onUnmounted(() => {
                   </svg>
                 </div>
                 <div class="flex-1 min-w-0">
-                  <div class="text-white font-medium truncate">{{ article.title }}</div>
-                  <div class="text-sm text-gray-400 truncate">{{ article.summary }}</div>
+                  <div class="text-white font-medium truncate" v-html="highlightText(article.title, searchQuery)"></div>
+                  <div class="text-sm text-gray-400 truncate" v-html="highlightText(article.summary || '', searchQuery)"></div>
                 </div>
                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
               </button>
             </div>
+            <button
+              @click="handleEnter"
+              class="w-full mt-3 py-2 text-center text-primary hover:text-primary/80 transition-colors text-sm font-medium"
+            >
+              查看全部 {{ blogStore.pagination.total }} 个结果 →
+            </button>
           </div>
 
           <div v-else-if="searchQuery && !isSearching" class="border-t border-white/10 pt-4 text-center text-gray-400">
