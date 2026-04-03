@@ -1,14 +1,18 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useBlogStore } from '@/stores'
 import ArticleCard from './ArticleCard.vue'
 import Pagination from '@/components/common/Pagination.vue'
+import { usePageSize } from '@/composables/usePageSize'
 
 const blogStore = useBlogStore()
 const isLoading = ref(false)
+const articlesSectionRef = ref<HTMLElement | null>(null)
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
-const displayArticles = computed(() => blogStore.articles.slice(0, 8))
+const { pageSize } = usePageSize()
+
+const displayArticles = computed(() => blogStore.articles.slice(0, pageSize.value))
 
 const debouncedFetch = (page: number) => {
   if (searchTimeout) {
@@ -17,12 +21,18 @@ const debouncedFetch = (page: number) => {
   searchTimeout = setTimeout(async () => {
     isLoading.value = true
     try {
-      await blogStore.fetchArticles({ page, page_size: 8 })
+      await blogStore.fetchArticles({ page, page_size: pageSize.value })
     } finally {
       isLoading.value = false
     }
   }, 300)
 }
+
+watch(pageSize, (newSize, oldSize) => {
+  if (newSize !== oldSize && blogStore.articles.length > 0) {
+    debouncedFetch(1)
+  }
+})
 
 onMounted(() => {
   if (blogStore.articles.length === 0) {
@@ -33,10 +43,17 @@ onMounted(() => {
 const handlePageChange = (page: number) => {
   debouncedFetch(page)
   
-  window.scrollTo({
-    top: 0,
-    behavior: 'smooth'
-  })
+  if (articlesSectionRef.value) {
+    const element = articlesSectionRef.value
+    const offset = 85
+    const elementPosition = element.getBoundingClientRect().top
+    const offsetPosition = elementPosition + window.pageYOffset - offset
+    
+    window.scrollTo({
+      top: offsetPosition,
+      behavior: 'smooth'
+    })
+  }
 }
 
 onUnmounted(() => {
@@ -60,7 +77,7 @@ onUnmounted(() => {
         <div class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
 
-      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div v-else ref="articlesSectionRef" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         <ArticleCard
           v-for="article in displayArticles"
           :key="article.id"
@@ -73,7 +90,7 @@ onUnmounted(() => {
           :current-page="blogStore.pagination.page"
           :total-pages="blogStore.pagination.totalPages"
           :total-items="blogStore.pagination.total"
-          :page-size="8"
+          :page-size="pageSize"
           @page-change="handlePageChange"
         />
       </div>

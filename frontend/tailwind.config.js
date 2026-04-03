@@ -54,6 +54,17 @@ export default {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
+      fontSize: {
+        'xs': ['var(--font-size-xs)', { lineHeight: '1rem' }],
+        'sm': ['var(--font-size-sm)', { lineHeight: '1.25rem' }],
+        'base': ['var(--font-size-base)', { lineHeight: '1.5rem' }],
+        'lg': ['var(--font-size-lg)', { lineHeight: '1.75rem' }],
+        'xl': ['var(--font-size-xl)', { lineHeight: '1.75rem' }],
+        '2xl': ['var(--font-size-2xl)', { lineHeight: '2rem' }],
+        '3xl': ['var(--font-size-3xl)', { lineHeight: '2.25rem' }],
+        '4xl': ['var(--font-size-4xl)', { lineHeight: '2.5rem' }],
+        '5xl': ['var(--font-size-5xl)', { lineHeight: '1' }],
+      },
       animation: {
         'glow': 'glow 2s ease-in-out infinite alternate',
         'float': 'float 6s ease-in-out infinite',

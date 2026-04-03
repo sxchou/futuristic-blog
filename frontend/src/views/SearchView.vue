@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useBlogStore } from '@/stores'
 import ArticleCard from '@/components/home/ArticleCard.vue'
 import Pagination from '@/components/common/Pagination.vue'
+import { usePageSize } from '@/composables/usePageSize'
 
 const route = useRoute()
 const router = useRouter()
@@ -11,7 +12,10 @@ const blogStore = useBlogStore()
 
 const searchQuery = ref('')
 const isSearching = ref(false)
+const searchResultsRef = ref<HTMLElement | null>(null)
 let currentSearchKeyword = ''
+
+const { pageSize } = usePageSize()
 
 const performSearch = async (page: number = 1) => {
   const keyword = currentSearchKeyword || searchQuery.value.trim()
@@ -25,12 +29,18 @@ const performSearch = async (page: number = 1) => {
     await blogStore.fetchArticles({ 
       search: keyword,
       page: page,
-      page_size: 8
+      page_size: pageSize.value
     })
   } finally {
     isSearching.value = false
   }
 }
+
+watch(pageSize, (newSize, oldSize) => {
+  if (newSize !== oldSize && currentSearchKeyword) {
+    performSearch(1)
+  }
+})
 
 watch(() => route.query.q, (newQuery) => {
   if (newQuery) {
@@ -59,10 +69,17 @@ const handleSearch = () => {
 const handlePageChange = (page: number) => {
   performSearch(page)
   
-  window.scrollTo({
-    top: 0,
-    behavior: 'smooth'
-  })
+  if (searchResultsRef.value) {
+    const element = searchResultsRef.value
+    const offset = 85
+    const elementPosition = element.getBoundingClientRect().top
+    const offsetPosition = elementPosition + window.pageYOffset - offset
+    
+    window.scrollTo({
+      top: offsetPosition,
+      behavior: 'smooth'
+    })
+  }
 }
 </script>
 
@@ -108,7 +125,7 @@ const handlePageChange = (page: number) => {
         <p class="text-gray-500 dark:text-gray-400">尝试使用不同的关键词搜索</p>
       </div>
 
-      <div v-else-if="blogStore.articles.length > 0">
+      <div v-else-if="blogStore.articles.length > 0" ref="searchResultsRef">
         <div class="text-center mb-8">
           <p class="text-gray-400">
             找到 <span class="text-primary font-semibold">{{ blogStore.pagination.total }}</span> 篇相关文章
@@ -129,7 +146,7 @@ const handlePageChange = (page: number) => {
             :current-page="blogStore.pagination.page"
             :total-pages="blogStore.pagination.totalPages"
             :total-items="blogStore.pagination.total"
-            :page-size="8"
+            :page-size="pageSize"
             @page-change="handlePageChange"
           />
         </div>
