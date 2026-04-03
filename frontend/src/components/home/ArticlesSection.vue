@@ -82,10 +82,25 @@ const debouncedFetch = (page: number, updateUrl: boolean = true, shouldScroll: b
   }, 100)
 }
 
-watch(pageSize, (newSize, oldSize) => {
+watch(pageSize, async (newSize, oldSize) => {
   if (newSize !== oldSize && blogStore.articles.length > 0) {
     const currentPage = parseInt(route.query.page as string) || 1
-    debouncedFetch(currentPage, false, false)
+    
+    await blogStore.fetchArticles({ page: currentPage, page_size: newSize })
+    
+    const totalPages = blogStore.pagination.totalPages
+    if (currentPage > totalPages && totalPages > 0) {
+      const newPage = totalPages
+      await blogStore.fetchArticles({ page: newPage, page_size: newSize })
+      
+      if (newPage === 1) {
+        const newQuery = { ...route.query }
+        delete newQuery.page
+        router.replace({ query: newQuery })
+      } else {
+        router.replace({ query: { ...route.query, page: newPage.toString() } })
+      }
+    }
   }
 })
 

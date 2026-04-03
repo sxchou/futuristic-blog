@@ -87,10 +87,17 @@ const performSearch = async (page: number = 1, updateUrl: boolean = true, should
   }
 }
 
-watch(pageSize, (newSize, oldSize) => {
+watch(pageSize, async (newSize, oldSize) => {
   if (newSize !== oldSize && currentSearchKeyword) {
     const currentPage = parseInt(route.query.page as string) || 1
-    performSearch(currentPage, false, false)
+    
+    await performSearch(currentPage, false, false)
+    
+    const totalPages = blogStore.pagination.totalPages
+    if (currentPage > totalPages && totalPages > 0) {
+      const newPage = totalPages
+      await performSearch(newPage, true, false)
+    }
   }
 })
 

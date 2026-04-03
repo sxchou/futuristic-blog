@@ -81,10 +81,17 @@ const fetchArticles = async (page: number = 1, updateUrl: boolean = true, should
   loading.value = false
 }
 
-watch(pageSize, (newSize, oldSize) => {
+watch(pageSize, async (newSize, oldSize) => {
   if (newSize !== oldSize) {
     const currentPage = parseInt(route.query.page as string) || 1
-    fetchArticles(currentPage, false, false)
+    
+    await fetchArticles(currentPage, false, false)
+    
+    const totalPages = blogStore.pagination.totalPages
+    if (currentPage > totalPages && totalPages > 0) {
+      const newPage = totalPages
+      await fetchArticles(newPage, true, false)
+    }
   }
 })
 
