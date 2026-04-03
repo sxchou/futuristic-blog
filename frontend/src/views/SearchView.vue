@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBlogStore } from '@/stores'
 import ArticleCard from '@/components/home/ArticleCard.vue'
@@ -13,11 +13,12 @@ const blogStore = useBlogStore()
 const searchQuery = ref('')
 const isSearching = ref(false)
 const searchResultsRef = ref<HTMLElement | null>(null)
+const isFirstLoad = ref(true)
 let currentSearchKeyword = ''
 
 const { pageSize } = usePageSize()
 
-const performSearch = async (page: number = 1, updateUrl: boolean = true) => {
+const performSearch = async (page: number = 1, updateUrl: boolean = true, scrollToResults: boolean = false) => {
   const keyword = currentSearchKeyword || searchQuery.value.trim()
   
   if (!keyword) {
@@ -39,6 +40,19 @@ const performSearch = async (page: number = 1, updateUrl: boolean = true) => {
       }
       router.replace({ path: '/search', query: newQuery })
     }
+    
+    if (scrollToResults && searchResultsRef.value) {
+      await nextTick()
+      const element = searchResultsRef.value
+      const offset = 85
+      const elementPosition = element.getBoundingClientRect().top
+      const offsetPosition = elementPosition + window.pageYOffset - offset
+      
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      })
+    }
   } finally {
     isSearching.value = false
   }
@@ -47,7 +61,7 @@ const performSearch = async (page: number = 1, updateUrl: boolean = true) => {
 watch(pageSize, (newSize, oldSize) => {
   if (newSize !== oldSize && currentSearchKeyword) {
     const currentPage = parseInt(route.query.page as string) || 1
-    performSearch(currentPage, false)
+    performSearch(currentPage, false, false)
   }
 })
 
@@ -57,7 +71,8 @@ watch(() => route.query.q, (newQuery) => {
     searchQuery.value = keyword
     currentSearchKeyword = keyword
     const pageFromUrl = parseInt(route.query.page as string) || 1
-    performSearch(pageFromUrl, false)
+    const shouldScroll = !isFirstLoad.value && pageFromUrl > 1
+    performSearch(pageFromUrl, false, shouldScroll)
   }
 }, { immediate: true })
 
@@ -67,6 +82,7 @@ onMounted(() => {
     searchQuery.value = query
     currentSearchKeyword = query
   }
+  isFirstLoad.value = false
 })
 
 const handleSearch = () => {
@@ -77,19 +93,7 @@ const handleSearch = () => {
 }
 
 const handlePageChange = (page: number) => {
-  performSearch(page)
-  
-  if (searchResultsRef.value) {
-    const element = searchResultsRef.value
-    const offset = 85
-    const elementPosition = element.getBoundingClientRect().top
-    const offsetPosition = elementPosition + window.pageYOffset - offset
-    
-    window.scrollTo({
-      top: offsetPosition,
-      behavior: 'smooth'
-    })
-  }
+  performSearch(page, true, true)
 }
 </script>
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBlogStore } from '@/stores'
 import ArticleCard from '@/components/home/ArticleCard.vue'
@@ -11,10 +11,11 @@ const router = useRouter()
 const blogStore = useBlogStore()
 const loading = ref(true)
 const articlesRef = ref<HTMLElement | null>(null)
+const isFirstLoad = ref(true)
 
 const { pageSize } = usePageSize()
 
-const fetchArticles = async (page: number = 1, updateUrl: boolean = true) => {
+const fetchArticles = async (page: number = 1, updateUrl: boolean = true, scrollToArticles: boolean = false) => {
   loading.value = true
   const slug = route.params.slug as string
   const category = blogStore.getCategoryBySlug(slug)
@@ -34,6 +35,19 @@ const fetchArticles = async (page: number = 1, updateUrl: boolean = true) => {
         router.replace({ query: newQuery })
       }
     }
+    
+    if (scrollToArticles && articlesRef.value) {
+      await nextTick()
+      const element = articlesRef.value
+      const offset = 85
+      const elementPosition = element.getBoundingClientRect().top
+      const offsetPosition = elementPosition + window.pageYOffset - offset
+      
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      })
+    }
   }
   loading.value = false
 }
@@ -41,17 +55,23 @@ const fetchArticles = async (page: number = 1, updateUrl: boolean = true) => {
 watch(pageSize, (newSize, oldSize) => {
   if (newSize !== oldSize) {
     const currentPage = parseInt(route.query.page as string) || 1
-    fetchArticles(currentPage, false)
+    fetchArticles(currentPage, false, false)
   }
 })
 
 watch(() => route.params.slug, () => {
-  fetchArticles(1, true)
+  fetchArticles(1, true, false)
 })
 
 onMounted(() => {
   const pageFromUrl = parseInt(route.query.page as string) || 1
-  blogStore.fetchCategories().then(() => fetchArticles(pageFromUrl, false))
+  
+  blogStore.fetchCategories().then(() => {
+    const shouldScroll = !isFirstLoad.value && pageFromUrl > 1
+    fetchArticles(pageFromUrl, false, shouldScroll)
+  })
+  
+  isFirstLoad.value = false
 })
 
 const currentCategory = () => {
@@ -60,19 +80,7 @@ const currentCategory = () => {
 }
 
 const handlePageChange = (page: number) => {
-  fetchArticles(page)
-  
-  if (articlesRef.value) {
-    const element = articlesRef.value
-    const offset = 85
-    const elementPosition = element.getBoundingClientRect().top
-    const offsetPosition = elementPosition + window.pageYOffset - offset
-    
-    window.scrollTo({
-      top: offsetPosition,
-      behavior: 'smooth'
-    })
-  }
+  fetchArticles(page, true, true)
 }
 </script>
 

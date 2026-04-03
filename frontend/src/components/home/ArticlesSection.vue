@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBlogStore } from '@/stores'
 import ArticleCard from './ArticleCard.vue'
@@ -12,12 +12,13 @@ const blogStore = useBlogStore()
 const isLoading = ref(false)
 const articlesSectionRef = ref<HTMLElement | null>(null)
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
+const isFirstLoad = ref(true)
 
 const { pageSize } = usePageSize()
 
 const displayArticles = computed(() => blogStore.articles.slice(0, pageSize.value))
 
-const debouncedFetch = (page: number, updateUrl: boolean = true) => {
+const debouncedFetch = (page: number, updateUrl: boolean = true, scrollToArticles: boolean = false) => {
   if (searchTimeout) {
     clearTimeout(searchTimeout)
   }
@@ -33,6 +34,19 @@ const debouncedFetch = (page: number, updateUrl: boolean = true) => {
         delete newQuery.page
         router.replace({ query: newQuery })
       }
+      
+      if (scrollToArticles && articlesSectionRef.value) {
+        await nextTick()
+        const element = articlesSectionRef.value
+        const offset = 85
+        const elementPosition = element.getBoundingClientRect().top
+        const offsetPosition = elementPosition + window.pageYOffset - offset
+        
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        })
+      }
     } finally {
       isLoading.value = false
     }
@@ -42,7 +56,7 @@ const debouncedFetch = (page: number, updateUrl: boolean = true) => {
 watch(pageSize, (newSize, oldSize) => {
   if (newSize !== oldSize && blogStore.articles.length > 0) {
     const currentPage = parseInt(route.query.page as string) || 1
-    debouncedFetch(currentPage, false)
+    debouncedFetch(currentPage, false, false)
   }
 })
 
@@ -50,24 +64,15 @@ onMounted(() => {
   const pageFromUrl = parseInt(route.query.page as string) || 1
   
   if (blogStore.articles.length === 0 || blogStore.pagination.page !== pageFromUrl) {
-    debouncedFetch(pageFromUrl, false)
+    const shouldScroll = !isFirstLoad.value && pageFromUrl > 1
+    debouncedFetch(pageFromUrl, false, shouldScroll)
   }
+  
+  isFirstLoad.value = false
 })
 
 const handlePageChange = (page: number) => {
-  debouncedFetch(page)
-  
-  if (articlesSectionRef.value) {
-    const element = articlesSectionRef.value
-    const offset = 85
-    const elementPosition = element.getBoundingClientRect().top
-    const offsetPosition = elementPosition + window.pageYOffset - offset
-    
-    window.scrollTo({
-      top: offsetPosition,
-      behavior: 'smooth'
-    })
-  }
+  debouncedFetch(page, true, true)
 }
 
 onUnmounted(() => {
