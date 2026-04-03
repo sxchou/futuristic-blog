@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useBlogStore } from '@/stores'
 import ArticleCard from './ArticleCard.vue'
 import Pagination from '@/components/common/Pagination.vue'
 import { usePageSize } from '@/composables/usePageSize'
 
+const route = useRoute()
+const router = useRouter()
 const blogStore = useBlogStore()
 const isLoading = ref(false)
 const articlesSectionRef = ref<HTMLElement | null>(null)
@@ -14,7 +17,7 @@ const { pageSize } = usePageSize()
 
 const displayArticles = computed(() => blogStore.articles.slice(0, pageSize.value))
 
-const debouncedFetch = (page: number) => {
+const debouncedFetch = (page: number, updateUrl: boolean = true) => {
   if (searchTimeout) {
     clearTimeout(searchTimeout)
   }
@@ -22,6 +25,14 @@ const debouncedFetch = (page: number) => {
     isLoading.value = true
     try {
       await blogStore.fetchArticles({ page, page_size: pageSize.value })
+      
+      if (updateUrl && page !== 1) {
+        router.replace({ query: { ...route.query, page: page.toString() } })
+      } else if (updateUrl && page === 1 && route.query.page) {
+        const newQuery = { ...route.query }
+        delete newQuery.page
+        router.replace({ query: newQuery })
+      }
     } finally {
       isLoading.value = false
     }
@@ -30,13 +41,16 @@ const debouncedFetch = (page: number) => {
 
 watch(pageSize, (newSize, oldSize) => {
   if (newSize !== oldSize && blogStore.articles.length > 0) {
-    debouncedFetch(1)
+    const currentPage = parseInt(route.query.page as string) || 1
+    debouncedFetch(currentPage, false)
   }
 })
 
 onMounted(() => {
-  if (blogStore.articles.length === 0) {
-    debouncedFetch(1)
+  const pageFromUrl = parseInt(route.query.page as string) || 1
+  
+  if (blogStore.articles.length === 0 || blogStore.pagination.page !== pageFromUrl) {
+    debouncedFetch(pageFromUrl, false)
   }
 })
 

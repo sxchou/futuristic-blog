@@ -1,19 +1,20 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useBlogStore } from '@/stores'
 import ArticleCard from '@/components/home/ArticleCard.vue'
 import Pagination from '@/components/common/Pagination.vue'
 import { usePageSize } from '@/composables/usePageSize'
 
 const route = useRoute()
+const router = useRouter()
 const blogStore = useBlogStore()
 const loading = ref(true)
 const articlesRef = ref<HTMLElement | null>(null)
 
 const { pageSize } = usePageSize()
 
-const fetchArticles = async (page: number = 1) => {
+const fetchArticles = async (page: number = 1, updateUrl: boolean = true) => {
   loading.value = true
   const slug = route.params.slug as string
   const tag = blogStore.getTagBySlug(slug)
@@ -23,22 +24,34 @@ const fetchArticles = async (page: number = 1) => {
       page: page,
       page_size: pageSize.value
     })
+    
+    if (updateUrl) {
+      if (page !== 1) {
+        router.replace({ query: { ...route.query, page: page.toString() } })
+      } else if (route.query.page) {
+        const newQuery = { ...route.query }
+        delete newQuery.page
+        router.replace({ query: newQuery })
+      }
+    }
   }
   loading.value = false
 }
 
 watch(pageSize, (newSize, oldSize) => {
   if (newSize !== oldSize) {
-    fetchArticles(1)
+    const currentPage = parseInt(route.query.page as string) || 1
+    fetchArticles(currentPage, false)
   }
 })
 
 watch(() => route.params.slug, () => {
-  fetchArticles(1)
+  fetchArticles(1, true)
 })
 
 onMounted(() => {
-  blogStore.fetchTags().then(() => fetchArticles(1))
+  const pageFromUrl = parseInt(route.query.page as string) || 1
+  blogStore.fetchTags().then(() => fetchArticles(pageFromUrl, false))
 })
 
 const currentTag = () => {

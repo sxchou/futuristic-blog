@@ -17,7 +17,7 @@ let currentSearchKeyword = ''
 
 const { pageSize } = usePageSize()
 
-const performSearch = async (page: number = 1) => {
+const performSearch = async (page: number = 1, updateUrl: boolean = true) => {
   const keyword = currentSearchKeyword || searchQuery.value.trim()
   
   if (!keyword) {
@@ -31,6 +31,14 @@ const performSearch = async (page: number = 1) => {
       page: page,
       page_size: pageSize.value
     })
+    
+    if (updateUrl) {
+      const newQuery: Record<string, string> = { q: keyword }
+      if (page !== 1) {
+        newQuery.page = page.toString()
+      }
+      router.replace({ path: '/search', query: newQuery })
+    }
   } finally {
     isSearching.value = false
   }
@@ -38,7 +46,8 @@ const performSearch = async (page: number = 1) => {
 
 watch(pageSize, (newSize, oldSize) => {
   if (newSize !== oldSize && currentSearchKeyword) {
-    performSearch(1)
+    const currentPage = parseInt(route.query.page as string) || 1
+    performSearch(currentPage, false)
   }
 })
 
@@ -47,7 +56,8 @@ watch(() => route.query.q, (newQuery) => {
     const keyword = newQuery as string
     searchQuery.value = keyword
     currentSearchKeyword = keyword
-    performSearch(1)
+    const pageFromUrl = parseInt(route.query.page as string) || 1
+    performSearch(pageFromUrl, false)
   }
 }, { immediate: true })
 
