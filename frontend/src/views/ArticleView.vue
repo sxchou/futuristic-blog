@@ -369,8 +369,6 @@ const scrollToComment = (commentId: number) => {
 }
 
 onMounted(async () => {
-  sessionStorage.setItem('returningFromArticle', 'true')
-  
   document.addEventListener('click', handleCopyCode)
   
   const highlight = route.query.highlight as string

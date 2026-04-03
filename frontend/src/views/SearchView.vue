@@ -17,15 +17,6 @@ let currentSearchKeyword = ''
 
 const { pageSize } = usePageSize()
 
-const smoothScrollTo = (targetY: number) => {
-  requestAnimationFrame(() => {
-    window.scrollTo({
-      top: targetY,
-      behavior: 'smooth'
-    })
-  })
-}
-
 const scrollToResults = () => {
   requestAnimationFrame(() => {
     if (searchResultsRef.value) {
@@ -34,26 +25,12 @@ const scrollToResults = () => {
       const elementPosition = element.getBoundingClientRect().top
       const offsetPosition = elementPosition + window.pageYOffset - offset
       
-      smoothScrollTo(offsetPosition)
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      })
     }
   })
-}
-
-const restoreScrollPosition = () => {
-  const savedPosition = sessionStorage.getItem('scrollPosition')
-  if (savedPosition) {
-    const scrollY = parseInt(savedPosition)
-    sessionStorage.removeItem('scrollPosition')
-    
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        smoothScrollTo(scrollY)
-      })
-    })
-    
-    return true
-  }
-  return false
 }
 
 const performSearch = async (page: number = 1, updateUrl: boolean = true, shouldScroll: boolean = false) => {
@@ -107,17 +84,8 @@ watch(() => route.query.q, (newQuery) => {
     searchQuery.value = keyword
     currentSearchKeyword = keyword
     const pageFromUrl = parseInt(route.query.page as string) || 1
-    const isReturningFromArticle = sessionStorage.getItem('returningFromArticle') === 'true'
     
     performSearch(pageFromUrl, false, false)
-    
-    if (isReturningFromArticle) {
-      const restored = restoreScrollPosition()
-      if (!restored && pageFromUrl > 1) {
-        scrollToResults()
-      }
-      sessionStorage.removeItem('returningFromArticle')
-    }
   }
 }, { immediate: true })
 

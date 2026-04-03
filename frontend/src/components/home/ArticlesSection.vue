@@ -17,15 +17,6 @@ const { pageSize } = usePageSize()
 
 const displayArticles = computed(() => blogStore.articles.slice(0, pageSize.value))
 
-const smoothScrollTo = (targetY: number) => {
-  requestAnimationFrame(() => {
-    window.scrollTo({
-      top: targetY,
-      behavior: 'smooth'
-    })
-  })
-}
-
 const scrollToArticlesSection = () => {
   requestAnimationFrame(() => {
     if (articlesSectionRef.value) {
@@ -34,26 +25,12 @@ const scrollToArticlesSection = () => {
       const elementPosition = element.getBoundingClientRect().top
       const offsetPosition = elementPosition + window.pageYOffset - offset
       
-      smoothScrollTo(offsetPosition)
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      })
     }
   })
-}
-
-const restoreScrollPosition = () => {
-  const savedPosition = sessionStorage.getItem('scrollPosition')
-  if (savedPosition) {
-    const scrollY = parseInt(savedPosition)
-    sessionStorage.removeItem('scrollPosition')
-    
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        smoothScrollTo(scrollY)
-      })
-    })
-    
-    return true
-  }
-  return false
 }
 
 const debouncedFetch = (page: number, updateUrl: boolean = true, shouldScroll: boolean = false) => {
@@ -104,27 +81,19 @@ watch(pageSize, async (newSize, oldSize) => {
   }
 })
 
+watch(() => route.path, async (newPath) => {
+  if (newPath === '/') {
+    const pageFromUrl = parseInt(route.query.page as string) || 1
+    await blogStore.fetchArticles({ page: pageFromUrl, page_size: pageSize.value })
+  }
+})
+
 onMounted(async () => {
   const pageFromUrl = parseInt(route.query.page as string) || 1
-  const isReturningFromArticle = sessionStorage.getItem('returningFromArticle') === 'true'
   
   if (blogStore.articles.length === 0 || blogStore.pagination.page !== pageFromUrl) {
     await blogStore.fetchArticles({ page: pageFromUrl, page_size: pageSize.value })
-    
-    if (isReturningFromArticle) {
-      const restored = restoreScrollPosition()
-      if (!restored && pageFromUrl > 1) {
-        scrollToArticlesSection()
-      }
-    }
-  } else if (isReturningFromArticle) {
-    const restored = restoreScrollPosition()
-    if (!restored && pageFromUrl > 1) {
-      scrollToArticlesSection()
-    }
   }
-  
-  sessionStorage.removeItem('returningFromArticle')
 })
 
 const handlePageChange = (page: number) => {

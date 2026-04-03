@@ -249,27 +249,44 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
-  scrollBehavior(to, from, savedPosition) {
+  scrollBehavior(_to, from, savedPosition) {
     if (savedPosition) {
-      return savedPosition
+      return new Promise((resolve) => {
+        const targetTop = savedPosition.top || 0
+        const targetLeft = savedPosition.left || 0
+        
+        const checkContent = (attempts = 0) => {
+          requestAnimationFrame(() => {
+            const docHeight = document.documentElement.scrollHeight
+            const viewportHeight = window.innerHeight
+            
+            if (docHeight >= targetTop + viewportHeight || attempts >= 20) {
+              resolve({
+                left: targetLeft,
+                top: targetTop,
+                behavior: 'auto'
+              })
+            } else {
+              setTimeout(() => checkContent(attempts + 1), 50)
+            }
+          })
+        }
+        
+        checkContent()
+      })
     }
     
     if (from.name === undefined) {
       return false
     }
     
-    if (to.path === from.path && to.name === from.name) {
-      return false
-    }
-    
-    const isReturningFromArticle = sessionStorage.getItem('returningFromArticle') === 'true'
-    if (isReturningFromArticle) {
-      return false
-    }
-    
-    return { top: 0 }
+    return { top: 0, behavior: 'smooth' }
   }
 })
+
+if ('scrollRestoration' in history) {
+  history.scrollRestoration = 'manual'
+}
 
 const prefetchCache = new Set<string>()
 

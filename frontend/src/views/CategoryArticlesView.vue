@@ -14,15 +14,6 @@ const articlesRef = ref<HTMLElement | null>(null)
 
 const { pageSize } = usePageSize()
 
-const smoothScrollTo = (targetY: number) => {
-  requestAnimationFrame(() => {
-    window.scrollTo({
-      top: targetY,
-      behavior: 'smooth'
-    })
-  })
-}
-
 const scrollToArticles = () => {
   requestAnimationFrame(() => {
     if (articlesRef.value) {
@@ -31,26 +22,12 @@ const scrollToArticles = () => {
       const elementPosition = element.getBoundingClientRect().top
       const offsetPosition = elementPosition + window.pageYOffset - offset
       
-      smoothScrollTo(offsetPosition)
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      })
     }
   })
-}
-
-const restoreScrollPosition = () => {
-  const savedPosition = sessionStorage.getItem('scrollPosition')
-  if (savedPosition) {
-    const scrollY = parseInt(savedPosition)
-    sessionStorage.removeItem('scrollPosition')
-    
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        smoothScrollTo(scrollY)
-      })
-    })
-    
-    return true
-  }
-  return false
 }
 
 const fetchArticles = async (page: number = 1, updateUrl: boolean = true, shouldScroll: boolean = false) => {
@@ -101,18 +78,9 @@ watch(() => route.params.slug, () => {
 
 onMounted(async () => {
   const pageFromUrl = parseInt(route.query.page as string) || 1
-  const isReturningFromArticle = sessionStorage.getItem('returningFromArticle') === 'true'
   
   await blogStore.fetchCategories()
   await fetchArticles(pageFromUrl, false, false)
-  
-  if (isReturningFromArticle) {
-    const restored = restoreScrollPosition()
-    if (!restored && pageFromUrl > 1) {
-      scrollToArticles()
-    }
-    sessionStorage.removeItem('returningFromArticle')
-  }
 })
 
 const currentCategory = () => {
