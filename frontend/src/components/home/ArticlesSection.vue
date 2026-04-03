@@ -91,7 +91,9 @@ watch(() => route.path, async (newPath) => {
 onMounted(async () => {
   const pageFromUrl = parseInt(route.query.page as string) || 1
   
-  if (blogStore.articles.length === 0 || blogStore.pagination.page !== pageFromUrl) {
+  if (route.path === '/') {
+    await blogStore.fetchArticles({ page: pageFromUrl, page_size: pageSize.value })
+  } else if (blogStore.articles.length === 0 || blogStore.pagination.page !== pageFromUrl) {
     await blogStore.fetchArticles({ page: pageFromUrl, page_size: pageSize.value })
   }
 })
