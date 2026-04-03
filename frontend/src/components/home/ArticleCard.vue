@@ -48,12 +48,17 @@ const getArticleLink = () => {
   }
   return link
 }
+
+const handleClick = () => {
+  sessionStorage.setItem('scrollPosition', window.pageYOffset.toString())
+}
 </script>
 
 <template>
   <router-link
     :to="getArticleLink()"
     class="group glass-card-hover p-4 flex flex-col h-full"
+    @click="handleClick"
   >
     <div v-if="article.cover_image" class="relative mb-3 overflow-hidden rounded-lg">
       <img

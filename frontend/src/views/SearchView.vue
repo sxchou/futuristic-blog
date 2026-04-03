@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, nextTick } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBlogStore } from '@/stores'
 import ArticleCard from '@/components/home/ArticleCard.vue'
@@ -13,12 +13,50 @@ const blogStore = useBlogStore()
 const searchQuery = ref('')
 const isSearching = ref(false)
 const searchResultsRef = ref<HTMLElement | null>(null)
-const isFirstLoad = ref(true)
 let currentSearchKeyword = ''
 
 const { pageSize } = usePageSize()
 
-const performSearch = async (page: number = 1, updateUrl: boolean = true, scrollToResults: boolean = false) => {
+const smoothScrollTo = (targetY: number) => {
+  requestAnimationFrame(() => {
+    window.scrollTo({
+      top: targetY,
+      behavior: 'smooth'
+    })
+  })
+}
+
+const scrollToResults = () => {
+  requestAnimationFrame(() => {
+    if (searchResultsRef.value) {
+      const element = searchResultsRef.value
+      const offset = 85
+      const elementPosition = element.getBoundingClientRect().top
+      const offsetPosition = elementPosition + window.pageYOffset - offset
+      
+      smoothScrollTo(offsetPosition)
+    }
+  })
+}
+
+const restoreScrollPosition = () => {
+  const savedPosition = sessionStorage.getItem('scrollPosition')
+  if (savedPosition) {
+    const scrollY = parseInt(savedPosition)
+    sessionStorage.removeItem('scrollPosition')
+    
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        smoothScrollTo(scrollY)
+      })
+    })
+    
+    return true
+  }
+  return false
+}
+
+const performSearch = async (page: number = 1, updateUrl: boolean = true, shouldScroll: boolean = false) => {
   const keyword = currentSearchKeyword || searchQuery.value.trim()
   
   if (!keyword) {
@@ -41,17 +79,8 @@ const performSearch = async (page: number = 1, updateUrl: boolean = true, scroll
       router.replace({ path: '/search', query: newQuery })
     }
     
-    if (scrollToResults && searchResultsRef.value) {
-      await nextTick()
-      const element = searchResultsRef.value
-      const offset = 85
-      const elementPosition = element.getBoundingClientRect().top
-      const offsetPosition = elementPosition + window.pageYOffset - offset
-      
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      })
+    if (shouldScroll) {
+      scrollToResults()
     }
   } finally {
     isSearching.value = false
@@ -71,8 +100,17 @@ watch(() => route.query.q, (newQuery) => {
     searchQuery.value = keyword
     currentSearchKeyword = keyword
     const pageFromUrl = parseInt(route.query.page as string) || 1
-    const shouldScroll = !isFirstLoad.value && pageFromUrl > 1
-    performSearch(pageFromUrl, false, shouldScroll)
+    const isReturningFromArticle = sessionStorage.getItem('returningFromArticle') === 'true'
+    
+    performSearch(pageFromUrl, false, false)
+    
+    if (isReturningFromArticle) {
+      const restored = restoreScrollPosition()
+      if (!restored && pageFromUrl > 1) {
+        scrollToResults()
+      }
+      sessionStorage.removeItem('returningFromArticle')
+    }
   }
 }, { immediate: true })
 
@@ -82,7 +120,6 @@ onMounted(() => {
     searchQuery.value = query
     currentSearchKeyword = query
   }
-  isFirstLoad.value = false
 })
 
 const handleSearch = () => {

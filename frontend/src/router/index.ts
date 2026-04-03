@@ -249,13 +249,24 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
-  scrollBehavior(_to, from, savedPosition) {
+  scrollBehavior(to, from, savedPosition) {
     if (savedPosition) {
       return savedPosition
     }
+    
     if (from.name === undefined) {
       return false
     }
+    
+    if (to.path === from.path && to.name === from.name) {
+      return false
+    }
+    
+    const isReturningFromArticle = sessionStorage.getItem('returningFromArticle') === 'true'
+    if (isReturningFromArticle) {
+      return false
+    }
+    
     return { top: 0 }
   }
 })

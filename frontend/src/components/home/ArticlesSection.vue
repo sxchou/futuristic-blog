@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBlogStore } from '@/stores'
 import ArticleCard from './ArticleCard.vue'
@@ -12,13 +12,51 @@ const blogStore = useBlogStore()
 const isLoading = ref(false)
 const articlesSectionRef = ref<HTMLElement | null>(null)
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
-const isFirstLoad = ref(true)
 
 const { pageSize } = usePageSize()
 
 const displayArticles = computed(() => blogStore.articles.slice(0, pageSize.value))
 
-const debouncedFetch = (page: number, updateUrl: boolean = true, scrollToArticles: boolean = false) => {
+const smoothScrollTo = (targetY: number) => {
+  requestAnimationFrame(() => {
+    window.scrollTo({
+      top: targetY,
+      behavior: 'smooth'
+    })
+  })
+}
+
+const scrollToArticlesSection = () => {
+  requestAnimationFrame(() => {
+    if (articlesSectionRef.value) {
+      const element = articlesSectionRef.value
+      const offset = 85
+      const elementPosition = element.getBoundingClientRect().top
+      const offsetPosition = elementPosition + window.pageYOffset - offset
+      
+      smoothScrollTo(offsetPosition)
+    }
+  })
+}
+
+const restoreScrollPosition = () => {
+  const savedPosition = sessionStorage.getItem('scrollPosition')
+  if (savedPosition) {
+    const scrollY = parseInt(savedPosition)
+    sessionStorage.removeItem('scrollPosition')
+    
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        smoothScrollTo(scrollY)
+      })
+    })
+    
+    return true
+  }
+  return false
+}
+
+const debouncedFetch = (page: number, updateUrl: boolean = true, shouldScroll: boolean = false) => {
   if (searchTimeout) {
     clearTimeout(searchTimeout)
   }
@@ -35,22 +73,13 @@ const debouncedFetch = (page: number, updateUrl: boolean = true, scrollToArticle
         router.replace({ query: newQuery })
       }
       
-      if (scrollToArticles && articlesSectionRef.value) {
-        await nextTick()
-        const element = articlesSectionRef.value
-        const offset = 85
-        const elementPosition = element.getBoundingClientRect().top
-        const offsetPosition = elementPosition + window.pageYOffset - offset
-        
-        window.scrollTo({
-          top: offsetPosition,
-          behavior: 'smooth'
-        })
+      if (shouldScroll) {
+        scrollToArticlesSection()
       }
     } finally {
       isLoading.value = false
     }
-  }, 300)
+  }, 100)
 }
 
 watch(pageSize, (newSize, oldSize) => {
@@ -60,15 +89,27 @@ watch(pageSize, (newSize, oldSize) => {
   }
 })
 
-onMounted(() => {
+onMounted(async () => {
   const pageFromUrl = parseInt(route.query.page as string) || 1
+  const isReturningFromArticle = sessionStorage.getItem('returningFromArticle') === 'true'
   
   if (blogStore.articles.length === 0 || blogStore.pagination.page !== pageFromUrl) {
-    const shouldScroll = !isFirstLoad.value && pageFromUrl > 1
-    debouncedFetch(pageFromUrl, false, shouldScroll)
+    await blogStore.fetchArticles({ page: pageFromUrl, page_size: pageSize.value })
+    
+    if (isReturningFromArticle) {
+      const restored = restoreScrollPosition()
+      if (!restored && pageFromUrl > 1) {
+        scrollToArticlesSection()
+      }
+    }
+  } else if (isReturningFromArticle) {
+    const restored = restoreScrollPosition()
+    if (!restored && pageFromUrl > 1) {
+      scrollToArticlesSection()
+    }
   }
   
-  isFirstLoad.value = false
+  sessionStorage.removeItem('returningFromArticle')
 })
 
 const handlePageChange = (page: number) => {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, nextTick } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBlogStore } from '@/stores'
 import ArticleCard from '@/components/home/ArticleCard.vue'
@@ -11,11 +11,49 @@ const router = useRouter()
 const blogStore = useBlogStore()
 const loading = ref(true)
 const articlesRef = ref<HTMLElement | null>(null)
-const isFirstLoad = ref(true)
 
 const { pageSize } = usePageSize()
 
-const fetchArticles = async (page: number = 1, updateUrl: boolean = true, scrollToArticles: boolean = false) => {
+const smoothScrollTo = (targetY: number) => {
+  requestAnimationFrame(() => {
+    window.scrollTo({
+      top: targetY,
+      behavior: 'smooth'
+    })
+  })
+}
+
+const scrollToArticles = () => {
+  requestAnimationFrame(() => {
+    if (articlesRef.value) {
+      const element = articlesRef.value
+      const offset = 85
+      const elementPosition = element.getBoundingClientRect().top
+      const offsetPosition = elementPosition + window.pageYOffset - offset
+      
+      smoothScrollTo(offsetPosition)
+    }
+  })
+}
+
+const restoreScrollPosition = () => {
+  const savedPosition = sessionStorage.getItem('scrollPosition')
+  if (savedPosition) {
+    const scrollY = parseInt(savedPosition)
+    sessionStorage.removeItem('scrollPosition')
+    
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        smoothScrollTo(scrollY)
+      })
+    })
+    
+    return true
+  }
+  return false
+}
+
+const fetchArticles = async (page: number = 1, updateUrl: boolean = true, shouldScroll: boolean = false) => {
   loading.value = true
   const slug = route.params.slug as string
   const tag = blogStore.getTagBySlug(slug)
@@ -36,17 +74,8 @@ const fetchArticles = async (page: number = 1, updateUrl: boolean = true, scroll
       }
     }
     
-    if (scrollToArticles && articlesRef.value) {
-      await nextTick()
-      const element = articlesRef.value
-      const offset = 85
-      const elementPosition = element.getBoundingClientRect().top
-      const offsetPosition = elementPosition + window.pageYOffset - offset
-      
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      })
+    if (shouldScroll) {
+      scrollToArticles()
     }
   }
   loading.value = false
@@ -63,15 +92,20 @@ watch(() => route.params.slug, () => {
   fetchArticles(1, true, false)
 })
 
-onMounted(() => {
+onMounted(async () => {
   const pageFromUrl = parseInt(route.query.page as string) || 1
+  const isReturningFromArticle = sessionStorage.getItem('returningFromArticle') === 'true'
   
-  blogStore.fetchTags().then(() => {
-    const shouldScroll = !isFirstLoad.value && pageFromUrl > 1
-    fetchArticles(pageFromUrl, false, shouldScroll)
-  })
+  await blogStore.fetchTags()
+  await fetchArticles(pageFromUrl, false, false)
   
-  isFirstLoad.value = false
+  if (isReturningFromArticle) {
+    const restored = restoreScrollPosition()
+    if (!restored && pageFromUrl > 1) {
+      scrollToArticles()
+    }
+    sessionStorage.removeItem('returningFromArticle')
+  }
 })
 
 const currentTag = () => {

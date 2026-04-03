@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useBlogStore } from '@/stores'
-import { dashboardApi } from '@/api'
+import { dashboardApi, articleApi } from '@/api'
 
 const blogStore = useBlogStore()
 
@@ -13,8 +13,9 @@ const stats = ref({
 })
 
 const loading = ref(true)
+const featuredArticlesList = ref<Array<any>>([])
 
-const featuredArticles = computed(() => blogStore.articles.filter(a => a.is_featured).slice(0, 3))
+const featuredArticles = computed(() => featuredArticlesList.value.slice(0, 3))
 
 const currentSlide = ref(0)
 
@@ -52,12 +53,25 @@ const fetchStats = async () => {
   }
 }
 
+const fetchFeaturedArticles = async () => {
+  try {
+    const response = await articleApi.getArticles({ 
+      is_featured: true, 
+      page: 1, 
+      page_size: 10 
+    })
+    featuredArticlesList.value = response.items
+  } catch (error) {
+    console.error('Failed to fetch featured articles:', error)
+  }
+}
+
 onMounted(async () => {
   await Promise.all([
-    blogStore.fetchArticles({ page: 1, page_size: 10 }),
     blogStore.fetchCategories(),
     blogStore.fetchTags(),
-    fetchStats()
+    fetchStats(),
+    fetchFeaturedArticles()
   ])
   
   if (featuredArticles.value.length > 1) {
