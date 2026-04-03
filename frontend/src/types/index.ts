@@ -251,3 +251,19 @@ export interface SocialLinks {
   blog: string
   email: string
 }
+
+export interface ArticleFile {
+  id: number
+  filename: string
+  original_filename: string
+  file_path: string
+  file_size: number
+  file_type: string
+  mime_type: string
+  is_image: boolean
+  article_id: number | null
+  download_count: number
+  preview_count: number
+  order: number
+  created_at: string
+}

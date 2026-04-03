@@ -2,6 +2,7 @@
 import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import CommentMarkdownPreview from './CommentMarkdownPreview.vue'
 import EmojiPicker from '@/components/common/EmojiPicker.vue'
+import LinkInserterDialog from './LinkInserterDialog.vue'
 
 const props = withDefaults(defineProps<{
   modelValue: string
@@ -33,6 +34,7 @@ const isFullscreen = ref(false)
 const isSyncingScroll = ref(false)
 const langSelectorPosition = ref({ top: 0, left: 0 })
 const showMarkdownHelp = ref(false)
+const showLinkInserter = ref(false)
 
 const programmingLanguages = [
   { code: 'javascript', label: 'JavaScript', alias: 'js' },
@@ -228,12 +230,28 @@ const insertCodeBlock = (lang: string) => {
   })
 }
 
+const insertLink = (markdown: string) => {
+  if (!textareaRef.value) return
+  
+  const textarea = textareaRef.value
+  const start = textarea.selectionStart
+  const end = textarea.selectionEnd
+  
+  const newValue = props.modelValue.substring(0, start) + markdown + props.modelValue.substring(end)
+  emit('update:modelValue', newValue)
+  
+  nextTick(() => {
+    textarea.focus({ preventScroll: true })
+    textarea.selectionStart = textarea.selectionEnd = start + markdown.length
+  })
+}
+
 const toolbarActions = [
   { icon: 'B', title: '粗体', action: () => insertText('**', '**') },
   { icon: 'I', title: '斜体', action: () => insertText('*', '*') },
   { icon: 'S', title: '删除线', action: () => insertText('~~', '~~') },
   { icon: '</>', title: '行内代码', action: () => insertText('`', '`') },
-  { icon: '🔗', title: '链接', action: () => insertText('[', '](url)') },
+  { icon: '🔗', title: '插入链接', action: () => showLinkInserter.value = true },
   { icon: '•', title: '列表', action: () => insertText('- ', '', true) },
   { icon: '>', title: '引用', action: () => insertText('> ', '', true) },
 ]
@@ -675,6 +693,11 @@ defineExpose({
         <CommentMarkdownPreview :content="previewContent" :show-lang-label="true" />
       </div>
     </template>
+    
+    <LinkInserterDialog
+      v-model="showLinkInserter"
+      @insert="insertLink"
+    />
   </div>
 </template>
 
