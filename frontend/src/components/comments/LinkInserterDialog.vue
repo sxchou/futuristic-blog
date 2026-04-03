@@ -132,7 +132,7 @@ watch(activeTab, (newTab) => {
 <template>
   <div
     v-if="modelValue"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+    class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50"
     @click.self="close"
   >
     <div class="bg-white dark:bg-dark-100 rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-hidden">
