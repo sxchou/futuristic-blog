@@ -421,6 +421,20 @@ onMounted(async () => {
       if (!isNaN(commentId)) {
         scrollToComment(commentId)
       }
+    } else if (route.hash.startsWith('#file-')) {
+      const fileId = parseInt(route.hash.replace('#file-', ''), 10)
+      if (!isNaN(fileId)) {
+        setTimeout(() => {
+          const fileElement = document.getElementById(`file-${fileId}`)
+          if (fileElement) {
+            fileElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            fileElement.classList.add('ring-2', 'ring-primary', 'ring-offset-2')
+            setTimeout(() => {
+              fileElement.classList.remove('ring-2', 'ring-primary', 'ring-offset-2')
+            }, 3000)
+          }
+        }, 500)
+      }
     }
   }
 })
@@ -537,7 +551,8 @@ onUnmounted(() => {
             <div
               v-for="file in articleFiles"
               :key="file.id"
-              class="flex items-center justify-between p-2 bg-white dark:bg-dark-200 rounded border transition-colors"
+              :id="`file-${file.id}`"
+              class="flex items-center justify-between p-2 bg-white dark:bg-dark-200 rounded border transition-colors scroll-mt-20"
               :class="[
                 selectedFileIds.has(file.id) 
                   ? 'border-primary bg-primary/5' 

@@ -105,7 +105,17 @@ const insertLink = () => {
     markdown = `[${text}](/article/${selectedArticle.value.slug})`
   } else if (activeTab.value === 'file' && selectedFile.value) {
     const text = linkText.value.trim() || selectedFile.value.original_filename
-    markdown = `[${text}](/file/${selectedFile.value.id})`
+    const file = selectedFile.value
+    if (file.article_id) {
+      const article = articles.value.find(a => a.id === file.article_id)
+      if (article) {
+        markdown = `[${text}](/article/${article.slug}#file-${file.id})`
+      } else {
+        markdown = `[${text}](/article/${file.article_id}#file-${file.id})`
+      }
+    } else {
+      markdown = `[${text}](/file/${file.id})`
+    }
   }
   
   if (markdown) {
@@ -118,8 +128,13 @@ watch(() => props.modelValue, (newVal) => {
   if (newVal) {
     if (activeTab.value === 'article' && articles.value.length === 0) {
       fetchArticles()
-    } else if (activeTab.value === 'file' && files.value.length === 0) {
-      fetchFiles()
+    } else if (activeTab.value === 'file') {
+      if (files.value.length === 0) {
+        fetchFiles()
+      }
+      if (articles.value.length === 0) {
+        fetchArticles()
+      }
     }
   }
 })
@@ -127,8 +142,13 @@ watch(() => props.modelValue, (newVal) => {
 watch(activeTab, (newTab) => {
   if (newTab === 'article' && articles.value.length === 0) {
     fetchArticles()
-  } else if (newTab === 'file' && files.value.length === 0) {
-    fetchFiles()
+  } else if (newTab === 'file') {
+    if (files.value.length === 0) {
+      fetchFiles()
+    }
+    if (articles.value.length === 0) {
+      fetchArticles()
+    }
   }
 })
 </script>
