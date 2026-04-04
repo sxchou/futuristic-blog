@@ -8,21 +8,21 @@ from app.schemas import TagCreate, TagUpdate, TagResponse
 from app.utils import get_current_user
 from app.utils.helpers import generate_slug, generate_unique_slug
 from app.services.log_service import LogService
-from app.utils.cache import cache
+from app.utils.cache import cache_manager
 
 router = APIRouter(prefix="/tags", tags=["Tags"])
 
-TAGS_CACHE_KEY = "tags:all"
-TAGS_CACHE_TTL = 120
+CACHE_NAME = "tags"
 
 
 def invalidate_tags_cache():
-    cache.delete(TAGS_CACHE_KEY)
+    cache_manager.clear_cache(CACHE_NAME)
 
 
 @router.get("", response_model=List[TagResponse])
 async def get_tags(db: Session = Depends(get_db)):
-    cached = cache.get(TAGS_CACHE_KEY)
+    cache_key = "all_tags"
+    cached = cache_manager.get(CACHE_NAME, cache_key)
     if cached:
         return cached
     
@@ -47,7 +47,7 @@ async def get_tags(db: Session = Depends(get_db)):
         tag_response.article_count = article_counts.get(tag.id, 0)
         result.append(tag_response)
     
-    cache.set(TAGS_CACHE_KEY, result, TAGS_CACHE_TTL)
+    cache_manager.set(CACHE_NAME, cache_key, result)
     return result
 
 

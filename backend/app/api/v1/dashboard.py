@@ -7,12 +7,15 @@ from pydantic import BaseModel
 from app.core.database import get_db
 from app.utils.auth import get_current_admin_user
 from app.utils.timezone import get_now, get_today_start, to_local
+from app.utils.cache import cache_manager
 from app.models.models import (
     Article, User, Comment, ArticleLike, Category, Tag,
     LoginLog, OperationLog, AccessLog, article_tags
 )
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
+
+CACHE_NAME = "dashboard"
 
 
 class PublicStats(BaseModel):
@@ -76,6 +79,11 @@ class AccessTrend(BaseModel):
 async def get_public_stats(
     db: Session = Depends(get_db)
 ):
+    cache_key = "public_stats"
+    cached = cache_manager.get(CACHE_NAME, cache_key)
+    if cached:
+        return cached
+    
     total_articles = db.query(func.count(Article.id)).filter(
         Article.is_published == True
     ).scalar() or 0
@@ -91,12 +99,15 @@ async def get_public_stats(
         Comment.status == 'approved'
     ).scalar() or 0
     
-    return PublicStats(
+    result = PublicStats(
         total_articles=total_articles,
         total_views=total_views,
         total_likes=total_likes,
         total_comments=total_comments
     )
+    
+    cache_manager.set(CACHE_NAME, cache_key, result)
+    return result
 
 
 @router.get("/overview", response_model=OverviewStats)

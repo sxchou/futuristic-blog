@@ -10,13 +10,72 @@
     <meta property="og:title" content="Futuristic Blog" />
     <meta property="og:description" content="Code for Future, Share for Growth" />
     <meta property="og:type" content="website" />
+    <meta name="theme-color" content="#00d4ff" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --bg-color: #f3f4f6;
+        --text-color: #1f2937;
+      }
+      .dark {
+        --bg-color: #1f1f1f;
+        --text-color: #e5e7eb;
+      }
+      #app-loading {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg-color);
+        z-index: 9999;
+        transition: opacity 0.3s ease;
+      }
+      #app-loading.fade-out {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(0, 212, 255, 0.2);
+        border-top-color: #00d4ff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
     <title>Futuristic Blog | Code for Future</title>
   </head>
   <body class="antialiased">
+    <div id="app-loading">
+      <div class="loading-spinner"></div>
+    </div>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
+    <script>
+      (function() {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+        window.addEventListener('load', function() {
+          const loading = document.getElementById('app-loading');
+          if (loading) {
+            loading.classList.add('fade-out');
+            setTimeout(function() { loading.remove(); }, 300);
+          }
+        });
+      })();
+    </script>
   </body>
 </html>

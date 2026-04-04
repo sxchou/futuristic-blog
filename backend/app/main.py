@@ -10,6 +10,8 @@ from app.api import router as api_router
 from app.services.init_data import init_database
 from app.services.log_service import LogService
 from app.utils import cleanup_expired_tokens
+from app.utils.cache import cache_manager
+from app.utils.performance import performance_metrics, performance_monitor
 from app.models.models import Article, Category, Tag
 import os
 import time
@@ -88,6 +90,44 @@ async def cleanup_expired_tokens_task():
                     logger.info(f"Cleaned up {count} expired refresh tokens")
         except Exception as e:
             logger.error(f"Error cleaning up expired tokens: {e}")
+
+async def cache_cleanup_task():
+    while True:
+        try:
+            await asyncio.sleep(3600)
+            cleaned = cache_manager.cleanup_all_expired()
+            total_cleaned = sum(cleaned.values())
+            if total_cleaned > 0:
+                logger.info(f"Cleaned up {total_cleaned} expired cache entries")
+        except Exception as e:
+            logger.error(f"Error cleaning up cache: {e}")
+
+async def performance_report_task():
+    while True:
+        try:
+            await asyncio.sleep(3600)
+            performance_monitor.log_report()
+        except Exception as e:
+            logger.error(f"Error generating performance report: {e}")
+
+class PerformanceMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        start_time = time.time()
+        response = await call_next(request)
+        response_time = (time.time() - start_time) * 1000
+        
+        performance_metrics.record_request(
+            path=request.url.path,
+            method=request.method,
+            response_time=response_time,
+            status_code=response.status_code
+        )
+        
+        response.headers["X-Response-Time"] = f"{response_time:.2f}ms"
+        
+        return response
+
+app.add_middleware(PerformanceMiddleware)
 
 class AccessLogMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -175,6 +215,8 @@ async def background_init():
         logger.info("Database data initialized")
         
         asyncio.create_task(cleanup_expired_tokens_task())
+        asyncio.create_task(cache_cleanup_task())
+        asyncio.create_task(performance_report_task())
         logger.info("=== Application initialized successfully ===")
     except Exception as e:
         logger.error(f"Background init error: {e}", exc_info=True)
@@ -193,6 +235,16 @@ async def root():
 async def health_check(request: Request):
     logger.info(f"Health check requested from: {request.headers.get('host', 'unknown')}")
     return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
+
+
+@app.get("/api/performance")
+async def get_performance_stats():
+    return performance_monitor.get_full_report()
+
+
+@app.get("/api/cache-stats")
+async def get_cache_stats():
+    return cache_manager.get_all_stats()
 
 
 @app.get("/sitemap.xml")

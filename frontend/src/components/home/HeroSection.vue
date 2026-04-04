@@ -15,7 +15,7 @@ const stats = ref({
 const loading = ref(true)
 const featuredArticlesList = ref<Array<any>>([])
 
-const featuredArticles = computed(() => featuredArticlesList.value.slice(0, 3))
+const featuredArticles = computed(() => featuredArticlesList.value)
 
 const currentSlide = ref(0)
 
@@ -58,7 +58,7 @@ const fetchFeaturedArticles = async () => {
     const response = await articleApi.getArticles({ 
       is_featured: true, 
       page: 1, 
-      page_size: 10 
+      page_size: 50 
     })
     featuredArticlesList.value = response.items
   } catch (error) {

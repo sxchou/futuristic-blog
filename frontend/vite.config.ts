@@ -42,7 +42,11 @@ export default defineConfig({
       compress: {
         drop_console: true,
         drop_debugger: true,
-        pure_funcs: ['console.log']
+        pure_funcs: ['console.log', 'console.info', 'console.debug'],
+        passes: 2
+      },
+      format: {
+        comments: false
       }
     },
     rollupOptions: {
@@ -61,20 +65,41 @@ export default defineConfig({
             if (id.includes('axios')) {
               return 'axios'
             }
+            if (id.includes('pdfjs') || id.includes('mammoth') || id.includes('xlsx') || id.includes('jszip')) {
+              return 'document-libs'
+            }
             return 'vendor'
           }
         },
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
-        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]'
+        assetFileNames: (assetInfo) => {
+          const info = assetInfo.name?.split('.') || []
+          const ext = info[info.length - 1]
+          if (/\.(png|jpe?g|gif|svg|webp|avif|ico)$/i.test(assetInfo.name || '')) {
+            return 'assets/images/[name]-[hash].[ext]'
+          }
+          if (/\.(woff2?|eot|ttf|otf)$/i.test(assetInfo.name || '')) {
+            return 'assets/fonts/[name]-[hash].[ext]'
+          }
+          if (ext === 'css') {
+            return 'assets/css/[name]-[hash].[ext]'
+          }
+          return 'assets/[ext]/[name]-[hash].[ext]'
+        }
       }
     },
     chunkSizeWarningLimit: 1000,
     cssCodeSplit: true,
-    sourcemap: false
+    sourcemap: false,
+    reportCompressedSize: true,
+    cssMinify: true
   },
   optimizeDeps: {
     include: ['vue', 'vue-router', 'pinia', 'axios', 'marked', 'highlight.js', 'dompurify'],
     exclude: ['@iconify/json']
+  },
+  css: {
+    devSourcemap: false
   }
 })

@@ -22,15 +22,20 @@ elif "postgresql" in database_url:
 logger.info(f"Database type: {'SQLite' if is_sqlite else 'PostgreSQL/MySQL'}")
 logger.info(f"Database URL: {database_url[:50]}...")
 
+pool_size = int(os.getenv("DB_POOL_SIZE", "10"))
+max_overflow = int(os.getenv("DB_MAX_OVERFLOW", "20"))
+pool_timeout = int(os.getenv("DB_POOL_TIMEOUT", "60"))
+pool_recycle = int(os.getenv("DB_POOL_RECYCLE", "1800"))
+
 engine = create_engine(
     database_url,
     connect_args=connect_args,
     echo=False,
-    pool_pre_ping=False,
-    pool_recycle=1800,
-    pool_size=5,
-    max_overflow=10,
-    pool_timeout=60,
+    pool_pre_ping=True,
+    pool_recycle=pool_recycle,
+    pool_size=pool_size,
+    max_overflow=max_overflow,
+    pool_timeout=pool_timeout,
     poolclass=QueuePool,
 )
 
@@ -48,6 +53,8 @@ if is_sqlite:
         cursor.execute("PRAGMA busy_timeout=5000")
         cursor.execute("PRAGMA temp_store=MEMORY")
         cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.execute("PRAGMA mmap_size=268435456")
+        cursor.execute("PRAGMA page_size=4096")
         cursor.close()
 
 def get_db():

@@ -54,19 +54,47 @@ const addPendingRequest = (config: InternalAxiosRequestConfig) => {
   }
 }
 
-const responseCache = new Map<string, { data: unknown; timestamp: number }>()
-const CACHE_TTL = 60000
+interface CacheEntry {
+  data: unknown
+  timestamp: number
+  etag?: string
+}
+
+const responseCache = new Map<string, CacheEntry>()
+
+const CACHE_CONFIG: Record<string, number> = {
+  '/categories': 300000,
+  '/tags': 300000,
+  '/resources': 120000,
+  '/site-config': 600000,
+  '/profile': 300000,
+  '/articles': 60000,
+  '/dashboard': 30000
+}
 
 const getCacheKey = (config: InternalAxiosRequestConfig): string => {
   return `${config.method}-${config.url}-${JSON.stringify(config.params)}`
 }
 
+const getCacheTTL = (url: string | undefined): number => {
+  if (!url) return 60000
+  for (const [endpoint, ttl] of Object.entries(CACHE_CONFIG)) {
+    if (url === endpoint || url.startsWith(endpoint + '?') || url.startsWith(endpoint + '/')) {
+      return ttl
+    }
+  }
+  return 60000
+}
+
 const getCachedResponse = (config: InternalAxiosRequestConfig): unknown | null => {
   const key = getCacheKey(config)
   const cached = responseCache.get(key)
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+  const ttl = getCacheTTL(config.url)
+  
+  if (cached && Date.now() - cached.timestamp < ttl) {
     return cached.data
   }
+  
   responseCache.delete(key)
   return null
 }
@@ -81,12 +109,31 @@ const cacheableEndpoints = [
   '/tags',
   '/resources',
   '/site-config',
-  '/profile'
+  '/profile',
+  '/articles',
+  '/dashboard'
 ]
 
 const shouldCache = (url: string | undefined): boolean => {
   if (!url) return false
-  return cacheableEndpoints.some(endpoint => url === endpoint || url.startsWith(endpoint + '?'))
+  return cacheableEndpoints.some(endpoint => url === endpoint || url.startsWith(endpoint + '?') || url.startsWith(endpoint + '/'))
+}
+
+const nonCacheablePatterns = [
+  /\/auth\//,
+  /\/comments\//,
+  /\/likes\//,
+  /\/logs\//,
+  /\/notifications\//,
+  /\/upload/,
+  /\/delete/,
+  /\/create/,
+  /\/update/
+]
+
+const isNonCacheable = (url: string | undefined): boolean => {
+  if (!url) return true
+  return nonCacheablePatterns.some(pattern => pattern.test(url))
 }
 
 const refreshToken = async (): Promise<string | null> => {
@@ -125,7 +172,7 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`
     }
     
-    if (config.method?.toLowerCase() === 'get' && shouldCache(config.url)) {
+    if (config.method?.toLowerCase() === 'get' && shouldCache(config.url) && !isNonCacheable(config.url)) {
       const cached = getCachedResponse(config)
       if (cached) {
         config.adapter = () => Promise.resolve({
@@ -157,7 +204,7 @@ apiClient.interceptors.response.use(
       removePendingRequest(response.config)
     }
     
-    if (response.config.method?.toLowerCase() === 'get' && shouldCache(response.config.url)) {
+    if (response.config.method?.toLowerCase() === 'get' && shouldCache(response.config.url) && !isNonCacheable(response.config.url)) {
       setCachedResponse(response.config, response.data)
     }
     
@@ -254,9 +301,24 @@ export const clearCache = () => {
   responseCache.clear()
 }
 
+export const clearCacheByPattern = (pattern: string) => {
+  for (const key of responseCache.keys()) {
+    if (key.includes(pattern)) {
+      responseCache.delete(key)
+    }
+  }
+}
+
 export const cancelAllRequests = () => {
   pendingRequests.forEach(({ controller }) => controller.abort())
   pendingRequests.clear()
+}
+
+export const getCacheStats = () => {
+  return {
+    size: responseCache.size,
+    keys: Array.from(responseCache.keys())
+  }
 }
 
 export default apiClient

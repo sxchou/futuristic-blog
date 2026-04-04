@@ -8,21 +8,21 @@ from app.schemas import CategoryCreate, CategoryUpdate, CategoryResponse
 from app.utils import get_current_user
 from app.utils.helpers import generate_slug, generate_unique_slug
 from app.services.log_service import LogService
-from app.utils.cache import cache
+from app.utils.cache import cache_manager
 
 router = APIRouter(prefix="/categories", tags=["Categories"])
 
-CATEGORIES_CACHE_KEY = "categories:all"
-CATEGORIES_CACHE_TTL = 120
+CACHE_NAME = "categories"
 
 
 def invalidate_categories_cache():
-    cache.delete(CATEGORIES_CACHE_KEY)
+    cache_manager.clear_cache(CACHE_NAME)
 
 
 @router.get("", response_model=List[CategoryResponse])
 async def get_categories(db: Session = Depends(get_db)):
-    cached = cache.get(CATEGORIES_CACHE_KEY)
+    cache_key = "all_categories"
+    cached = cache_manager.get(CACHE_NAME, cache_key)
     if cached:
         return cached
     
@@ -48,7 +48,7 @@ async def get_categories(db: Session = Depends(get_db)):
         cat_response.article_count = article_counts.get(cat.id, 0)
         result.append(cat_response)
     
-    cache.set(CATEGORIES_CACHE_KEY, result, CATEGORIES_CACHE_TTL)
+    cache_manager.set(CACHE_NAME, cache_key, result)
     return result
 
 

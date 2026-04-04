@@ -64,7 +64,7 @@ const getArticleLink = () => {
       <div class="absolute inset-0 bg-gradient-to-t from-dark to-transparent opacity-60" />
     </div>
 
-    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1 group-hover:text-primary transition-colors line-clamp-2">
+    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1 group-hover:text-primary transition-colors line-clamp-2 min-h-[3.5rem]">
       <template v-if="article.highlighted_title">
         <span v-html="article.highlighted_title"></span>
       </template>
@@ -73,14 +73,15 @@ const getArticleLink = () => {
       </template>
     </h3>
 
-    <p v-if="article.summary || article.highlighted_summary" class="text-gray-500 dark:text-gray-400 text-sm mb-2 line-clamp-2 flex-grow">
+    <p v-if="article.summary || article.highlighted_summary" class="text-gray-500 dark:text-gray-400 text-sm mb-2 line-clamp-2 min-h-[2.5rem]">
       <template v-if="article.highlighted_summary">
-        <span v-html="article.highlighted_summary"></span>
+        <span class="inline" v-html="article.highlighted_summary"></span>
       </template>
       <template v-else>
         {{ article.summary }}
       </template>
     </p>
+    <div v-else class="min-h-[2.5rem] mb-2"></div>
 
     <div v-if="article.category" class="mb-2">
       <span

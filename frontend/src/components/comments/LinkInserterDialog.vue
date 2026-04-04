@@ -56,11 +56,9 @@ const fetchArticles = async () => {
   loading.value = true
   try {
     const response = await articleApi.getArticles({ page: 1, page_size: 50 })
-    articles.value = response.items || []
-    console.log('Fetched articles:', articles.value.length)
+    articles.value = response.items
   } catch (error) {
     console.error('Failed to fetch articles:', error)
-    articles.value = []
   } finally {
     loading.value = false
   }
@@ -69,11 +67,9 @@ const fetchArticles = async () => {
 const fetchFiles = async () => {
   loading.value = true
   try {
-    files.value = await fileApi.getFiles() || []
-    console.log('Fetched files:', files.value.length)
+    files.value = await fileApi.getFiles()
   } catch (error) {
     console.error('Failed to fetch files:', error)
-    files.value = []
   } finally {
     loading.value = false
   }
@@ -129,39 +125,30 @@ const insertLink = () => {
   }
 }
 
-watch(() => props.modelValue, async (newVal) => {
+watch(() => props.modelValue, (newVal) => {
   if (newVal) {
-    await new Promise(resolve => setTimeout(resolve, 100))
-    try {
-      if (articles.value.length === 0) {
-        await fetchArticles()
-      }
+    if (activeTab.value === 'article' && articles.value.length === 0) {
+      fetchArticles()
+    } else if (activeTab.value === 'file') {
       if (files.value.length === 0) {
-        await fetchFiles()
+        fetchFiles()
       }
-    } catch (error) {
-      console.error('Failed to load data:', error)
+      if (articles.value.length === 0) {
+        fetchArticles()
+      }
     }
   }
 })
 
-watch(activeTab, async (newTab) => {
+watch(activeTab, (newTab) => {
   if (newTab === 'article' && articles.value.length === 0) {
-    try {
-      await fetchArticles()
-    } catch (error) {
-      console.error('Failed to fetch articles:', error)
-    }
+    fetchArticles()
   } else if (newTab === 'file') {
-    try {
-      if (files.value.length === 0) {
-        await fetchFiles()
-      }
-      if (articles.value.length === 0) {
-        await fetchArticles()
-      }
-    } catch (error) {
-      console.error('Failed to fetch files or articles:', error)
+    if (files.value.length === 0) {
+      fetchFiles()
+    }
+    if (articles.value.length === 0) {
+      fetchArticles()
     }
   }
 })
@@ -171,11 +158,13 @@ watch(activeTab, async (newTab) => {
   <div
     v-if="modelValue"
     class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
+    @click.self="close"
   >
-    <div class="bg-white dark:bg-dark-100 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col" @click.stop>
+    <div class="bg-white dark:bg-dark-100 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
       <div class="flex items-center justify-between p-3 border-b border-gray-200 dark:border-white/10 flex-shrink-0">
         <h3 class="text-base font-semibold text-gray-900 dark:text-white">插入链接</h3>
         <button
+          type="button"
           @click="close"
           class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
         >
@@ -194,7 +183,8 @@ watch(activeTab, async (newTab) => {
               { key: 'file', label: '文件链接' }
             ]"
             :key="tab.key"
-            @click.stop="activeTab = tab.key as any"
+            type="button"
+            @click="activeTab = tab.key as any"
             :class="[
               'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
               activeTab === tab.key
@@ -252,7 +242,8 @@ watch(activeTab, async (newTab) => {
             <button
               v-for="article in filteredArticles"
               :key="article.id"
-              @click.stop="selectedArticle = article"
+              type="button"
+              @click="selectedArticle = article"
               :class="[
                 'w-full p-2 rounded-lg text-left transition-colors',
                 selectedArticle?.id === article.id
@@ -305,7 +296,8 @@ watch(activeTab, async (newTab) => {
             <button
               v-for="file in filteredFiles"
               :key="file.id"
-              @click.stop="selectedFile = file"
+              type="button"
+              @click="selectedFile = file"
               :class="[
                 'w-full p-2 rounded-lg text-left transition-colors',
                 selectedFile?.id === file.id
@@ -347,13 +339,15 @@ watch(activeTab, async (newTab) => {
       
       <div class="flex justify-end gap-2 p-3 border-t border-gray-200 dark:border-white/10 flex-shrink-0">
         <button
-          @click.stop="close"
+          type="button"
+          @click="close"
           class="px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-dark-200 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
         >
           取消
         </button>
         <button
-          @click.stop="insertLink"
+          type="button"
+          @click="insertLink"
           :disabled="!canInsert"
           :class="[
             'px-3 py-1.5 text-xs font-medium text-white rounded-lg transition-colors',

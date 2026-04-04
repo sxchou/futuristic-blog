@@ -71,7 +71,7 @@
   }
 
   body {
-    @apply bg-white dark:bg-dark text-gray-800 dark:text-gray-200;
+    @apply bg-gray-100 dark:bg-dark-300 text-gray-800 dark:text-gray-200;
     font-feature-settings: "rlig" 1, "calt" 1;
     transition: background-color 0.3s ease, color 0.3s ease;
     font-size: 1rem;
@@ -88,15 +88,15 @@
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-gray-100 dark:bg-dark-100;
+    @apply bg-transparent;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-primary/50 rounded-full;
+    @apply bg-gray-300 dark:bg-gray-700 rounded-full;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-primary/70;
+    @apply bg-gray-400 dark:bg-gray-600;
   }
 }
 
@@ -195,6 +195,8 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
   }
 
   .line-clamp-3 {
@@ -202,6 +204,8 @@
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
   }
 }
 
@@ -340,6 +344,71 @@ hr {
   background-color: rgba(250, 204, 21, 0.5) !important;
   color: #fde047 !important;
   box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.4);
+}
+
+.lazy-loading {
+  opacity: 0.5;
+  filter: blur(10px);
+  transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+.lazy-loaded {
+  opacity: 1;
+  filter: blur(0);
+}
+
+.lazy-error {
+  opacity: 0.3;
+  filter: grayscale(100%);
+}
+
+img[loading="lazy"] {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.03) 25%,
+    rgba(0, 0, 0, 0.05) 50%,
+    rgba(0, 0, 0, 0.03) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.dark img[loading="lazy"] {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.02) 25%,
+    rgba(255, 255, 255, 0.04) 50%,
+    rgba(255, 255, 255, 0.02) 75%
+  );
+  background-size: 200% 100%;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.content-visibility-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 500px;
+}
+
+.will-change-transform {
+  will-change: transform;
+}
+
+.will-change-opacity {
+  will-change: opacity;
+}
+
+.gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
 }
 
 mark.search-highlight {

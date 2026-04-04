@@ -27,7 +27,7 @@ const showLangSelector = ref(false)
 const showMarkdownHelp = ref(false)
 const hasUnsavedChanges = ref(false)
 const originalValue = ref('')
-const showLinkDialog = ref(false)
+const showLinkInserter = ref(false)
 
 const programmingLanguages = [
   { code: 'javascript', label: 'JavaScript' },
@@ -253,48 +253,29 @@ const insertCodeBlock = (lang: string) => {
 }
 
 const openLinkDialog = () => {
-  showLinkDialog.value = true
+  showLinkInserter.value = true
 }
 
 const insertLink = (markdown: string) => {
-  if (!markdown) {
-    showLinkDialog.value = false
-    return
-  }
+  if (!editorRef.value) return
   
   const textarea = editorRef.value
-  if (textarea) {
-    const start = textarea.selectionStart
-    const end = textarea.selectionEnd
-    
-    const newText = props.modelValue.substring(0, start) + markdown + props.modelValue.substring(end)
-    emit('update:modelValue', newText)
-    
-    nextTick(() => {
-      textarea.focus({ preventScroll: true })
-      const newCursorPos = start + markdown.length
-      textarea.selectionStart = textarea.selectionEnd = newCursorPos
-    })
-  } else {
-    emit('update:modelValue', props.modelValue + markdown)
-  }
+  const start = textarea.selectionStart
+  const end = textarea.selectionEnd
   
-  showLinkDialog.value = false
+  const newText = props.modelValue.substring(0, start) + markdown + props.modelValue.substring(end)
+  emit('update:modelValue', newText)
+  
+  nextTick(() => {
+    textarea.focus({ preventScroll: true })
+    textarea.selectionStart = textarea.selectionEnd = start + markdown.length
+  })
 }
 
 const handleClickOutside = (e: MouseEvent) => {
   const target = e.target as HTMLElement
-  
-  // 如果点击在 LinkInserterDialog 内，不处理
-  if (target.closest('.fixed.z-\\[100\\]')) {
-    return
-  }
-  
   if (!target.closest('.lang-selector-container')) {
     showLangSelector.value = false
-  }
-  if (!target.closest('.markdown-help-container')) {
-    showMarkdownHelp.value = false
   }
 }
 
@@ -594,7 +575,7 @@ defineExpose({
     </div>
     
     <LinkInserterDialog
-      v-model="showLinkDialog"
+      v-model="showLinkInserter"
       @insert="insertLink"
     />
   </div>

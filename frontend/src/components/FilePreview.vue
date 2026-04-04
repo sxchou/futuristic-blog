@@ -573,18 +573,18 @@ onUnmounted(() => {
       class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm"
       @click.self="emit('close')"
     >
-      <div class="relative w-full h-full max-w-7xl max-h-[95vh] m-4 flex flex-col bg-gray-900 dark:bg-dark-300 rounded-xl overflow-hidden shadow-2xl">
-        <div class="flex items-center justify-between px-3 py-1 border-b border-gray-700 dark:border-white/10 bg-gray-800/50">
+      <div class="relative w-full h-full max-w-7xl max-h-[95vh] m-4 flex flex-col bg-white dark:bg-dark-300 rounded-xl overflow-hidden shadow-2xl border border-gray-200 dark:border-white/10">
+        <div class="flex items-center justify-between px-3 py-1 border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-gray-800/50">
           <div class="flex items-center gap-2 min-w-0 flex-1">
             <span 
               class="w-6 h-6 flex-shrink-0 flex items-center justify-center rounded"
               :class="[getFileIconComponent.bg, getFileIconComponent.color]"
               v-html="getFileIconComponent.svg"
             ></span>
-            <h3 class="text-xs font-medium text-white break-all leading-tight m-0">
+            <h3 class="text-xs font-medium text-gray-900 dark:text-white break-all leading-tight m-0">
               {{ file.original_filename }}
             </h3>
-            <span class="text-[10px] text-gray-500 flex-shrink-0">
+            <span class="text-[10px] text-gray-500 dark:text-gray-400 flex-shrink-0">
               {{ formatFileSize(file.file_size) }}
             </span>
           </div>
@@ -592,7 +592,7 @@ onUnmounted(() => {
             <button
               @click="handleDownload"
               title="下载"
-              class="p-1.5 text-gray-400 hover:text-primary hover:bg-gray-700/50 rounded transition-colors"
+              class="p-1.5 text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded transition-colors"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -600,7 +600,7 @@ onUnmounted(() => {
             </button>
             <button
               @click="emit('close')"
-              class="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded transition-colors"
+              class="p-1.5 text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded transition-colors"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -610,10 +610,10 @@ onUnmounted(() => {
         </div>
 
         <div class="flex-1 overflow-auto relative">
-          <div v-if="loading" class="absolute inset-0 flex items-center justify-center bg-gray-900 z-10">
+          <div v-if="loading" class="absolute inset-0 flex items-center justify-center bg-white dark:bg-gray-900 z-10">
             <div class="flex flex-col items-center gap-4">
               <div class="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-              <p class="text-gray-400">加载中...</p>
+              <p class="text-gray-500 dark:text-gray-400">加载中...</p>
             </div>
           </div>
 
@@ -630,11 +630,11 @@ onUnmounted(() => {
           </div>
 
           <div v-if="previewType === 'image'" class="relative h-full flex flex-col">
-            <div class="absolute top-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 bg-gray-800/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg">
+            <div class="absolute top-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg border border-gray-200 dark:border-gray-700">
               <button
                 @click="zoomOut"
                 :disabled="imageScale <= 0.25"
-                class="p-1.5 text-gray-300 hover:text-white hover:bg-gray-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                class="p-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="缩小"
               >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -642,10 +642,10 @@ onUnmounted(() => {
                 </svg>
               </button>
               <div class="flex items-center gap-2 px-2">
-                <span class="text-sm text-gray-300 min-w-[60px] text-center">{{ Math.round(imageScale * 100) }}%</span>
+                <span class="text-sm text-gray-700 dark:text-gray-300 min-w-[60px] text-center">{{ Math.round(imageScale * 100) }}%</span>
                 <button
                   @click="resetZoom"
-                  class="p-1 text-gray-400 hover:text-white transition-colors"
+                  class="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                   title="重置"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -656,7 +656,7 @@ onUnmounted(() => {
               <button
                 @click="zoomIn"
                 :disabled="imageScale >= 5"
-                class="p-1.5 text-gray-300 hover:text-white hover:bg-gray-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                class="p-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="放大"
               >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -717,18 +717,18 @@ onUnmounted(() => {
                     v-html="getFileIconComponent.svg"
                   ></span>
                 </div>
-                <h4 class="text-xl font-semibold text-white mb-2">{{ file.original_filename }}</h4>
-                <div class="bg-gray-800 dark:bg-dark-400 rounded-lg p-6 mt-4">
+                <h4 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">{{ file.original_filename }}</h4>
+                <div class="bg-gray-100 dark:bg-dark-400 rounded-lg p-6 mt-4">
                   <div class="flex items-center justify-between mb-3">
-                    <span class="text-gray-400">类型:</span>
-                    <span class="text-white font-medium">{{ officeFileType }} 文档</span>
+                    <span class="text-gray-500 dark:text-gray-400">类型:</span>
+                    <span class="text-gray-900 dark:text-white font-medium">{{ officeFileType }} 文档</span>
                   </div>
                   <div class="flex items-center justify-between mb-3">
-                    <span class="text-gray-400">大小:</span>
-                    <span class="text-white font-medium">{{ formatFileSize(file.file_size) }}</span>
+                    <span class="text-gray-500 dark:text-gray-400">大小:</span>
+                    <span class="text-gray-900 dark:text-white font-medium">{{ formatFileSize(file.file_size) }}</span>
                   </div>
                 </div>
-                <p class="text-yellow-400 mt-4 text-sm">
+                <p class="text-amber-600 dark:text-yellow-400 mt-4 text-sm">
                   ⚠️ Office 文件预览需要在线环境，本地开发环境暂不支持
                 </p>
                 <button
@@ -742,7 +742,7 @@ onUnmounted(() => {
           </div>
 
           <div v-else-if="previewType === 'text'" class="h-full p-6">
-            <pre class="h-full overflow-auto p-4 bg-gray-800 dark:bg-dark-400 rounded-lg text-gray-100 text-sm font-mono whitespace-pre-wrap break-words">{{ textContent }}</pre>
+            <pre class="h-full overflow-auto p-4 bg-gray-100 dark:bg-dark-400 rounded-lg text-gray-800 dark:text-gray-100 text-sm font-mono whitespace-pre-wrap break-words border border-gray-200 dark:border-white/10">{{ textContent }}</pre>
           </div>
 
           <div v-else-if="previewType === 'audio'" class="flex items-center justify-center h-full p-8">
@@ -757,7 +757,7 @@ onUnmounted(() => {
                   v-html="getFileIconComponent.svg"
                 ></span>
               </div>
-              <h4 class="text-xl font-semibold text-white mb-4">{{ file.original_filename }}</h4>
+              <h4 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">{{ file.original_filename }}</h4>
               <audio
                 :src="downloadUrl"
                 controls
@@ -782,13 +782,13 @@ onUnmounted(() => {
             <div v-if="archiveLoading" class="flex-1 flex items-center justify-center">
               <div class="flex flex-col items-center gap-4">
                 <div class="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-                <p class="text-gray-400">正在解析压缩包...</p>
+                <p class="text-gray-500 dark:text-gray-400">正在解析压缩包...</p>
               </div>
             </div>
             
             <div v-else-if="error && !archiveContent" class="flex-1 flex items-center justify-center p-8">
               <div class="text-center">
-                <p class="text-red-400 mb-4">{{ error }}</p>
+                <p class="text-red-500 dark:text-red-400 mb-4">{{ error }}</p>
                 <button
                   @click="fetchArchiveContent"
                   class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
@@ -799,20 +799,20 @@ onUnmounted(() => {
             </div>
             
             <div v-else-if="archiveContent" class="flex-1 flex flex-col overflow-hidden">
-              <div class="px-3 py-2 border-b border-gray-700 dark:border-white/10 bg-gray-800/50 flex-shrink-0">
+              <div class="px-3 py-2 border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-gray-800/50 flex-shrink-0">
                 <div class="flex flex-col gap-1.5 mb-2">
                   <div class="flex items-center gap-2 flex-wrap">
-                    <span class="px-1.5 py-0.5 text-[10px] font-medium bg-amber-500/20 text-amber-400 rounded">
+                    <span class="px-1.5 py-0.5 text-[10px] font-medium bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded">
                       {{ archiveContent.format }}
                     </span>
-                    <span class="text-[10px] text-gray-400">
+                    <span class="text-[10px] text-gray-500 dark:text-gray-400">
                       {{ archiveContent.total_files }} 个文件, {{ archiveContent.total_dirs }} 个文件夹
                     </span>
                   </div>
-                  <div class="text-[10px] text-gray-400 break-all">
+                  <div class="text-[10px] text-gray-500 dark:text-gray-400 break-all">
                     原始大小: {{ formatFileSize(archiveContent.total_size) }} | 
                     压缩后: {{ formatFileSize(archiveContent.compressed_size) }}
-                    <span v-if="archiveContent.total_size > 0" class="text-green-400 ml-1">
+                    <span v-if="archiveContent.total_size > 0" class="text-green-600 dark:text-green-400 ml-1">
                       ({{ Math.round((1 - archiveContent.compressed_size / archiveContent.total_size) * 100) }}% 压缩率)
                     </span>
                   </div>
@@ -822,7 +822,7 @@ onUnmounted(() => {
                     v-model="searchQuery"
                     type="text"
                     placeholder="搜索文件（支持 * 和 ? 通配符）..."
-                    class="w-full px-2 py-1 text-xs bg-gray-700 dark:bg-dark-400 border border-gray-600 dark:border-white/10 rounded text-white placeholder-gray-400 focus:border-primary focus:outline-none"
+                    class="w-full px-2 py-1 text-xs bg-white dark:bg-dark-400 border border-gray-300 dark:border-white/10 rounded text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:outline-none"
                   />
                   <svg class="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -830,11 +830,11 @@ onUnmounted(() => {
                 </div>
                 
                 <div class="flex items-center gap-1 mt-1.5 flex-wrap">
-                  <span class="text-[10px] text-gray-400">排序:</span>
+                  <span class="text-[10px] text-gray-500 dark:text-gray-400">排序:</span>
                   <button
                     @click="toggleSort('name')"
                     class="px-1.5 py-0.5 text-[10px] rounded transition-colors flex items-center gap-0.5"
-                    :class="sortField === 'name' ? 'bg-primary/20 text-primary' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'"
+                    :class="sortField === 'name' ? 'bg-primary/20 text-primary' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'"
                   >
                     名称
                     <svg v-if="sortField === 'name'" class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -845,7 +845,7 @@ onUnmounted(() => {
                   <button
                     @click="toggleSort('size')"
                     class="px-1.5 py-0.5 text-[10px] rounded transition-colors flex items-center gap-0.5"
-                    :class="sortField === 'size' ? 'bg-primary/20 text-primary' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'"
+                    :class="sortField === 'size' ? 'bg-primary/20 text-primary' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'"
                   >
                     大小
                     <svg v-if="sortField === 'size'" class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -856,7 +856,7 @@ onUnmounted(() => {
                   <button
                     @click="toggleSort('type')"
                     class="px-1.5 py-0.5 text-[10px] rounded transition-colors flex items-center gap-0.5"
-                    :class="sortField === 'type' ? 'bg-primary/20 text-primary' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'"
+                    :class="sortField === 'type' ? 'bg-primary/20 text-primary' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'"
                   >
                     类型
                     <svg v-if="sortField === 'type'" class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -872,14 +872,14 @@ onUnmounted(() => {
                   <div
                     v-for="item in flattenTree"
                     :key="item.path"
-                    class="flex items-center gap-1.5 px-1.5 py-1 rounded hover:bg-gray-700/50 dark:hover:bg-white/5 cursor-default group"
+                    class="flex items-center gap-1.5 px-1.5 py-1 rounded hover:bg-gray-100 dark:hover:bg-white/5 cursor-default group"
                     :class="{ 'cursor-pointer': item.is_dir }"
                     :style="{ paddingLeft: `${item.depth * 12 + 6}px` }"
                     @click="item.is_dir && toggleDir(item.path)"
                   >
                     <span
                       v-if="item.is_dir"
-                      class="w-3 h-3 flex items-center justify-center text-gray-400"
+                      class="w-3 h-3 flex items-center justify-center text-gray-500 dark:text-gray-400"
                     >
                       <svg 
                         class="w-2.5 h-2.5 transition-transform" 
@@ -895,23 +895,23 @@ onUnmounted(() => {
                     
                     <span 
                       class="flex-shrink-0"
-                      :class="item.is_dir ? 'text-amber-400' : ''"
+                      :class="item.is_dir ? 'text-amber-600 dark:text-amber-400' : ''"
                       v-html="getFileIcon(item.name, item.is_dir)"
                     ></span>
                     
                     <span 
                       class="flex-1 text-xs break-all"
-                      :class="item.is_dir ? 'text-gray-200 font-medium' : 'text-gray-300'"
+                      :class="item.is_dir ? 'text-gray-900 dark:text-gray-200 font-medium' : 'text-gray-700 dark:text-gray-300'"
                       v-html="highlightText(item.name, searchQuery)"
                     ></span>
                     
-                    <span v-if="!item.is_dir" class="text-xs text-gray-500 flex-shrink-0">
+                    <span v-if="!item.is_dir" class="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
                       {{ formatFileSize(item.size) }}
                     </span>
                   </div>
                 </div>
                 
-                <div v-if="flattenTree.length === 0 && searchQuery" class="text-center py-8 text-gray-400">
+                <div v-if="flattenTree.length === 0 && searchQuery" class="text-center py-8 text-gray-500 dark:text-gray-400">
                   未找到匹配的文件
                 </div>
               </div>
@@ -929,19 +929,19 @@ onUnmounted(() => {
                     v-html="getFileIconComponent.svg"
                   ></span>
                 </div>
-                <h4 class="text-xl font-semibold text-white mb-2">{{ file.original_filename }}</h4>
-                <div class="bg-gray-800 dark:bg-dark-400 rounded-lg p-6 mt-4">
+                <h4 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">{{ file.original_filename }}</h4>
+                <div class="bg-gray-100 dark:bg-dark-400 rounded-lg p-6 mt-4">
                   <div class="flex items-center justify-between mb-3">
-                    <span class="text-gray-400">类型:</span>
-                    <span class="text-white font-medium">{{ getArchiveInfo().type }}</span>
+                    <span class="text-gray-500 dark:text-gray-400">类型:</span>
+                    <span class="text-gray-900 dark:text-white font-medium">{{ getArchiveInfo().type }}</span>
                   </div>
                   <div class="flex items-center justify-between mb-3">
-                    <span class="text-gray-400">大小:</span>
-                    <span class="text-white font-medium">{{ formatFileSize(file.file_size) }}</span>
+                    <span class="text-gray-500 dark:text-gray-400">大小:</span>
+                    <span class="text-gray-900 dark:text-white font-medium">{{ formatFileSize(file.file_size) }}</span>
                   </div>
                   <div class="flex items-center justify-between">
-                    <span class="text-gray-400">描述:</span>
-                    <span class="text-white font-medium">{{ getArchiveInfo().description }}</span>
+                    <span class="text-gray-500 dark:text-gray-400">描述:</span>
+                    <span class="text-gray-900 dark:text-white font-medium">{{ getArchiveInfo().description }}</span>
                   </div>
                 </div>
                 <button
@@ -966,8 +966,8 @@ onUnmounted(() => {
                   v-html="getFileIconComponent.svg"
                 ></span>
               </div>
-              <h4 class="text-xl font-semibold text-white mb-2">{{ file.original_filename }}</h4>
-              <p class="text-gray-400 mb-6">
+              <h4 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">{{ file.original_filename }}</h4>
+              <p class="text-gray-500 dark:text-gray-400 mb-6">
                 此文件类型暂不支持在线预览
               </p>
               <button
@@ -991,16 +991,28 @@ pre::-webkit-scrollbar {
 }
 
 pre::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
+  background: transparent;
   border-radius: 4px;
+}
+
+.dark pre::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 pre::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.1);
   border-radius: 4px;
 }
 
+.dark pre::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 pre::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.dark pre::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 </style>
