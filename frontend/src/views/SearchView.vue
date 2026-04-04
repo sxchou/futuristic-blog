@@ -112,10 +112,13 @@ const handlePageChange = (page: number) => {
 <template>
   <div class="pb-20">
     <div class="container mx-auto px-4">
-      <div class="max-w-3xl mx-auto mb-12">
-        <h1 class="text-3xl md:text-4xl font-bold text-center mb-8">
-          <span class="gradient-text">搜索文章</span>
-        </h1>
+      <div class="max-w-3xl mx-auto mb-8">
+        <div class="text-center mb-6">
+          <h1 class="text-2xl md:text-3xl font-bold mb-1">
+            <span class="gradient-text">搜索文章</span>
+          </h1>
+          <p class="text-sm text-gray-500 dark:text-gray-400">输入关键词搜索文章</p>
+        </div>
 
         <div class="relative">
           <input

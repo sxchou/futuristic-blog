@@ -96,11 +96,11 @@ const handlePageChange = (page: number) => {
 <template>
   <div class="pb-20">
     <div class="container mx-auto px-4">
-      <div class="text-center mb-12">
-        <h1 class="text-4xl md:text-5xl font-bold mb-4">
+      <div class="text-center mb-8">
+        <h1 class="text-2xl md:text-3xl font-bold mb-1">
           <span :style="{ color: currentTag()?.color }">#{{ currentTag()?.name || '标签文章' }}</span>
         </h1>
-        <p class="text-gray-400 text-lg">
+        <p class="text-sm text-gray-500 dark:text-gray-400">
           共 {{ blogStore.pagination.total }} 篇相关文章
         </p>
       </div>

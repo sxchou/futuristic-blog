@@ -616,7 +616,7 @@ onUnmounted(() => {
               v-for="file in articleFiles"
               :key="file.id"
               :id="`file-${file.id}`"
-              class="flex items-center justify-between p-2 bg-white dark:bg-dark-100 rounded border transition-colors scroll-mt-20"
+              class="flex items-center justify-between p-2 bg-white dark:bg-dark-200 rounded border transition-colors scroll-mt-20"
               :class="[
                 selectedFileIds.has(file.id) 
                   ? 'border-primary bg-primary/5' 

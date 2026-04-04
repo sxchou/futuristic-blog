@@ -29,10 +29,10 @@ onMounted(() => {
     <div class="container mx-auto px-4">
       <div class="max-w-5xl mx-auto">
         <div class="text-center mb-8">
-          <h1 class="text-3xl md:text-4xl font-bold mb-2">
+          <h1 class="text-2xl md:text-3xl font-bold mb-1">
             <span class="gradient-text">关于我</span>
           </h1>
-          <p class="text-gray-500 dark:text-gray-400 text-base">了解博主的技术背景与成长历程</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">了解博主的技术背景与成长历程</p>
         </div>
         
         <div v-if="isLoading" class="flex justify-center py-16">

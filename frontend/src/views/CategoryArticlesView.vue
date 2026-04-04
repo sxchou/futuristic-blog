@@ -96,11 +96,11 @@ const handlePageChange = (page: number) => {
 <template>
   <div class="pb-20">
     <div class="container mx-auto px-4">
-      <div class="text-center mb-12">
-        <h1 class="text-4xl md:text-5xl font-bold mb-4">
+      <div class="text-center mb-8">
+        <h1 class="text-2xl md:text-3xl font-bold mb-1">
           <span class="gradient-text">{{ currentCategory()?.name || '分类文章' }}</span>
         </h1>
-        <p v-if="currentCategory()?.description" class="text-gray-400 text-lg">
+        <p v-if="currentCategory()?.description" class="text-sm text-gray-500 dark:text-gray-400">
           {{ currentCategory()?.description }}
         </p>
       </div>

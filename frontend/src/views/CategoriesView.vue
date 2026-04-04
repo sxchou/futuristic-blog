@@ -13,10 +13,10 @@ onMounted(() => {
   <div class="pb-16">
     <div class="container mx-auto px-4">
       <div class="text-center mb-8">
-        <h1 class="text-3xl md:text-4xl font-bold mb-2">
+        <h1 class="text-2xl md:text-3xl font-bold mb-1">
           <span class="gradient-text">技术领域</span>
         </h1>
-        <p class="text-gray-500 dark:text-gray-400 text-base">按技术领域探索文章</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">按技术领域探索文章</p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">

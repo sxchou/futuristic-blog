@@ -382,7 +382,7 @@ defineExpose({
         
         <div
           v-if="showLangSelector"
-          class="fixed z-[200] bg-white dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg shadow-lg py-1 w-40 max-h-60 overflow-y-auto"
+          class="fixed z-[200] bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-lg shadow-lg py-1 w-40 max-h-60 overflow-y-auto"
           :style="langSelectorStyle"
         >
           <div class="px-2 py-1 text-xs text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-white/10">
@@ -435,7 +435,7 @@ defineExpose({
     
     <div 
       v-if="showMarkdownHelp" 
-      class="mb-2 p-3 bg-gray-50 dark:bg-dark-100/50 border border-gray-200 dark:border-white/10 rounded-lg text-xs text-gray-600 dark:text-gray-400"
+      class="mb-2 p-3 bg-gray-50 dark:bg-dark-200/50 border border-gray-200 dark:border-white/10 rounded-lg text-xs text-gray-600 dark:text-gray-400"
     >
       <div class="flex justify-between items-center mb-3">
         <span class="font-medium text-gray-700 dark:text-gray-300">Markdown 语法参考</span>
@@ -547,7 +547,7 @@ defineExpose({
         class="editor-pane flex-1 flex flex-col min-w-0"
         :class="{ 'max-w-[50%]': showPreview }"
       >
-        <div class="flex items-center px-3 py-1.5 bg-gray-50 dark:bg-dark-100 border-b border-gray-200 dark:border-white/5">
+        <div class="flex items-center px-3 py-1.5 bg-gray-50 dark:bg-dark-200 border-b border-gray-200 dark:border-white/5">
           <span class="text-xs font-medium text-gray-500 dark:text-gray-400">编辑</span>
         </div>
         <textarea
@@ -558,7 +558,7 @@ defineExpose({
           @scroll="handleEditorScroll"
           :placeholder="placeholder"
           :disabled="disabled"
-          class="flex-1 w-full p-3 text-sm bg-white dark:bg-dark-100 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 resize-none focus:outline-none font-mono leading-relaxed"
+          class="flex-1 w-full p-3 text-sm bg-white dark:bg-dark-200 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 resize-none focus:outline-none font-mono leading-relaxed"
         />
       </div>
       
