@@ -77,6 +77,19 @@ const formatDate = (dateStr: string) => {
   return `${month}-${day}`
 }
 
+const highlightText = (text: string, keyword: string): string => {
+  if (!keyword || !text) return text
+  
+  const escapeRegExp = (str: string) => {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  }
+  
+  const pattern = escapeRegExp(keyword)
+  const regex = new RegExp(`(${pattern})`, 'gi')
+  
+  return text.replace(regex, '<mark class="search-highlight">$1</mark>')
+}
+
 const getMonthKey = (year: number, month: number) => `${year}-${month}`
 
 const toggleMonth = (year: number, month: number) => {
@@ -294,13 +307,10 @@ onMounted(() => {
                         backgroundColor: `${article.category.color}20`,
                         color: article.category.color 
                       }"
-                    >
-                      {{ article.category.name }}
-                    </span>
+                      v-html="highlightText(article.category.name, searchQuery)"
+                    ></span>
                     
-                    <span class="flex-1 text-sm text-gray-700 dark:text-gray-300 truncate group-hover:text-primary transition-colors">
-                      {{ article.title }}
-                    </span>
+                    <span class="flex-1 text-sm text-gray-700 dark:text-gray-300 truncate group-hover:text-primary transition-colors" v-html="highlightText(article.title, searchQuery)"></span>
                     
                     <div class="flex items-center gap-2 text-xs text-gray-400 flex-shrink-0">
                       <span v-if="article.view_count" class="flex items-center gap-0.5">
