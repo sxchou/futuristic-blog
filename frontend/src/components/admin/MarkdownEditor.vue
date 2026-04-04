@@ -284,6 +284,12 @@ const insertLink = (markdown: string) => {
 
 const handleClickOutside = (e: MouseEvent) => {
   const target = e.target as HTMLElement
+  
+  // 如果点击在 LinkInserterDialog 内，不处理
+  if (target.closest('.fixed.z-\\[100\\]')) {
+    return
+  }
+  
   if (!target.closest('.lang-selector-container')) {
     showLangSelector.value = false
   }
