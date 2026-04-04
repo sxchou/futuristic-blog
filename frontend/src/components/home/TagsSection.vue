@@ -21,10 +21,10 @@ const getTagSize = (count: number) => {
     
     <div class="container mx-auto px-4 relative z-10">
       <div class="text-center mb-12">
-        <h2 class="text-3xl md:text-4xl font-bold mb-2">
+        <h2 class="text-2xl md:text-3xl font-bold mb-1">
           <span class="gradient-text">热门标签</span>
         </h2>
-        <p class="text-gray-500 dark:text-gray-400 text-base">探索不同技术领域</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">探索不同技术领域</p>
       </div>
 
       <div class="flex flex-wrap justify-center gap-4 max-w-4xl mx-auto">

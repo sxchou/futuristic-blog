@@ -113,10 +113,10 @@ onUnmounted(() => {
   <section class="pb-12 relative">
     <div class="container mx-auto px-4">
       <div class="text-center mb-8">
-        <h2 class="text-3xl md:text-4xl font-bold mb-2">
+        <h2 class="text-2xl md:text-3xl font-bold mb-1">
           <span class="gradient-text">最新文章</span>
         </h2>
-        <p class="text-gray-500 dark:text-gray-400 text-base">探索技术前沿，分享工程实践</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">探索技术前沿，分享工程实践</p>
       </div>
 
       <div v-if="isLoading && blogStore.articles.length === 0" class="flex justify-center py-12">

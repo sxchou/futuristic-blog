@@ -95,10 +95,10 @@ onUnmounted(() => {
 
     <div class="container mx-auto px-4 relative z-10">
       <div class="text-center mb-8">
-        <h2 class="text-3xl md:text-4xl font-bold mb-2">
+        <h2 class="text-2xl md:text-3xl font-bold mb-1">
           <span class="gradient-text">探索技术前沿</span>
         </h2>
-        <p class="text-gray-500 dark:text-gray-400 text-base">记录学习历程，分享技术心得，探索无限可能</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">记录学习历程，分享技术心得，探索无限可能</p>
       </div>
 
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-10">
