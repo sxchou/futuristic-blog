@@ -105,7 +105,7 @@ const insertLink = () => {
     markdown = `[${text}](/article/${selectedArticle.value.slug})`
   } else if (activeTab.value === 'file' && selectedFile.value) {
     const text = linkText.value.trim() || selectedFile.value.original_filename
-    markdown = `[${text}](/api/v1/files/${selectedFile.value.id}/download)`
+    markdown = `[${text}](/file/${selectedFile.value.id})`
   }
   
   if (markdown) {
