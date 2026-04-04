@@ -94,8 +94,12 @@ const insertLink = () => {
   
   if (activeTab.value === 'external') {
     if (!externalUrl.value.trim()) return
-    const text = externalText.value.trim() || externalUrl.value
-    markdown = `[${text}](${externalUrl.value})`
+    let url = externalUrl.value.trim()
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://' + url
+    }
+    const text = externalText.value.trim() || url
+    markdown = `[${text}](${url})`
   } else if (activeTab.value === 'article' && selectedArticle.value) {
     const text = linkText.value.trim() || selectedArticle.value.title
     markdown = `[${text}](/article/${selectedArticle.value.slug})`
