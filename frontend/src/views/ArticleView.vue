@@ -428,9 +428,9 @@ onMounted(async () => {
           const fileElement = document.getElementById(`file-${fileId}`)
           if (fileElement) {
             fileElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            fileElement.classList.add('ring-2', 'ring-primary', 'ring-offset-2')
+            fileElement.classList.add('file-highlight')
             setTimeout(() => {
-              fileElement.classList.remove('ring-2', 'ring-primary', 'ring-offset-2')
+              fileElement.classList.remove('file-highlight')
             }, 3000)
           }
         }, 500)
@@ -780,5 +780,38 @@ onUnmounted(() => {
 
 .article-content :deep(img) {
   @apply rounded-lg max-w-full h-auto my-4;
+}
+
+.file-highlight {
+  animation: file-highlight-pulse 2s ease-in-out;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+  border-color: rgb(59, 130, 246) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2), 0 4px 12px rgba(59, 130, 246, 0.15);
+  transform: scale(1.02);
+  transition: all 0.3s ease;
+}
+
+.dark .file-highlight {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
+  border-color: rgb(96, 165, 250) !important;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.3), 0 4px 12px rgba(96, 165, 250, 0.2);
+}
+
+@keyframes file-highlight-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2), 0 4px 12px rgba(59, 130, 246, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.3), 0 6px 16px rgba(59, 130, 246, 0.25);
+  }
+}
+
+.dark @keyframes file-highlight-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.3), 0 4px 12px rgba(96, 165, 250, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(96, 165, 250, 0.4), 0 6px 16px rgba(96, 165, 250, 0.3);
+  }
 }
 </style>
