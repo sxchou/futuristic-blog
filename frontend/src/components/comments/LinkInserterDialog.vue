@@ -125,30 +125,38 @@ const insertLink = () => {
   }
 }
 
-watch(() => props.modelValue, (newVal) => {
+watch(() => props.modelValue, async (newVal) => {
   if (newVal) {
-    if (activeTab.value === 'article' && articles.value.length === 0) {
-      fetchArticles()
-    } else if (activeTab.value === 'file') {
-      if (files.value.length === 0) {
-        fetchFiles()
-      }
+    try {
       if (articles.value.length === 0) {
-        fetchArticles()
+        await fetchArticles()
       }
+      if (files.value.length === 0) {
+        await fetchFiles()
+      }
+    } catch (error) {
+      console.error('Failed to load data:', error)
     }
   }
 })
 
-watch(activeTab, (newTab) => {
+watch(activeTab, async (newTab) => {
   if (newTab === 'article' && articles.value.length === 0) {
-    fetchArticles()
-  } else if (newTab === 'file') {
-    if (files.value.length === 0) {
-      fetchFiles()
+    try {
+      await fetchArticles()
+    } catch (error) {
+      console.error('Failed to fetch articles:', error)
     }
-    if (articles.value.length === 0) {
-      fetchArticles()
+  } else if (newTab === 'file') {
+    try {
+      if (files.value.length === 0) {
+        await fetchFiles()
+      }
+      if (articles.value.length === 0) {
+        await fetchArticles()
+      }
+    } catch (error) {
+      console.error('Failed to fetch files or articles:', error)
     }
   }
 })
