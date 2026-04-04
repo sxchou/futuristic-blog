@@ -253,9 +253,7 @@ onMounted(() => {
             >
               <div class="absolute left-[-32px] md:left-[-48px] top-3 w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600"></div>
 
-              <div
-                class="bg-white dark:bg-dark-200/50 rounded-lg border border-gray-200 dark:border-white/5 overflow-hidden hover:border-primary/30 transition-colors"
-              >
+              <div class="glass-card-hover overflow-hidden">
                 <button
                   @click="toggleMonth(yearData.year, monthData.month)"
                   class="w-full flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"

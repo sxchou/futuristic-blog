@@ -102,11 +102,11 @@
 
 @layer components {
   .glass-card {
-    @apply bg-white/80 dark:bg-dark-100/80 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-2xl;
+    @apply bg-white dark:bg-dark-200/50 border border-gray-200 dark:border-white/5 rounded-lg;
   }
 
   .glass-card-hover {
-    @apply glass-card transition-all duration-300 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10;
+    @apply glass-card transition-colors hover:border-primary/30;
   }
 
   .cyber-glow {
