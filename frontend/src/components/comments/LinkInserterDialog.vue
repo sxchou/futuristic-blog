@@ -131,6 +131,7 @@ const insertLink = () => {
 
 watch(() => props.modelValue, async (newVal) => {
   if (newVal) {
+    await new Promise(resolve => setTimeout(resolve, 100))
     try {
       if (articles.value.length === 0) {
         await fetchArticles()
@@ -170,9 +171,8 @@ watch(activeTab, async (newTab) => {
   <div
     v-if="modelValue"
     class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
-    @click.self="close"
   >
-    <div class="bg-white dark:bg-dark-100 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+    <div class="bg-white dark:bg-dark-100 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col" @click.stop>
       <div class="flex items-center justify-between p-3 border-b border-gray-200 dark:border-white/10 flex-shrink-0">
         <h3 class="text-base font-semibold text-gray-900 dark:text-white">插入链接</h3>
         <button

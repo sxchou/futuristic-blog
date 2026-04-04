@@ -287,6 +287,9 @@ const handleClickOutside = (e: MouseEvent) => {
   if (!target.closest('.lang-selector-container')) {
     showLangSelector.value = false
   }
+  if (!target.closest('.markdown-help-container')) {
+    showMarkdownHelp.value = false
+  }
 }
 
 const markAsSaved = () => {
