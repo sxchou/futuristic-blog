@@ -56,9 +56,11 @@ const fetchArticles = async () => {
   loading.value = true
   try {
     const response = await articleApi.getArticles({ page: 1, page_size: 50 })
-    articles.value = response.items
+    articles.value = response.items || []
+    console.log('Fetched articles:', articles.value.length)
   } catch (error) {
     console.error('Failed to fetch articles:', error)
+    articles.value = []
   } finally {
     loading.value = false
   }
@@ -67,9 +69,11 @@ const fetchArticles = async () => {
 const fetchFiles = async () => {
   loading.value = true
   try {
-    files.value = await fileApi.getFiles()
+    files.value = await fileApi.getFiles() || []
+    console.log('Fetched files:', files.value.length)
   } catch (error) {
     console.error('Failed to fetch files:', error)
+    files.value = []
   } finally {
     loading.value = false
   }
@@ -190,7 +194,7 @@ watch(activeTab, async (newTab) => {
               { key: 'file', label: '文件链接' }
             ]"
             :key="tab.key"
-            @click="activeTab = tab.key as any"
+            @click.stop="activeTab = tab.key as any"
             :class="[
               'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
               activeTab === tab.key
@@ -248,7 +252,7 @@ watch(activeTab, async (newTab) => {
             <button
               v-for="article in filteredArticles"
               :key="article.id"
-              @click="selectedArticle = article"
+              @click.stop="selectedArticle = article"
               :class="[
                 'w-full p-2 rounded-lg text-left transition-colors',
                 selectedArticle?.id === article.id
@@ -301,7 +305,7 @@ watch(activeTab, async (newTab) => {
             <button
               v-for="file in filteredFiles"
               :key="file.id"
-              @click="selectedFile = file"
+              @click.stop="selectedFile = file"
               :class="[
                 'w-full p-2 rounded-lg text-left transition-colors',
                 selectedFile?.id === file.id
@@ -343,13 +347,13 @@ watch(activeTab, async (newTab) => {
       
       <div class="flex justify-end gap-2 p-3 border-t border-gray-200 dark:border-white/10 flex-shrink-0">
         <button
-          @click="close"
+          @click.stop="close"
           class="px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-dark-200 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
         >
           取消
         </button>
         <button
-          @click="insertLink"
+          @click.stop="insertLink"
           :disabled="!canInsert"
           :class="[
             'px-3 py-1.5 text-xs font-medium text-white rounded-lg transition-colors',

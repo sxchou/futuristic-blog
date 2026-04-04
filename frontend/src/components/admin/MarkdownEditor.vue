@@ -257,23 +257,27 @@ const openLinkDialog = () => {
 }
 
 const insertLink = (markdown: string) => {
-  if (!editorRef.value) {
+  if (!markdown) {
     showLinkDialog.value = false
     return
   }
   
   const textarea = editorRef.value
-  const start = textarea.selectionStart
-  const end = textarea.selectionEnd
-  
-  const newText = props.modelValue.substring(0, start) + markdown + props.modelValue.substring(end)
-  emit('update:modelValue', newText)
-  
-  nextTick(() => {
-    textarea.focus({ preventScroll: true })
-    const newCursorPos = start + markdown.length
-    textarea.selectionStart = textarea.selectionEnd = newCursorPos
-  })
+  if (textarea) {
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    
+    const newText = props.modelValue.substring(0, start) + markdown + props.modelValue.substring(end)
+    emit('update:modelValue', newText)
+    
+    nextTick(() => {
+      textarea.focus({ preventScroll: true })
+      const newCursorPos = start + markdown.length
+      textarea.selectionStart = textarea.selectionEnd = newCursorPos
+    })
+  } else {
+    emit('update:modelValue', props.modelValue + markdown)
+  }
   
   showLinkDialog.value = false
 }
