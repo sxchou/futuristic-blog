@@ -340,6 +340,56 @@ const handleCopyCode = (e: Event) => {
   }
 }
 
+const handleFileLinkClick = (e: Event) => {
+  const target = e.target as HTMLElement
+  const link = target.closest('a') as HTMLAnchorElement | null
+  
+  if (link) {
+    const href = link.getAttribute('href')
+    if (href && href.includes('#file-')) {
+      const hashIndex = href.indexOf('#file-')
+      const hash = href.substring(hashIndex)
+      const fileId = parseInt(hash.replace('#file-', ''), 10)
+      
+      if (!isNaN(fileId)) {
+        const currentPath = window.location.pathname
+        const linkPath = href.substring(0, hashIndex) || currentPath
+        
+        const isSamePage = linkPath === currentPath || linkPath === ''
+        
+        if (isSamePage) {
+          e.preventDefault()
+          e.stopPropagation()
+          
+          const fileElement = document.getElementById(`file-${fileId}`)
+          if (fileElement) {
+            const rect = fileElement.getBoundingClientRect()
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+            const targetPosition = rect.top + scrollTop - 100
+            
+            fileElement.classList.remove('file-highlight')
+            
+            window.scrollTo({
+              top: targetPosition,
+              behavior: 'smooth'
+            })
+            
+            setTimeout(() => {
+              fileElement.classList.add('file-highlight')
+            }, 100)
+            
+            setTimeout(() => {
+              fileElement.classList.remove('file-highlight')
+            }, 3100)
+            
+            history.pushState(null, '', hash)
+          }
+        }
+      }
+    }
+  }
+}
+
 const setupLazyLoading = () => {
   const images = document.querySelectorAll('.article-content img')
   images.forEach((img) => {
@@ -370,6 +420,7 @@ const scrollToComment = (commentId: number) => {
 
 onMounted(async () => {
   document.addEventListener('click', handleCopyCode)
+  document.addEventListener('click', handleFileLinkClick)
   
   const highlight = route.query.highlight as string
   if (highlight) {
@@ -441,6 +492,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   document.removeEventListener('click', handleCopyCode)
+  document.removeEventListener('click', handleFileLinkClick)
 })
 </script>
 
@@ -815,15 +867,6 @@ onUnmounted(() => {
   }
   50% {
     box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.3), 0 6px 16px rgba(59, 130, 246, 0.25);
-  }
-}
-
-.dark @keyframes file-highlight-pulse {
-  0%, 100% {
-    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.3), 0 4px 12px rgba(96, 165, 250, 0.2);
-  }
-  50% {
-    box-shadow: 0 0 0 5px rgba(96, 165, 250, 0.4), 0 6px 16px rgba(96, 165, 250, 0.3);
   }
 }
 </style>

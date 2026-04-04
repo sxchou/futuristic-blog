@@ -42,7 +42,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-white dark:bg-dark flex flex-col">
+  <div class="min-h-screen bg-gray-100 dark:bg-dark-100 flex flex-col">
     <template v-if="!isAdminPage">
       <ReadingProgress />
       <Navbar />
