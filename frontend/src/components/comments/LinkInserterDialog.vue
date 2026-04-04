@@ -33,9 +33,10 @@ const filteredArticles = computed(() => {
 })
 
 const filteredFiles = computed(() => {
-  if (!searchQuery.value) return files.value
+  let result = files.value.filter((file: ArticleFile) => file.article_id !== null)
+  if (!searchQuery.value) return result
   const query = searchQuery.value.toLowerCase()
-  return files.value.filter((file: ArticleFile) => 
+  return result.filter((file: ArticleFile) => 
     file.original_filename.toLowerCase().includes(query)
   )
 })
@@ -46,7 +47,7 @@ const canInsert = computed(() => {
   } else if (activeTab.value === 'article') {
     return selectedArticle.value !== null
   } else if (activeTab.value === 'file') {
-    return selectedFile.value !== null
+    return selectedFile.value !== null && selectedFile.value.article_id !== null
   }
   return false
 })
@@ -114,7 +115,7 @@ const insertLink = () => {
         markdown = `[${text}](/article/${file.article_id}#file-${file.id})`
       }
     } else {
-      markdown = `[${text}](/file/${file.id})`
+      return
     }
   }
   

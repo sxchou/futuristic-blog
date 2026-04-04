@@ -76,12 +76,6 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '文章详情' }
   },
   {
-    path: '/file/:id',
-    name: 'File',
-    component: () => import('@/views/FileView.vue'),
-    meta: { title: '文件详情' }
-  },
-  {
     path: '/resources',
     name: 'Resources',
     component: () => import('@/views/ResourcesView.vue'),
