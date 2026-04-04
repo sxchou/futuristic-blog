@@ -2,7 +2,7 @@
 </script>
 
 <template>
-  <div class="article-card-skeleton bg-white dark:bg-dark-200 rounded-xl overflow-hidden border border-gray-200 dark:border-white/10">
+  <div class="article-card-skeleton bg-white dark:bg-dark-100 rounded-xl overflow-hidden border border-gray-200 dark:border-white/10">
     <div class="aspect-video relative">
       <SkeletonLoader height="100%" radius="0" />
     </div>

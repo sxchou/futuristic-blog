@@ -96,7 +96,7 @@
         </div>
         
         <div v-if="showReplyForm" class="mt-3">
-          <div class="bg-gray-200 dark:bg-dark-200/50 border border-gray-300 dark:border-white/10 rounded-lg p-3">
+          <div class="bg-gray-200 dark:bg-dark-100/50 border border-gray-300 dark:border-white/10 rounded-lg p-3">
             <CommentEditor
               ref="replyEditorRef"
               v-model="replyContent"

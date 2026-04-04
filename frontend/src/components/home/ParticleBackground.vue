@@ -96,6 +96,6 @@ onUnmounted(() => {
 <template>
   <div class="absolute inset-0 overflow-hidden">
     <canvas ref="canvasRef" class="absolute inset-0" />
-    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-white/30 dark:via-dark/50 to-white dark:to-dark" />
+    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-white/30 dark:via-dark/50 to-white dark:to-dark-100" />
   </div>
 </template>

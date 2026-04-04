@@ -216,7 +216,7 @@ const getProviderBgColor = (name: string) => {
     case 'qq':
       return 'bg-[#12B7F5]'
     default:
-      return 'bg-gray-100 dark:bg-dark-200'
+      return 'bg-gray-100 dark:bg-dark-100'
   }
 }
 
@@ -239,7 +239,7 @@ onMounted(fetchProviders)
     <div v-else class="bg-white dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden">
       <table class="w-full">
         <thead>
-          <tr class="border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-dark-200/50">
+          <tr class="border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-dark-100/50">
             <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5 w-48">平台</th>
             <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5">状态</th>
             <th class="text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5 w-28">登录页显示</th>
@@ -394,7 +394,7 @@ onMounted(fetchProviders)
                     type="text"
                     id="oauth-display-name"
                     name="display-name"
-                    class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all"
+                    class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all"
                   />
                 </div>
                 <div>
@@ -404,7 +404,7 @@ onMounted(fetchProviders)
                     type="text"
                     id="oauth-scope"
                     name="scope"
-                    class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all"
+                    class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all"
                   />
                 </div>
               </div>
@@ -419,7 +419,7 @@ onMounted(fetchProviders)
                     type="text"
                     id="oauth-client-id"
                     name="client-id"
-                    class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all"
+                    class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all"
                   />
                 </div>
                 <div>
@@ -432,7 +432,7 @@ onMounted(fetchProviders)
                     id="oauth-client-secret"
                     name="client-secret"
                     autocomplete="new-password"
-                    class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all"
+                    class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all"
                     placeholder="留空保持原值"
                   />
                 </div>
@@ -447,7 +447,7 @@ onMounted(fetchProviders)
                   type="text"
                   id="oauth-redirect-uri"
                   name="redirect-uri"
-                  class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all"
+                  class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all"
                   placeholder="http://localhost:3001/oauth/callback/{provider}"
                 />
               </div>
@@ -473,7 +473,7 @@ onMounted(fetchProviders)
                         type="text"
                         id="oauth-authorize-url"
                         name="authorize-url"
-                        class="w-full px-2 py-1 text-xs rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
+                        class="w-full px-2 py-1 text-xs rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
                       />
                     </div>
                     <div>
@@ -483,7 +483,7 @@ onMounted(fetchProviders)
                         type="text"
                         id="oauth-token-url"
                         name="token-url"
-                        class="w-full px-2 py-1 text-xs rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
+                        class="w-full px-2 py-1 text-xs rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
                       />
                     </div>
                     <div>
@@ -493,7 +493,7 @@ onMounted(fetchProviders)
                         type="text"
                         id="oauth-userinfo-url"
                         name="userinfo-url"
-                        class="w-full px-2 py-1 text-xs rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
+                        class="w-full px-2 py-1 text-xs rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
                       />
                     </div>
                   </div>
@@ -521,7 +521,7 @@ onMounted(fetchProviders)
             </div>
           </div>
 
-          <div class="flex items-center justify-end gap-2 px-4 py-3 border-t border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-dark-200/30">
+          <div class="flex items-center justify-end gap-2 px-4 py-3 border-t border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-dark-100/30">
             <button
               @click="closeEditModal"
               type="button"

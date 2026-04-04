@@ -1424,7 +1424,7 @@ watch(form, () => {
                 @dragleave="handleDragLeave"
                 @drop="handleDrop($event, index)"
                 @dragend="handleDragEnd"
-                class="flex items-center justify-between p-2 bg-white dark:bg-dark-200 rounded border transition-all duration-200"
+                class="flex items-center justify-between p-2 bg-white dark:bg-dark-100 rounded border transition-all duration-200"
                 :class="[
                   selectedFileIds.has(file.id) 
                     ? 'border-primary bg-primary/5' 
@@ -1575,7 +1575,7 @@ watch(form, () => {
                     type="checkbox"
                     :value="tag.id"
                     v-model="form.tag_ids"
-                    class="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-200 text-primary focus:ring-primary"
+                    class="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-100 text-primary focus:ring-primary"
                   />
                   <span 
                     class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full border"
@@ -1597,7 +1597,7 @@ watch(form, () => {
               <input
                 type="checkbox"
                 v-model="form.is_published"
-                class="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-200 text-primary focus:ring-primary"
+                class="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-100 text-primary focus:ring-primary"
               />
               <span class="text-gray-700 dark:text-gray-300 text-sm">发布文章</span>
             </label>
@@ -1605,7 +1605,7 @@ watch(form, () => {
               <input
                 type="checkbox"
                 v-model="form.is_pinned"
-                class="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-200 text-primary focus:ring-primary"
+                class="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-100 text-primary focus:ring-primary"
               />
               <span class="text-gray-700 dark:text-gray-300 text-sm">置顶文章</span>
             </label>
@@ -1613,7 +1613,7 @@ watch(form, () => {
               <input
                 type="checkbox"
                 v-model="form.is_featured"
-                class="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-200 text-primary focus:ring-primary"
+                class="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-100 text-primary focus:ring-primary"
               />
               <span class="text-gray-700 dark:text-gray-300 text-sm">设为精选</span>
             </label>

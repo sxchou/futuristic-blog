@@ -166,7 +166,7 @@ onMounted(() => {
               v-model="searchQuery"
               type="text"
               placeholder="搜索文章..."
-              class="w-48 px-3 py-1.5 pl-8 text-sm bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none transition-colors"
+              class="w-48 px-3 py-1.5 pl-8 text-sm bg-white dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none transition-colors"
             />
             <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -175,7 +175,7 @@ onMounted(() => {
           
           <select
             v-model="selectedYear"
-            class="px-3 py-1.5 text-sm bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none transition-colors"
+            class="px-3 py-1.5 text-sm bg-white dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none transition-colors"
           >
             <option :value="null">全部年份</option>
             <option v-for="year in availableYears" :key="year" :value="year">{{ year }}年</option>
@@ -254,7 +254,7 @@ onMounted(() => {
               <div class="absolute left-[-32px] md:left-[-48px] top-3 w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600"></div>
 
               <div
-                class="bg-white dark:bg-dark-200/50 rounded-lg border border-gray-200 dark:border-white/5 overflow-hidden hover:border-primary/30 transition-colors"
+                class="bg-white dark:bg-dark-100/50 rounded-lg border border-gray-200 dark:border-white/5 overflow-hidden hover:border-primary/30 transition-colors"
               >
                 <button
                   @click="toggleMonth(yearData.year, monthData.month)"

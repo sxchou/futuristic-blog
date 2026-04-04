@@ -189,7 +189,7 @@ watch(activeTab, (newTab) => {
               'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
               activeTab === tab.key
                 ? 'bg-primary text-white'
-                : 'bg-gray-100 dark:bg-dark-200 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-300'
+                : 'bg-gray-100 dark:bg-dark-100 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-300'
             ]"
           >
             {{ tab.label }}
@@ -248,7 +248,7 @@ watch(activeTab, (newTab) => {
                 'w-full p-2 rounded-lg text-left transition-colors',
                 selectedArticle?.id === article.id
                   ? 'bg-primary/10 border-2 border-primary'
-                  : 'bg-gray-50 dark:bg-dark-200 hover:bg-gray-100 dark:hover:bg-dark-300 border-2 border-transparent'
+                  : 'bg-gray-50 dark:bg-dark-100 hover:bg-gray-100 dark:hover:bg-dark-300 border-2 border-transparent'
               ]"
             >
               <div class="font-medium text-gray-900 dark:text-white text-sm">{{ article.title }}</div>
@@ -302,7 +302,7 @@ watch(activeTab, (newTab) => {
                 'w-full p-2 rounded-lg text-left transition-colors',
                 selectedFile?.id === file.id
                   ? 'bg-primary/10 border-2 border-primary'
-                  : 'bg-gray-50 dark:bg-dark-200 hover:bg-gray-100 dark:hover:bg-dark-300 border-2 border-transparent'
+                  : 'bg-gray-50 dark:bg-dark-100 hover:bg-gray-100 dark:hover:bg-dark-300 border-2 border-transparent'
               ]"
             >
               <div class="flex items-center gap-2">
@@ -341,7 +341,7 @@ watch(activeTab, (newTab) => {
         <button
           type="button"
           @click="close"
-          class="px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-dark-200 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
+          class="px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-dark-100 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
         >
           取消
         </button>

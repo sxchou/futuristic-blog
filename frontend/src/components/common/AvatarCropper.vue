@@ -25,7 +25,7 @@
         <div class="flex-1 overflow-auto p-6">
           <div class="flex gap-6">
             <div class="flex-1">
-              <div class="cropper-wrapper bg-gray-100 dark:bg-dark-200 rounded-lg overflow-hidden relative">
+              <div class="cropper-wrapper bg-gray-100 dark:bg-dark-100 rounded-lg overflow-hidden relative">
                 <img
                   ref="imageRef"
                   :src="imageSrc"
@@ -34,7 +34,7 @@
                 />
                 <div
                   v-if="isLoading"
-                  class="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-dark-200"
+                  class="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-dark-100"
                 >
                   <div class="flex flex-col items-center gap-3">
                     <div class="w-8 h-8 border-3 border-primary/30 border-t-primary rounded-full animate-spin" />
@@ -43,7 +43,7 @@
                 </div>
                 <div
                   v-if="loadError"
-                  class="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-dark-200"
+                  class="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-dark-100"
                 >
                   <div class="flex flex-col items-center gap-2">
                     <svg class="w-10 h-10 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -58,7 +58,7 @@
                 <button
                   type="button"
                   @click="handleZoomIn"
-                  class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-200 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
+                  class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
                   :class="{ 'opacity-50 cursor-not-allowed': !cropperReady }"
                   :disabled="!cropperReady"
                   title="放大"
@@ -70,7 +70,7 @@
                 <button
                   type="button"
                   @click="handleZoomOut"
-                  class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-200 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
+                  class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
                   :class="{ 'opacity-50 cursor-not-allowed': !cropperReady }"
                   :disabled="!cropperReady"
                   title="缩小"
@@ -83,7 +83,7 @@
                 <button
                   type="button"
                   @click="handleRotateLeft"
-                  class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-200 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
+                  class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
                   :class="{ 'opacity-50 cursor-not-allowed': !cropperReady }"
                   :disabled="!cropperReady"
                   title="向左旋转"
@@ -95,7 +95,7 @@
                 <button
                   type="button"
                   @click="handleRotateRight"
-                  class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-200 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
+                  class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
                   :class="{ 'opacity-50 cursor-not-allowed': !cropperReady }"
                   :disabled="!cropperReady"
                   title="向右旋转"
@@ -108,7 +108,7 @@
                 <button
                   type="button"
                   @click="handleFlipHorizontal"
-                  class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-200 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
+                  class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
                   :class="{ 'opacity-50 cursor-not-allowed': !cropperReady }"
                   :disabled="!cropperReady"
                   title="水平翻转"
@@ -120,7 +120,7 @@
                 <button
                   type="button"
                   @click="handleFlipVertical"
-                  class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-200 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
+                  class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
                   :class="{ 'opacity-50 cursor-not-allowed': !cropperReady }"
                   :disabled="!cropperReady"
                   title="垂直翻转"
@@ -133,7 +133,7 @@
                 <button
                   type="button"
                   @click="handleReset"
-                  class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-200 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
+                  class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
                   :class="{ 'opacity-50 cursor-not-allowed': !cropperReady }"
                   :disabled="!cropperReady"
                   title="重置"
@@ -151,20 +151,20 @@
                 <div>
                   <div
                     ref="previewRef"
-                    class="preview-container w-40 h-40 rounded-lg overflow-hidden bg-gray-100 dark:bg-dark-200 border-2 border-gray-200 dark:border-white/10 mx-auto"
+                    class="preview-container w-40 h-40 rounded-lg overflow-hidden bg-gray-100 dark:bg-dark-100 border-2 border-gray-200 dark:border-white/10 mx-auto"
                   />
                   <p class="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">200 × 200 px</p>
                 </div>
                 <div>
                   <div
                     ref="previewSmallRef"
-                    class="preview-container w-20 h-20 rounded-full overflow-hidden bg-gray-100 dark:bg-dark-200 border-2 border-gray-200 dark:border-white/10 mx-auto"
+                    class="preview-container w-20 h-20 rounded-full overflow-hidden bg-gray-100 dark:bg-dark-100 border-2 border-gray-200 dark:border-white/10 mx-auto"
                   />
                   <p class="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">80 × 80 px</p>
                 </div>
               </div>
 
-              <div class="mt-6 p-3 bg-gray-50 dark:bg-dark-200/50 rounded-lg">
+              <div class="mt-6 p-3 bg-gray-50 dark:bg-dark-100/50 rounded-lg">
                 <p class="text-xs text-gray-500 dark:text-gray-400">
                   <span class="font-medium text-gray-700 dark:text-gray-300">提示：</span>
                   拖动选择框调整裁剪区域，使用上方按钮进行缩放和旋转。
@@ -174,7 +174,7 @@
           </div>
         </div>
 
-        <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-dark-200/50">
+        <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-dark-100/50">
           <button
             type="button"
             @click="handleCancel"

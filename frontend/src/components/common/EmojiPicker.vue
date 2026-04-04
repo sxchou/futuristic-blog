@@ -14,7 +14,7 @@
     <div
       v-if="showPicker"
       :class="[
-        'absolute z-[100] bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-lg shadow-lg p-3 w-72',
+        'absolute z-[100] bg-white dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg shadow-lg p-3 w-72',
         position === 'top' ? 'bottom-full mb-2 left-0' : 'top-full mt-2 left-0'
       ]"
     >

@@ -17,7 +17,7 @@ const getTagSize = (count: number) => {
 
 <template>
   <section class="pb-20 relative overflow-hidden">
-    <div class="absolute inset-0 bg-gradient-to-b from-gray-50 via-gray-100/50 to-gray-50 dark:from-dark dark:via-dark-100/50 dark:to-dark" />
+    <div class="absolute inset-0 bg-gradient-to-b from-gray-50 via-gray-100/50 to-gray-50 dark:from-dark-100 dark:via-dark-100/50 dark:to-dark-100" />
     
     <div class="container mx-auto px-4 relative z-10">
       <div class="text-center mb-12">

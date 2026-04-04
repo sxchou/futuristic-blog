@@ -86,7 +86,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-100 dark:bg-dark-200 flex">
+  <div class="min-h-screen bg-gray-100 dark:bg-dark-100 flex">
     <aside
       :class="[
         'fixed lg:static inset-y-0 left-0 z-50 w-52 bg-white dark:bg-dark-100 border-r border-gray-200 dark:border-white/10 transform transition-transform duration-300',
@@ -187,7 +187,7 @@ onMounted(() => {
     </aside>
 
     <div class="flex-1 flex flex-col min-h-screen">
-      <header class="sticky top-0 z-40 bg-white/80 dark:bg-dark-200/80 backdrop-blur-lg border-b border-gray-200 dark:border-white/10 px-4 py-3">
+      <header class="sticky top-0 z-40 bg-white/80 dark:bg-dark-100/80 backdrop-blur-lg border-b border-gray-200 dark:border-white/10 px-4 py-3">
         <div class="flex items-center justify-between">
           <button
             @click="isSidebarOpen = !isSidebarOpen"

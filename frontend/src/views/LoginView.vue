@@ -79,7 +79,7 @@ const getProviderIcon = (icon: string | null) => {
 const getProviderButtonClass = (provider: OAuthProviderResponse) => {
   const base = 'flex items-center justify-center w-9 h-9 rounded-full border transition-all duration-200'
   if (!provider.is_configured || !provider.is_enabled) {
-    return `${base} bg-gray-100 dark:bg-dark-200 border-gray-200 dark:border-white/10 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-60`
+    return `${base} bg-gray-100 dark:bg-dark-100 border-gray-200 dark:border-white/10 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-60`
   }
   switch (provider.name) {
     case 'google':
@@ -311,7 +311,7 @@ onMounted(fetchOAuthProviders)
               <div class="w-full border-t border-gray-200 dark:border-white/10"></div>
             </div>
             <div class="relative flex justify-center text-xs">
-              <span class="px-2 bg-white dark:bg-dark text-gray-500 dark:text-gray-400">或</span>
+              <span class="px-2 bg-white dark:bg-dark-100 text-gray-500 dark:text-gray-400">或</span>
             </div>
           </div>
 

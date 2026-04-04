@@ -282,7 +282,7 @@ onMounted(() => {
               <input
                 v-model="tech.category"
                 type="text"
-                class="px-2 py-1 text-sm bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
+                class="px-2 py-1 text-sm bg-white dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
                 placeholder="分类名称"
               />
               <button @click="removeTechCategory(index)" class="text-red-400 hover:text-red-300 text-sm">删除</button>
@@ -290,7 +290,7 @@ onMounted(() => {
             <input
               v-model="tech.items"
               type="text"
-              class="w-full px-2 py-1 text-sm bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
+              class="w-full px-2 py-1 text-sm bg-white dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
               placeholder="技术项（逗号分隔）"
             />
           </div>
@@ -330,26 +330,26 @@ onMounted(() => {
               <input
                 v-model="item.period"
                 type="text"
-                class="px-2 py-1 text-sm bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
+                class="px-2 py-1 text-sm bg-white dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
                 placeholder="时间段"
               />
               <input
                 v-model="item.company"
                 type="text"
-                class="px-2 py-1 text-sm bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
+                class="px-2 py-1 text-sm bg-white dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
                 placeholder="公司"
               />
             </div>
             <input
               v-model="item.position"
               type="text"
-              class="w-full px-2 py-1 text-sm bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
+              class="w-full px-2 py-1 text-sm bg-white dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
               placeholder="职位"
             />
             <textarea
               v-model="item.achievements"
               rows="2"
-              class="w-full px-2 py-1 text-sm bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none resize-none"
+              class="w-full px-2 py-1 text-sm bg-white dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none resize-none"
               placeholder="主要成就"
             />
           </div>
@@ -369,7 +369,7 @@ onMounted(() => {
                   type="text"
                   id="edu-period"
                   name="period"
-                  class="w-full px-2 py-1 text-sm bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
+                  class="w-full px-2 py-1 text-sm bg-white dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
                 />
               </div>
               <div>
@@ -379,7 +379,7 @@ onMounted(() => {
                   type="text"
                   id="edu-school"
                   name="school"
-                  class="w-full px-2 py-1 text-sm bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
+                  class="w-full px-2 py-1 text-sm bg-white dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
                 />
               </div>
             </div>
@@ -391,7 +391,7 @@ onMounted(() => {
                   type="text"
                   id="edu-major"
                   name="major"
-                  class="w-full px-2 py-1 text-sm bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
+                  class="w-full px-2 py-1 text-sm bg-white dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
                 />
               </div>
               <div>
@@ -401,7 +401,7 @@ onMounted(() => {
                   type="text"
                   id="edu-degree"
                   name="degree"
-                  class="w-full px-2 py-1 text-sm bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
+                  class="w-full px-2 py-1 text-sm bg-white dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
                 />
               </div>
             </div>

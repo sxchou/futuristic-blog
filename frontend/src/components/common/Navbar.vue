@@ -94,7 +94,7 @@ onMounted(() => {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <span class="text-sm hidden sm:inline">搜索</span>
-            <kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-dark-200 rounded text-sm hidden sm:inline">⌘K</kbd>
+            <kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-dark-100 rounded text-sm hidden sm:inline">⌘K</kbd>
           </button>
 
           <button

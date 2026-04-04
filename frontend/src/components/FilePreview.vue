@@ -573,7 +573,7 @@ onUnmounted(() => {
       class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm"
       @click.self="emit('close')"
     >
-      <div class="relative w-full h-full max-w-7xl max-h-[95vh] m-4 flex flex-col bg-white dark:bg-dark-300 rounded-xl overflow-hidden shadow-2xl border border-gray-200 dark:border-white/10">
+      <div class="relative w-full h-full max-w-7xl max-h-[95vh] m-4 flex flex-col bg-white dark:bg-dark-100 rounded-xl overflow-hidden shadow-2xl border border-gray-200 dark:border-white/10">
         <div class="flex items-center justify-between px-3 py-1 border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-gray-800/50">
           <div class="flex items-center gap-2 min-w-0 flex-1">
             <span 
@@ -718,7 +718,7 @@ onUnmounted(() => {
                   ></span>
                 </div>
                 <h4 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">{{ file.original_filename }}</h4>
-                <div class="bg-gray-100 dark:bg-dark-400 rounded-lg p-6 mt-4">
+                <div class="bg-gray-100 dark:bg-dark-100 rounded-lg p-6 mt-4">
                   <div class="flex items-center justify-between mb-3">
                     <span class="text-gray-500 dark:text-gray-400">类型:</span>
                     <span class="text-gray-900 dark:text-white font-medium">{{ officeFileType }} 文档</span>
@@ -742,7 +742,7 @@ onUnmounted(() => {
           </div>
 
           <div v-else-if="previewType === 'text'" class="h-full p-6">
-            <pre class="h-full overflow-auto p-4 bg-gray-100 dark:bg-dark-400 rounded-lg text-gray-800 dark:text-gray-100 text-sm font-mono whitespace-pre-wrap break-words border border-gray-200 dark:border-white/10">{{ textContent }}</pre>
+            <pre class="h-full overflow-auto p-4 bg-gray-100 dark:bg-dark-100 rounded-lg text-gray-800 dark:text-gray-100 text-sm font-mono whitespace-pre-wrap break-words border border-gray-200 dark:border-white/10">{{ textContent }}</pre>
           </div>
 
           <div v-else-if="previewType === 'audio'" class="flex items-center justify-center h-full p-8">
@@ -822,7 +822,7 @@ onUnmounted(() => {
                     v-model="searchQuery"
                     type="text"
                     placeholder="搜索文件（支持 * 和 ? 通配符）..."
-                    class="w-full px-2 py-1 text-xs bg-white dark:bg-dark-400 border border-gray-300 dark:border-white/10 rounded text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:outline-none"
+                    class="w-full px-2 py-1 text-xs bg-white dark:bg-dark-100 border border-gray-300 dark:border-white/10 rounded text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:outline-none"
                   />
                   <svg class="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -930,7 +930,7 @@ onUnmounted(() => {
                   ></span>
                 </div>
                 <h4 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">{{ file.original_filename }}</h4>
-                <div class="bg-gray-100 dark:bg-dark-400 rounded-lg p-6 mt-4">
+                <div class="bg-gray-100 dark:bg-dark-100 rounded-lg p-6 mt-4">
                   <div class="flex items-center justify-between mb-3">
                     <span class="text-gray-500 dark:text-gray-400">类型:</span>
                     <span class="text-gray-900 dark:text-white font-medium">{{ getArchiveInfo().type }}</span>

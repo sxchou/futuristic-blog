@@ -63,7 +63,7 @@ const handleSave = async () => {
             type="text"
             id="settings-site-name"
             name="site-name"
-            class="w-full px-4 py-2 bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none transition-colors"
+            class="w-full px-4 py-2 bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none transition-colors"
             placeholder="请输入网站名称"
           />
           <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -80,7 +80,7 @@ const handleSave = async () => {
             id="settings-site-description"
             name="site-description"
             rows="3"
-            class="w-full px-4 py-2 bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none transition-colors resize-none"
+            class="w-full px-4 py-2 bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none transition-colors resize-none"
             placeholder="请输入网站描述"
           />
           <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -97,7 +97,7 @@ const handleSave = async () => {
             type="text"
             id="settings-site-keywords"
             name="site-keywords"
-            class="w-full px-4 py-2 bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none transition-colors"
+            class="w-full px-4 py-2 bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none transition-colors"
             placeholder="请输入网站关键词，用逗号分隔"
           />
           <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -131,17 +131,17 @@ const handleSave = async () => {
       <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">预览效果</h2>
       
       <div class="space-y-4">
-        <div class="p-4 bg-gray-50 dark:bg-dark-200 rounded-lg">
+        <div class="p-4 bg-gray-50 dark:bg-dark-100 rounded-lg">
           <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">网站名称</p>
           <p class="text-xl font-bold gradient-text">{{ formData.siteName || 'Futuristic Blog' }}</p>
         </div>
         
-        <div class="p-4 bg-gray-50 dark:bg-dark-200 rounded-lg">
+        <div class="p-4 bg-gray-50 dark:bg-dark-100 rounded-lg">
           <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">网站描述</p>
           <p class="text-gray-700 dark:text-gray-300">{{ formData.siteDescription || '暂无描述' }}</p>
         </div>
         
-        <div class="p-4 bg-gray-50 dark:bg-dark-200 rounded-lg">
+        <div class="p-4 bg-gray-50 dark:bg-dark-100 rounded-lg">
           <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">网站关键词</p>
           <div class="flex flex-wrap gap-2">
             <span

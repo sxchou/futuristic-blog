@@ -158,7 +158,7 @@ onMounted(() => {
           <tr v-for="resource in resources" :key="resource.id" class="hover:bg-gray-50 dark:hover:bg-white/5">
             <td class="px-4 py-3">
               <div class="flex items-center gap-3">
-                <div v-if="resource.icon" class="w-8 h-8 rounded bg-gray-100 dark:bg-dark-200 flex items-center justify-center text-lg">
+                <div v-if="resource.icon" class="w-8 h-8 rounded bg-gray-100 dark:bg-dark-100 flex items-center justify-center text-lg">
                   {{ resource.icon }}
                 </div>
                 <div>
@@ -225,7 +225,7 @@ onMounted(() => {
               id="resource-title"
               name="title"
               required
-              class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white text-sm"
+              class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white text-sm"
             />
           </div>
 
@@ -237,7 +237,7 @@ onMounted(() => {
               id="resource-url"
               name="url"
               required
-              class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white text-sm"
+              class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white text-sm"
             />
           </div>
 
@@ -248,7 +248,7 @@ onMounted(() => {
               id="resource-description"
               name="description"
               rows="2"
-              class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white text-sm"
+              class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white text-sm"
             />
           </div>
 
@@ -259,7 +259,7 @@ onMounted(() => {
                 v-model="form.category"
                 id="resource-category"
                 name="category"
-                class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white text-sm"
+                class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white text-sm"
               >
                 <option v-for="opt in categoryOptions" :key="opt.value" :value="opt.value">
                   {{ opt.label }}
@@ -275,7 +275,7 @@ onMounted(() => {
                 id="resource-icon"
                 name="icon"
                 placeholder="emoji 或图标类名"
-                class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white text-sm"
+                class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white text-sm"
               />
             </div>
           </div>
@@ -289,7 +289,7 @@ onMounted(() => {
                 id="resource-order"
                 name="order"
                 min="0"
-                class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white text-sm"
+                class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white text-sm"
               />
             </div>
 

@@ -243,7 +243,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
       </div>
     </div>
 
-    <div v-if="!isAdmin" class="bg-white dark:bg-dark-200 rounded-xl border border-gray-200 dark:border-white/10 p-8 text-center">
+    <div v-if="!isAdmin" class="bg-white dark:bg-dark-100 rounded-xl border border-gray-200 dark:border-white/10 p-8 text-center">
       <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
         <svg class="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -253,7 +253,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
       <p class="text-gray-500 dark:text-gray-400">您没有权限访问此页面，请联系管理员</p>
     </div>
 
-    <div v-else class="bg-white dark:bg-dark-200 rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
+    <div v-else class="bg-white dark:bg-dark-100 rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
       <div class="p-4 border-b border-gray-200 dark:border-white/10 flex flex-wrap items-center justify-between gap-4">
         <div class="flex items-center gap-4">
           <select
@@ -427,7 +427,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
     </div>
 
     <div v-if="showAuditModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div class="bg-white dark:bg-dark-200 rounded-xl p-6 w-full max-w-md mx-4">
+      <div class="bg-white dark:bg-dark-100 rounded-xl p-6 w-full max-w-md mx-4">
         <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">审核评论</h3>
         <div class="space-y-4">
           <div>
@@ -473,7 +473,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
     </div>
 
     <div v-if="showBatchAuditModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div class="bg-white dark:bg-dark-200 rounded-xl p-6 w-full max-w-md mx-4">
+      <div class="bg-white dark:bg-dark-100 rounded-xl p-6 w-full max-w-md mx-4">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">批量审核</h3>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
           将对 {{ selectedComments.length }} 条评论进行批量操作
@@ -522,7 +522,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
     </div>
 
     <div v-if="showLogsModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div class="bg-white dark:bg-dark-200 rounded-xl p-6 w-full max-w-lg mx-4 max-h-[80vh] overflow-y-auto">
+      <div class="bg-white dark:bg-dark-100 rounded-xl p-6 w-full max-w-lg mx-4 max-h-[80vh] overflow-y-auto">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-sm font-semibold text-gray-900 dark:text-white">审核日志</h3>
           <button
@@ -580,7 +580,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
     </div>
 
     <div v-if="showDeleteModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div class="bg-white dark:bg-dark-200 rounded-xl p-6 w-full max-w-md mx-4">
+      <div class="bg-white dark:bg-dark-100 rounded-xl p-6 w-full max-w-md mx-4">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">删除评论</h3>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
           请选择删除方式：
@@ -624,7 +624,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
     </div>
 
     <div v-if="showBatchDeleteModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div class="bg-white dark:bg-dark-200 rounded-xl p-6 w-full max-w-md mx-4">
+      <div class="bg-white dark:bg-dark-100 rounded-xl p-6 w-full max-w-md mx-4">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">批量删除评论</h3>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
           将删除 <span class="font-medium text-red-500">{{ selectedComments.length }}</span> 条评论，请选择删除方式：

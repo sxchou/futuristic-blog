@@ -386,7 +386,7 @@ function getProviderBgColor(provider: string) {
             'px-3 py-1.5 text-sm rounded-md font-medium transition-colors',
             activeTab === 'config'
               ? 'bg-primary text-white'
-              : 'bg-gray-100 dark:bg-dark-200 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-300'
+              : 'bg-gray-100 dark:bg-dark-100 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-300'
           ]"
         >
           配置
@@ -397,7 +397,7 @@ function getProviderBgColor(provider: string) {
             'px-3 py-1.5 text-sm rounded-md font-medium transition-colors',
             activeTab === 'logs'
               ? 'bg-primary text-white'
-              : 'bg-gray-100 dark:bg-dark-200 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-300'
+              : 'bg-gray-100 dark:bg-dark-100 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-300'
           ]"
         >
           日志
@@ -516,7 +516,7 @@ function getProviderBgColor(provider: string) {
               v-model="testResendEmail"
               type="email"
               placeholder="输入测试邮箱地址"
-              class="flex-1 px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-md text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:outline-none"
+              class="flex-1 px-3 py-2 text-sm bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-md text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:outline-none"
             />
             <button
               @click="sendResendTestEmail"
@@ -549,7 +549,7 @@ function getProviderBgColor(provider: string) {
 
           <table v-else class="w-full">
             <thead>
-              <tr class="border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-dark-200/50">
+              <tr class="border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-dark-100/50">
                 <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5">服务商</th>
                 <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5">邮箱账号</th>
                 <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5">发件人</th>
@@ -635,7 +635,7 @@ function getProviderBgColor(provider: string) {
               v-model="testEmail"
               type="email"
               placeholder="输入测试邮箱地址"
-              class="flex-1 px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-md text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:outline-none"
+              class="flex-1 px-3 py-2 text-sm bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-md text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:outline-none"
             />
             <button
               @click="sendTestEmail"
@@ -656,7 +656,7 @@ function getProviderBgColor(provider: string) {
           <select
             v-model="logsFilter.email_type"
             @change="logsPage = 1; loadLogs()"
-            class="px-2 py-1 text-sm bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-md text-gray-900 dark:text-white"
+            class="px-2 py-1 text-sm bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-md text-gray-900 dark:text-white"
           >
             <option value="">全部类型</option>
             <option value="verification">邮箱验证</option>
@@ -665,7 +665,7 @@ function getProviderBgColor(provider: string) {
           <select
             v-model="logsFilter.status"
             @change="logsPage = 1; loadLogs()"
-            class="px-2 py-1 text-sm bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-md text-gray-900 dark:text-white"
+            class="px-2 py-1 text-sm bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-md text-gray-900 dark:text-white"
           >
             <option value="">全部状态</option>
             <option value="sent">已发送</option>
@@ -680,7 +680,7 @@ function getProviderBgColor(provider: string) {
 
         <table v-else class="w-full">
           <thead>
-            <tr class="border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-dark-200/50">
+            <tr class="border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-dark-100/50">
               <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5">收件人</th>
               <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5">类型</th>
               <th class="text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5 w-24">状态</th>
@@ -726,7 +726,7 @@ function getProviderBgColor(provider: string) {
                 'px-2 py-1 text-xs rounded transition-colors',
                 logsPage === page
                   ? 'bg-primary text-white'
-                  : 'bg-gray-100 dark:bg-dark-200 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-300'
+                  : 'bg-gray-100 dark:bg-dark-100 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-300'
               ]"
             >
               {{ page }}
@@ -830,7 +830,7 @@ function getProviderBgColor(provider: string) {
                     name="smtp-user"
                     autocomplete="email"
                     :placeholder="configForm.provider === 'qq' ? 'QQ邮箱' : '邮箱地址'"
-                    class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
+                    class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
                   />
                 </div>
                 <div>
@@ -844,7 +844,7 @@ function getProviderBgColor(provider: string) {
                     name="smtp-password"
                     autocomplete="new-password"
                     :placeholder="editingConfig ? '留空保持原值' : '授权码/密码'"
-                    class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
+                    class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
                   />
                 </div>
               </div>
@@ -861,7 +861,7 @@ function getProviderBgColor(provider: string) {
                     name="from-email"
                     autocomplete="email"
                     placeholder="发件人邮箱"
-                    class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
+                    class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
                   />
                 </div>
                 <div>
@@ -874,14 +874,14 @@ function getProviderBgColor(provider: string) {
                     id="email-from-name"
                     name="from-name"
                     placeholder="显示名称"
-                    class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
+                    class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
                   />
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="flex items-center justify-end gap-2 px-4 py-3 border-t border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-dark-200/30">
+          <div class="flex items-center justify-end gap-2 px-4 py-3 border-t border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-dark-100/30">
             <button
               @click="closeEditModal"
               type="button"

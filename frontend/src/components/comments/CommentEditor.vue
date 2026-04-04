@@ -396,7 +396,7 @@ defineExpose({
         
         <div
           v-if="showLangSelector"
-          class="fixed z-[200] bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-lg shadow-lg py-1 w-40 max-h-60 overflow-y-auto"
+          class="fixed z-[200] bg-white dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg shadow-lg py-1 w-40 max-h-60 overflow-y-auto"
           :style="{ top: langSelectorPosition.top + 'px', left: langSelectorPosition.left + 'px' }"
         >
           <div class="px-2 py-1 text-xs text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-white/10">
@@ -457,7 +457,7 @@ defineExpose({
     <!-- Markdown 语法帮助 -->
     <div 
       v-if="showMarkdownHelp && !isFullscreen" 
-      class="mb-2 p-3 bg-gray-50 dark:bg-dark-200/50 border border-gray-200 dark:border-white/10 rounded-lg text-xs text-gray-600 dark:text-gray-400"
+      class="mb-2 p-3 bg-gray-50 dark:bg-dark-100/50 border border-gray-200 dark:border-white/10 rounded-lg text-xs text-gray-600 dark:text-gray-400"
     >
       <div class="flex justify-between items-center mb-3">
         <span class="font-medium text-gray-700 dark:text-gray-300">Markdown 语法参考</span>
@@ -558,7 +558,7 @@ defineExpose({
       style="height: calc(100vh - 32px);"
     >
       <!-- 上下文信息区域 -->
-      <div class="flex-shrink-0 mb-2 p-2 bg-gray-100 dark:bg-dark-200/50 rounded-lg border border-gray-200 dark:border-white/10">
+      <div class="flex-shrink-0 mb-2 p-2 bg-gray-100 dark:bg-dark-100/50 rounded-lg border border-gray-200 dark:border-white/10">
         <div v-if="replyTo" class="text-sm">
           <span class="text-gray-500 dark:text-gray-400">回复 </span>
           <span class="text-primary font-medium">@{{ replyTo }}</span>
@@ -576,7 +576,7 @@ defineExpose({
       <div class="flex gap-3 flex-1 min-h-0">
         <!-- 编辑区 -->
         <div class="flex-1 flex flex-col border border-gray-200 dark:border-white/10 rounded-lg overflow-visible">
-          <div class="flex-shrink-0 min-h-8 px-3 py-1 bg-gray-50 dark:bg-dark-200 border-b border-gray-200 dark:border-white/10 rounded-t-lg flex justify-between items-center">
+          <div class="flex-shrink-0 min-h-8 px-3 py-1 bg-gray-50 dark:bg-dark-100 border-b border-gray-200 dark:border-white/10 rounded-t-lg flex justify-between items-center">
             <span class="text-xs text-gray-500 dark:text-gray-400">编辑</span>
             <div class="flex flex-wrap items-center gap-0.5">
               <button
@@ -600,7 +600,7 @@ defineExpose({
                 </button>
                 <div
                   v-if="showLangSelector"
-                  class="fixed z-[200] bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-lg shadow-lg py-1 w-40 max-h-60 overflow-y-auto"
+                  class="fixed z-[200] bg-white dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg shadow-lg py-1 w-40 max-h-60 overflow-y-auto"
                   :style="{ top: langSelectorPosition.top + 'px', left: langSelectorPosition.left + 'px' }"
                 >
                   <div class="px-2 py-1 text-xs text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-white/10">
@@ -634,7 +634,7 @@ defineExpose({
         
         <!-- 预览区 -->
         <div class="flex-1 flex flex-col border border-gray-200 dark:border-white/10 rounded-lg overflow-hidden">
-          <div class="flex-shrink-0 h-8 px-3 bg-gray-50 dark:bg-dark-200 border-b border-gray-200 dark:border-white/10 rounded-t-lg flex items-center">
+          <div class="flex-shrink-0 h-8 px-3 bg-gray-50 dark:bg-dark-100 border-b border-gray-200 dark:border-white/10 rounded-t-lg flex items-center">
             <span class="text-xs text-gray-500 dark:text-gray-400">预览</span>
           </div>
           <div 
@@ -687,7 +687,7 @@ defineExpose({
       
       <div 
         v-if="showPreview && modelValue" 
-        class="mt-3 p-3 bg-gray-50 dark:bg-dark-200/50 rounded-lg border border-gray-200 dark:border-white/5"
+        class="mt-3 p-3 bg-gray-50 dark:bg-dark-100/50 rounded-lg border border-gray-200 dark:border-white/5"
       >
         <div class="text-xs text-gray-500 dark:text-gray-400 mb-2">预览</div>
         <CommentMarkdownPreview :content="previewContent" :show-lang-label="true" />

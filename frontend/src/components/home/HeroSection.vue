@@ -187,7 +187,7 @@ onUnmounted(() => {
           <div class="flex items-center gap-2">
             <button
               @click="prevSlide"
-              class="w-8 h-8 rounded-full bg-gray-100 dark:bg-dark-200 flex items-center justify-center hover:bg-primary/20 transition-colors"
+              class="w-8 h-8 rounded-full bg-gray-100 dark:bg-dark-100 flex items-center justify-center hover:bg-primary/20 transition-colors"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -195,7 +195,7 @@ onUnmounted(() => {
             </button>
             <button
               @click="nextSlide"
-              class="w-8 h-8 rounded-full bg-gray-100 dark:bg-dark-200 flex items-center justify-center hover:bg-primary/20 transition-colors"
+              class="w-8 h-8 rounded-full bg-gray-100 dark:bg-dark-100 flex items-center justify-center hover:bg-primary/20 transition-colors"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />

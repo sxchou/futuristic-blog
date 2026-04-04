@@ -354,7 +354,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 v-model="form.is_admin"
                 id="user-is-admin"
                 name="is_admin"
-                class="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-200 text-primary focus:ring-primary"
+                class="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-100 text-primary focus:ring-primary"
               />
               <span class="text-gray-700 dark:text-gray-300 text-sm">管理员权限</span>
             </label>
