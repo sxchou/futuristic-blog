@@ -483,62 +483,104 @@ async def get_storage_info(
         "total_files": 0,
         "directories": {},
         "orphan_files": [],
-        "db_files_count": 0
+        "db_files_count": 0,
+        "storage_type": "supabase" if supabase_storage.is_enabled() else "local"
     }
     
     db_files = db.query(ArticleFile).all()
     result["db_files_count"] = len(db_files)
-    db_file_paths = {f.file_path for f in db_files}
-    db_file_map = {f.file_path: f for f in db_files}
     
-    PROTECTED_DIRS = {'avatars'}
-    
-    if os.path.exists(UPLOAD_DIR):
-        for root, dirs, files in os.walk(UPLOAD_DIR):
-            rel_path = os.path.relpath(root, UPLOAD_DIR)
-            dir_name = rel_path if rel_path != "." else "root"
+    if supabase_storage.is_enabled():
+        result["upload_dir"] = f"{settings.SUPABASE_URL}/storage/v1/object/public/{settings.SUPABASE_BUCKET}"
+        
+        dir_stats = {}
+        for f in db_files:
+            folder = "articles"
+            if "images/" in f.file_path:
+                folder = "images"
+            elif "avatars/" in f.file_path:
+                folder = "avatars"
+            elif "videos/" in f.file_path:
+                folder = "videos"
+            elif "audio/" in f.file_path:
+                folder = "audio"
             
-            is_protected = dir_name in PROTECTED_DIRS or dir_name.startswith('avatars/')
+            if folder not in dir_stats:
+                dir_stats[folder] = {"size": 0, "files": []}
             
-            dir_size = 0
-            dir_files = []
-            
-            for file in files:
-                file_path = os.path.join(root, file)
-                try:
-                    file_size = os.path.getsize(file_path)
-                    file_stat = os.stat(file_path)
-                    dir_size += file_size
-                    result["total_size"] += file_size
-                    result["total_files"] += 1
-                    
-                    db_file = db_file_map.get(file_path)
-                    display_name = db_file.original_filename if db_file else file
-                    
-                    file_info = {
-                        "name": file,
-                        "display_name": display_name,
-                        "path": file_path,
-                        "size": file_size,
-                        "size_formatted": format_file_size(file_size),
-                        "modified": datetime.fromtimestamp(file_stat.st_mtime).isoformat(),
-                        "is_avatar": dir_name == 'avatars' or dir_name.startswith('avatars/')
-                    }
-                    dir_files.append(file_info)
-                    
-                    if file_path not in db_file_paths and not is_protected:
-                        result["orphan_files"].append(file_info)
-                        
-                except Exception as e:
-                    pass
-            
-            result["directories"][dir_name] = {
-                "size": dir_size,
-                "size_formatted": format_file_size(dir_size),
-                "file_count": len(dir_files),
-                "files": dir_files[:20],
-                "is_protected": is_protected
+            dir_stats[folder]["size"] += f.file_size or 0
+            dir_stats[folder]["files"].append({
+                "name": f.filename,
+                "display_name": f.original_filename,
+                "path": f.file_path,
+                "size": f.file_size or 0,
+                "size_formatted": format_file_size(f.file_size or 0),
+                "modified": f.created_at.isoformat() if f.created_at else "",
+                "is_avatar": folder == "avatars"
+            })
+            result["total_size"] += f.file_size or 0
+            result["total_files"] += 1
+        
+        for folder, stats in dir_stats.items():
+            result["directories"][folder] = {
+                "size": stats["size"],
+                "size_formatted": format_file_size(stats["size"]),
+                "file_count": len(stats["files"]),
+                "files": stats["files"][:20],
+                "is_protected": folder == "avatars"
             }
+    else:
+        db_file_paths = {f.file_path for f in db_files}
+        db_file_map = {f.file_path: f for f in db_files}
+        
+        PROTECTED_DIRS = {'avatars'}
+        
+        if os.path.exists(UPLOAD_DIR):
+            for root, dirs, files in os.walk(UPLOAD_DIR):
+                rel_path = os.path.relpath(root, UPLOAD_DIR)
+                dir_name = rel_path if rel_path != "." else "root"
+                
+                is_protected = dir_name in PROTECTED_DIRS or dir_name.startswith('avatars/')
+                
+                dir_size = 0
+                dir_files = []
+                
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    try:
+                        file_size = os.path.getsize(file_path)
+                        file_stat = os.stat(file_path)
+                        dir_size += file_size
+                        result["total_size"] += file_size
+                        result["total_files"] += 1
+                        
+                        db_file = db_file_map.get(file_path)
+                        display_name = db_file.original_filename if db_file else file
+                        
+                        file_info = {
+                            "name": file,
+                            "display_name": display_name,
+                            "path": file_path,
+                            "size": file_size,
+                            "size_formatted": format_file_size(file_size),
+                            "modified": datetime.fromtimestamp(file_stat.st_mtime).isoformat(),
+                            "is_avatar": dir_name == 'avatars' or dir_name.startswith('avatars/')
+                        }
+                        dir_files.append(file_info)
+                        
+                        if file_path not in db_file_paths and not is_protected:
+                            result["orphan_files"].append(file_info)
+                            
+                    except Exception as e:
+                        pass
+                
+                result["directories"][dir_name] = {
+                    "size": dir_size,
+                    "size_formatted": format_file_size(dir_size),
+                    "file_count": len(dir_files),
+                    "files": dir_files[:20],
+                    "is_protected": is_protected
+                }
     
     result["total_size_formatted"] = format_file_size(result["total_size"])
     result["orphan_count"] = len(result["orphan_files"])
