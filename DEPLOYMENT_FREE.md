@@ -67,19 +67,35 @@
 
 6. 添加环境变量：
 
-| 变量名 | 值 |
-|--------|-----|
-| `DATABASE_URL` | Neon 数据库连接字符串 |
-| `SECRET_KEY` | 随机字符串（可用 `openssl rand -hex 32` 生成） |
-| `ALGORITHM` | `HS256` |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | `1440` |
-| `DEBUG` | `false` |
-| `ALLOWED_ORIGINS` | `https://你的前端域名.vercel.app` |
-| `FRONTEND_URL` | `https://你的前端域名.vercel.app` |
-| `USE_SUPABASE_STORAGE` | `true` |
-| `SUPABASE_URL` | `https://xxx.supabase.co` |
-| `SUPABASE_KEY` | 你的 anon public key |
-| `SUPABASE_BUCKET` | `blog-files` |
+### 必填变量
+
+| 变量名 | 值 | 说明 |
+|--------|-----|------|
+| `DATABASE_URL` | Neon 连接字符串 | 数据库连接 |
+| `SECRET_KEY` | 随机字符串 | JWT 密钥（至少 32 位） |
+| `ALLOWED_ORIGINS` | `https://你的前端域名.vercel.app` | CORS 允许的域名 |
+| `FRONTEND_URL` | `https://你的前端域名.vercel.app` | 前端地址 |
+
+### 可选变量（有默认值）
+
+| 变量名 | 默认值 | 说明 |
+|--------|--------|------|
+| `ALGORITHM` | `HS256` | JWT 算法 |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | `43200` | Token 过期时间（分钟） |
+| `ADMIN_USERNAME` | `admin` | 管理员用户名 |
+| `ADMIN_PASSWORD` | `admin123` | 管理员密码（**建议修改**） |
+| `ADMIN_EMAIL` | `admin@futuristic-blog.com` | 管理员邮箱 |
+| `SITE_URL` | `https://zhouzhouya.top` | 网站地址 |
+| `TIMEZONE` | `Asia/Shanghai` | 时区 |
+
+### Supabase 存储变量（使用云存储时填写）
+
+| 变量名 | 值 | 说明 |
+|--------|-----|------|
+| `USE_SUPABASE_STORAGE` | `true` | 启用 Supabase 存储 |
+| `SUPABASE_URL` | `https://xxx.supabase.co` | Supabase 项目 URL |
+| `SUPABASE_KEY` | `anon public key` | Supabase 公开密钥 |
+| `SUPABASE_BUCKET` | `blog-files` | 存储桶名称 |
 
 7. 点击 "Create Web Service"
 8. 等待部署完成，记录后端 URL（如：`https://futuristic-blog-backend.onrender.com`）

@@ -23,6 +23,13 @@ class Settings(BaseSettings):
     ADMIN_EMAIL: str = "admin@futuristic-blog.com"
     
     CORS_ORIGINS: List[str] = ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000"]
+    ALLOWED_ORIGINS: str = ""
+    
+    @property
+    def get_cors_origins(self) -> List[str]:
+        if self.ALLOWED_ORIGINS:
+            return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
+        return self.CORS_ORIGINS
     
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587
