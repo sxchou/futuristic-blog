@@ -19,17 +19,13 @@ services:
         value: false
       - key: PYTHONUNBUFFERED
         value: 1
-      - key: USE_R2_STORAGE
+      - key: USE_SUPABASE_STORAGE
         value: false
-      - key: R2_ACCESS_KEY
+      - key: SUPABASE_URL
         sync: false
-      - key: R2_SECRET_KEY
+      - key: SUPABASE_KEY
         sync: false
-      - key: R2_BUCKET_NAME
-        sync: false
-      - key: R2_ENDPOINT_URL
-        sync: false
-      - key: R2_PUBLIC_URL
+      - key: SUPABASE_BUCKET
         sync: false
       - key: ALLOWED_ORIGINS
         sync: false

@@ -44,13 +44,11 @@ class Settings(BaseSettings):
     SITE_URL: str = "https://zhouzhouya.top"
     BAIDU_PUSH_TOKEN: str = ""
     
-    R2_ACCESS_KEY: str = ""
-    R2_SECRET_KEY: str = ""
-    R2_BUCKET_NAME: str = ""
-    R2_ENDPOINT_URL: str = ""
-    R2_PUBLIC_URL: str = ""
+    SUPABASE_URL: str = ""
+    SUPABASE_KEY: str = ""
+    SUPABASE_BUCKET: str = ""
     
-    USE_R2_STORAGE: bool = False
+    USE_SUPABASE_STORAGE: bool = False
     
     @property
     def tz(self) -> "ZoneInfo":
