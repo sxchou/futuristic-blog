@@ -11,6 +11,8 @@ from app.schemas import UserProfileResponse, UserProfileUpdate
 from app.utils.auth import get_current_user
 from app.services.log_service import LogService
 from app.services.avatar_service import AvatarFileService
+from app.services.supabase_storage import supabase_storage
+from io import BytesIO
 
 router = APIRouter(prefix="/user-profile", tags=["UserProfile"])
 logger = logging.getLogger(__name__)
@@ -92,17 +94,26 @@ async def save_avatar_file(file: UploadFile, user_id: int) -> str:
     timestamp = int(time.time() * 1000)
     filename = f"avatar_{user_id}_{timestamp}{ext}"
     
-    avatar_path = AvatarFileService.get_avatar_base_path()
-    file_path = avatar_path / filename
-    
     content = await file.read()
     if len(content) > MAX_FILE_SIZE:
         raise HTTPException(status_code=400, detail="文件大小不能超过5MB")
     
-    with open(file_path, "wb") as f:
-        f.write(content)
-    
-    return f"/uploads/avatars/{filename}"
+    if supabase_storage.is_enabled():
+        storage_key = f"avatars/{filename}"
+        file_io = BytesIO(content)
+        public_url = await supabase_storage.upload_file(file_io, storage_key, file.content_type)
+        if public_url:
+            return public_url
+        else:
+            raise HTTPException(status_code=500, detail="头像上传到 Supabase 失败")
+    else:
+        avatar_path = AvatarFileService.get_avatar_base_path()
+        file_path = avatar_path / filename
+        
+        with open(file_path, "wb") as f:
+            f.write(content)
+        
+        return f"/uploads/avatars/{filename}"
 
 
 @router.get("", response_model=UserProfileResponse)

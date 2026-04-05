@@ -7,7 +7,7 @@ import gzip
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from app.core.database import get_db
@@ -16,6 +16,8 @@ from app.schemas import ArticleFileResponse, FileOrderUpdate
 from app.utils import get_current_active_user
 from app.utils.timezone import get_now
 from app.core.config import settings
+from app.services.supabase_storage import supabase_storage
+from io import BytesIO
 
 try:
     import rarfile
@@ -244,20 +246,30 @@ async def upload_file(
     unique_filename = f"{get_now().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:8]}{file_ext}"
     
     if is_image:
-        file_path = os.path.join(UPLOAD_DIR, "images", unique_filename)
+        folder = "images"
     elif is_audio:
-        file_path = os.path.join(UPLOAD_DIR, "audio", unique_filename)
+        folder = "audio"
     elif is_video:
-        file_path = os.path.join(UPLOAD_DIR, "videos", unique_filename)
+        folder = "videos"
     else:
-        file_path = os.path.join(UPLOAD_DIR, "articles", unique_filename)
+        folder = "articles"
     
-    dir_path = os.path.dirname(file_path)
-    if not os.path.exists(dir_path):
-        os.makedirs(dir_path)
+    storage_key = f"{folder}/{unique_filename}"
     
-    async with aiofiles.open(file_path, 'wb') as f:
-        await f.write(content)
+    if supabase_storage.is_enabled():
+        file_io = BytesIO(content)
+        public_url = await supabase_storage.upload_file(file_io, storage_key, mime_type)
+        if public_url:
+            file_path = public_url
+        else:
+            raise HTTPException(status_code=500, detail="文件上传到 Supabase 失败")
+    else:
+        file_path = os.path.join(UPLOAD_DIR, folder, unique_filename)
+        dir_path = os.path.dirname(file_path)
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+        async with aiofiles.open(file_path, 'wb') as f:
+            await f.write(content)
     
     db_file = ArticleFile(
         filename=unique_filename,
@@ -301,10 +313,19 @@ async def upload_image(
     file_ext = os.path.splitext(file.filename)[1] if file.filename else ".jpg"
     unique_filename = f"{get_now().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:8]}{file_ext}"
     
-    file_path = os.path.join(UPLOAD_DIR, "images", unique_filename)
+    storage_key = f"images/{unique_filename}"
     
-    async with aiofiles.open(file_path, 'wb') as f:
-        await f.write(content)
+    if supabase_storage.is_enabled():
+        file_io = BytesIO(content)
+        public_url = await supabase_storage.upload_file(file_io, storage_key, mime_type)
+        if public_url:
+            file_path = public_url
+        else:
+            raise HTTPException(status_code=500, detail="文件上传到 Supabase 失败")
+    else:
+        file_path = os.path.join(UPLOAD_DIR, "images", unique_filename)
+        async with aiofiles.open(file_path, 'wb') as f:
+            await f.write(content)
     
     db_file = ArticleFile(
         filename=unique_filename,
@@ -360,11 +381,14 @@ async def download_file(
     if not db_file:
         raise HTTPException(status_code=404, detail="文件不存在")
     
-    if not os.path.exists(db_file.file_path):
-        raise HTTPException(status_code=404, detail="文件已被删除")
-    
     db_file.download_count += 1
     db.commit()
+    
+    if db_file.file_path.startswith("http"):
+        return RedirectResponse(url=db_file.file_path)
+    
+    if not os.path.exists(db_file.file_path):
+        raise HTTPException(status_code=404, detail="文件已被删除")
     
     return FileResponse(
         path=db_file.file_path,
@@ -409,8 +433,18 @@ async def delete_file(
     filename = db_file.original_filename
     
     try:
-        if file_path and os.path.exists(file_path):
-            os.remove(file_path)
+        if file_path:
+            if file_path.startswith("http") and supabase_storage.is_enabled():
+                storage_key = f"{db_file.filename}"
+                if "images/" in file_path:
+                    storage_key = f"images/{storage_key}"
+                elif "articles/" in file_path:
+                    storage_key = f"articles/{storage_key}"
+                elif "avatars/" in file_path:
+                    storage_key = f"avatars/{storage_key}"
+                await supabase_storage.delete_file(storage_key)
+            elif os.path.exists(file_path):
+                os.remove(file_path)
     except Exception as e:
         pass
     
