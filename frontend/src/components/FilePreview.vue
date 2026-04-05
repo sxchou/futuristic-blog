@@ -97,10 +97,6 @@ const downloadUrl = computed(() => {
   return fileApi.getDownloadUrl(props.file.id)
 })
 
-const contentUrl = computed(() => {
-  return fileApi.getContentUrl(props.file.id)
-})
-
 const isLocalhost = computed(() => {
   const hostname = window.location.hostname
   return hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.')
@@ -439,7 +435,7 @@ const fetchTextContent = async () => {
   error.value = ''
   
   try {
-    const response = await fetch(contentUrl.value)
+    const response = await fetch(downloadUrl.value)
     if (!response.ok) throw new Error('加载失败')
     
     const text = await response.text()
@@ -678,7 +674,7 @@ onUnmounted(() => {
               @mouseleave="handleMouseUp"
             >
               <img
-                :src="contentUrl"
+                :src="downloadUrl"
                 :alt="file.original_filename"
                 class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-lg shadow-lg transition-transform duration-75"
                 :style="{
@@ -694,7 +690,7 @@ onUnmounted(() => {
 
           <div v-else-if="previewType === 'pdf'" class="h-full">
             <iframe
-              :src="contentUrl"
+              :src="downloadUrl"
               class="w-full h-full border-0"
               @load="handleIframeLoad"
               @error="handleIframeError"
@@ -763,7 +759,7 @@ onUnmounted(() => {
               </div>
               <h4 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">{{ file.original_filename }}</h4>
               <audio
-                :src="contentUrl"
+                :src="downloadUrl"
                 controls
                 class="w-full max-w-md"
               >
@@ -774,7 +770,7 @@ onUnmounted(() => {
 
           <div v-else-if="previewType === 'video'" class="flex items-center justify-center h-full p-4">
             <video
-              :src="contentUrl"
+              :src="downloadUrl"
               controls
               class="max-w-full max-h-full rounded-lg shadow-lg"
             >

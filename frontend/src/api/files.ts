@@ -224,10 +224,6 @@ export const fileApi = {
     return `${apiClient.defaults.baseURL}/files/${fileId}/download`
   },
 
-  getContentUrl(fileId: number): string {
-    return `${apiClient.defaults.baseURL}/files/${fileId}/content`
-  },
-
   async downloadFile(fileId: number): Promise<{ data: Blob }> {
     const response = await apiClient.get(`/files/${fileId}/download`, {
       responseType: 'blob'

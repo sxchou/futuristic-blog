@@ -8,7 +8,7 @@ import httpx
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
-from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from app.core.database import get_db
@@ -386,18 +386,7 @@ async def download_file(
     db.commit()
     
     if db_file.file_path.startswith("http"):
-        async def stream_from_supabase():
-            async with httpx.AsyncClient(timeout=60.0) as client:
-                response = await client.get(db_file.file_path, follow_redirects=True)
-                yield response.content
-        
-        return StreamingResponse(
-            stream_from_supabase(),
-            media_type=db_file.mime_type or "application/octet-stream",
-            headers={
-                "Content-Disposition": f'attachment; filename="{db_file.original_filename}"'
-            }
-        )
+        return RedirectResponse(url=db_file.file_path)
     
     if not os.path.exists(db_file.file_path):
         raise HTTPException(status_code=404, detail="文件已被删除")
@@ -429,35 +418,6 @@ async def preview_file(
         "preview_count": db_file.preview_count,
         "file_id": file_id
     }
-
-
-@router.get("/{file_id}/content")
-async def get_file_content(
-    file_id: int,
-    db: Session = Depends(get_db)
-):
-    db_file = db.query(ArticleFile).filter(ArticleFile.id == file_id).first()
-    if not db_file:
-        raise HTTPException(status_code=404, detail="文件不存在")
-    
-    if db_file.file_path.startswith("http"):
-        async def stream_from_supabase():
-            async with httpx.AsyncClient(timeout=60.0) as client:
-                response = await client.get(db_file.file_path, follow_redirects=True)
-                yield response.content
-        
-        return StreamingResponse(
-            stream_from_supabase(),
-            media_type=db_file.mime_type or "application/octet-stream"
-        )
-    
-    if not os.path.exists(db_file.file_path):
-        raise HTTPException(status_code=404, detail="文件已被删除")
-    
-    return FileResponse(
-        path=db_file.file_path,
-        media_type=db_file.mime_type
-    )
 
 
 @router.delete("/{file_id}")
