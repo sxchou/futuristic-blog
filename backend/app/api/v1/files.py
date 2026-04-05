@@ -4,10 +4,11 @@ import aiofiles
 import zipfile
 import tarfile
 import gzip
+import httpx
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from app.core.database import get_db
@@ -385,7 +386,18 @@ async def download_file(
     db.commit()
     
     if db_file.file_path.startswith("http"):
-        return RedirectResponse(url=db_file.file_path)
+        async def stream_from_supabase():
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                response = await client.get(db_file.file_path, follow_redirects=True)
+                yield response.content
+        
+        return StreamingResponse(
+            stream_from_supabase(),
+            media_type=db_file.mime_type or "application/octet-stream",
+            headers={
+                "Content-Disposition": f'attachment; filename="{db_file.original_filename}"'
+            }
+        )
     
     if not os.path.exists(db_file.file_path):
         raise HTTPException(status_code=404, detail="文件已被删除")
@@ -417,6 +429,35 @@ async def preview_file(
         "preview_count": db_file.preview_count,
         "file_id": file_id
     }
+
+
+@router.get("/{file_id}/content")
+async def get_file_content(
+    file_id: int,
+    db: Session = Depends(get_db)
+):
+    db_file = db.query(ArticleFile).filter(ArticleFile.id == file_id).first()
+    if not db_file:
+        raise HTTPException(status_code=404, detail="文件不存在")
+    
+    if db_file.file_path.startswith("http"):
+        async def stream_from_supabase():
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                response = await client.get(db_file.file_path, follow_redirects=True)
+                yield response.content
+        
+        return StreamingResponse(
+            stream_from_supabase(),
+            media_type=db_file.mime_type or "application/octet-stream"
+        )
+    
+    if not os.path.exists(db_file.file_path):
+        raise HTTPException(status_code=404, detail="文件已被删除")
+    
+    return FileResponse(
+        path=db_file.file_path,
+        media_type=db_file.mime_type
+    )
 
 
 @router.delete("/{file_id}")
@@ -918,26 +959,41 @@ async def get_archive_content(
     if not db_file:
         raise HTTPException(status_code=404, detail="文件不存在")
     
-    if not os.path.exists(db_file.file_path):
-        raise HTTPException(status_code=404, detail="文件不存在")
-    
     ext = os.path.splitext(db_file.original_filename)[1].lower()
     
+    temp_file_path = None
+    
     try:
+        if db_file.file_path.startswith("http"):
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                response = await client.get(db_file.file_path, follow_redirects=True)
+                if response.status_code != 200:
+                    raise HTTPException(status_code=404, detail="文件下载失败")
+                
+                import tempfile
+                with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as temp_file:
+                    temp_file.write(response.content)
+                    temp_file_path = temp_file.name
+                file_path = temp_file_path
+        else:
+            if not os.path.exists(db_file.file_path):
+                raise HTTPException(status_code=404, detail="文件不存在")
+            file_path = db_file.file_path
+        
         if ext == '.zip':
-            result = parse_zip(db_file.file_path)
+            result = parse_zip(file_path)
         elif ext == '.tar':
-            result = parse_tar(db_file.file_path, 'r')
+            result = parse_tar(file_path, 'r')
         elif ext in ['.tar.gz', '.tgz']:
-            result = parse_tar(db_file.file_path, 'r:gz')
+            result = parse_tar(file_path, 'r:gz')
         elif ext in ['.tar.bz2', '.tbz2']:
-            result = parse_tar(db_file.file_path, 'r:bz2')
+            result = parse_tar(file_path, 'r:bz2')
         elif ext == '.rar':
-            result = parse_rar(db_file.file_path)
+            result = parse_rar(file_path)
         elif ext == '.7z':
-            result = parse_7z(db_file.file_path)
+            result = parse_7z(file_path)
         elif ext == '.gz':
-            result = parse_gz(db_file.file_path)
+            result = parse_gz(file_path)
         else:
             raise HTTPException(status_code=400, detail="不支持的压缩格式")
         
@@ -949,3 +1005,9 @@ async def get_archive_content(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"解析压缩文件失败: {str(e)}")
+    finally:
+        if temp_file_path and os.path.exists(temp_file_path):
+            try:
+                os.remove(temp_file_path)
+            except:
+                pass
