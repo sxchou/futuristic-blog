@@ -1,8 +1,16 @@
 import axios, { AxiosError } from 'axios'
 import type { AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
 
+const getBaseURL = (): string => {
+  const apiUrl = import.meta.env.VITE_API_URL
+  if (apiUrl) {
+    return apiUrl.replace(/\/$/, '')
+  }
+  return '/api/v1'
+}
+
 const config: AxiosRequestConfig = {
-  baseURL: '/api/v1',
+  baseURL: getBaseURL(),
   timeout: 120000,
   headers: {
     'Content-Type': 'application/json'

@@ -3,24 +3,6 @@
   "outputDirectory": "dist",
   "framework": "vue",
   "installCommand": "npm install",
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "https://futuristic-blog-backend.onrender.com/api/$1"
-    },
-    {
-      "source": "/uploads/(.*)",
-      "destination": "https://futuristic-blog-backend.onrender.com/uploads/$1"
-    },
-    {
-      "source": "/robots.txt",
-      "destination": "https://futuristic-blog-backend.onrender.com/robots.txt"
-    },
-    {
-      "source": "/sitemap.xml",
-      "destination": "https://futuristic-blog-backend.onrender.com/sitemap.xml"
-    }
-  ],
   "headers": [
     {
       "source": "/(.*)",

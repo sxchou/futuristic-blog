@@ -14,12 +14,9 @@ const deletingOrphans = ref(false)
 const getAvatarUrl = (file: StorageFileInfo): string => {
   if (!file.is_avatar) return ''
   const filename = file.name
-  if (import.meta.env.PROD) {
-    return `/uploads/avatars/${filename}`
-  }
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
-  const STATIC_BASE = API_BASE.replace('/api/v1', '')
-  return `${STATIC_BASE}/uploads/avatars/${filename}`
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
+  const staticBase = apiUrl.replace('/api/v1', '').replace(/\/$/, '')
+  return `${staticBase}/uploads/avatars/${filename}`
 }
 
 const fetchStorageInfo = async () => {
