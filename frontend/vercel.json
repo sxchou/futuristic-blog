@@ -6,19 +6,19 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://your-backend.onrender.com/api/$1"
+      "destination": "https://futuristic-blog-backend.onrender.com/api/$1"
     },
     {
       "source": "/uploads/(.*)",
-      "destination": "https://your-backend.onrender.com/uploads/$1"
+      "destination": "https://futuristic-blog-backend.onrender.com/uploads/$1"
     },
     {
       "source": "/robots.txt",
-      "destination": "https://your-backend.onrender.com/robots.txt"
+      "destination": "https://futuristic-blog-backend.onrender.com/robots.txt"
     },
     {
       "source": "/sitemap.xml",
-      "destination": "https://your-backend.onrender.com/sitemap.xml"
+      "destination": "https://futuristic-blog-backend.onrender.com/sitemap.xml"
     }
   ],
   "headers": [
