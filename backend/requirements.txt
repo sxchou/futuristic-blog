@@ -18,4 +18,4 @@ httpx==0.26.0
 pypinyin==0.51.0
 rarfile==4.2
 py7zr==0.21.0
-supabase==2.3.0
+supabase>=2.0.0
