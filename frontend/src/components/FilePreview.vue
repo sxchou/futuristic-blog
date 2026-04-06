@@ -82,12 +82,59 @@ const previewType = computed(() => {
   return 'unsupported'
 })
 
-const fileUrl = computed(() => {
+const directUrl = computed(() => {
+  if (props.file.file_path && props.file.file_path.startsWith('http')) {
+    return props.file.file_path
+  }
+  return null
+})
+
+const proxyUrl = computed(() => {
   return fileApi.getContentUrl(props.file.id)
+})
+
+const fileUrl = computed(() => {
+  if (useProxy.value) {
+    return proxyUrl.value
+  }
+  return directUrl.value || proxyUrl.value
 })
 
 const downloadUrl = computed(() => {
   return fileApi.getDownloadUrl(props.file.id)
+})
+
+const useProxy = ref(false)
+
+const checkDirectAccess = async () => {
+  if (!directUrl.value || useProxy.value) return
+  
+  try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 3000)
+    
+    const response = await fetch(directUrl.value, { 
+      method: 'HEAD',
+      signal: controller.signal 
+    })
+    
+    clearTimeout(timeoutId)
+    
+    if (!response.ok) {
+      useProxy.value = true
+    }
+  } catch {
+    useProxy.value = true
+  }
+}
+
+onMounted(() => {
+  checkDirectAccess()
+})
+
+watch(() => props.file, () => {
+  useProxy.value = false
+  checkDirectAccess()
 })
 
 const isLocalhost = computed(() => {
@@ -97,7 +144,8 @@ const isLocalhost = computed(() => {
 
 const officePreviewUrl = computed(() => {
   if (isLocalhost.value) return ''
-  const encodedUrl = encodeURIComponent(fileUrl.value)
+  const url = useProxy.value ? proxyUrl.value : (directUrl.value || proxyUrl.value)
+  const encodedUrl = encodeURIComponent(url)
   return `https://view.officeapps.live.com/op/embed.aspx?src=${encodedUrl}`
 })
 
