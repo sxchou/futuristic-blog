@@ -2,25 +2,11 @@
 import { ref, onMounted, watch, onUnmounted } from 'vue'
 import { useBlogStore, useDialogStore, useAuthStore } from '@/stores'
 import { articleApi, fileApi, categoryApi, tagApi, utilsApi, parseUploadError } from '@/api'
-import type { ArticleListItem, Article } from '@/types'
+import type { ArticleListItem, Article, ArticleFile } from '@/types'
 import { useAdminCheck } from '@/composables/useAdminCheck'
 import { formatDateTime } from '@/utils/date'
 import MarkdownEditor from '@/components/admin/MarkdownEditor.vue'
 import FilePreview from '@/components/FilePreview.vue'
-
-interface ArticleFile {
-  id: number
-  filename: string
-  original_filename: string
-  file_size: number
-  file_type: string
-  mime_type: string
-  is_image: boolean
-  download_count: number
-  preview_count: number
-  order: number
-  created_at: string
-}
 
 const blogStore = useBlogStore()
 const dialog = useDialogStore()
