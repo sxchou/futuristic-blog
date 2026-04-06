@@ -83,9 +83,10 @@ const previewType = computed(() => {
 })
 
 const fileUrl = computed(() => {
-  if (props.file.file_path && props.file.file_path.startsWith('http')) {
-    return props.file.file_path
-  }
+  return fileApi.getContentUrl(props.file.id)
+})
+
+const downloadUrl = computed(() => {
   return fileApi.getDownloadUrl(props.file.id)
 })
 
@@ -514,7 +515,7 @@ const handleIframeError = () => {
 }
 
 const handleDownload = () => {
-  window.open(fileUrl.value, '_blank')
+  window.open(downloadUrl.value, '_blank')
 }
 
 const handleKeydown = (e: KeyboardEvent) => {

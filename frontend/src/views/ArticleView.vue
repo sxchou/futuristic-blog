@@ -231,13 +231,8 @@ const getFileIconInfo = (fileType: string, mimeType: string, filename: string): 
 }
 
 const downloadFile = (fileId: number) => {
-  const file = articleFiles.value.find(f => f.id === fileId)
-  if (file && file.file_path.startsWith('http')) {
-    window.open(file.file_path, '_blank')
-  } else {
-    const url = fileApi.getDownloadUrl(fileId)
-    window.open(url, '_blank')
-  }
+  const url = fileApi.getDownloadUrl(fileId)
+  window.open(url, '_blank')
 }
 
 const toggleSelectAll = () => {

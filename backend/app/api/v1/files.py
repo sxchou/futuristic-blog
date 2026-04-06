@@ -398,6 +398,43 @@ async def download_file(
     )
 
 
+@router.get("/{file_id}/content")
+async def get_file_content(
+    file_id: int,
+    db: Session = Depends(get_db)
+):
+    db_file = db.query(ArticleFile).filter(ArticleFile.id == file_id).first()
+    if not db_file:
+        raise HTTPException(status_code=404, detail="文件不存在")
+    
+    if db_file.file_path.startswith("http"):
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.get(db_file.file_path)
+            if response.status_code != 200:
+                raise HTTPException(status_code=500, detail="无法获取文件内容")
+            
+            from fastapi.responses import StreamingResponse
+            from io import BytesIO
+            
+            return StreamingResponse(
+                BytesIO(response.content),
+                media_type=db_file.mime_type,
+                headers={
+                    "Content-Disposition": f'inline; filename="{db_file.original_filename}"',
+                    "Cache-Control": "public, max-age=3600"
+                }
+            )
+    
+    if not os.path.exists(db_file.file_path):
+        raise HTTPException(status_code=404, detail="文件已被删除")
+    
+    return FileResponse(
+        path=db_file.file_path,
+        filename=db_file.original_filename,
+        media_type=db_file.mime_type
+    )
+
+
 @router.post("/{file_id}/preview")
 async def preview_file(
     file_id: int,
