@@ -93,7 +93,10 @@ const previewType = computed(() => {
   return 'unsupported'
 })
 
-const downloadUrl = computed(() => {
+const fileUrl = computed(() => {
+  if (props.file.file_path && props.file.file_path.startsWith('http')) {
+    return props.file.file_path
+  }
   return fileApi.getDownloadUrl(props.file.id)
 })
 
@@ -104,7 +107,7 @@ const isLocalhost = computed(() => {
 
 const officePreviewUrl = computed(() => {
   if (isLocalhost.value) return ''
-  const encodedUrl = encodeURIComponent(window.location.origin + downloadUrl.value)
+  const encodedUrl = encodeURIComponent(fileUrl.value)
   return `https://view.officeapps.live.com/op/embed.aspx?src=${encodedUrl}`
 })
 
@@ -435,7 +438,7 @@ const fetchTextContent = async () => {
   error.value = ''
   
   try {
-    const response = await fetch(downloadUrl.value)
+    const response = await fetch(fileUrl.value)
     if (!response.ok) throw new Error('加载失败')
     
     const text = await response.text()
@@ -522,7 +525,7 @@ const handleIframeError = () => {
 }
 
 const handleDownload = () => {
-  window.open(downloadUrl.value, '_blank')
+  window.open(fileUrl.value, '_blank')
 }
 
 const handleKeydown = (e: KeyboardEvent) => {
@@ -674,7 +677,7 @@ onUnmounted(() => {
               @mouseleave="handleMouseUp"
             >
               <img
-                :src="downloadUrl"
+                :src="fileUrl"
                 :alt="file.original_filename"
                 class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-lg shadow-lg transition-transform duration-75"
                 :style="{
@@ -690,7 +693,7 @@ onUnmounted(() => {
 
           <div v-else-if="previewType === 'pdf'" class="h-full">
             <iframe
-              :src="downloadUrl"
+              :src="fileUrl"
               class="w-full h-full border-0"
               @load="handleIframeLoad"
               @error="handleIframeError"
@@ -759,7 +762,7 @@ onUnmounted(() => {
               </div>
               <h4 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">{{ file.original_filename }}</h4>
               <audio
-                :src="downloadUrl"
+                :src="fileUrl"
                 controls
                 class="w-full max-w-md"
               >
@@ -770,7 +773,7 @@ onUnmounted(() => {
 
           <div v-else-if="previewType === 'video'" class="flex items-center justify-center h-full p-4">
             <video
-              :src="downloadUrl"
+              :src="fileUrl"
               controls
               class="max-w-full max-h-full rounded-lg shadow-lg"
             >

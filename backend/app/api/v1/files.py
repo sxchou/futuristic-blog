@@ -386,7 +386,7 @@ async def download_file(
     db.commit()
     
     if db_file.file_path.startswith("http"):
-        return RedirectResponse(url=db_file.file_path)
+        return RedirectResponse(url=db_file.file_path, status_code=302)
     
     if not os.path.exists(db_file.file_path):
         raise HTTPException(status_code=404, detail="文件已被删除")
