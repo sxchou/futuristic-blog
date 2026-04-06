@@ -5,22 +5,9 @@ import hljs from 'highlight.js'
 import DOMPurify from 'dompurify'
 import { useRoute } from 'vue-router'
 import { articleApi, likeApi, fileApi } from '@/api'
-import type { Article } from '@/types'
+import type { Article, ArticleFile } from '@/types'
 import CommentSection from '@/components/comments/CommentSection.vue'
 import FilePreview from '@/components/FilePreview.vue'
-
-interface ArticleFile {
-  id: number
-  filename: string
-  original_filename: string
-  file_size: number
-  file_type: string
-  mime_type: string
-  is_image: boolean
-  download_count: number
-  preview_count: number
-  created_at: string
-}
 
 const route = useRoute()
 const article = ref<Article | null>(null)

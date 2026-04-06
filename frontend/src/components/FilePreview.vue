@@ -1,18 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { fileApi, type ArchiveContent } from '@/api'
-
-interface ArticleFile {
-  id: number
-  filename: string
-  original_filename: string
-  file_size: number
-  file_type: string
-  mime_type: string
-  is_image: boolean
-  download_count: number
-  created_at: string
-}
+import type { ArticleFile } from '@/types'
 
 const props = defineProps<{
   file: ArticleFile
