@@ -408,22 +408,25 @@ async def get_file_content(
         raise HTTPException(status_code=404, detail="文件不存在")
     
     if db_file.file_path.startswith("http"):
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.get(db_file.file_path)
-            if response.status_code != 200:
-                raise HTTPException(status_code=500, detail="无法获取文件内容")
-            
-            from fastapi.responses import StreamingResponse
-            from io import BytesIO
-            
-            return StreamingResponse(
-                BytesIO(response.content),
-                media_type=db_file.mime_type,
-                headers={
-                    "Content-Disposition": f'inline; filename="{db_file.original_filename}"',
-                    "Cache-Control": "public, max-age=3600"
-                }
-            )
+        from fastapi.responses import StreamingResponse
+        
+        async def stream_from_supabase():
+            async with httpx.AsyncClient(timeout=120.0) as client:
+                async with client.stream("GET", db_file.file_path) as response:
+                    if response.status_code != 200:
+                        raise HTTPException(status_code=500, detail="无法获取文件内容")
+                    async for chunk in response.aiter_bytes(chunk_size=65536):
+                        yield chunk
+        
+        return StreamingResponse(
+            stream_from_supabase(),
+            media_type=db_file.mime_type,
+            headers={
+                "Content-Disposition": f'inline; filename="{db_file.original_filename}"',
+                "Cache-Control": "public, max-age=86400",
+                "Access-Control-Allow-Origin": "*"
+            }
+        )
     
     if not os.path.exists(db_file.file_path):
         raise HTTPException(status_code=404, detail="文件已被删除")
