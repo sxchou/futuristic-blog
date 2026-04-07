@@ -105,21 +105,21 @@ const backendProxyUrl = computed(() => {
 })
 
 const fileUrl = computed(() => {
-  if (accessMode.value === 'vercel' && vercelProxyUrl.value) {
-    return vercelProxyUrl.value
-  }
   if (accessMode.value === 'direct' && directUrl.value) {
     return directUrl.value
+  }
+  if (accessMode.value === 'vercel' && vercelProxyUrl.value) {
+    return vercelProxyUrl.value
   }
   return backendProxyUrl.value
 })
 
 const downloadUrl = computed(() => {
-  if (accessMode.value === 'vercel' && vercelProxyUrl.value) {
-    return vercelProxyUrl.value
-  }
   if (accessMode.value === 'direct' && directUrl.value) {
     return directUrl.value
+  }
+  if (accessMode.value === 'vercel' && vercelProxyUrl.value) {
+    return vercelProxyUrl.value
   }
   return fileApi.getDownloadUrl(props.file.id)
 })
@@ -128,28 +128,28 @@ type AccessMode = 'vercel' | 'direct' | 'backend'
 const accessMode = ref<AccessMode>('vercel')
 
 const handleLoadError = () => {
-  if (accessMode.value === 'vercel' && directUrl.value) {
-    accessMode.value = 'direct'
-  } else if (accessMode.value === 'direct') {
+  if (accessMode.value === 'direct' && vercelProxyUrl.value) {
+    accessMode.value = 'vercel'
+  } else if (accessMode.value === 'vercel') {
     accessMode.value = 'backend'
   }
 }
 
 onMounted(() => {
-  if (vercelProxyUrl.value) {
-    accessMode.value = 'vercel'
-  } else if (directUrl.value) {
+  if (directUrl.value) {
     accessMode.value = 'direct'
+  } else if (vercelProxyUrl.value) {
+    accessMode.value = 'vercel'
   } else {
     accessMode.value = 'backend'
   }
 })
 
 watch(() => props.file, () => {
-  if (vercelProxyUrl.value) {
-    accessMode.value = 'vercel'
-  } else if (directUrl.value) {
+  if (directUrl.value) {
     accessMode.value = 'direct'
+  } else if (vercelProxyUrl.value) {
+    accessMode.value = 'vercel'
   } else {
     accessMode.value = 'backend'
   }
