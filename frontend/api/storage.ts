@@ -3,7 +3,6 @@ export const config = {
 }
 
 const SUPABASE_URL = process.env.SUPABASE_URL
-const SUPABASE_BUCKET = process.env.SUPABASE_BUCKET || 'blog-files'
 
 export default async function handler(request: Request) {
   if (!SUPABASE_URL) {
@@ -23,7 +22,7 @@ export default async function handler(request: Request) {
     })
   }
 
-  const supabaseUrl = `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${path}`
+  const supabaseUrl = `${SUPABASE_URL}/storage/v1/object/public/${path}`
 
   try {
     const response = await fetch(supabaseUrl, {
