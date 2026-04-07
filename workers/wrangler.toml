@@ -3,7 +3,7 @@ main = "storage/index.js"
 compatibility_date = "2024-01-01"
 
 [vars]
-SUPABASE_URL = "https://jzyendfoudhzbweryyrb.supabase.co"
+SUPABASE_URL = "https://jcodbcnbybtqqqlkiifg.supabase.co"
 
 [[routes]]
 pattern = "cdn.zhouzhouya.top/*"

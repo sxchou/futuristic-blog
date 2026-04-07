@@ -94,87 +94,69 @@ const cfProxyUrl = computed(() => {
   try {
     const url = new URL(directUrl.value)
     const path = url.pathname.replace('/storage/v1/object/public/', '')
-    return `https://cdn.zhouzhouya.top?path=${encodeURIComponent(path)}`
+    const cfBaseUrl = import.meta.env.VITE_CF_CDN_URL || 'https://cdn.zhouzhouya.top'
+    return `${cfBaseUrl}?path=${encodeURIComponent(path)}`
   } catch {
     return null
   }
-})
-
-const vercelProxyUrl = computed(() => {
-  if (!directUrl.value) return null
-  try {
-    const url = new URL(directUrl.value)
-    const path = url.pathname.replace('/storage/v1/object/public/', '')
-    return `/api/storage?path=${encodeURIComponent(path)}`
-  } catch {
-    return null
-  }
-})
-
-const backendProxyUrl = computed(() => {
-  return fileApi.getContentUrl(props.file.id)
 })
 
 const fileUrl = computed(() => {
   if (accessMode.value === 'cf' && cfProxyUrl.value) {
     return cfProxyUrl.value
   }
-  if (accessMode.value === 'direct' && directUrl.value) {
-    return directUrl.value
-  }
-  if (accessMode.value === 'vercel' && vercelProxyUrl.value) {
-    return vercelProxyUrl.value
-  }
-  return backendProxyUrl.value
+  return directUrl.value
 })
 
 const downloadUrl = computed(() => {
   if (accessMode.value === 'cf' && cfProxyUrl.value) {
     return cfProxyUrl.value
   }
-  if (accessMode.value === 'direct' && directUrl.value) {
-    return directUrl.value
-  }
-  if (accessMode.value === 'vercel' && vercelProxyUrl.value) {
-    return vercelProxyUrl.value
-  }
-  return fileApi.getDownloadUrl(props.file.id)
+  return directUrl.value
 })
 
-type AccessMode = 'cf' | 'direct' | 'vercel' | 'backend'
+type AccessMode = 'cf' | 'direct'
 const accessMode = ref<AccessMode>('cf')
 
+const loadTimeout = ref<NodeJS.Timeout | null>(null)
+
 const handleLoadError = () => {
-  if (accessMode.value === 'cf' && directUrl.value) {
+  if (loadTimeout.value) {
+    clearTimeout(loadTimeout.value)
+    loadTimeout.value = null
+  }
+  if (accessMode.value === 'cf') {
     accessMode.value = 'direct'
-  } else if (accessMode.value === 'direct' && vercelProxyUrl.value) {
-    accessMode.value = 'vercel'
-  } else if (accessMode.value === 'vercel') {
-    accessMode.value = 'backend'
   }
 }
 
 onMounted(() => {
   if (cfProxyUrl.value) {
     accessMode.value = 'cf'
-  } else if (directUrl.value) {
-    accessMode.value = 'direct'
-  } else if (vercelProxyUrl.value) {
-    accessMode.value = 'vercel'
+    loadTimeout.value = setTimeout(() => {
+      if (accessMode.value === 'cf') {
+        handleLoadError()
+      }
+    }, 10000)
   } else {
-    accessMode.value = 'backend'
+    accessMode.value = 'direct'
   }
 })
 
 watch(() => props.file, () => {
+  if (loadTimeout.value) {
+    clearTimeout(loadTimeout.value)
+    loadTimeout.value = null
+  }
   if (cfProxyUrl.value) {
     accessMode.value = 'cf'
-  } else if (directUrl.value) {
-    accessMode.value = 'direct'
-  } else if (vercelProxyUrl.value) {
-    accessMode.value = 'vercel'
+    loadTimeout.value = setTimeout(() => {
+      if (accessMode.value === 'cf') {
+        handleLoadError()
+      }
+    }, 10000)
   } else {
-    accessMode.value = 'backend'
+    accessMode.value = 'direct'
   }
 })
 
