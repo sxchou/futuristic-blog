@@ -105,64 +105,54 @@ const backendProxyUrl = computed(() => {
 })
 
 const fileUrl = computed(() => {
-  if (accessMode.value === 'direct' && directUrl.value) {
-    return directUrl.value
-  }
   if (accessMode.value === 'vercel' && vercelProxyUrl.value) {
     return vercelProxyUrl.value
+  }
+  if (accessMode.value === 'direct' && directUrl.value) {
+    return directUrl.value
   }
   return backendProxyUrl.value
 })
 
 const downloadUrl = computed(() => {
-  if (accessMode.value === 'direct' && directUrl.value) {
-    return directUrl.value
-  }
   if (accessMode.value === 'vercel' && vercelProxyUrl.value) {
     return vercelProxyUrl.value
+  }
+  if (accessMode.value === 'direct' && directUrl.value) {
+    return directUrl.value
   }
   return fileApi.getDownloadUrl(props.file.id)
 })
 
-type AccessMode = 'checking' | 'direct' | 'vercel' | 'backend'
-const accessMode = ref<AccessMode>('checking')
+type AccessMode = 'vercel' | 'direct' | 'backend'
+const accessMode = ref<AccessMode>('vercel')
 
-const checkDirectAccess = async () => {
-  if (!directUrl.value) {
+const handleLoadError = () => {
+  if (accessMode.value === 'vercel' && directUrl.value) {
+    accessMode.value = 'direct'
+  } else if (accessMode.value === 'direct') {
     accessMode.value = 'backend'
-    return
-  }
-  
-  accessMode.value = 'checking'
-  
-  try {
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 5000)
-    
-    const response = await fetch(directUrl.value, { 
-      method: 'HEAD',
-      signal: controller.signal 
-    })
-    
-    clearTimeout(timeoutId)
-    
-    if (response.ok) {
-      accessMode.value = 'direct'
-    } else {
-      accessMode.value = 'vercel'
-    }
-  } catch {
-    accessMode.value = 'vercel'
   }
 }
 
 onMounted(() => {
-  checkDirectAccess()
+  if (vercelProxyUrl.value) {
+    accessMode.value = 'vercel'
+  } else if (directUrl.value) {
+    accessMode.value = 'direct'
+  } else {
+    accessMode.value = 'backend'
+  }
 })
 
 watch(() => props.file, () => {
-  accessMode.value = 'checking'
-  checkDirectAccess()
+  if (vercelProxyUrl.value) {
+    accessMode.value = 'vercel'
+  } else if (directUrl.value) {
+    accessMode.value = 'direct'
+  } else {
+    accessMode.value = 'backend'
+  }
 })
 
 const isLocalhost = computed(() => {
@@ -528,6 +518,13 @@ const handleImageLoad = () => {
 }
 
 const handleImageError = () => {
+  if (accessMode.value === 'vercel' || accessMode.value === 'direct') {
+    const prevMode = accessMode.value
+    handleLoadError()
+    if (accessMode.value !== prevMode) {
+      return
+    }
+  }
   loading.value = false
   error.value = '图片加载失败'
 }
@@ -586,6 +583,13 @@ const handleIframeLoad = () => {
 }
 
 const handleIframeError = () => {
+  if (accessMode.value === 'vercel' || accessMode.value === 'direct') {
+    const prevMode = accessMode.value
+    handleLoadError()
+    if (accessMode.value !== prevMode) {
+      return
+    }
+  }
   loading.value = false
   error.value = '预览加载失败'
 }
