@@ -89,38 +89,55 @@ const directUrl = computed(() => {
   return null
 })
 
-const proxyUrl = computed(() => {
+const vercelProxyUrl = computed(() => {
+  if (!directUrl.value) return null
+  try {
+    const url = new URL(directUrl.value)
+    const path = url.pathname.replace('/storage/v1/object/public/', '')
+    return `/api/storage/${path}`
+  } catch {
+    return null
+  }
+})
+
+const backendProxyUrl = computed(() => {
   return fileApi.getContentUrl(props.file.id)
 })
 
 const fileUrl = computed(() => {
-  if (useProxy.value) {
-    return proxyUrl.value
+  if (accessMode.value === 'direct' && directUrl.value) {
+    return directUrl.value
   }
-  return directUrl.value || proxyUrl.value
+  if (accessMode.value === 'vercel' && vercelProxyUrl.value) {
+    return vercelProxyUrl.value
+  }
+  return backendProxyUrl.value
 })
 
 const downloadUrl = computed(() => {
-  if (directUrl.value && !useProxy.value) {
+  if (accessMode.value === 'direct' && directUrl.value) {
     return directUrl.value
+  }
+  if (accessMode.value === 'vercel' && vercelProxyUrl.value) {
+    return vercelProxyUrl.value
   }
   return fileApi.getDownloadUrl(props.file.id)
 })
 
-const useProxy = ref(false)
-const checkingDirectAccess = ref(false)
+type AccessMode = 'checking' | 'direct' | 'vercel' | 'backend'
+const accessMode = ref<AccessMode>('checking')
 
 const checkDirectAccess = async () => {
   if (!directUrl.value) {
-    useProxy.value = true
+    accessMode.value = 'backend'
     return
   }
   
-  checkingDirectAccess.value = true
+  accessMode.value = 'checking'
   
   try {
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 10000)
+    const timeoutId = setTimeout(() => controller.abort(), 5000)
     
     const response = await fetch(directUrl.value, { 
       method: 'HEAD',
@@ -129,15 +146,13 @@ const checkDirectAccess = async () => {
     
     clearTimeout(timeoutId)
     
-    if (!response.ok) {
-      useProxy.value = true
+    if (response.ok) {
+      accessMode.value = 'direct'
     } else {
-      useProxy.value = false
+      accessMode.value = 'vercel'
     }
   } catch {
-    useProxy.value = true
-  } finally {
-    checkingDirectAccess.value = false
+    accessMode.value = 'vercel'
   }
 }
 
@@ -146,7 +161,7 @@ onMounted(() => {
 })
 
 watch(() => props.file, () => {
-  useProxy.value = false
+  accessMode.value = 'checking'
   checkDirectAccess()
 })
 
@@ -157,7 +172,7 @@ const isLocalhost = computed(() => {
 
 const officePreviewUrl = computed(() => {
   if (isLocalhost.value) return ''
-  const url = useProxy.value ? proxyUrl.value : (directUrl.value || proxyUrl.value)
+  const url = fileUrl.value
   const encodedUrl = encodeURIComponent(url)
   return `https://view.officeapps.live.com/op/embed.aspx?src=${encodedUrl}`
 })
