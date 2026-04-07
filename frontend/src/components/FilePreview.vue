@@ -162,7 +162,13 @@ const isLocalhost = computed(() => {
 
 const officePreviewUrl = computed(() => {
   if (isLocalhost.value) return ''
-  const url = fileUrl.value
+  
+  let url = fileUrl.value
+  
+  if (url.startsWith('/api/storage/')) {
+    url = `${window.location.origin}${url}`
+  }
+  
   const encodedUrl = encodeURIComponent(url)
   return `https://view.officeapps.live.com/op/embed.aspx?src=${encodedUrl}`
 })
