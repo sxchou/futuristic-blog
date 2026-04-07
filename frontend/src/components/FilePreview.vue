@@ -116,11 +116,11 @@ const backendProxyUrl = computed(() => {
 })
 
 const fileUrl = computed(() => {
-  if (accessMode.value === 'direct' && directUrl.value) {
-    return directUrl.value
-  }
   if (accessMode.value === 'cf' && cfProxyUrl.value) {
     return cfProxyUrl.value
+  }
+  if (accessMode.value === 'direct' && directUrl.value) {
+    return directUrl.value
   }
   if (accessMode.value === 'vercel' && vercelProxyUrl.value) {
     return vercelProxyUrl.value
@@ -129,11 +129,11 @@ const fileUrl = computed(() => {
 })
 
 const downloadUrl = computed(() => {
-  if (accessMode.value === 'direct' && directUrl.value) {
-    return directUrl.value
-  }
   if (accessMode.value === 'cf' && cfProxyUrl.value) {
     return cfProxyUrl.value
+  }
+  if (accessMode.value === 'direct' && directUrl.value) {
+    return directUrl.value
   }
   if (accessMode.value === 'vercel' && vercelProxyUrl.value) {
     return vercelProxyUrl.value
@@ -141,13 +141,13 @@ const downloadUrl = computed(() => {
   return fileApi.getDownloadUrl(props.file.id)
 })
 
-type AccessMode = 'direct' | 'cf' | 'vercel' | 'backend'
-const accessMode = ref<AccessMode>('direct')
+type AccessMode = 'cf' | 'direct' | 'vercel' | 'backend'
+const accessMode = ref<AccessMode>('cf')
 
 const handleLoadError = () => {
-  if (accessMode.value === 'direct' && cfProxyUrl.value) {
-    accessMode.value = 'cf'
-  } else if (accessMode.value === 'cf' && vercelProxyUrl.value) {
+  if (accessMode.value === 'cf' && directUrl.value) {
+    accessMode.value = 'direct'
+  } else if (accessMode.value === 'direct' && vercelProxyUrl.value) {
     accessMode.value = 'vercel'
   } else if (accessMode.value === 'vercel') {
     accessMode.value = 'backend'
@@ -155,7 +155,9 @@ const handleLoadError = () => {
 }
 
 onMounted(() => {
-  if (directUrl.value) {
+  if (cfProxyUrl.value) {
+    accessMode.value = 'cf'
+  } else if (directUrl.value) {
     accessMode.value = 'direct'
   } else if (vercelProxyUrl.value) {
     accessMode.value = 'vercel'
@@ -165,7 +167,9 @@ onMounted(() => {
 })
 
 watch(() => props.file, () => {
-  if (directUrl.value) {
+  if (cfProxyUrl.value) {
+    accessMode.value = 'cf'
+  } else if (directUrl.value) {
     accessMode.value = 'direct'
   } else if (vercelProxyUrl.value) {
     accessMode.value = 'vercel'
