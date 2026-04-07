@@ -89,6 +89,17 @@ const directUrl = computed(() => {
   return null
 })
 
+const cfProxyUrl = computed(() => {
+  if (!directUrl.value) return null
+  try {
+    const url = new URL(directUrl.value)
+    const path = url.pathname.replace('/storage/v1/object/public/', '')
+    return `https://cdn.zhouzhouya.top?path=${encodeURIComponent(path)}`
+  } catch {
+    return null
+  }
+})
+
 const vercelProxyUrl = computed(() => {
   if (!directUrl.value) return null
   try {
@@ -108,6 +119,9 @@ const fileUrl = computed(() => {
   if (accessMode.value === 'direct' && directUrl.value) {
     return directUrl.value
   }
+  if (accessMode.value === 'cf' && cfProxyUrl.value) {
+    return cfProxyUrl.value
+  }
   if (accessMode.value === 'vercel' && vercelProxyUrl.value) {
     return vercelProxyUrl.value
   }
@@ -118,17 +132,22 @@ const downloadUrl = computed(() => {
   if (accessMode.value === 'direct' && directUrl.value) {
     return directUrl.value
   }
+  if (accessMode.value === 'cf' && cfProxyUrl.value) {
+    return cfProxyUrl.value
+  }
   if (accessMode.value === 'vercel' && vercelProxyUrl.value) {
     return vercelProxyUrl.value
   }
   return fileApi.getDownloadUrl(props.file.id)
 })
 
-type AccessMode = 'vercel' | 'direct' | 'backend'
-const accessMode = ref<AccessMode>('vercel')
+type AccessMode = 'direct' | 'cf' | 'vercel' | 'backend'
+const accessMode = ref<AccessMode>('direct')
 
 const handleLoadError = () => {
-  if (accessMode.value === 'direct' && vercelProxyUrl.value) {
+  if (accessMode.value === 'direct' && cfProxyUrl.value) {
+    accessMode.value = 'cf'
+  } else if (accessMode.value === 'cf' && vercelProxyUrl.value) {
     accessMode.value = 'vercel'
   } else if (accessMode.value === 'vercel') {
     accessMode.value = 'backend'

@@ -1,0 +1,10 @@
+name = "storage-proxy"
+main = "storage/index.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+SUPABASE_URL = "https://jzyendfoudhzbweryyrb.supabase.co"
+
+[[routes]]
+pattern = "cdn.zhouzhouya.top/*"
+zone_name = "zhouzhouya.top"
