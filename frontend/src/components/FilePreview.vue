@@ -109,14 +109,11 @@ const fileUrl = computed(() => {
 })
 
 const downloadUrl = computed(() => {
-  if (accessMode.value === 'cf' && cfProxyUrl.value) {
-    return cfProxyUrl.value
-  }
   return directUrl.value
 })
 
-type AccessMode = 'cf' | 'direct'
-const accessMode = ref<AccessMode>('cf')
+type AccessMode = 'direct' | 'cf'
+const accessMode = ref<AccessMode>('direct')
 
 const loadTimeout = ref<NodeJS.Timeout | null>(null)
 
@@ -125,22 +122,18 @@ const handleLoadError = () => {
     clearTimeout(loadTimeout.value)
     loadTimeout.value = null
   }
-  if (accessMode.value === 'cf') {
-    accessMode.value = 'direct'
+  if (accessMode.value === 'direct' && cfProxyUrl.value) {
+    accessMode.value = 'cf'
   }
 }
 
 onMounted(() => {
-  if (cfProxyUrl.value) {
-    accessMode.value = 'cf'
-    loadTimeout.value = setTimeout(() => {
-      if (accessMode.value === 'cf') {
-        handleLoadError()
-      }
-    }, 10000)
-  } else {
-    accessMode.value = 'direct'
-  }
+  accessMode.value = 'direct'
+  loadTimeout.value = setTimeout(() => {
+    if (accessMode.value === 'direct') {
+      handleLoadError()
+    }
+  }, 5000)
 })
 
 watch(() => props.file, () => {
@@ -148,16 +141,12 @@ watch(() => props.file, () => {
     clearTimeout(loadTimeout.value)
     loadTimeout.value = null
   }
-  if (cfProxyUrl.value) {
-    accessMode.value = 'cf'
-    loadTimeout.value = setTimeout(() => {
-      if (accessMode.value === 'cf') {
-        handleLoadError()
-      }
-    }, 10000)
-  } else {
-    accessMode.value = 'direct'
-  }
+  accessMode.value = 'direct'
+  loadTimeout.value = setTimeout(() => {
+    if (accessMode.value === 'direct') {
+      handleLoadError()
+    }
+  }, 5000)
 })
 
 const isLocalhost = computed(() => {
@@ -529,7 +518,7 @@ const handleImageLoad = () => {
 }
 
 const handleImageError = () => {
-  if (accessMode.value === 'vercel' || accessMode.value === 'direct') {
+  if (accessMode.value === 'direct' && cfProxyUrl.value) {
     const prevMode = accessMode.value
     handleLoadError()
     if (accessMode.value !== prevMode) {
@@ -594,7 +583,7 @@ const handleIframeLoad = () => {
 }
 
 const handleIframeError = () => {
-  if (accessMode.value === 'vercel' || accessMode.value === 'direct') {
+  if (accessMode.value === 'direct' && cfProxyUrl.value) {
     const prevMode = accessMode.value
     handleLoadError()
     if (accessMode.value !== prevMode) {
