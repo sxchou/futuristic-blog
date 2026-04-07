@@ -105,13 +105,19 @@ const downloadUrl = computed(() => {
 })
 
 const useProxy = ref(false)
+const checkingDirectAccess = ref(false)
 
 const checkDirectAccess = async () => {
-  if (!directUrl.value || useProxy.value) return
+  if (!directUrl.value) {
+    useProxy.value = true
+    return
+  }
+  
+  checkingDirectAccess.value = true
   
   try {
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 3000)
+    const timeoutId = setTimeout(() => controller.abort(), 10000)
     
     const response = await fetch(directUrl.value, { 
       method: 'HEAD',
@@ -122,9 +128,13 @@ const checkDirectAccess = async () => {
     
     if (!response.ok) {
       useProxy.value = true
+    } else {
+      useProxy.value = false
     }
   } catch {
     useProxy.value = true
+  } finally {
+    checkingDirectAccess.value = false
   }
 }
 
