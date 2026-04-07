@@ -105,11 +105,11 @@ const fileUrl = computed(() => {
   if (accessMode.value === 'cf' && cfProxyUrl.value) {
     return cfProxyUrl.value
   }
-  return directUrl.value
+  return directUrl.value || ''
 })
 
 const downloadUrl = computed(() => {
-  return directUrl.value
+  return directUrl.value || ''
 })
 
 type AccessMode = 'direct' | 'cf'
