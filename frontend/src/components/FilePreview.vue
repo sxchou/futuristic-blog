@@ -94,7 +94,7 @@ const vercelProxyUrl = computed(() => {
   try {
     const url = new URL(directUrl.value)
     const path = url.pathname.replace('/storage/v1/object/public/', '')
-    return `/api/storage/${path}`
+    return `/api/storage?path=${encodeURIComponent(path)}`
   } catch {
     return null
   }
@@ -165,7 +165,7 @@ const officePreviewUrl = computed(() => {
   
   let url = fileUrl.value
   
-  if (url.startsWith('/api/storage/')) {
+  if (url.startsWith('/api/storage?')) {
     url = `${window.location.origin}${url}`
   }
   

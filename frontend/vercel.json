@@ -31,7 +31,7 @@
       ]
     },
     {
-      "source": "/api/storage/(.*)",
+      "source": "/api/storage",
       "headers": [
         {
           "key": "Cache-Control",

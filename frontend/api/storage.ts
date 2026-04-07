@@ -14,10 +14,10 @@ export default async function handler(request: Request) {
   }
 
   const url = new URL(request.url)
-  const path = url.pathname.replace('/api/storage/', '')
+  const path = url.searchParams.get('path')
   
   if (!path) {
-    return new Response(JSON.stringify({ error: 'Path required' }), {
+    return new Response(JSON.stringify({ error: 'Path parameter required' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' }
     })
