@@ -3,11 +3,6 @@
   "outputDirectory": "dist",
   "framework": "vue",
   "installCommand": "npm install",
-  "functions": {
-    "api/**/*.ts": {
-      "runtime": "edge"
-    }
-  },
   "headers": [
     {
       "source": "/(.*)",
