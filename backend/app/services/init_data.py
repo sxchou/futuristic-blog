@@ -157,18 +157,10 @@ def init_database():
             db.commit()
             print(f"Created admin user: {settings.ADMIN_USERNAME}")
         else:
-            updated = False
             if not admin.is_verified:
                 admin.is_verified = True
-                updated = True
-            if admin.email != settings.ADMIN_EMAIL:
-                admin.email = settings.ADMIN_EMAIL
-                updated = True
-            admin.hashed_password = get_password_hash(settings.ADMIN_PASSWORD)
-            updated = True
-            if updated:
                 db.commit()
-                print(f"Updated admin user: {settings.ADMIN_USERNAME}")
+                print(f"Updated admin user verification status: {settings.ADMIN_USERNAME}")
         
         categories_data = [
             {"name": "前端工程化", "slug": "frontend-engineering", "description": "前端架构、工程化最佳实践", "icon": "code", "color": "#00d4ff", "order": 1},
