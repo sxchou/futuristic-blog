@@ -101,6 +101,9 @@ const fileUrl = computed(() => {
 })
 
 const downloadUrl = computed(() => {
+  if (directUrl.value && !useProxy.value) {
+    return directUrl.value
+  }
   return fileApi.getDownloadUrl(props.file.id)
 })
 
