@@ -89,64 +89,12 @@ const directUrl = computed(() => {
   return null
 })
 
-const cfProxyUrl = computed(() => {
-  if (!directUrl.value) return null
-  try {
-    const url = new URL(directUrl.value)
-    const path = url.pathname.replace('/storage/v1/object/public/', '')
-    const cfBaseUrl = import.meta.env.VITE_CF_CDN_URL || 'https://cdn.zhouzhouya.top'
-    return `${cfBaseUrl}?path=${encodeURIComponent(path)}`
-  } catch {
-    return null
-  }
-})
-
 const fileUrl = computed(() => {
-  if (accessMode.value === 'cf' && cfProxyUrl.value) {
-    return cfProxyUrl.value
-  }
   return directUrl.value || ''
 })
 
 const downloadUrl = computed(() => {
   return directUrl.value || ''
-})
-
-type AccessMode = 'cf' | 'direct'
-const accessMode = ref<AccessMode>('cf')
-
-const loadTimeout = ref<NodeJS.Timeout | null>(null)
-
-const handleLoadError = () => {
-  if (loadTimeout.value) {
-    clearTimeout(loadTimeout.value)
-    loadTimeout.value = null
-  }
-  if (accessMode.value === 'cf' && directUrl.value) {
-    accessMode.value = 'direct'
-  }
-}
-
-onMounted(() => {
-  accessMode.value = 'cf'
-  loadTimeout.value = setTimeout(() => {
-    if (accessMode.value === 'cf') {
-      handleLoadError()
-    }
-  }, 10000)
-})
-
-watch(() => props.file, () => {
-  if (loadTimeout.value) {
-    clearTimeout(loadTimeout.value)
-    loadTimeout.value = null
-  }
-  accessMode.value = 'cf'
-  loadTimeout.value = setTimeout(() => {
-    if (accessMode.value === 'cf') {
-      handleLoadError()
-    }
-  }, 10000)
 })
 
 const isLocalhost = computed(() => {
