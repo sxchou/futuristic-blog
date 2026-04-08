@@ -616,9 +616,20 @@ const closePreview = () => {
   previewFile.value = null
 }
 
-const downloadFile = (fileId: number) => {
-  const url = fileApi.getDownloadUrl(fileId)
-  window.open(url, '_blank')
+const downloadFile = async (file: ArticleFile) => {
+  try {
+    const response = await fileApi.downloadFile(file.id)
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', file.original_filename)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error(`Failed to download file ${file.original_filename}:`, error)
+  }
 }
 
 const handleDeleteFile = async (fileId: number) => {
@@ -1488,7 +1499,7 @@ watch(form, () => {
                   </button>
                   <button
                     type="button"
-                    @click="downloadFile(file.id)"
+                    @click="downloadFile(file)"
                     class="w-6 h-6 flex items-center justify-center text-primary hover:bg-primary/10 rounded transition-colors"
                     title="下载"
                   >
