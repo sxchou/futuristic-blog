@@ -1,7 +1,8 @@
 from supabase import create_client, Client
 from typing import Optional, BinaryIO
 import logging
-import httpx
+import boto3
+from botocore.config import Config
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -10,9 +11,20 @@ logger = logging.getLogger(__name__)
 class SupabaseStorageService:
     def __init__(self):
         self.client: Optional[Client] = None
+        self.s3_client = None
         if settings.USE_SUPABASE_STORAGE and settings.SUPABASE_URL and settings.SUPABASE_KEY:
             self.client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
-            logger.info("Supabase Storage Service initialized")
+            project_ref = settings.SUPABASE_URL.replace("https://", "").replace(".supabase.co", "")
+            s3_endpoint = f"https://{project_ref}.supabase.co/storage/v1/s3"
+            self.s3_client = boto3.client(
+                's3',
+                endpoint_url=s3_endpoint,
+                aws_access_key_id=settings.SUPABASE_KEY,
+                aws_secret_access_key=settings.SUPABASE_KEY,
+                config=Config(signature_version='s3v4'),
+                region_name='us-east-1'
+            )
+            logger.info("Supabase Storage Service initialized with S3 API")
         else:
             logger.info("Using local file storage")
 
@@ -31,33 +43,21 @@ class SupabaseStorageService:
         try:
             file_content = file_data.read()
             
-            storage_url = f"{settings.SUPABASE_URL}/storage/v1/object/{settings.SUPABASE_BUCKET}/{key}"
-            
-            headers = {
-                "Authorization": f"Bearer {settings.SUPABASE_KEY}",
-                "x-upsert": "true"
+            metadata = {
+                'CacheControl': 'public, max-age=31536000'
             }
+            if content_type:
+                metadata['ContentType'] = content_type
             
-            files = {
-                "file": (key, file_content, content_type or "application/octet-stream")
-            }
-            data = {
-                "cacheControl": "31536000"
-            }
-            
-            async with httpx.AsyncClient() as client:
-                response = await client.post(
-                    storage_url,
-                    headers=headers,
-                    files=files,
-                    data=data
-                )
-            
-            if response.status_code not in [200, 201]:
-                logger.error(f"Failed to upload file to Supabase: {response.status_code} - {response.text}")
-                return None
+            self.s3_client.put_object(
+                Bucket=settings.SUPABASE_BUCKET,
+                Key=key,
+                Body=file_content,
+                **metadata
+            )
 
             public_url = self.client.storage.from_(settings.SUPABASE_BUCKET).get_public_url(key)
+            logger.info(f"File uploaded successfully with cache control: {key}")
             return public_url
 
         except Exception as e:
