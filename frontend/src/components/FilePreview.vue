@@ -112,8 +112,8 @@ const downloadUrl = computed(() => {
   return directUrl.value || ''
 })
 
-type AccessMode = 'direct' | 'cf'
-const accessMode = ref<AccessMode>('direct')
+type AccessMode = 'cf' | 'direct'
+const accessMode = ref<AccessMode>('cf')
 
 const loadTimeout = ref<NodeJS.Timeout | null>(null)
 
@@ -122,18 +122,18 @@ const handleLoadError = () => {
     clearTimeout(loadTimeout.value)
     loadTimeout.value = null
   }
-  if (accessMode.value === 'direct' && cfProxyUrl.value) {
-    accessMode.value = 'cf'
+  if (accessMode.value === 'cf' && directUrl.value) {
+    accessMode.value = 'direct'
   }
 }
 
 onMounted(() => {
-  accessMode.value = 'direct'
+  accessMode.value = 'cf'
   loadTimeout.value = setTimeout(() => {
-    if (accessMode.value === 'direct') {
+    if (accessMode.value === 'cf') {
       handleLoadError()
     }
-  }, 5000)
+  }, 10000)
 })
 
 watch(() => props.file, () => {
@@ -141,12 +141,12 @@ watch(() => props.file, () => {
     clearTimeout(loadTimeout.value)
     loadTimeout.value = null
   }
-  accessMode.value = 'direct'
+  accessMode.value = 'cf'
   loadTimeout.value = setTimeout(() => {
-    if (accessMode.value === 'direct') {
+    if (accessMode.value === 'cf') {
       handleLoadError()
     }
-  }, 5000)
+  }, 10000)
 })
 
 const isLocalhost = computed(() => {
