@@ -466,13 +466,6 @@ const handleImageLoad = () => {
 }
 
 const handleImageError = () => {
-  if (accessMode.value === 'direct' && cfProxyUrl.value) {
-    const prevMode = accessMode.value
-    handleLoadError()
-    if (accessMode.value !== prevMode) {
-      return
-    }
-  }
   loading.value = false
   error.value = '图片加载失败'
 }
@@ -531,13 +524,6 @@ const handleIframeLoad = () => {
 }
 
 const handleIframeError = () => {
-  if (accessMode.value === 'direct' && cfProxyUrl.value) {
-    const prevMode = accessMode.value
-    handleLoadError()
-    if (accessMode.value !== prevMode) {
-      return
-    }
-  }
   loading.value = false
   error.value = '预览加载失败'
 }
