@@ -7,7 +7,7 @@ import gzip
 import httpx
 from datetime import datetime
 from typing import Optional, List, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query
 from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -17,7 +17,7 @@ from app.schemas import ArticleFileResponse, FileOrderUpdate
 from app.utils import get_current_active_user
 from app.utils.timezone import get_now
 from app.core.config import settings
-from app.services.supabase_storage import supabase_storage
+from app.services.supabase_storage import supabase_storage, get_cache_policy
 from io import BytesIO
 
 try:
@@ -410,6 +410,14 @@ async def get_file_content(
     if db_file.file_path.startswith("http"):
         from fastapi.responses import StreamingResponse
         
+        storage_key = None
+        for folder in ["images", "avatars", "audio", "videos", "articles"]:
+            if f"{folder}/" in db_file.file_path:
+                storage_key = f"{folder}/{db_file.filename}"
+                break
+        
+        cache_policy = get_cache_policy(storage_key) if storage_key else "public, max-age=86400"
+        
         async def stream_from_supabase():
             async with httpx.AsyncClient(timeout=120.0) as client:
                 async with client.stream("GET", db_file.file_path) as response:
@@ -423,7 +431,7 @@ async def get_file_content(
             media_type=db_file.mime_type,
             headers={
                 "Content-Disposition": f'inline; filename="{db_file.original_filename}"',
-                "Cache-Control": "public, max-age=86400",
+                "Cache-Control": cache_policy,
                 "Access-Control-Allow-Origin": "*"
             }
         )
@@ -1011,3 +1019,63 @@ async def get_archive_content(
                 os.remove(temp_file_path)
             except:
                 pass
+
+
+@router.post("/admin/update-cache-control")
+async def update_cache_control(
+    prefix: Optional[str] = Query(None, description="存储路径前缀，如 images/、articles/、avatars/"),
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_active_user)
+):
+    if not supabase_storage.is_enabled():
+        raise HTTPException(status_code=400, detail="Supabase Storage 未启用")
+
+    if not supabase_storage.s3_client:
+        raise HTTPException(status_code=400, detail="S3 API 未配置，无法更新缓存策略")
+
+    result = await supabase_storage.batch_update_cache_control(prefix)
+    return {
+        "message": f"缓存策略更新完成: {result['updated']} 个文件已更新, {result['failed']} 个文件失败",
+        **result
+    }
+
+
+@router.post("/admin/update-single-cache-control")
+async def update_single_cache_control(
+    file_id: int,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_active_user)
+):
+    if not supabase_storage.is_enabled():
+        raise HTTPException(status_code=400, detail="Supabase Storage 未启用")
+
+    if not supabase_storage.s3_client:
+        raise HTTPException(status_code=400, detail="S3 API 未配置，无法更新缓存策略")
+
+    db_file = db.query(ArticleFile).filter(ArticleFile.id == file_id).first()
+    if not db_file:
+        raise HTTPException(status_code=404, detail="文件不存在")
+
+    if not db_file.file_path.startswith("http"):
+        raise HTTPException(status_code=400, detail="该文件不在 Supabase Storage 中")
+
+    storage_key = None
+    if "images/" in db_file.file_path:
+        storage_key = f"images/{db_file.filename}"
+    elif "articles/" in db_file.file_path:
+        storage_key = f"articles/{db_file.filename}"
+    elif "avatars/" in db_file.file_path:
+        storage_key = f"avatars/{db_file.filename}"
+    elif "audio/" in db_file.file_path:
+        storage_key = f"audio/{db_file.filename}"
+    elif "videos/" in db_file.file_path:
+        storage_key = f"videos/{db_file.filename}"
+
+    if not storage_key:
+        raise HTTPException(status_code=400, detail="无法确定文件的存储路径")
+
+    success = await supabase_storage.update_cache_control(storage_key)
+    if success:
+        return {"message": f"文件 {db_file.original_filename} 的缓存策略已更新", "storage_key": storage_key}
+    else:
+        raise HTTPException(status_code=500, detail="更新缓存策略失败")

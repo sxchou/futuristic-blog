@@ -1,11 +1,36 @@
 from supabase import create_client, Client
 from typing import Optional, BinaryIO
 import logging
+import asyncio
 import boto3
 from botocore.config import Config
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+
+
+CACHE_POLICIES = {
+    "image": "public, max-age=31536000, immutable",
+    "avatar": "public, max-age=604800, stale-while-revalidate=2592000",
+    "document": "public, max-age=86400, stale-while-revalidate=604800",
+    "audio": "public, max-age=31536000, immutable",
+    "video": "public, max-age=31536000, immutable",
+    "default": "public, max-age=86400, stale-while-revalidate=604800",
+}
+
+
+def get_cache_policy(storage_key: str) -> str:
+    if storage_key.startswith("avatars/"):
+        return CACHE_POLICIES["avatar"]
+    if storage_key.startswith("images/"):
+        return CACHE_POLICIES["image"]
+    if storage_key.startswith("audio/"):
+        return CACHE_POLICIES["audio"]
+    if storage_key.startswith("videos/"):
+        return CACHE_POLICIES["video"]
+    if storage_key.startswith("articles/"):
+        return CACHE_POLICIES["document"]
+    return CACHE_POLICIES["default"]
 
 
 class SupabaseStorageService:
@@ -49,15 +74,16 @@ class SupabaseStorageService:
 
         try:
             file_content = file_data.read()
+            cache_policy = get_cache_policy(key)
             
             if self.s3_client:
                 extra_args = {
-                    'CacheControl': 'public, max-age=31536000'
+                    'CacheControl': cache_policy
                 }
                 if content_type:
                     extra_args['ContentType'] = content_type
                 
-                logger.info(f"Uploading via S3 API: bucket={settings.SUPABASE_BUCKET}, key={key}, cache={extra_args.get('CacheControl')}")
+                logger.info(f"Uploading via S3 API: bucket={settings.SUPABASE_BUCKET}, key={key}, cache={cache_policy}")
                 
                 self.s3_client.put_object(
                     Bucket=settings.SUPABASE_BUCKET,
@@ -68,7 +94,7 @@ class SupabaseStorageService:
                 logger.info(f"File uploaded via S3 API with cache control: {key}")
             else:
                 options = {
-                    "cache-control": "31536000",
+                    "cache-control": cache_policy,
                     "upsert": "true"
                 }
                 if content_type:
@@ -91,6 +117,69 @@ class SupabaseStorageService:
         except Exception as e:
             logger.error(f"Failed to upload file to Supabase: {e}", exc_info=True)
             return None
+
+    async def update_cache_control(self, key: str, cache_control: Optional[str] = None) -> bool:
+        if not self.s3_client:
+            logger.warning("S3 client not available, cannot update cache-control")
+            return False
+
+        try:
+            if cache_control is None:
+                cache_control = get_cache_policy(key)
+
+            head = self.s3_client.head_object(
+                Bucket=settings.SUPABASE_BUCKET,
+                Key=key
+            )
+
+            copy_args = {
+                'Bucket': settings.SUPABASE_BUCKET,
+                'Key': key,
+                'CopySource': {'Bucket': settings.SUPABASE_BUCKET, 'Key': key},
+                'CacheControl': cache_control,
+                'MetadataDirective': 'REPLACE',
+                'ContentType': head.get('ContentType', 'application/octet-stream'),
+            }
+
+            self.s3_client.copy_object(**copy_args)
+            logger.info(f"Updated cache-control for {key}: {cache_control}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to update cache-control for {key}: {e}", exc_info=True)
+            return False
+
+    async def batch_update_cache_control(self, prefix: Optional[str] = None) -> dict:
+        if not self.s3_client:
+            logger.warning("S3 client not available, cannot batch update cache-control")
+            return {"updated": 0, "failed": 0, "errors": []}
+
+        result = {"updated": 0, "failed": 0, "errors": []}
+        try:
+            list_kwargs = {'Bucket': settings.SUPABASE_BUCKET, 'MaxKeys': 1000}
+            if prefix:
+                list_kwargs['Prefix'] = prefix
+
+            paginator = self.s3_client.get_paginator('list_objects_v2')
+            for page in paginator.paginate(**list_kwargs):
+                for obj in page.get('Contents', []):
+                    key = obj['Key']
+                    try:
+                        success = await self.update_cache_control(key)
+                        if success:
+                            result["updated"] += 1
+                        else:
+                            result["failed"] += 1
+                        await asyncio.sleep(0.1)
+                    except Exception as e:
+                        result["failed"] += 1
+                        result["errors"].append({"key": key, "error": str(e)})
+
+            logger.info(f"Batch update cache-control completed: {result['updated']} updated, {result['failed']} failed")
+        except Exception as e:
+            logger.error(f"Batch update cache-control failed: {e}", exc_info=True)
+            result["errors"].append({"error": str(e)})
+
+        return result
 
     async def delete_file(self, key: str) -> bool:
         if not self.is_enabled():
