@@ -14,17 +14,21 @@ class SupabaseStorageService:
         self.s3_client = None
         if settings.USE_SUPABASE_STORAGE and settings.SUPABASE_URL and settings.SUPABASE_KEY:
             self.client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
-            project_ref = settings.SUPABASE_URL.replace("https://", "").replace(".supabase.co", "")
-            s3_endpoint = f"https://{project_ref}.supabase.co/storage/v1/s3"
-            self.s3_client = boto3.client(
-                's3',
-                endpoint_url=s3_endpoint,
-                aws_access_key_id=settings.SUPABASE_KEY,
-                aws_secret_access_key=settings.SUPABASE_KEY,
-                config=Config(signature_version='s3v4'),
-                region_name='us-east-1'
-            )
-            logger.info("Supabase Storage Service initialized with S3 API")
+            
+            if settings.S3_ACCESS_KEY_ID and settings.S3_SECRET_ACCESS_KEY:
+                project_ref = settings.SUPABASE_URL.replace("https://", "").replace(".supabase.co", "")
+                s3_endpoint = f"https://{project_ref}.storage.supabase.co/storage/v1/s3"
+                self.s3_client = boto3.client(
+                    's3',
+                    endpoint_url=s3_endpoint,
+                    aws_access_key_id=settings.S3_ACCESS_KEY_ID,
+                    aws_secret_access_key=settings.S3_SECRET_ACCESS_KEY,
+                    config=Config(signature_version='s3v4'),
+                    region_name='us-east-1'
+                )
+                logger.info("Supabase Storage Service initialized with S3 API")
+            else:
+                logger.warning("S3 credentials not configured, using SDK upload")
         else:
             logger.info("Using local file storage")
 
@@ -43,21 +47,40 @@ class SupabaseStorageService:
         try:
             file_content = file_data.read()
             
-            metadata = {
-                'CacheControl': 'public, max-age=31536000'
-            }
-            if content_type:
-                metadata['ContentType'] = content_type
-            
-            self.s3_client.put_object(
-                Bucket=settings.SUPABASE_BUCKET,
-                Key=key,
-                Body=file_content,
-                **metadata
-            )
+            if self.s3_client:
+                extra_args = {
+                    'CacheControl': 'public, max-age=31536000'
+                }
+                if content_type:
+                    extra_args['ContentType'] = content_type
+                
+                self.s3_client.put_object(
+                    Bucket=settings.SUPABASE_BUCKET,
+                    Key=key,
+                    Body=file_content,
+                    **extra_args
+                )
+                logger.info(f"File uploaded via S3 API with cache control: {key}")
+            else:
+                options = {
+                    "cache-control": "31536000",
+                    "upsert": "true"
+                }
+                if content_type:
+                    options["content-type"] = content_type
+
+                response = self.client.storage.from_(settings.SUPABASE_BUCKET).upload(
+                    key,
+                    file_content,
+                    file_options=options
+                )
+
+                if hasattr(response, 'error') and response.error:
+                    logger.error(f"Failed to upload file to Supabase: {response.error}")
+                    return None
+                logger.info(f"File uploaded via SDK: {key}")
 
             public_url = self.client.storage.from_(settings.SUPABASE_BUCKET).get_public_url(key)
-            logger.info(f"File uploaded successfully with cache control: {key}")
             return public_url
 
         except Exception as e:
