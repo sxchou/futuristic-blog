@@ -21,6 +21,8 @@ import logging
 from contextlib import contextmanager
 from datetime import datetime
 
+IS_VERCEL = os.environ.get("VERCEL") == "1"
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -170,37 +172,46 @@ app.add_middleware(AccessLogMiddleware)
 app.include_router(api_router, prefix="/api")
 
 
-def ensure_uploads_dir():
-    uploads_dir = (
-        settings.AVATAR_STORAGE_PATH or 
-        os.getenv("AVATAR_STORAGE_PATH") or 
-        os.getenv("RAILWAY_VOLUME_MOUNT_PATH") or
-        os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
-    )
-    if not os.path.exists(uploads_dir):
-        os.makedirs(uploads_dir, exist_ok=True)
-    
-    subdirs = ["avatars", "images", "articles"]
-    for subdir in subdirs:
-        subdir_path = os.path.join(uploads_dir, subdir)
-        if not os.path.exists(subdir_path):
-            os.makedirs(subdir_path, exist_ok=True)
-    
-    return uploads_dir
+if not IS_VERCEL:
+    def ensure_uploads_dir():
+        uploads_dir = (
+            settings.AVATAR_STORAGE_PATH or 
+            os.getenv("AVATAR_STORAGE_PATH") or 
+            os.getenv("RAILWAY_VOLUME_MOUNT_PATH") or
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+        )
+        if not os.path.exists(uploads_dir):
+            os.makedirs(uploads_dir, exist_ok=True)
+        
+        subdirs = ["avatars", "images", "articles"]
+        for subdir in subdirs:
+            subdir_path = os.path.join(uploads_dir, subdir)
+            if not os.path.exists(subdir_path):
+                os.makedirs(subdir_path, exist_ok=True)
+        
+        return uploads_dir
 
-
-uploads_dir = ensure_uploads_dir()
-try:
-    app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
-except Exception as e:
-    logger.warning(f"Failed to mount uploads directory: {e}")
+    uploads_dir = ensure_uploads_dir()
+    try:
+        app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
+    except Exception as e:
+        logger.warning(f"Failed to mount uploads directory: {e}")
 
 
 @app.on_event("startup")
 async def startup_event():
     logger.info("=== Application startup event triggered ===")
     logger.info(f"Database URL: {str(engine.url)[:50]}...")
-    asyncio.create_task(background_init())
+    
+    if IS_VERCEL:
+        try:
+            Base.metadata.create_all(bind=engine)
+            init_database()
+            logger.info("Database initialized for Vercel")
+        except Exception as e:
+            logger.error(f"Database init error: {e}")
+    else:
+        asyncio.create_task(background_init())
 
 
 async def background_init():
