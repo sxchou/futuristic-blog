@@ -20,12 +20,16 @@ services:
       - key: PYTHONUNBUFFERED
         value: 1
       - key: USE_SUPABASE_STORAGE
-        value: false
+        sync: false
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_KEY
         sync: false
       - key: SUPABASE_BUCKET
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
         sync: false
       - key: ALLOWED_ORIGINS
         sync: false
