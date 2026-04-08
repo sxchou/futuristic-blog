@@ -23,10 +23,13 @@ class SupabaseStorageService:
                     endpoint_url=s3_endpoint,
                     aws_access_key_id=settings.S3_ACCESS_KEY_ID,
                     aws_secret_access_key=settings.S3_SECRET_ACCESS_KEY,
-                    config=Config(signature_version='s3v4'),
+                    config=Config(
+                        signature_version='s3v4',
+                        s3={'addressing_style': 'path'}
+                    ),
                     region_name='us-east-1'
                 )
-                logger.info("Supabase Storage Service initialized with S3 API")
+                logger.info(f"Supabase Storage Service initialized with S3 API: {s3_endpoint}")
             else:
                 logger.warning("S3 credentials not configured, using SDK upload")
         else:
@@ -53,6 +56,8 @@ class SupabaseStorageService:
                 }
                 if content_type:
                     extra_args['ContentType'] = content_type
+                
+                logger.info(f"Uploading via S3 API: bucket={settings.SUPABASE_BUCKET}, key={key}, cache={extra_args.get('CacheControl')}")
                 
                 self.s3_client.put_object(
                     Bucket=settings.SUPABASE_BUCKET,
@@ -84,7 +89,7 @@ class SupabaseStorageService:
             return public_url
 
         except Exception as e:
-            logger.error(f"Failed to upload file to Supabase: {e}")
+            logger.error(f"Failed to upload file to Supabase: {e}", exc_info=True)
             return None
 
     async def delete_file(self, key: str) -> bool:
