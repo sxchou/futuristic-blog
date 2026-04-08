@@ -1,6 +1,7 @@
 from supabase import create_client, Client
 from typing import Optional, BinaryIO
 import logging
+import httpx
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -29,21 +30,31 @@ class SupabaseStorageService:
 
         try:
             file_content = file_data.read()
-            options = {
-                "cache-control": "31536000",
-                "upsert": "true"
+            
+            storage_url = f"{settings.SUPABASE_URL}/storage/v1/object/{settings.SUPABASE_BUCKET}/{key}"
+            
+            headers = {
+                "Authorization": f"Bearer {settings.SUPABASE_KEY}",
+                "x-upsert": "true"
             }
-            if content_type:
-                options["content-type"] = content_type
-
-            response = self.client.storage.from_(settings.SUPABASE_BUCKET).upload(
-                key,
-                file_content,
-                file_options=options
-            )
-
-            if hasattr(response, 'error') and response.error:
-                logger.error(f"Failed to upload file to Supabase: {response.error}")
+            
+            files = {
+                "file": (key, file_content, content_type or "application/octet-stream")
+            }
+            data = {
+                "cacheControl": "31536000"
+            }
+            
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    storage_url,
+                    headers=headers,
+                    files=files,
+                    data=data
+                )
+            
+            if response.status_code not in [200, 201]:
+                logger.error(f"Failed to upload file to Supabase: {response.status_code} - {response.text}")
                 return None
 
             public_url = self.client.storage.from_(settings.SUPABASE_BUCKET).get_public_url(key)

@@ -32,7 +32,7 @@ export default {
 
       const headers = new Headers(response.headers)
       headers.set('Access-Control-Allow-Origin', '*')
-      headers.set('Cache-Control', 'public, max-age=86400')
+      headers.set('Cache-Control', 'public, max-age=31536000')
       headers.delete('Content-Encoding')
 
       return new Response(response.body, {
