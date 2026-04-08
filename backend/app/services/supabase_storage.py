@@ -29,7 +29,9 @@ class SupabaseStorageService:
 
         try:
             file_content = file_data.read()
-            options = {}
+            options = {
+                "cachecontrol": "public, max-age=31536000"
+            }
             if content_type:
                 options["content-type"] = content_type
 
