@@ -61,7 +61,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <header class="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-dark-200 border-b border-gray-200 dark:border-white/10">
+  <header class="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-dark-100/80 backdrop-blur-xl border-b border-white/10">
     <nav class="container mx-auto px-4 py-2">
       <div class="flex items-center justify-between">
         <router-link to="/" class="flex items-center gap-2 group">
