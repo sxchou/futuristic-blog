@@ -12,10 +12,10 @@ logger = logging.getLogger(__name__)
 CACHE_POLICIES = {
     "image": "public, max-age=31536000, immutable",
     "avatar": "public, max-age=604800, stale-while-revalidate=2592000",
-    "document": "public, max-age=86400, stale-while-revalidate=604800",
+    "document": "public, max-age=31536000, immutable",
     "audio": "public, max-age=31536000, immutable",
     "video": "public, max-age=31536000, immutable",
-    "default": "public, max-age=86400, stale-while-revalidate=604800",
+    "default": "public, max-age=31536000, immutable",
 }
 
 
