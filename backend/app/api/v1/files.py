@@ -1054,6 +1054,7 @@ async def cache_diagnostic(
         "supabase_bucket": settings.SUPABASE_BUCKET or "not set",
         "s3_access_key_set": bool(settings.S3_ACCESS_KEY_ID),
         "s3_secret_key_set": bool(settings.S3_SECRET_ACCESS_KEY),
+        "message": "S3 API upload required for Cache-Control to work. Set S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY in Render environment variables."
     }
 
     if file_id:
@@ -1066,15 +1067,13 @@ async def cache_diagnostic(
                     break
 
             if storage_key:
-                actual_cache = await supabase_storage._check_cache_control(storage_key)
                 expected_cache = get_cache_policy(storage_key)
                 result["file_info"] = {
                     "file_id": file_id,
                     "filename": db_file.filename,
                     "storage_key": storage_key,
                     "expected_cache_control": expected_cache,
-                    "actual_cache_control": actual_cache,
-                    "cache_working": actual_cache is not None and "no-cache" not in (actual_cache or "").lower()
+                    "file_url": db_file.file_path
                 }
 
     return result
