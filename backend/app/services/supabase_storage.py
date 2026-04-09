@@ -115,7 +115,7 @@ class SupabaseStorageService:
     async def _warmup_cache_async(self, url: str, key: str):
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.head(url)
+                response = await client.get(url, follow_redirects=True)
                 if response.status_code == 200:
                     logger.info(f"Cache warmup successful: {key}")
                 else:
@@ -126,7 +126,7 @@ class SupabaseStorageService:
     async def warmup_cache(self, url: str) -> bool:
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.head(url)
+                response = await client.get(url, follow_redirects=True)
                 return response.status_code == 200
         except Exception as e:
             logger.warning(f"Cache warmup failed: {url} - {e}")
