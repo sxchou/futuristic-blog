@@ -1040,6 +1040,46 @@ async def update_cache_control(
     }
 
 
+@router.get("/admin/cache-diagnostic")
+async def cache_diagnostic(
+    file_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_active_user)
+):
+    result = {
+        "storage_enabled": supabase_storage.is_enabled(),
+        "upload_method": supabase_storage.get_upload_method(),
+        "s3_configured": supabase_storage.s3_client is not None,
+        "supabase_url": settings.SUPABASE_URL[:30] + "..." if settings.SUPABASE_URL else "not set",
+        "supabase_bucket": settings.SUPABASE_BUCKET or "not set",
+        "s3_access_key_set": bool(settings.S3_ACCESS_KEY_ID),
+        "s3_secret_key_set": bool(settings.S3_SECRET_ACCESS_KEY),
+    }
+
+    if file_id:
+        db_file = db.query(ArticleFile).filter(ArticleFile.id == file_id).first()
+        if db_file and db_file.file_path.startswith("http"):
+            storage_key = None
+            for folder in ["images", "avatars", "audio", "videos", "articles"]:
+                if f"{folder}/" in db_file.file_path:
+                    storage_key = f"{folder}/{db_file.filename}"
+                    break
+
+            if storage_key:
+                actual_cache = await supabase_storage._check_cache_control(storage_key)
+                expected_cache = get_cache_policy(storage_key)
+                result["file_info"] = {
+                    "file_id": file_id,
+                    "filename": db_file.filename,
+                    "storage_key": storage_key,
+                    "expected_cache_control": expected_cache,
+                    "actual_cache_control": actual_cache,
+                    "cache_working": actual_cache is not None and "no-cache" not in (actual_cache or "").lower()
+                }
+
+    return result
+
+
 @router.post("/admin/update-single-cache-control")
 async def update_single_cache_control(
     file_id: int,

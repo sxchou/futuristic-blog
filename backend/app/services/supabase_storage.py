@@ -5,6 +5,7 @@ import asyncio
 import boto3
 from botocore.config import Config
 from app.core.config import settings
+import httpx
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +64,54 @@ class SupabaseStorageService:
     def is_enabled(self) -> bool:
         return self.client is not None
 
+    def get_upload_method(self) -> str:
+        if self.s3_client:
+            return "s3"
+        if self.client:
+            return "http"
+        return "none"
+
+    async def _upload_via_http(
+        self,
+        key: str,
+        file_content: bytes,
+        content_type: Optional[str],
+        cache_policy: str
+    ) -> bool:
+        url = f"{settings.SUPABASE_URL}/storage/v1/object/{settings.SUPABASE_BUCKET}/{key}"
+
+        headers = {
+            "Authorization": f"Bearer {settings.SUPABASE_KEY}",
+            "x-upsert": "true",
+            "cache-control": cache_policy,
+        }
+
+        files = {
+            "file": (key, file_content, content_type or "application/octet-stream")
+        }
+
+        logger.info(f"Uploading via HTTP API: key={key}, cache={cache_policy}")
+
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            response = await client.post(url, headers=headers, files=files)
+            if response.status_code in (200, 201):
+                logger.info(f"HTTP upload succeeded: {key}")
+                return True
+            else:
+                logger.error(f"HTTP upload failed: {response.status_code} {response.text}")
+                return False
+
+    async def _check_cache_control(self, key: str) -> Optional[str]:
+        url = f"{settings.SUPABASE_URL}/storage/v1/object/public/{settings.SUPABASE_BUCKET}/{key}"
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            try:
+                response = await client.head(url)
+                return response.headers.get("cache-control")
+            except Exception as e:
+                logger.error(f"Failed to check cache-control: {e}")
+                return None
+
     async def upload_file(
         self,
         file_data: BinaryIO,
@@ -75,16 +124,16 @@ class SupabaseStorageService:
         try:
             file_content = file_data.read()
             cache_policy = get_cache_policy(key)
-            
+
             if self.s3_client:
                 extra_args = {
                     'CacheControl': cache_policy
                 }
                 if content_type:
                     extra_args['ContentType'] = content_type
-                
+
                 logger.info(f"Uploading via S3 API: bucket={settings.SUPABASE_BUCKET}, key={key}, cache={cache_policy}")
-                
+
                 self.s3_client.put_object(
                     Bucket=settings.SUPABASE_BUCKET,
                     Key=key,
@@ -93,23 +142,32 @@ class SupabaseStorageService:
                 )
                 logger.info(f"File uploaded via S3 API with cache control: {key}")
             else:
-                options = {
-                    "cache-control": cache_policy,
-                    "upsert": "true"
-                }
-                if content_type:
-                    options["content-type"] = content_type
+                http_success = await self._upload_via_http(key, file_content, content_type, cache_policy)
+                if not http_success:
+                    logger.warning("HTTP upload failed, falling back to SDK")
+                    options = {
+                        "cache-control": cache_policy,
+                        "x-upsert": "true"
+                    }
+                    if content_type:
+                        options["content-type"] = content_type
 
-                response = self.client.storage.from_(settings.SUPABASE_BUCKET).upload(
-                    key,
-                    file_content,
-                    file_options=options
-                )
+                    response = self.client.storage.from_(settings.SUPABASE_BUCKET).upload(
+                        key,
+                        file_content,
+                        file_options=options
+                    )
 
-                if hasattr(response, 'error') and response.error:
-                    logger.error(f"Failed to upload file to Supabase: {response.error}")
-                    return None
-                logger.info(f"File uploaded via SDK: {key}")
+                    if hasattr(response, 'error') and response.error:
+                        logger.error(f"Failed to upload file to Supabase: {response.error}")
+                        return None
+                    logger.info(f"File uploaded via SDK fallback: {key}")
+
+                actual_cache = await self._check_cache_control(key)
+                if actual_cache and "no-cache" in actual_cache.lower():
+                    logger.warning(f"Cache-Control still 'no-cache' after upload, Supabase server may override it. key={key}")
+                elif actual_cache:
+                    logger.info(f"Cache-Control verified: {actual_cache} for key={key}")
 
             public_url = self.client.storage.from_(settings.SUPABASE_BUCKET).get_public_url(key)
             return public_url
