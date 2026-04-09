@@ -1,8 +1,9 @@
 from supabase import create_client, Client
-from typing import Optional, BinaryIO
+from typing import Optional, BinaryIO, List
 import logging
 import asyncio
 import boto3
+import httpx
 from botocore.config import Config
 from app.core.config import settings
 
@@ -102,11 +103,50 @@ class SupabaseStorageService:
             logger.info(f"File uploaded via S3 API with cache control: {key}")
 
             public_url = self.client.storage.from_(settings.SUPABASE_BUCKET).get_public_url(key)
+            
+            asyncio.create_task(self._warmup_cache_async(public_url, key))
+            
             return public_url
 
         except Exception as e:
             logger.error(f"Failed to upload file to Supabase: {e}", exc_info=True)
             return None
+
+    async def _warmup_cache_async(self, url: str, key: str):
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.head(url)
+                if response.status_code == 200:
+                    logger.info(f"Cache warmup successful: {key}")
+                else:
+                    logger.warning(f"Cache warmup returned status {response.status_code}: {key}")
+        except Exception as e:
+            logger.warning(f"Cache warmup failed (non-critical): {key} - {e}")
+
+    async def warmup_cache(self, url: str) -> bool:
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.head(url)
+                return response.status_code == 200
+        except Exception as e:
+            logger.warning(f"Cache warmup failed: {url} - {e}")
+            return False
+
+    async def warmup_cache_batch(self, urls: List[str]) -> dict:
+        result = {"success": 0, "failed": 0}
+        for url in urls:
+            try:
+                success = await self.warmup_cache(url)
+                if success:
+                    result["success"] += 1
+                else:
+                    result["failed"] += 1
+                await asyncio.sleep(0.05)
+            except Exception as e:
+                result["failed"] += 1
+                logger.warning(f"Batch warmup failed for {url}: {e}")
+        logger.info(f"Cache warmup batch completed: {result['success']} success, {result['failed']} failed")
+        return result
 
     async def update_cache_control(self, key: str, cache_control: Optional[str] = None) -> bool:
         if not self.s3_client:
