@@ -549,6 +549,8 @@ async def get_storage_info(
                 folder = "images"
             elif "avatars/" in f.file_path:
                 folder = "avatars"
+            elif "logos/" in f.file_path:
+                folder = "logos"
             elif "videos/" in f.file_path:
                 folder = "videos"
             elif "audio/" in f.file_path:
@@ -576,20 +578,20 @@ async def get_storage_info(
                 "size_formatted": format_file_size(stats["size"]),
                 "file_count": len(stats["files"]),
                 "files": stats["files"][:20],
-                "is_protected": folder == "avatars"
+                "is_protected": folder == "avatars" or folder == "logos"
             }
     else:
         db_file_paths = {f.file_path for f in db_files}
         db_file_map = {f.file_path: f for f in db_files}
         
-        PROTECTED_DIRS = {'avatars'}
+        PROTECTED_DIRS = {'avatars', 'logos'}
         
         if os.path.exists(UPLOAD_DIR):
             for root, dirs, files in os.walk(UPLOAD_DIR):
                 rel_path = os.path.relpath(root, UPLOAD_DIR)
                 dir_name = rel_path if rel_path != "." else "root"
                 
-                is_protected = dir_name in PROTECTED_DIRS or dir_name.startswith('avatars/')
+                is_protected = dir_name in PROTECTED_DIRS or dir_name.startswith('avatars/') or dir_name.startswith('logos/')
                 
                 dir_size = 0
                 dir_files = []
@@ -613,7 +615,8 @@ async def get_storage_info(
                             "size": file_size,
                             "size_formatted": format_file_size(file_size),
                             "modified": datetime.fromtimestamp(file_stat.st_mtime).isoformat(),
-                            "is_avatar": dir_name == 'avatars' or dir_name.startswith('avatars/')
+                            "is_avatar": dir_name == 'avatars' or dir_name.startswith('avatars/'),
+                            "is_logo": dir_name == 'logos' or dir_name.startswith('logos/')
                         }
                         dir_files.append(file_info)
                         
@@ -648,7 +651,7 @@ async def delete_orphan_files(
     db_files = db.query(ArticleFile).all()
     db_file_paths = {f.file_path for f in db_files}
     
-    EXCLUDED_DIRS = {'avatars'}
+    EXCLUDED_DIRS = {'avatars', 'logos'}
     
     deleted_files = []
     deleted_size = 0
