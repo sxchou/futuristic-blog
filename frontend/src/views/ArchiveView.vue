@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import apiClient from '@/api/client'
+import BlogSidebar from '@/components/common/BlogSidebar.vue'
 
 interface Article {
   id: number
@@ -47,25 +48,22 @@ const availableYears = computed(() => {
 
 const filteredData = computed(() => {
   let data = archiveData.value
-  
   if (selectedYear.value) {
     data = data.filter(y => y.year === selectedYear.value)
   }
-  
   if (searchQuery.value.trim()) {
     const query = searchQuery.value.toLowerCase()
     data = data.map(yearData => ({
       ...yearData,
       months: yearData.months.map(monthData => ({
         ...monthData,
-        articles: monthData.articles.filter(article => 
+        articles: monthData.articles.filter(article =>
           article.title.toLowerCase().includes(query) ||
           article.category?.name.toLowerCase().includes(query)
         )
       })).filter(m => m.articles.length > 0)
     })).filter(y => y.months.length > 0)
   }
-  
   return data
 })
 
@@ -79,14 +77,9 @@ const formatDate = (dateStr: string) => {
 
 const highlightText = (text: string, keyword: string): string => {
   if (!keyword || !text) return text
-  
-  const escapeRegExp = (str: string) => {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  }
-  
+  const escapeRegExp = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const pattern = escapeRegExp(keyword)
   const regex = new RegExp(`(${pattern})`, 'gi')
-  
   return text.replace(regex, '<mark class="search-highlight">$1</mark>')
 }
 
@@ -129,7 +122,6 @@ const fetchArchive = async () => {
     loading.value = true
     const response = await apiClient.get('/articles/archive/list')
     archiveData.value = response.data
-    
     const firstYear = archiveData.value[0]
     if (firstYear) {
       firstYear.months.forEach(m => {
@@ -161,86 +153,56 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen pb-16">
-    <div class="container mx-auto px-4 max-w-5xl">
-      <div class="mb-8">
-        <div class="text-center mb-4">
-          <h1 class="text-2xl md:text-3xl font-bold mb-1">
-            <span class="gradient-text">文章归档</span>
-          </h1>
-          <p class="text-sm text-gray-500 dark:text-gray-400">
-            共 <span class="text-primary font-semibold">{{ totalArticles }}</span> 篇文章
-          </p>
+  <div class="flex flex-col lg:flex-row gap-8">
+    <div class="flex-1 min-w-0">
+      <div class="mb-6">
+        <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">文章归档</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          共 <span class="text-primary font-semibold">{{ totalArticles }}</span> 篇文章
+        </p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2 mb-6">
+        <div class="relative">
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="搜索文章..."
+            class="w-48 px-3 py-1.5 pl-8 text-sm bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none transition-colors"
+          />
+          <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
         </div>
-        
-        <div class="flex flex-wrap items-center justify-center gap-2">
-          <div class="relative">
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="搜索文章..."
-              class="w-48 px-3 py-1.5 pl-8 text-sm bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none transition-colors"
-            />
-            <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
-          
-          <select
-            v-model="selectedYear"
-            class="px-3 py-1.5 text-sm bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none transition-colors"
-          >
-            <option :value="null">全部年份</option>
-            <option v-for="year in availableYears" :key="year" :value="year">{{ year }}年</option>
-          </select>
-          
-          <div class="flex items-center gap-1">
-            <button
-              @click="expandAll"
-              class="px-2 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-primary/10 rounded transition-colors"
-              title="展开全部"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-              </svg>
-            </button>
-            <button
-              @click="collapseAll"
-              class="px-2 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-primary/10 rounded transition-colors"
-              title="收起全部"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
-              </svg>
-            </button>
-          </div>
+        <select
+          v-model="selectedYear"
+          class="px-3 py-1.5 text-sm bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none transition-colors"
+        >
+          <option :value="null">全部年份</option>
+          <option v-for="year in availableYears" :key="year" :value="year">{{ year }}年</option>
+        </select>
+        <div class="flex items-center gap-1">
+          <button @click="expandAll" class="px-2 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-primary/10 rounded transition-colors" title="展开全部">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+          </button>
+          <button @click="collapseAll" class="px-2 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-primary/10 rounded transition-colors" title="收起全部">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" /></svg>
+          </button>
         </div>
       </div>
 
-      <div v-if="loading" class="flex flex-col items-center justify-center py-20">
-        <div class="relative w-10 h-10 mb-3">
-          <div class="absolute inset-0 border-3 border-primary/20 rounded-full"></div>
-          <div class="absolute inset-0 border-3 border-transparent border-t-primary rounded-full animate-spin"></div>
-        </div>
-        <p class="text-gray-500 dark:text-gray-400 text-sm">加载中...</p>
+      <div v-if="loading" class="flex justify-center py-20">
+        <div class="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
 
       <div v-else-if="filteredData.length === 0" class="text-center py-16">
-        <div class="w-16 h-16 mx-auto mb-4 rounded-xl bg-gray-100 dark:bg-white/5 flex items-center justify-center">
-          <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-        </div>
+        <svg class="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
         <p class="text-gray-500 dark:text-gray-400 mb-3 text-sm">
           {{ searchQuery || selectedYear ? '没有找到匹配的文章' : '暂无文章' }}
         </p>
-        <button
-          v-if="searchQuery || selectedYear"
-          @click="clearFilters"
-          class="text-primary hover:underline text-sm"
-        >
-          清除筛选条件
-        </button>
+        <button v-if="searchQuery || selectedYear" @click="clearFilters" class="text-primary hover:underline text-sm">清除筛选条件</button>
         <router-link v-else to="/" class="text-primary hover:underline text-sm">返回首页</router-link>
       </div>
 
@@ -259,26 +221,16 @@ onMounted(() => {
           </div>
 
           <div class="space-y-2 pl-12 md:pl-20">
-            <div
-              v-for="monthData in yearData.months"
-              :key="monthData.month"
-              class="relative"
-            >
+            <div v-for="monthData in yearData.months" :key="monthData.month" class="relative">
               <div class="absolute left-[-32px] md:left-[-48px] top-3 w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600"></div>
 
-              <div class="glass-card-hover overflow-hidden">
+              <div class="glass-card overflow-hidden">
                 <button
                   @click="toggleMonth(yearData.year, monthData.month)"
                   class="w-full flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                 >
                   <div class="flex items-center gap-2">
-                    <svg
-                      class="w-4 h-4 text-gray-400 transition-transform"
-                      :class="{ 'rotate-90': isMonthExpanded(yearData.year, monthData.month) }"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
+                    <svg class="w-4 h-4 text-gray-400 transition-transform" :class="{ 'rotate-90': isMonthExpanded(yearData.year, monthData.month) }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                     </svg>
                     <span class="font-medium text-gray-900 dark:text-white text-sm">{{ monthData.month }}月</span>
@@ -286,38 +238,24 @@ onMounted(() => {
                   </div>
                 </button>
 
-                <div
-                  v-show="isMonthExpanded(yearData.year, monthData.month)"
-                  class="border-t border-gray-100 dark:border-white/5"
-                >
+                <div v-show="isMonthExpanded(yearData.year, monthData.month)" class="border-t border-gray-100 dark:border-white/5">
                   <router-link
                     v-for="article in monthData.articles"
                     :key="article.id"
                     :to="`/article/${article.slug}`"
                     class="group flex items-center gap-3 px-4 py-2 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors border-b border-gray-50 dark:border-white/5 last:border-b-0"
                   >
-                    <span class="text-xs text-gray-400 w-12 flex-shrink-0 font-mono">
-                      {{ formatDate(article.created_at) }}
-                    </span>
-                    
+                    <span class="text-xs text-gray-400 w-12 flex-shrink-0 font-mono">{{ formatDate(article.created_at) }}</span>
                     <span
                       v-if="article.category"
                       class="px-1.5 py-0.5 rounded text-[10px] font-medium flex-shrink-0"
-                      :style="{ 
-                        backgroundColor: `${article.category.color}20`,
-                        color: article.category.color 
-                      }"
+                      :style="{ backgroundColor: `${article.category.color}20`, color: article.category.color }"
                       v-html="highlightText(article.category.name, searchQuery)"
                     ></span>
-                    
                     <span class="flex-1 text-sm text-gray-700 dark:text-gray-300 truncate group-hover:text-primary transition-colors" v-html="highlightText(article.title, searchQuery)"></span>
-                    
                     <div class="flex items-center gap-2 text-xs text-gray-400 flex-shrink-0">
                       <span v-if="article.view_count" class="flex items-center gap-0.5">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                         {{ article.view_count }}
                       </span>
                       <svg class="w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:text-primary group-hover:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -333,14 +271,11 @@ onMounted(() => {
           <div v-if="yearIndex < filteredData.length - 1" class="h-4"></div>
         </div>
       </div>
+    </div>
 
-      <div class="mt-12 text-center">
-        <router-link to="/" class="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-primary transition-colors">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-          </svg>
-          返回首页
-        </router-link>
+    <div class="lg:w-80 xl:w-84 flex-shrink-0">
+      <div class="lg:sticky lg:top-20">
+        <BlogSidebar />
       </div>
     </div>
   </div>

@@ -190,6 +190,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
     </div>
 
     <div v-else class="glass-card overflow-hidden">
+      <div class="overflow-x-auto">
       <table class="w-full text-sm">
         <thead class="bg-gray-100 dark:bg-dark-100">
           <tr>
@@ -270,6 +271,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
           </tr>
         </tbody>
       </table>
+      </div>
 
       <div v-if="totalPages > 1" class="flex items-center justify-center gap-4 mt-4">
         <button

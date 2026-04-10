@@ -547,7 +547,8 @@ function getProviderBgColor(provider: string) {
             暂无配置，请添加邮箱配置
           </div>
 
-          <table v-else class="w-full">
+          <div v-else class="overflow-x-auto">
+          <table class="w-full">
             <thead>
               <tr class="border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-dark-100/50">
                 <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5">服务商</th>
@@ -626,6 +627,7 @@ function getProviderBgColor(provider: string) {
               </tr>
             </tbody>
           </table>
+          </div>
         </div>
 
         <div class="bg-white dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10 p-4">
@@ -678,7 +680,8 @@ function getProviderBgColor(provider: string) {
           <div class="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
         </div>
 
-        <table v-else class="w-full">
+        <div v-else class="overflow-x-auto">
+        <table class="w-full">
           <thead>
             <tr class="border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-dark-100/50">
               <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5">收件人</th>
@@ -712,6 +715,7 @@ function getProviderBgColor(provider: string) {
             </tr>
           </tbody>
         </table>
+        </div>
 
         <div v-if="logs.length > 0" class="px-4 py-3 border-t border-gray-200 dark:border-white/10 flex items-center justify-between">
           <span class="text-xs text-gray-500">

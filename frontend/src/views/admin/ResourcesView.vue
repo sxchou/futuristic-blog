@@ -143,6 +143,7 @@ onMounted(() => {
     </div>
 
     <div v-else class="glass-card overflow-hidden">
+      <div class="overflow-x-auto">
       <table class="w-full">
         <thead class="bg-gray-50 dark:bg-dark-100">
           <tr>
@@ -202,6 +203,7 @@ onMounted(() => {
           </tr>
         </tbody>
       </table>
+      </div>
 
       <div v-if="resources.length === 0" class="text-center py-12 text-gray-500">
         暂无资源

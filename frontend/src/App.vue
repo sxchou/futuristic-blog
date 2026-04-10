@@ -42,13 +42,20 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-100 dark:bg-dark-100 flex flex-col">
+  <div class="min-h-screen bg-white dark:bg-dark-100 flex flex-col">
     <template v-if="!isAdminPage">
       <ReadingProgress />
       <Navbar />
     </template>
-    <main class="flex-1" :class="{ 'pt-32': !isAdminPage }">
-      <router-view v-slot="{ Component }">
+    <main class="flex-1" :class="{ 'pt-16': !isAdminPage }">
+      <div v-if="!isAdminPage" class="blog-container py-8">
+        <router-view v-slot="{ Component }">
+          <transition name="fade" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </router-view>
+      </div>
+      <router-view v-else v-slot="{ Component }">
         <transition name="fade" mode="out-in">
           <component :is="Component" />
         </transition>

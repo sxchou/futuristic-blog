@@ -6,6 +6,40 @@ import hashlib
 import json
 from datetime import datetime, timedelta
 from collections import OrderedDict
+import redis
+import logging
+import os
+
+logger = logging.getLogger(__name__)
+
+
+def get_redis_client() -> Optional[redis.Redis]:
+    try:
+        redis_url = os.getenv("REDIS_URL", "")
+        if not redis_url:
+            return None
+        client = redis.from_url(
+            redis_url,
+            decode_responses=True,
+            socket_connect_timeout=5,
+            socket_timeout=5
+        )
+        client.ping()
+        logger.info("Redis connected for caching")
+        return client
+    except Exception as e:
+        logger.warning(f"Redis connection failed, using memory cache: {e}")
+        return None
+
+
+_redis_client: Optional[redis.Redis] = None
+
+
+def get_redis() -> Optional[redis.Redis]:
+    global _redis_client
+    if _redis_client is None:
+        _redis_client = get_redis_client()
+    return _redis_client
 
 
 class LRUCache:
@@ -100,6 +134,8 @@ class CacheManager:
                 if cls._instance is None:
                     cls._instance = super().__new__(cls)
                     cls._instance._caches: Dict[str, LRUCache] = {}
+                    cls._instance._redis: Optional[redis.Redis] = None
+                    cls._instance._use_redis: bool = False
                     cls._instance._default_ttl: Dict[str, int] = {
                         'articles': 60,
                         'article_detail': 300,
@@ -112,43 +148,131 @@ class CacheManager:
                         'public_stats': 60,
                         'search': 30,
                     }
+                    cls._instance._init_redis()
         return cls._instance
+    
+    def _init_redis(self):
+        try:
+            self._redis = get_redis()
+            if self._redis:
+                self._use_redis = True
+                logger.info("CacheManager using Redis backend")
+            else:
+                self._use_redis = False
+                logger.info("CacheManager using memory backend")
+        except Exception as e:
+            logger.warning(f"Redis init failed, using memory cache: {e}")
+            self._use_redis = False
     
     def get_cache(self, name: str, max_size: int = 500) -> LRUCache:
         if name not in self._caches:
             self._caches[name] = LRUCache(max_size=max_size)
         return self._caches[name]
     
+    def _make_redis_key(self, cache_name: str, key: str) -> str:
+        return f"cache:{cache_name}:{key}"
+    
     def get(self, cache_name: str, key: str) -> Optional[Any]:
+        if self._use_redis and self._redis:
+            try:
+                redis_key = self._make_redis_key(cache_name, key)
+                value = self._redis.get(redis_key)
+                if value:
+                    return json.loads(value)
+                return None
+            except Exception as e:
+                logger.warning(f"Redis get failed, fallback to memory: {e}")
+        
         cache = self.get_cache(cache_name)
         return cache.get(key)
     
     def set(self, cache_name: str, key: str, value: Any, ttl: Optional[int] = None) -> None:
-        cache = self.get_cache(cache_name)
         if ttl is None:
             ttl = self._default_ttl.get(cache_name, 60)
+        
+        if self._use_redis and self._redis:
+            try:
+                redis_key = self._make_redis_key(cache_name, key)
+                self._redis.setex(redis_key, ttl, json.dumps(value, ensure_ascii=False, default=str))
+                return
+            except Exception as e:
+                logger.warning(f"Redis set failed, fallback to memory: {e}")
+        
+        cache = self.get_cache(cache_name)
         cache.set(key, value, ttl)
     
     def delete(self, cache_name: str, key: str) -> bool:
+        if self._use_redis and self._redis:
+            try:
+                redis_key = self._make_redis_key(cache_name, key)
+                self._redis.delete(redis_key)
+                return True
+            except Exception as e:
+                logger.warning(f"Redis delete failed: {e}")
+        
         cache = self.get_cache(cache_name)
         return cache.delete(key)
     
     def delete_pattern(self, cache_name: str, pattern: str) -> int:
+        if self._use_redis and self._redis:
+            try:
+                redis_pattern = self._make_redis_key(cache_name, pattern)
+                keys = self._redis.keys(f"{redis_pattern}*")
+                if keys:
+                    return self._redis.delete(*keys)
+                return 0
+            except Exception as e:
+                logger.warning(f"Redis delete_pattern failed: {e}")
+        
         cache = self.get_cache(cache_name)
         return cache.delete_pattern(pattern)
     
     def clear_cache(self, cache_name: str) -> None:
+        if self._use_redis and self._redis:
+            try:
+                pattern = self._make_redis_key(cache_name, "")
+                keys = self._redis.keys(f"{pattern}*")
+                if keys:
+                    self._redis.delete(*keys)
+                return
+            except Exception as e:
+                logger.warning(f"Redis clear_cache failed: {e}")
+        
         if cache_name in self._caches:
             self._caches[cache_name].clear()
     
     def clear_all(self) -> None:
+        if self._use_redis and self._redis:
+            try:
+                keys = self._redis.keys("cache:*")
+                if keys:
+                    self._redis.delete(*keys)
+                return
+            except Exception as e:
+                logger.warning(f"Redis clear_all failed: {e}")
+        
         for cache in self._caches.values():
             cache.clear()
     
     def get_all_stats(self) -> Dict[str, Dict[str, Any]]:
+        if self._use_redis and self._redis:
+            try:
+                info = self._redis.info("memory")
+                keys = self._redis.keys("cache:*")
+                return {
+                    "backend": "redis",
+                    "used_memory": info.get("used_memory_human", "unknown"),
+                    "keys_count": len(keys)
+                }
+            except Exception as e:
+                logger.warning(f"Redis stats failed: {e}")
+        
         return {name: cache.get_stats() for name, cache in self._caches.items()}
     
     def cleanup_all_expired(self) -> Dict[str, int]:
+        if self._use_redis:
+            return {"redis": 0}
+        
         return {name: cache.cleanup_expired() for name, cache in self._caches.items()}
 
 

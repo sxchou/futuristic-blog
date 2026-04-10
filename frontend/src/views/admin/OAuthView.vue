@@ -237,6 +237,7 @@ onMounted(fetchProviders)
     </div>
 
     <div v-else class="bg-white dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden">
+      <div class="overflow-x-auto">
       <table class="w-full">
         <thead>
           <tr class="border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-dark-100/50">
@@ -338,6 +339,7 @@ onMounted(fetchProviders)
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
 
     <Teleport to="body">

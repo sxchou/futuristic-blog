@@ -9,7 +9,7 @@ const authStore = useAuthStore()
 const siteConfigStore = useSiteConfigStore()
 const userProfileStore = useUserProfileStore()
 
-const isSidebarOpen = ref(true)
+const isSidebarOpen = ref(false)
 
 const menuItems = [
   { name: '仪表盘', path: '/admin', icon: 'dashboard' },
@@ -34,6 +34,12 @@ const isActive = (path: string) => {
     return route.path === '/admin'
   }
   return route.path.startsWith(path)
+}
+
+const handleMenuClick = () => {
+  if (window.innerWidth < 1024) {
+    isSidebarOpen.value = false
+  }
 }
 
 const handleLogout = () => {
@@ -105,6 +111,7 @@ onMounted(() => {
             v-for="item in menuItems"
             :key="item.path"
             :to="item.path"
+            @click="handleMenuClick"
             :class="[
               'flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm',
               isActive(item.path)

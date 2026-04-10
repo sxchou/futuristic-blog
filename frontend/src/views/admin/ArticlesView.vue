@@ -1055,81 +1055,122 @@ watch(form, () => {
     </div>
 
     <div v-else class="glass-card overflow-hidden">
-      <table class="w-full text-sm">
-        <thead class="bg-gray-100 dark:bg-dark-100">
-          <tr>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">标题</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">分类</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">状态</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">浏览</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">创建时间</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400">操作</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-200 dark:divide-white/5">
-          <tr v-for="article in articles" :key="article.id" class="hover:bg-gray-50 dark:hover:bg-white/5">
-            <td class="px-4 py-3">
-              <div class="flex items-center gap-2">
-                <span v-if="article.is_pinned" class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-600 dark:text-amber-400 rounded border border-amber-500/30">
-                  <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
-                  </svg>
-                  置顶
+      <div class="hidden sm:block overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-100 dark:bg-dark-100">
+            <tr>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">标题</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">分类</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">状态</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">浏览</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">创建时间</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400">操作</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 dark:divide-white/5">
+            <tr v-for="article in articles" :key="article.id" class="hover:bg-gray-50 dark:hover:bg-white/5">
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2">
+                  <span v-if="article.is_pinned" class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-600 dark:text-amber-400 rounded border border-amber-500/30">
+                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
+                    </svg>
+                    置顶
+                  </span>
+                  <span v-if="article.is_featured" class="px-2 py-0.5 text-xs font-medium bg-gradient-to-r from-primary to-accent text-white rounded-full">精选</span>
+                  <span class="text-gray-900 dark:text-white">{{ article.title }}</span>
+                </div>
+              </td>
+              <td class="px-4 py-3">
+                <span v-if="article.category" :style="{ color: article.category.color }">
+                  {{ article.category.name }}
                 </span>
-                <span v-if="article.is_featured" class="px-2 py-0.5 text-xs font-medium bg-gradient-to-r from-primary to-accent text-white rounded-full">精选</span>
-                <span class="text-gray-900 dark:text-white">{{ article.title }}</span>
-              </div>
-            </td>
-            <td class="px-4 py-3">
-              <span v-if="article.category" :style="{ color: article.category.color }">
-                {{ article.category.name }}
+                <span v-else class="text-gray-500">未分类</span>
+              </td>
+              <td class="px-4 py-3">
+                <span
+                  v-if="article.is_published"
+                  class="px-1.5 py-0.5 text-xs rounded bg-green-500/20 text-green-400"
+                >
+                  已发布
+                </span>
+                <span
+                  v-else
+                  class="px-1.5 py-0.5 text-xs rounded bg-yellow-500/20 text-yellow-400"
+                >
+                  未发布
+                </span>
+              </td>
+              <td class="px-4 py-3 text-gray-400">{{ article.view_count }}</td>
+              <td class="px-4 py-3 text-gray-400">
+                {{ formatDate(article.created_at) }}
+              </td>
+              <td class="px-4 py-3 text-right">
+                <button
+                  @click="handleEdit(article)"
+                  class="text-primary hover:text-primary/80 mr-3 text-sm"
+                >
+                  编辑
+                </button>
+                <button
+                  @click="handleDelete(article)"
+                  class="text-red-400 hover:text-red-300 text-sm"
+                >
+                  删除
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sm:hidden divide-y divide-gray-200 dark:divide-white/5">
+        <div
+          v-for="article in articles"
+          :key="article.id"
+          class="p-4 hover:bg-gray-50 dark:hover:bg-white/5"
+        >
+          <div class="flex items-start justify-between gap-2 mb-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <span v-if="article.is_pinned" class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-600 dark:text-amber-400 rounded border border-amber-500/30 flex-shrink-0">
+                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg>
+                置顶
               </span>
-              <span v-else class="text-gray-500">未分类</span>
-            </td>
-            <td class="px-4 py-3">
-              <span
-                v-if="article.is_published"
-                class="px-1.5 py-0.5 text-xs rounded bg-green-500/20 text-green-400"
-              >
-                已发布
-              </span>
-              <span
-                v-else
-                class="px-1.5 py-0.5 text-xs rounded bg-yellow-500/20 text-yellow-400"
-              >
-                未发布
-              </span>
-            </td>
-            <td class="px-4 py-3 text-gray-400">{{ article.view_count }}</td>
-            <td class="px-4 py-3 text-gray-400">
-              {{ formatDate(article.created_at) }}
-            </td>
-            <td class="px-4 py-3 text-right">
-              <button
-                @click="handleEdit(article)"
-                class="text-primary hover:text-primary/80 mr-3 text-sm"
-              >
-                编辑
-              </button>
-              <button
-                @click="handleDelete(article)"
-                class="text-red-400 hover:text-red-300 text-sm"
-              >
-                删除
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              <span v-if="article.is_featured" class="px-2 py-0.5 text-xs font-medium bg-gradient-to-r from-primary to-accent text-white rounded-full flex-shrink-0">精选</span>
+              <span class="text-gray-900 dark:text-white text-sm font-medium truncate">{{ article.title }}</span>
+            </div>
+            <span
+              v-if="article.is_published"
+              class="px-1.5 py-0.5 text-xs rounded bg-green-500/20 text-green-400 flex-shrink-0"
+            >已发布</span>
+            <span
+              v-else
+              class="px-1.5 py-0.5 text-xs rounded bg-yellow-500/20 text-yellow-400 flex-shrink-0"
+            >未发布</span>
+          </div>
+          <div class="flex items-center justify-between text-xs text-gray-400">
+            <div class="flex items-center gap-3">
+              <span v-if="article.category" :style="{ color: article.category.color }">{{ article.category.name }}</span>
+              <span v-else>未分类</span>
+              <span>{{ article.view_count }} 浏览</span>
+              <span>{{ formatDate(article.created_at) }}</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <button @click="handleEdit(article)" class="text-primary hover:text-primary/80">编辑</button>
+              <button @click="handleDelete(article)" class="text-red-400 hover:text-red-300">删除</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div
       v-if="showEditor"
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
     >
-      <div class="glass-card w-full max-w-5xl max-h-[90vh] overflow-hidden m-4 p-5 flex flex-col">
+      <div class="glass-card w-full max-w-5xl max-h-[90vh] overflow-hidden m-2 sm:m-4 p-4 sm:p-5 flex flex-col">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-base font-bold text-gray-900 dark:text-white">
+          <h2 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white">
             {{ editingArticle ? '编辑文章' : '新建文章' }}
           </h2>
           <button
@@ -1143,7 +1184,7 @@ watch(form, () => {
         </div>
 
         <form @submit.prevent="handleSubmit" class="space-y-4 flex-1 overflow-y-auto pr-2">
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label for="article-title" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">标题</label>
               <input
@@ -1525,7 +1566,7 @@ watch(form, () => {
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <div class="flex items-center justify-between mb-1.5">
                 <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">分类</label>
@@ -1589,7 +1630,7 @@ watch(form, () => {
             </div>
           </div>
 
-          <div class="flex items-center gap-4">
+          <div class="flex flex-wrap items-center gap-3 sm:gap-4">
             <label class="flex items-center gap-1.5 cursor-pointer">
               <input
                 type="checkbox"
