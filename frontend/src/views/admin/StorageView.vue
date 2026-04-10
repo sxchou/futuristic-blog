@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import { fileApi, type StorageInfo, type StorageFileInfo } from '@/api/files'
 import { useAdminCheck } from '@/composables/useAdminCheck'
 
-const { requireAdmin } = useAdminCheck()
+const { isAdmin } = useAdminCheck()
 
 const loading = ref(true)
 const storageInfo = ref<StorageInfo | null>(null)
@@ -20,8 +20,6 @@ const getAvatarUrl = (file: StorageFileInfo): string => {
 }
 
 const fetchStorageInfo = async () => {
-  if (!await requireAdmin('查看存储信息')) return
-  
   loading.value = true
   try {
     storageInfo.value = await fileApi.getStorageInfo()
@@ -140,6 +138,34 @@ onMounted(fetchStorageInfo)
 
 <template>
   <div class="p-6">
+    <div
+      v-if="!isAdmin"
+      class="glass-card p-8 text-center"
+    >
+      <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
+        <svg
+          class="w-8 h-8 text-yellow-500"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          />
+        </svg>
+      </div>
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+        权限不足
+      </h2>
+      <p class="text-gray-500 dark:text-gray-400">
+        您没有权限访问此页面，请联系管理员
+      </p>
+    </div>
+
+    <template v-else>
     <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
       <div class="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
         <svg
@@ -169,7 +195,7 @@ onMounted(fetchStorageInfo)
             y2="8"
           />
         </svg>
-        <span>头像目录 (avatars) 显示但受保护，不会被清理孤立文件时删除</span>
+        <span>头像目录 和网站Logo目录 显示但受保护，不会被清理孤立文件时删除</span>
       </div>
     </div>
     
@@ -552,5 +578,6 @@ onMounted(fetchStorageInfo)
     >
       无法获取存储信息
     </div>
+    </template>
   </div>
 </template>
