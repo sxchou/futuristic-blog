@@ -10,6 +10,13 @@ onMounted(() => {
   siteConfigStore.fetchConfigs()
   socialLinksStore.fetchProfile()
 })
+
+const getLogoUrl = (url: string) => {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  if (url.startsWith('/')) return url
+  return `/${url}`
+}
 </script>
 
 <template>
@@ -18,18 +25,64 @@ onMounted(() => {
       <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
         <div class="md:col-span-5">
           <div class="flex items-center gap-2.5 mb-3">
-            <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <svg
-                class="w-3.5 h-3.5 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+            <div
+              v-if="siteConfigStore.siteLogoUrl"
+              class="w-7 h-7 rounded-lg overflow-hidden bg-gray-100 dark:bg-dark-200"
+            >
+              <img
+                :src="getLogoUrl(siteConfigStore.siteLogoUrl)"
+                :alt="siteConfigStore.siteName"
+                class="w-full h-full object-contain"
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2.5"
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
+            </div>
+            <div
+              v-else
+              class="w-7 h-7 rounded-lg bg-black flex items-center justify-center relative overflow-hidden"
+            >
+              <svg
+                viewBox="0 0 100 100"
+                class="w-5 h-5"
+              >
+                <defs>
+                  <linearGradient
+                    id="footer-logo-grad"
+                    x1="0%"
+                    y1="0%"
+                    x2="100%"
+                    y2="100%"
+                  >
+                    <stop
+                      offset="0%"
+                      style="stop-color:#00d4ff;stop-opacity:1"
+                    />
+                    <stop
+                      offset="100%"
+                      style="stop-color:#7c3aed;stop-opacity:1"
+                    />
+                  </linearGradient>
+                </defs>
+                <text
+                  x="50"
+                  y="68"
+                  font-family="monospace"
+                  font-size="55"
+                  font-weight="bold"
+                  fill="url(#footer-logo-grad)"
+                  text-anchor="middle"
+                >F</text>
+                <circle
+                  cx="75"
+                  cy="25"
+                  r="8"
+                  fill="#00d4ff"
+                  opacity="0.8"
+                />
+                <circle
+                  cx="85"
+                  cy="35"
+                  r="4"
+                  fill="#7c3aed"
+                  opacity="0.6"
                 />
               </svg>
             </div>
