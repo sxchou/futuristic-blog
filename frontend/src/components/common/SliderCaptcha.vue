@@ -124,7 +124,7 @@ defineExpose({ reset })
       <div 
         class="slider-progress absolute left-0 top-0 h-full bg-gradient-to-r from-primary/20 to-accent/20 transition-[width] duration-100"
         :style="progressStyle"
-      ></div>
+      />
       <div 
         class="slider-button absolute left-0 top-0 w-10 h-10 cursor-pointer flex items-center justify-center transition-all duration-100 bg-white dark:bg-dark-100 border-r border-gray-300 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-dark-300 rounded-l-lg"
         :class="{ 
@@ -137,11 +137,33 @@ defineExpose({ reset })
         @touchmove="handleTouchMove"
         @touchend="handleTouchEnd"
       >
-        <svg v-if="!isVerified" class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        <svg
+          v-if="!isVerified"
+          class="w-5 h-5 text-gray-400 dark:text-gray-500"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 5l7 7-7 7"
+          />
         </svg>
-        <svg v-else class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        <svg
+          v-else
+          class="w-5 h-5 text-white"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M5 13l4 4L19 7"
+          />
         </svg>
       </div>
       <span 

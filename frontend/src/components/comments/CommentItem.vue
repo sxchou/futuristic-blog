@@ -29,17 +29,32 @@
           </span>
         </div>
         
-        <div v-if="comment.is_deleted" class="text-gray-400 dark:text-gray-500 text-sm italic mb-3 line-through">
+        <div
+          v-if="comment.is_deleted"
+          class="text-gray-400 dark:text-gray-500 text-sm italic mb-3 line-through"
+        >
           {{ comment.deleted_by === 'admin' ? '此评论已被管理员删除' : '此评论已被用户删除' }}
         </div>
-        <div v-else-if="comment.status === 'pending'" class="text-yellow-600 dark:text-yellow-400 text-sm italic mb-3">
+        <div
+          v-else-if="comment.status === 'pending'"
+          class="text-yellow-600 dark:text-yellow-400 text-sm italic mb-3"
+        >
           评论待审核，审核通过后显示评论内容
         </div>
-        <div v-else-if="comment.status === 'rejected'" class="text-red-500 dark:text-red-400 text-sm italic mb-3">
+        <div
+          v-else-if="comment.status === 'rejected'"
+          class="text-red-500 dark:text-red-400 text-sm italic mb-3"
+        >
           审核不通过
         </div>
-        <div v-else class="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-3 comment-content">
-          <div v-if="comment.reply_to_user_name" class="mb-1">
+        <div
+          v-else
+          class="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-3 comment-content"
+        >
+          <div
+            v-if="comment.reply_to_user_name"
+            class="mb-1"
+          >
             <span class="text-primary font-medium">@{{ comment.reply_to_user_name }}</span>
           </div>
           <div 
@@ -55,8 +70,8 @@
           </div>
           <button
             v-if="shouldShowExpand"
-            @click="toggleExpand"
             class="mt-1 text-xs text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
+            @click="toggleExpand"
           >
             <svg 
               class="w-4 h-4 transition-transform duration-200" 
@@ -65,37 +80,68 @@
               stroke="currentColor" 
               viewBox="0 0 24 24"
             >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"
+              />
             </svg>
             {{ isExpanded ? '收起' : '展开全文' }}
           </button>
         </div>
         
-        <div v-if="!comment.is_deleted && comment.status === 'approved'" class="flex items-center gap-4 text-xs">
+        <div
+          v-if="!comment.is_deleted && comment.status === 'approved'"
+          class="flex items-center gap-4 text-xs"
+        >
           <button
             v-if="authStore.isAuthenticated"
-            @click="showReplyForm = !showReplyForm"
             class="text-gray-500 hover:text-primary transition-colors flex items-center gap-1"
+            @click="showReplyForm = !showReplyForm"
           >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
+              />
             </svg>
             回复
           </button>
           
           <button
             v-if="canDelete"
-            @click="$emit('delete', comment.id)"
             class="text-gray-500 hover:text-red-500 transition-colors flex items-center gap-1"
+            @click="$emit('delete', comment.id)"
           >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
             </svg>
             删除
           </button>
         </div>
         
-        <div v-if="showReplyForm" class="mt-3">
+        <div
+          v-if="showReplyForm"
+          class="mt-3"
+        >
           <div class="bg-gray-200 dark:bg-dark-100/50 border border-gray-300 dark:border-white/10 rounded-lg p-3">
             <CommentEditor
               ref="replyEditorRef"
@@ -110,15 +156,15 @@
             />
             <div class="flex justify-end gap-2 mt-2">
               <button
-                @click="showReplyForm = false"
                 class="px-3 py-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                @click="showReplyForm = false"
               >
                 取消
               </button>
               <button
-                @click="submitReply"
                 :disabled="!replyContent.trim() || submittingReply"
                 class="px-3 py-1 text-xs bg-primary text-white rounded hover:bg-primary/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                @click="submitReply"
               >
                 {{ submittingReply ? '发送中...' : '发送' }}
               </button>
@@ -126,7 +172,10 @@
           </div>
         </div>
         
-        <div v-if="comment.replies && comment.replies.length > 0" class="mt-4 space-y-3 pl-4 border-l-2 border-gray-300 dark:border-white/10">
+        <div
+          v-if="comment.replies && comment.replies.length > 0"
+          class="mt-4 space-y-3 pl-4 border-l-2 border-gray-300 dark:border-white/10"
+        >
           <CommentItem
             v-for="reply in comment.replies"
             :key="reply.id"

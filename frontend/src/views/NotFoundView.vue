@@ -17,7 +17,10 @@ onMounted(() => {
       <div class="max-w-2xl mx-auto text-center">
         <div class="mb-8">
           <h1 class="text-8xl md:text-9xl font-bold mb-4 relative">
-            <span class="gradient-text glitch" data-text="404">{{ glitchText }}</span>
+            <span
+              class="gradient-text glitch"
+              data-text="404"
+            >{{ glitchText }}</span>
           </h1>
           <div class="w-24 h-1 bg-gradient-to-r from-primary to-accent mx-auto mb-8" />
         </div>
@@ -51,18 +54,44 @@ onMounted(() => {
         </div>
 
         <div class="flex flex-wrap justify-center gap-4">
-          <router-link to="/" class="btn-primary">
+          <router-link
+            to="/"
+            class="btn-primary"
+          >
             <span class="flex items-center gap-2">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                />
               </svg>
               返回首页
             </span>
           </router-link>
-          <button @click="$router.back()" class="btn-secondary">
+          <button
+            class="btn-secondary"
+            @click="$router.back()"
+          >
             <span class="flex items-center gap-2">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                />
               </svg>
               返回上页
             </span>
@@ -70,9 +99,24 @@ onMounted(() => {
         </div>
 
         <div class="mt-12 flex justify-center gap-8 text-gray-500">
-          <router-link to="/categories" class="hover:text-primary transition-colors">浏览分类</router-link>
-          <router-link to="/tags" class="hover:text-primary transition-colors">查看标签</router-link>
-          <router-link to="/about" class="hover:text-primary transition-colors">关于我</router-link>
+          <router-link
+            to="/categories"
+            class="hover:text-primary transition-colors"
+          >
+            浏览分类
+          </router-link>
+          <router-link
+            to="/tags"
+            class="hover:text-primary transition-colors"
+          >
+            查看标签
+          </router-link>
+          <router-link
+            to="/about"
+            class="hover:text-primary transition-colors"
+          >
+            关于我
+          </router-link>
         </div>
       </div>
     </div>

@@ -234,11 +234,15 @@ class ArticleListItem(BaseModel):
     category: Optional[CategoryResponse] = None
     tags: List[TagResponse] = []
     is_liked: bool = False
+    liked_at: Optional[str] = None
+    is_bookmarked: bool = False
+    bookmarked_at: Optional[str] = None
+    commented_at: Optional[str] = None
     highlighted_title: Optional[str] = None
     highlighted_summary: Optional[str] = None
     match_type: Optional[str] = None
     
-    @field_validator('created_at', 'published_at', mode='before')
+    @field_validator('created_at', 'published_at', 'liked_at', 'bookmarked_at', 'commented_at', mode='before')
     @classmethod
     def serialize_datetime_field(cls, v):
         return serialize_datetime(v)
@@ -251,6 +255,12 @@ class LikeResponse(BaseModel):
     article_id: int
     like_count: int
     is_liked: bool
+
+
+class BookmarkResponse(BaseModel):
+    article_id: int
+    is_bookmarked: bool
+    bookmark_count: Optional[int] = None
 
 
 class ResourceBase(BaseModel):

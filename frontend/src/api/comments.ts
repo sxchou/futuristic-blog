@@ -1,5 +1,5 @@
 import apiClient from './client'
-import type { Comment, CommentCreate, AdminComment, CommentAuditLog, CommentAuditRequest, BatchAuditRequest, PaginatedResponse } from '@/types'
+import type { Comment, CommentCreate, AdminComment, CommentAuditLog, CommentAuditRequest, BatchAuditRequest, PaginatedResponse, ArticleListItem } from '@/types'
 
 export const commentApi = {
   getArticleComments: async (articleId: number): Promise<Comment[]> => {
@@ -14,6 +14,13 @@ export const commentApi = {
 
   delete: async (commentId: number): Promise<void> => {
     await apiClient.delete(`/comments/${commentId}`)
+  },
+
+  getUserCommentedArticles: async (page: number = 1, pageSize: number = 10): Promise<PaginatedResponse<ArticleListItem>> => {
+    const response = await apiClient.get('/comments/user/commented', {
+      params: { page, page_size: pageSize }
+    })
+    return response.data
   },
 
   getAdminComments: async (params: {

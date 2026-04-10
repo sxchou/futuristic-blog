@@ -1030,62 +1030,119 @@ watch(form, () => {
 
 <template>
   <div>
-    <div class="flex items-center justify-between mb-4">
-      <h1 class="text-xl font-bold text-gray-900 dark:text-white">文章管理</h1>
+    <div class="flex items-center justify-between mb-4 gap-2">
+      <h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
+        文章管理
+      </h1>
       <button
+        class="btn-primary text-xs sm:text-sm px-3 sm:px-4 py-1.5 whitespace-nowrap"
         @click="openCreateModal"
-        class="btn-primary text-sm px-4 py-1.5"
       >
         新建文章
       </button>
     </div>
 
-    <div v-if="!isAdmin" class="glass-card p-8 text-center">
+    <div
+      v-if="!isAdmin"
+      class="glass-card p-8 text-center"
+    >
       <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
-        <svg class="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        <svg
+          class="w-8 h-8 text-yellow-500"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          />
         </svg>
       </div>
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">权限不足</h2>
-      <p class="text-gray-500 dark:text-gray-400">您没有权限访问此页面，请联系管理员</p>
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+        权限不足
+      </h2>
+      <p class="text-gray-500 dark:text-gray-400">
+        您没有权限访问此页面，请联系管理员
+      </p>
     </div>
 
-    <div v-else-if="isLoading" class="flex justify-center py-16">
+    <div
+      v-else-if="isLoading"
+      class="flex justify-center py-16"
+    >
       <div class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
     </div>
 
-    <div v-else class="glass-card overflow-hidden">
+    <div
+      v-else
+      class="glass-card overflow-hidden"
+    >
       <div class="hidden sm:block overflow-x-auto">
         <table class="w-full text-sm">
           <thead class="bg-gray-100 dark:bg-dark-100">
             <tr>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">标题</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">分类</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">状态</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">浏览</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">创建时间</th>
-              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400">操作</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                标题
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                分类
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                状态
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                浏览
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                创建时间
+              </th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
+                操作
+              </th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200 dark:divide-white/5">
-            <tr v-for="article in articles" :key="article.id" class="hover:bg-gray-50 dark:hover:bg-white/5">
+            <tr
+              v-for="article in articles"
+              :key="article.id"
+              class="hover:bg-gray-50 dark:hover:bg-white/5"
+            >
               <td class="px-4 py-3">
                 <div class="flex items-center gap-2">
-                  <span v-if="article.is_pinned" class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-600 dark:text-amber-400 rounded border border-amber-500/30">
-                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
+                  <span
+                    v-if="article.is_pinned"
+                    class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-600 dark:text-amber-400 rounded border border-amber-500/30"
+                  >
+                    <svg
+                      class="w-3 h-3"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" />
                     </svg>
                     置顶
                   </span>
-                  <span v-if="article.is_featured" class="px-2 py-0.5 text-xs font-medium bg-gradient-to-r from-primary to-accent text-white rounded-full">精选</span>
+                  <span
+                    v-if="article.is_featured"
+                    class="px-2 py-0.5 text-xs font-medium bg-gradient-to-r from-primary to-accent text-white rounded-full"
+                  >精选</span>
                   <span class="text-gray-900 dark:text-white">{{ article.title }}</span>
                 </div>
               </td>
               <td class="px-4 py-3">
-                <span v-if="article.category" :style="{ color: article.category.color }">
+                <span
+                  v-if="article.category"
+                  :style="{ color: article.category.color }"
+                >
                   {{ article.category.name }}
                 </span>
-                <span v-else class="text-gray-500">未分类</span>
+                <span
+                  v-else
+                  class="text-gray-500"
+                >未分类</span>
               </td>
               <td class="px-4 py-3">
                 <span
@@ -1101,20 +1158,22 @@ watch(form, () => {
                   未发布
                 </span>
               </td>
-              <td class="px-4 py-3 text-gray-400">{{ article.view_count }}</td>
+              <td class="px-4 py-3 text-gray-400">
+                {{ article.view_count }}
+              </td>
               <td class="px-4 py-3 text-gray-400">
                 {{ formatDate(article.created_at) }}
               </td>
               <td class="px-4 py-3 text-right">
                 <button
-                  @click="handleEdit(article)"
                   class="text-primary hover:text-primary/80 mr-3 text-sm"
+                  @click="handleEdit(article)"
                 >
                   编辑
                 </button>
                 <button
-                  @click="handleDelete(article)"
                   class="text-red-400 hover:text-red-300 text-sm"
+                  @click="handleDelete(article)"
                 >
                   删除
                 </button>
@@ -1132,11 +1191,21 @@ watch(form, () => {
         >
           <div class="flex items-start justify-between gap-2 mb-2">
             <div class="flex items-center gap-2 min-w-0">
-              <span v-if="article.is_pinned" class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-600 dark:text-amber-400 rounded border border-amber-500/30 flex-shrink-0">
-                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg>
+              <span
+                v-if="article.is_pinned"
+                class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-600 dark:text-amber-400 rounded border border-amber-500/30 flex-shrink-0"
+              >
+                <svg
+                  class="w-3 h-3"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                ><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" /></svg>
                 置顶
               </span>
-              <span v-if="article.is_featured" class="px-2 py-0.5 text-xs font-medium bg-gradient-to-r from-primary to-accent text-white rounded-full flex-shrink-0">精选</span>
+              <span
+                v-if="article.is_featured"
+                class="px-2 py-0.5 text-xs font-medium bg-gradient-to-r from-primary to-accent text-white rounded-full flex-shrink-0"
+              >精选</span>
               <span class="text-gray-900 dark:text-white text-sm font-medium truncate">{{ article.title }}</span>
             </div>
             <span
@@ -1150,14 +1219,27 @@ watch(form, () => {
           </div>
           <div class="flex items-center justify-between text-xs text-gray-400">
             <div class="flex items-center gap-3">
-              <span v-if="article.category" :style="{ color: article.category.color }">{{ article.category.name }}</span>
+              <span
+                v-if="article.category"
+                :style="{ color: article.category.color }"
+              >{{ article.category.name }}</span>
               <span v-else>未分类</span>
               <span>{{ article.view_count }} 浏览</span>
               <span>{{ formatDate(article.created_at) }}</span>
             </div>
             <div class="flex items-center gap-3">
-              <button @click="handleEdit(article)" class="text-primary hover:text-primary/80">编辑</button>
-              <button @click="handleDelete(article)" class="text-red-400 hover:text-red-300">删除</button>
+              <button
+                class="text-primary hover:text-primary/80"
+                @click="handleEdit(article)"
+              >
+                编辑
+              </button>
+              <button
+                class="text-red-400 hover:text-red-300"
+                @click="handleDelete(article)"
+              >
+                删除
+              </button>
             </div>
           </div>
         </div>
@@ -1174,49 +1256,83 @@ watch(form, () => {
             {{ editingArticle ? '编辑文章' : '新建文章' }}
           </h2>
           <button
-            @click="showEditor = false"
             class="text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            @click="showEditor = false"
           >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
 
-        <form @submit.prevent="handleSubmit" class="space-y-4 flex-1 overflow-y-auto pr-2">
+        <form
+          class="space-y-4 flex-1 overflow-y-auto pr-2"
+          @submit.prevent="handleSubmit"
+        >
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label for="article-title" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">标题</label>
+              <label
+                for="article-title"
+                class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+              >标题</label>
               <input
+                id="article-title"
                 v-model="form.title"
                 type="text"
-                id="article-title"
                 name="title"
                 class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
                 placeholder="请输入文章标题"
                 @input="handleTitleInput"
                 @blur="handleTitleBlur"
-              />
+              >
             </div>
             <div>
-              <label for="article-slug" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Slug</label>
+              <label
+                for="article-slug"
+                class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+              >Slug</label>
               <div class="relative">
                 <input
+                  id="article-slug"
                   v-model="form.slug"
                   type="text"
-                  id="article-slug"
                   name="slug"
                   class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none pr-8"
                   placeholder="留空自动生成"
                   @input="handleSlugInput"
-                />
+                >
                 <div 
                   v-if="isGeneratingSlug" 
                   class="absolute right-2 top-1/2 -translate-y-1/2"
                 >
-                  <svg class="w-4 h-4 animate-spin text-gray-400" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    class="w-4 h-4 animate-spin text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      class="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="4"
+                    />
+                    <path
+                      class="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
                   </svg>
                 </div>
               </div>
@@ -1224,10 +1340,13 @@ watch(form, () => {
           </div>
 
           <div>
-            <label for="article-summary" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">摘要</label>
+            <label
+              for="article-summary"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            >摘要</label>
             <textarea
-              v-model="form.summary"
               id="article-summary"
+              v-model="form.summary"
               name="summary"
               rows="2"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none resize-none"
@@ -1236,7 +1355,10 @@ watch(form, () => {
           </div>
 
           <div>
-            <label for="article-content" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">内容 (Markdown)</label>
+            <label
+              for="article-content"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            >内容 (Markdown)</label>
             <MarkdownEditor
               ref="markdownEditorRef"
               v-model="form.content"
@@ -1247,22 +1369,40 @@ watch(form, () => {
 
           <div class="p-3 bg-gray-50 dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10">
             <div class="flex items-center justify-between mb-3">
-              <h3 class="text-sm font-medium text-gray-900 dark:text-white">文件上传</h3>
+              <h3 class="text-sm font-medium text-gray-900 dark:text-white">
+                文件上传
+              </h3>
               <div class="flex gap-2">
                 <label class="cursor-pointer">
                   <input
                     type="file"
                     accept="image/*"
-                    @change="handleImageUpload"
                     class="hidden"
                     :disabled="isUploading"
-                  />
+                    @change="handleImageUpload"
+                  >
                   <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-sm">
                     <span class="w-4 h-4">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2"/>
-                        <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
-                        <path d="M21 15l-5-5L5 21"/>
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <rect
+                          x="3"
+                          y="3"
+                          width="18"
+                          height="18"
+                          rx="2"
+                        />
+                        <circle
+                          cx="8.5"
+                          cy="8.5"
+                          r="1.5"
+                          fill="currentColor"
+                        />
+                        <path d="M21 15l-5-5L5 21" />
                       </svg>
                     </span>
                     上传图片
@@ -1272,18 +1412,23 @@ watch(form, () => {
                   <input
                     type="file"
                     multiple
-                    @change="handleFileUpload"
                     class="hidden"
                     :disabled="isUploading || !editingArticle"
-                  />
+                    @change="handleFileUpload"
+                  >
                   <span 
                     class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gradient-to-r from-primary to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all shadow-sm"
                     :class="{ 'opacity-50 cursor-not-allowed': !editingArticle }"
                   >
                     <span class="w-4 h-4">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                        <path d="M14 2v6h6"/>
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                        <path d="M14 2v6h6" />
                       </svg>
                     </span>
                     上传附件
@@ -1292,15 +1437,35 @@ watch(form, () => {
               </div>
             </div>
             
-            <div v-if="uploadError" class="mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <div
+              v-if="uploadError"
+              class="mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg"
+            >
               <div class="flex items-start gap-2">
-                <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg
+                  class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
                 <div class="flex-1 min-w-0">
-                  <div class="text-sm font-medium text-red-800 dark:text-red-200">{{ uploadError.message }}</div>
-                  <div class="text-xs text-red-600 dark:text-red-400 mt-0.5">{{ uploadError.suggestion }}</div>
-                  <div v-if="uploadError.fileName" class="text-xs text-red-500 dark:text-red-500 mt-1 truncate">
+                  <div class="text-sm font-medium text-red-800 dark:text-red-200">
+                    {{ uploadError.message }}
+                  </div>
+                  <div class="text-xs text-red-600 dark:text-red-400 mt-0.5">
+                    {{ uploadError.suggestion }}
+                  </div>
+                  <div
+                    v-if="uploadError.fileName"
+                    class="text-xs text-red-500 dark:text-red-500 mt-1 truncate"
+                  >
                     文件: {{ uploadError.fileName }}
                   </div>
                 </div>
@@ -1308,37 +1473,65 @@ watch(form, () => {
               <div class="flex items-center gap-2 mt-2">
                 <button
                   type="button"
-                  @click="retryUpload"
                   class="px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors flex items-center gap-1"
+                  @click="retryUpload"
                 >
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  <svg
+                    class="w-3 h-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
                   </svg>
                   重试
                 </button>
                 <button
                   type="button"
-                  @click="resetUploadState"
                   class="px-3 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors"
+                  @click="resetUploadState"
                 >
                   取消
                 </button>
               </div>
             </div>
             
-            <div v-if="isUploading && currentUploadingFile" class="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <div
+              v-if="isUploading && currentUploadingFile"
+              class="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg"
+            >
               <div class="flex items-center justify-between mb-2">
                 <div class="flex items-center gap-2 min-w-0 flex-1">
-                  <svg class="w-4 h-4 text-blue-500 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    class="w-4 h-4 text-blue-500 animate-spin flex-shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      class="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="4"
+                    />
+                    <path
+                      class="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
                   </svg>
                   <span class="text-xs text-blue-700 dark:text-blue-300 truncate">{{ currentUploadingFile.name }}</span>
                 </div>
                 <button
                   type="button"
-                  @click="cancelUpload"
                   class="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 flex-shrink-0 ml-2"
+                  @click="cancelUpload"
                 >
                   取消
                 </button>
@@ -1356,7 +1549,9 @@ watch(form, () => {
                       :style="{ width: currentUploadingFile.progress + '%' }"
                     />
                   </div>
-                  <div class="text-xs text-blue-600 dark:text-blue-400 text-right mt-0.5">{{ currentUploadingFile.progress }}%</div>
+                  <div class="text-xs text-blue-600 dark:text-blue-400 text-right mt-0.5">
+                    {{ currentUploadingFile.progress }}%
+                  </div>
                 </div>
                 
                 <div v-if="pendingFiles.length > 1">
@@ -1370,16 +1565,24 @@ watch(form, () => {
                       :style="{ width: overallUploadProgress + '%' }"
                     />
                   </div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400 text-right mt-0.5">{{ overallUploadProgress }}%</div>
+                  <div class="text-xs text-gray-500 dark:text-gray-400 text-right mt-0.5">
+                    {{ overallUploadProgress }}%
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div v-if="!editingArticle" class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+            <div
+              v-if="!editingArticle"
+              class="text-xs text-gray-500 dark:text-gray-400 mb-2"
+            >
               💡 请先保存文章后再上传附件文件
             </div>
 
-            <div v-if="articleFiles.length > 0" class="space-y-1.5">
+            <div
+              v-if="articleFiles.length > 0"
+              class="space-y-1.5"
+            >
               <div class="flex items-center justify-between mb-1">
                 <div class="flex items-center gap-2 text-xs">
                   <label class="flex items-center gap-1.5 cursor-pointer">
@@ -1387,16 +1590,26 @@ watch(form, () => {
                       type="checkbox"
                       :checked="selectedFileIds.size === articleFiles.length && articleFiles.length > 0"
                       :indeterminate="selectedFileIds.size > 0 && selectedFileIds.size < articleFiles.length"
-                      @change="toggleSelectAll"
                       class="w-3.5 h-3.5 rounded border-gray-300 text-primary focus:ring-primary"
-                    />
+                      @change="toggleSelectAll"
+                    >
                     <span class="text-gray-700 dark:text-gray-300 font-medium">全选</span>
                   </label>
                   <span class="text-gray-400">|</span>
                   <span class="text-gray-500">{{ articleFiles.length }} 个文件</span>
                   <div class="flex items-center gap-1 text-primary">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                    <svg
+                      class="w-3.5 h-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                      />
                     </svg>
                     <span>可拖拽排序</span>
                   </div>
@@ -1405,49 +1618,106 @@ watch(form, () => {
                   <button
                     v-if="selectedFileIds.size > 0"
                     type="button"
-                    @click="handleBatchDownload"
                     class="px-2 py-0.5 text-xs bg-primary/10 text-primary hover:bg-primary/20 rounded transition-colors flex items-center gap-1"
+                    @click="handleBatchDownload"
                   >
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    <svg
+                      class="w-3 h-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                      />
                     </svg>
                     下载选中 ({{ selectedFileIds.size }})
                   </button>
                   <button
                     v-if="selectedFileIds.size > 0"
                     type="button"
-                    @click="handleBatchDelete"
                     :disabled="isBatchDeleting"
                     class="px-2 py-0.5 text-xs bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded transition-colors flex items-center gap-1"
+                    @click="handleBatchDelete"
                   >
-                    <svg v-if="isBatchDeleting" class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      v-if="isBatchDeleting"
+                      class="w-3 h-3 animate-spin"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                      />
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
                     </svg>
-                    <svg v-else class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    <svg
+                      v-else
+                      class="w-3 h-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
                     </svg>
                     删除选中 ({{ selectedFileIds.size }})
                   </button>
                   <button
                     type="button"
-                    @click="sortFilesAsc"
                     class="px-2 py-0.5 text-xs text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors flex items-center gap-1"
                     title="按名称升序 (A-Z)"
+                    @click="sortFilesAsc"
                   >
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                    <svg
+                      class="w-3 h-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
+                      />
                     </svg>
                     升序
                   </button>
                   <button
                     type="button"
-                    @click="sortFilesDesc"
                     class="px-2 py-0.5 text-xs text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors flex items-center gap-1"
                     title="按名称降序 (Z-A)"
+                    @click="sortFilesDesc"
                   >
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
+                    <svg
+                      class="w-3 h-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"
+                      />
                     </svg>
                     降序
                   </button>
@@ -1457,11 +1727,6 @@ watch(form, () => {
                 v-for="(file, index) in articleFiles" 
                 :key="file.id"
                 draggable="true"
-                @dragstart="handleDragStart($event, index)"
-                @dragover="handleDragOver($event, index)"
-                @dragleave="handleDragLeave"
-                @drop="handleDrop($event, index)"
-                @dragend="handleDragEnd"
                 class="flex items-center justify-between p-2 bg-white dark:bg-dark-100 rounded border transition-all duration-200"
                 :class="[
                   selectedFileIds.has(file.id) 
@@ -1472,21 +1737,28 @@ watch(form, () => {
                         ? 'border-primary border-dashed bg-primary/5' 
                         : 'border-gray-200 dark:border-white/5 hover:border-gray-300 dark:hover:border-white/10'
                 ]"
+                @dragstart="handleDragStart($event, index)"
+                @dragover="handleDragOver($event, index)"
+                @dragleave="handleDragLeave"
+                @drop="handleDrop($event, index)"
+                @dragend="handleDragEnd"
               >
                 <div class="flex items-center gap-2 min-w-0 flex-1">
                   <input
                     type="checkbox"
                     :checked="selectedFileIds.has(file.id)"
-                    @change="toggleFileSelection(file.id)"
                     class="w-3.5 h-3.5 rounded border-gray-300 text-primary focus:ring-primary flex-shrink-0"
-                  />
+                    @change="toggleFileSelection(file.id)"
+                  >
                   <span 
                     class="w-7 h-7 flex items-center justify-center rounded flex-shrink-0"
                     :class="[getFileIconInfo(file.file_type, file.mime_type, file.original_filename).bg, getFileIconInfo(file.file_type, file.mime_type, file.original_filename).color]"
                     v-html="getFileIconInfo(file.file_type, file.mime_type, file.original_filename).svg"
-                  ></span>
+                  />
                   <div class="min-w-0 flex-1">
-                    <div class="text-xs text-gray-900 dark:text-white break-all">{{ file.original_filename }}</div>
+                    <div class="text-xs text-gray-900 dark:text-white break-all">
+                      {{ file.original_filename }}
+                    </div>
                     <div class="text-[10px] text-gray-500">
                       {{ formatFileSize(file.file_size) }} · {{ file.preview_count || 0 }} 次预览 · {{ file.download_count }} 次下载
                     </div>
@@ -1496,72 +1768,130 @@ watch(form, () => {
                   <input
                     type="number"
                     :value="index + 1"
-                    @change="(e) => updateFileOrderNumber(file.id, parseInt((e.target as HTMLInputElement).value) - 1)"
                     min="1"
                     :max="articleFiles.length"
                     class="w-10 px-1 py-0.5 text-xs text-center bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     title="输入序号排序"
-                  />
+                    @change="(e) => updateFileOrderNumber(file.id, parseInt((e.target as HTMLInputElement).value) - 1)"
+                  >
                   <div class="flex flex-col gap-0.5">
                     <button
                       type="button"
-                      @click="moveFileUp(index)"
                       :disabled="index === 0"
                       class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                       title="上移"
+                      @click="moveFileUp(index)"
                     >
-                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                      <svg
+                        class="w-3 h-3"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M5 15l7-7 7 7"
+                        />
                       </svg>
                     </button>
                     <button
                       type="button"
-                      @click="moveFileDown(index)"
                       :disabled="index === articleFiles.length - 1"
                       class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                       title="下移"
+                      @click="moveFileDown(index)"
                     >
-                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                      <svg
+                        class="w-3 h-3"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M19 9l-7 7-7-7"
+                        />
                       </svg>
                     </button>
                   </div>
-                  <div class="w-px h-4 bg-gray-200 dark:bg-white/10 mx-0.5"></div>
+                  <div class="w-px h-4 bg-gray-200 dark:bg-white/10 mx-0.5" />
                   <button
                     type="button"
-                    @click="openPreview(file)"
                     class="w-6 h-6 flex items-center justify-center text-emerald-500 hover:bg-emerald-500/10 rounded transition-colors"
                     title="预览"
+                    @click="openPreview(file)"
                   >
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    <svg
+                      class="w-3.5 h-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                      />
                     </svg>
                   </button>
                   <button
                     type="button"
-                    @click="downloadFile(file)"
                     class="w-6 h-6 flex items-center justify-center text-primary hover:bg-primary/10 rounded transition-colors"
                     title="下载"
+                    @click="downloadFile(file)"
                   >
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    <svg
+                      class="w-3.5 h-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                      />
                     </svg>
                   </button>
                   <button
                     type="button"
-                    @click="handleDeleteFile(file.id)"
                     class="w-6 h-6 flex items-center justify-center text-red-400 hover:bg-red-500/10 rounded transition-colors"
                     title="删除"
+                    @click="handleDeleteFile(file.id)"
                   >
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    <svg
+                      class="w-3.5 h-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
                     </svg>
                   </button>
                 </div>
               </div>
             </div>
-            <div v-else-if="editingArticle" class="text-xs text-gray-400">
+            <div
+              v-else-if="editingArticle"
+              class="text-xs text-gray-400"
+            >
               暂无附件
             </div>
           </div>
@@ -1572,8 +1902,8 @@ watch(form, () => {
                 <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">分类</label>
                 <button
                   type="button"
-                  @click="openCategoryModal"
                   class="text-xs text-primary hover:text-primary/80"
+                  @click="openCategoryModal"
                 >
                   + 新建分类
                 </button>
@@ -1582,7 +1912,9 @@ watch(form, () => {
                 v-model="form.category_id"
                 class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
               >
-                <option :value="null">选择分类</option>
+                <option :value="null">
+                  选择分类
+                </option>
                 <option
                   v-for="category in blogStore.categories"
                   :key="category.id"
@@ -1597,8 +1929,8 @@ watch(form, () => {
                 <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">标签</label>
                 <button
                   type="button"
-                  @click="openTagModal"
                   class="text-xs text-primary hover:text-primary/80"
+                  @click="openTagModal"
                 >
                   + 新建标签
                 </button>
@@ -1610,11 +1942,11 @@ watch(form, () => {
                   class="flex items-center gap-1.5 cursor-pointer"
                 >
                   <input
+                    v-model="form.tag_ids"
                     type="checkbox"
                     :value="tag.id"
-                    v-model="form.tag_ids"
                     class="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-100 text-primary focus:ring-primary"
-                  />
+                  >
                   <span 
                     class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full border"
                     :style="{ 
@@ -1633,26 +1965,26 @@ watch(form, () => {
           <div class="flex flex-wrap items-center gap-3 sm:gap-4">
             <label class="flex items-center gap-1.5 cursor-pointer">
               <input
-                type="checkbox"
                 v-model="form.is_published"
+                type="checkbox"
                 class="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-100 text-primary focus:ring-primary"
-              />
+              >
               <span class="text-gray-700 dark:text-gray-300 text-sm">发布文章</span>
             </label>
             <label class="flex items-center gap-1.5 cursor-pointer">
               <input
-                type="checkbox"
                 v-model="form.is_pinned"
+                type="checkbox"
                 class="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-100 text-primary focus:ring-primary"
-              />
+              >
               <span class="text-gray-700 dark:text-gray-300 text-sm">置顶文章</span>
             </label>
             <label class="flex items-center gap-1.5 cursor-pointer">
               <input
-                type="checkbox"
                 v-model="form.is_featured"
+                type="checkbox"
                 class="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-100 text-primary focus:ring-primary"
-              />
+              >
               <span class="text-gray-700 dark:text-gray-300 text-sm">设为精选</span>
             </label>
           </div>
@@ -1660,8 +1992,8 @@ watch(form, () => {
           <div class="flex justify-end gap-3 pt-2">
             <button
               type="button"
-              @click="showEditor = false"
               class="px-4 py-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              @click="showEditor = false"
             >
               取消
             </button>
@@ -1682,45 +2014,69 @@ watch(form, () => {
     >
       <div class="glass-card w-full max-w-md m-4 p-5">
         <div class="flex items-center justify-between mb-4">
-          <h3 class="text-base font-bold text-gray-900 dark:text-white">新建分类</h3>
+          <h3 class="text-base font-bold text-gray-900 dark:text-white">
+            新建分类
+          </h3>
           <button
-            @click="showCategoryModal = false"
             class="text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            @click="showCategoryModal = false"
           >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
-        <form @submit.prevent="handleCreateCategory" class="space-y-3">
+        <form
+          class="space-y-3"
+          @submit.prevent="handleCreateCategory"
+        >
           <div>
-            <label for="new-category-name" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">名称</label>
+            <label
+              for="new-category-name"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            >名称</label>
             <input
+              id="new-category-name"
               v-model="newCategory.name"
               type="text"
-              id="new-category-name"
               name="name"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
               placeholder="分类名称"
               @blur="generateCategorySlug"
-            />
+            >
           </div>
           <div>
-            <label for="new-category-slug" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Slug (留空自动生成)</label>
+            <label
+              for="new-category-slug"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            >Slug (留空自动生成)</label>
             <input
+              id="new-category-slug"
               v-model="newCategory.slug"
               type="text"
-              id="new-category-slug"
               name="slug"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
               placeholder="留空自动生成"
-            />
+            >
           </div>
           <div>
-            <label for="new-category-description" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">描述</label>
+            <label
+              for="new-category-description"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            >描述</label>
             <textarea
-              v-model="newCategory.description"
               id="new-category-description"
+              v-model="newCategory.description"
               name="description"
               rows="2"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none resize-none"
@@ -1728,30 +2084,33 @@ watch(form, () => {
             />
           </div>
           <div>
-            <label for="new-category-color" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">颜色</label>
+            <label
+              for="new-category-color"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            >颜色</label>
             <div class="flex gap-2">
               <input
+                id="new-category-color"
                 v-model="newCategory.color"
                 type="color"
-                id="new-category-color"
                 name="color"
                 class="w-10 h-10 rounded-lg cursor-pointer"
-              />
+              >
               <input
+                id="new-category-color-text"
                 v-model="newCategory.color"
                 type="text"
-                id="new-category-color-text"
                 name="color-text"
                 class="flex-1 px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
                 placeholder="#00d4ff"
-              />
+              >
             </div>
           </div>
           <div class="flex justify-end gap-3 pt-2">
             <button
               type="button"
-              @click="showCategoryModal = false"
               class="px-4 py-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              @click="showCategoryModal = false"
             >
               取消
             </button>
@@ -1773,65 +2132,89 @@ watch(form, () => {
     >
       <div class="glass-card w-full max-w-md m-4 p-5">
         <div class="flex items-center justify-between mb-4">
-          <h3 class="text-base font-bold text-gray-900 dark:text-white">新建标签</h3>
+          <h3 class="text-base font-bold text-gray-900 dark:text-white">
+            新建标签
+          </h3>
           <button
-            @click="showTagModal = false"
             class="text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            @click="showTagModal = false"
           >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
-        <form @submit.prevent="handleCreateTag" class="space-y-3">
+        <form
+          class="space-y-3"
+          @submit.prevent="handleCreateTag"
+        >
           <div>
-            <label for="new-tag-name" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">名称</label>
+            <label
+              for="new-tag-name"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            >名称</label>
             <input
+              id="new-tag-name"
               v-model="newTag.name"
               type="text"
-              id="new-tag-name"
               name="name"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
               placeholder="标签名称"
               @blur="generateTagSlug"
-            />
+            >
           </div>
           <div>
-            <label for="new-tag-slug" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Slug (留空自动生成)</label>
+            <label
+              for="new-tag-slug"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            >Slug (留空自动生成)</label>
             <input
+              id="new-tag-slug"
               v-model="newTag.slug"
               type="text"
-              id="new-tag-slug"
               name="slug"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
               placeholder="留空自动生成"
-            />
+            >
           </div>
           <div>
-            <label for="new-tag-color" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">颜色</label>
+            <label
+              for="new-tag-color"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            >颜色</label>
             <div class="flex gap-2">
               <input
+                id="new-tag-color"
                 v-model="newTag.color"
                 type="color"
-                id="new-tag-color"
                 name="color"
                 class="w-10 h-10 rounded-lg cursor-pointer"
-              />
+              >
               <input
+                id="new-tag-color-text"
                 v-model="newTag.color"
                 type="text"
-                id="new-tag-color-text"
                 name="color-text"
                 class="flex-1 px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
                 placeholder="#00d4ff"
-              />
+              >
             </div>
           </div>
           <div class="flex justify-end gap-3 pt-2">
             <button
               type="button"
-              @click="showTagModal = false"
               class="px-4 py-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              @click="showTagModal = false"
             >
               取消
             </button>

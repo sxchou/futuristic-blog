@@ -174,16 +174,26 @@ onMounted(fetchProfile)
 <template>
   <div>
     <div class="flex items-center justify-between mb-6">
-      <h1 class="text-xl font-bold text-gray-900 dark:text-white">我的资料</h1>
+      <h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
+        我的资料
+      </h1>
     </div>
 
-    <div v-if="isLoading" class="flex justify-center py-16">
+    <div
+      v-if="isLoading"
+      class="flex justify-center py-16"
+    >
       <div class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
     </div>
 
-    <div v-else class="space-y-6">
+    <div
+      v-else
+      class="space-y-6"
+    >
       <div class="glass-card p-6">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">头像设置</h2>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          头像设置
+        </h2>
         
         <div class="flex items-center gap-6">
           <div class="relative">
@@ -199,7 +209,9 @@ onMounted(fetchProfile)
               v-if="isUploading"
               class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center"
             >
-              <div class="text-white text-sm">{{ uploadProgress }}%</div>
+              <div class="text-white text-sm">
+                {{ uploadProgress }}%
+              </div>
             </div>
           </div>
           
@@ -209,24 +221,24 @@ onMounted(fetchProfile)
             </p>
             <div class="flex gap-3 flex-wrap">
               <button
-                @click="triggerUpload"
                 class="px-4 py-2 bg-primary text-white text-sm rounded-lg hover:opacity-90 transition-opacity"
                 :disabled="isUploading"
+                @click="triggerUpload"
               >
                 {{ isUploading ? '上传中...' : '上传头像' }}
               </button>
               <button
                 v-if="profile?.oauth_avatar_url && profile?.avatar_type !== 'oauth'"
-                @click="handleUseOAuthAvatar"
                 class="px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors"
                 :disabled="isUploading"
+                @click="handleUseOAuthAvatar"
               >
                 使用OAuth头像
               </button>
               <button
                 v-if="profile?.avatar_type === 'custom' && !profile?.oauth_avatar_url"
-                @click="handleResetAvatar"
                 class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                @click="handleResetAvatar"
               >
                 恢复默认
               </button>
@@ -240,7 +252,7 @@ onMounted(fetchProfile)
           accept="image/jpeg,image/png,image/webp"
           class="hidden"
           @change="handleFileChange"
-        />
+        >
         
         <AvatarCropper
           v-model="showCropper"
@@ -250,7 +262,9 @@ onMounted(fetchProfile)
       </div>
 
       <div class="glass-card p-6">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">账户信息</h2>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          账户信息
+        </h2>
         
         <div class="space-y-4">
           <div class="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700">
@@ -290,8 +304,13 @@ onMounted(fetchProfile)
         </div>
       </div>
 
-      <div v-if="user?.is_admin" class="glass-card p-6">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">管理功能</h2>
+      <div
+        v-if="user?.is_admin"
+        class="glass-card p-6"
+      >
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          管理功能
+        </h2>
         <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
           作为管理员，您可以编辑网站所有者的公开资料信息（显示在"关于我"页面）。
         </p>
@@ -299,8 +318,18 @@ onMounted(fetchProfile)
           to="/admin/profile"
           class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary to-accent text-white text-sm rounded-lg hover:opacity-90 transition-opacity"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+            />
           </svg>
           编辑网站资料
         </router-link>

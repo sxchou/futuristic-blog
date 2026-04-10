@@ -122,23 +122,38 @@ onUnmounted(() => {
         
         <div class="relative w-full max-w-2xl glass-card p-4 shadow-2xl">
           <div class="flex items-center gap-4 mb-4">
-            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <svg
+              class="w-5 h-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
             <input
-              data-search-input
               v-model="searchQuery"
+              data-search-input
               type="text"
               placeholder="搜索文章、标签、分类...（按回车查看全部结果）"
               class="flex-1 bg-transparent text-white text-lg outline-none placeholder-gray-500"
               @input="performSearch"
               @keyup.enter="handleEnter"
-            />
+            >
             <kbd class="px-2 py-1 bg-dark-200 rounded text-xs text-gray-400">ESC</kbd>
           </div>
 
-          <div v-if="searchQuery && filteredResults.length > 0" class="border-t border-white/10 pt-4">
-            <div class="text-sm text-gray-400 mb-2">搜索结果</div>
+          <div
+            v-if="searchQuery && filteredResults.length > 0"
+            class="border-t border-white/10 pt-4"
+          >
+            <div class="text-sm text-gray-400 mb-2">
+              搜索结果
+            </div>
             <div class="space-y-2">
               <button
                 v-for="article in filteredResults"
@@ -147,40 +162,92 @@ onUnmounted(() => {
                 @click="goToArticle(article.slug)"
               >
                 <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                  <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <svg
+                    class="w-5 h-5 text-primary"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
                   </svg>
                 </div>
                 <div class="flex-1 min-w-0">
-                  <div class="text-white font-medium truncate" v-html="highlightText(article.title, searchQuery)"></div>
-                  <div class="text-sm text-gray-400 truncate" v-html="highlightText(article.summary || '', searchQuery)"></div>
+                  <div
+                    class="text-white font-medium truncate"
+                    v-html="highlightText(article.title, searchQuery)"
+                  />
+                  <div
+                    class="text-sm text-gray-400 truncate"
+                    v-html="highlightText(article.summary || '', searchQuery)"
+                  />
                 </div>
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                <svg
+                  class="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </button>
             </div>
             <button
-              @click="handleEnter"
               class="w-full mt-3 py-2 text-center text-primary hover:text-primary/80 transition-colors text-sm font-medium"
+              @click="handleEnter"
             >
               查看全部 {{ blogStore.pagination.total }} 个结果 →
             </button>
           </div>
 
-          <div v-else-if="searchQuery && !isSearching" class="border-t border-white/10 pt-4 text-center text-gray-400">
+          <div
+            v-else-if="searchQuery && !isSearching"
+            class="border-t border-white/10 pt-4 text-center text-gray-400"
+          >
             未找到相关结果
           </div>
 
-          <div v-if="isSearching" class="border-t border-white/10 pt-4 text-center text-gray-400">
-            <svg class="animate-spin w-5 h-5 mx-auto" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          <div
+            v-if="isSearching"
+            class="border-t border-white/10 pt-4 text-center text-gray-400"
+          >
+            <svg
+              class="animate-spin w-5 h-5 mx-auto"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              />
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
             </svg>
           </div>
 
-          <div v-if="!searchQuery" class="border-t border-white/10 pt-4">
-            <div class="text-sm text-gray-400 mb-3">热门标签</div>
+          <div
+            v-if="!searchQuery"
+            class="border-t border-white/10 pt-4"
+          >
+            <div class="text-sm text-gray-400 mb-3">
+              热门标签
+            </div>
             <div class="flex flex-wrap gap-2">
               <router-link
                 v-for="tag in blogStore.tags.slice(0, 8)"

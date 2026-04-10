@@ -24,7 +24,9 @@ const getTagSize = (count: number) => {
         <h2 class="text-2xl md:text-3xl font-bold mb-1">
           <span class="gradient-text">热门标签</span>
         </h2>
-        <p class="text-sm text-gray-500 dark:text-gray-400">探索不同技术领域</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          探索不同技术领域
+        </p>
       </div>
 
       <div class="flex flex-wrap justify-center gap-4 max-w-4xl mx-auto">
@@ -40,8 +42,14 @@ const getTagSize = (count: number) => {
           }"
         >
           <span class="relative z-10 font-medium">{{ tag.name }}</span>
-          <span class="absolute inset-0 rounded-full opacity-0 group-hover:opacity-20 transition-opacity" :style="{ backgroundColor: tag.color }" />
-          <span class="absolute -top-2 -right-2 px-2 py-0.5 text-xs bg-white dark:bg-dark-100 rounded-full border shadow-sm" :style="{ borderColor: tag.color, color: tag.color }">
+          <span
+            class="absolute inset-0 rounded-full opacity-0 group-hover:opacity-20 transition-opacity"
+            :style="{ backgroundColor: tag.color }"
+          />
+          <span
+            class="absolute -top-2 -right-2 px-2 py-0.5 text-xs bg-white dark:bg-dark-100 rounded-full border shadow-sm"
+            :style="{ borderColor: tag.color, color: tag.color }"
+          >
             {{ tag.article_count }}
           </span>
         </router-link>

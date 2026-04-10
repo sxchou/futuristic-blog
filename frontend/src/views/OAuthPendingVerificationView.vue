@@ -295,29 +295,73 @@ onUnmounted(() => {
 <template>
   <div class="flex items-center justify-center px-4 pb-32">
     <div class="w-full max-w-md">
-      <div v-if="isLoading" class="text-center space-y-4">
+      <div
+        v-if="isLoading"
+        class="text-center space-y-4"
+      >
         <div class="w-12 h-12 mx-auto border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-        <p class="text-gray-500 dark:text-gray-400">正在加载...</p>
+        <p class="text-gray-500 dark:text-gray-400">
+          正在加载...
+        </p>
       </div>
       
-      <div v-else class="space-y-6">
+      <div
+        v-else
+        class="space-y-6"
+      >
         <div class="text-center space-y-3">
-          <div class="w-16 h-16 mx-auto rounded-full flex items-center justify-center" :class="isExpired ? 'bg-red-500/10' : 'bg-amber-500/10'">
-            <svg class="w-8 h-8" :class="isExpired ? 'text-red-500' : 'text-amber-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path v-if="isExpired" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          <div
+            class="w-16 h-16 mx-auto rounded-full flex items-center justify-center"
+            :class="isExpired ? 'bg-red-500/10' : 'bg-amber-500/10'"
+          >
+            <svg
+              class="w-8 h-8"
+              :class="isExpired ? 'text-red-500' : 'text-amber-500'"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                v-if="isExpired"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+              <path
+                v-else
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+              />
             </svg>
           </div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ isExpired ? '链接已失效' : '邮箱未验证' }}</h1>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+            {{ isExpired ? '链接已失效' : '邮箱未验证' }}
+          </h1>
           <p class="text-gray-500 dark:text-gray-400">
             您好，<span class="font-medium text-gray-700 dark:text-gray-300">{{ username }}</span>！
           </p>
         </div>
         
-        <div v-if="isExpired" class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+        <div
+          v-if="isExpired"
+          class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4"
+        >
           <div class="flex items-start gap-3">
-            <svg class="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              class="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <div class="space-y-1">
               <p class="text-sm font-medium text-red-800 dark:text-red-200">
@@ -330,10 +374,23 @@ onUnmounted(() => {
           </div>
         </div>
         
-        <div v-else class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+        <div
+          v-else
+          class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4"
+        >
           <div class="flex items-start gap-3">
-            <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              class="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <div class="space-y-1">
               <p class="text-sm font-medium text-blue-800 dark:text-blue-200">
@@ -346,7 +403,10 @@ onUnmounted(() => {
           </div>
         </div>
         
-        <div v-if="hasEmail && !showChangeEmailForm" class="space-y-4">
+        <div
+          v-if="hasEmail && !showChangeEmailForm"
+          class="space-y-4"
+        >
           <div class="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 space-y-3">
             <div class="flex items-center justify-between">
               <span class="text-sm text-gray-500 dark:text-gray-400">当前邮箱</span>
@@ -360,7 +420,10 @@ onUnmounted(() => {
               <span class="text-sm text-gray-500 dark:text-gray-400">预计送达时间</span>
               <span class="text-sm font-medium text-gray-700 dark:text-gray-300">10秒内</span>
             </div>
-            <div v-if="!isExpired && countdownText" class="flex items-center justify-between">
+            <div
+              v-if="!isExpired && countdownText"
+              class="flex items-center justify-between"
+            >
               <span class="text-sm text-gray-500 dark:text-gray-400">链接有效期</span>
               <span class="text-sm font-medium text-orange-600 dark:text-orange-400">{{ countdownText }}</span>
             </div>
@@ -368,72 +431,98 @@ onUnmounted(() => {
           
           <div class="space-y-3">
             <button
-              @click="handleResendVerification"
               :disabled="isSubmitting"
               class="w-full py-3 px-4 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              @click="handleResendVerification"
             >
-              <div v-if="isSubmitting" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              <div
+                v-if="isSubmitting"
+                class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
+              />
+              <svg
+                v-else
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
               </svg>
               {{ isSubmitting ? '发送中...' : '重新发送验证邮件' }}
             </button>
             
             <button
-              @click="handleChangeEmail"
               class="w-full py-3 px-4 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+              @click="handleChangeEmail"
             >
               更换邮箱地址
             </button>
           </div>
         </div>
         
-        <div v-else-if="showChangeEmailForm" class="space-y-4">
+        <div
+          v-else-if="showChangeEmailForm"
+          class="space-y-4"
+        >
           <div class="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
             <p class="text-sm text-gray-600 dark:text-gray-400">
               请输入新的邮箱地址，我们将发送验证邮件到该地址。
             </p>
           </div>
           
-          <form @submit.prevent="handleSubmitNewEmail" class="space-y-4">
+          <form
+            class="space-y-4"
+            @submit.prevent="handleSubmitNewEmail"
+          >
             <div>
-              <label for="new-email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              <label
+                for="new-email"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+              >
                 新邮箱地址
               </label>
               <input
+                id="new-email"
                 v-model="newEmail"
                 type="email"
-                id="new-email"
                 name="new-email"
                 autocomplete="email"
                 placeholder="请输入新的邮箱地址"
                 class="w-full px-3 py-2.5 bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none transition text-sm"
                 :disabled="isSubmitting"
-              />
+              >
             </div>
             
             <div>
-              <label for="confirm-email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              <label
+                for="confirm-email"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+              >
                 确认邮箱地址
               </label>
               <input
+                id="confirm-email"
                 v-model="confirmEmail"
                 type="email"
-                id="confirm-email"
                 name="confirm-email"
                 autocomplete="email"
                 placeholder="请再次输入邮箱地址"
                 class="w-full px-3 py-2.5 bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none transition text-sm"
                 :disabled="isSubmitting"
-              />
+              >
             </div>
             
             <div class="flex gap-3">
               <button
                 type="button"
-                @click="handleCancelChangeEmail"
                 :disabled="isSubmitting"
                 class="flex-1 py-2.5 px-4 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition disabled:opacity-50"
+                @click="handleCancelChangeEmail"
               >
                 取消
               </button>
@@ -442,51 +531,66 @@ onUnmounted(() => {
                 :disabled="isSubmitting"
                 class="flex-1 py-2.5 px-4 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                <div v-if="isSubmitting" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div
+                  v-if="isSubmitting"
+                  class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
+                />
                 {{ isSubmitting ? '发送中...' : '发送验证邮件' }}
               </button>
             </div>
           </form>
         </div>
         
-        <div v-else class="space-y-4">
+        <div
+          v-else
+          class="space-y-4"
+        >
           <div class="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
             <p class="text-sm text-gray-600 dark:text-gray-400">
               您尚未设置邮箱地址，请提供您的邮箱以完成账户设置。
             </p>
           </div>
           
-          <form @submit.prevent="handleSubmitNewEmail" class="space-y-4">
+          <form
+            class="space-y-4"
+            @submit.prevent="handleSubmitNewEmail"
+          >
             <div>
-              <label for="setup-email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              <label
+                for="setup-email"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+              >
                 邮箱地址
               </label>
               <input
+                id="setup-email"
                 v-model="newEmail"
                 type="email"
-                id="setup-email"
                 name="email"
                 autocomplete="email"
                 placeholder="请输入您的邮箱地址"
                 class="w-full px-3 py-2.5 bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none transition text-sm"
                 :disabled="isSubmitting"
-              />
+              >
             </div>
             
             <div>
-              <label for="setup-confirm-email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              <label
+                for="setup-confirm-email"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+              >
                 确认邮箱地址
               </label>
               <input
+                id="setup-confirm-email"
                 v-model="confirmEmail"
                 type="email"
-                id="setup-confirm-email"
                 name="confirm-email"
                 autocomplete="email"
                 placeholder="请再次输入邮箱地址"
                 class="w-full px-3 py-2.5 bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none transition text-sm"
                 :disabled="isSubmitting"
-              />
+              >
             </div>
             
             <button
@@ -494,7 +598,10 @@ onUnmounted(() => {
               :disabled="isSubmitting"
               class="w-full py-3 px-4 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              <div v-if="isSubmitting" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div
+                v-if="isSubmitting"
+                class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
+              />
               {{ isSubmitting ? '发送中...' : '发送验证邮件' }}
             </button>
           </form>
@@ -513,7 +620,10 @@ onUnmounted(() => {
         </div>
         
         <div class="text-center">
-          <router-link to="/login" class="text-sm text-gray-500 hover:text-primary transition">
+          <router-link
+            to="/login"
+            class="text-sm text-gray-500 hover:text-primary transition"
+          >
             返回登录
           </router-link>
         </div>

@@ -209,7 +209,9 @@ const goBack = () => {
           <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
             <span class="text-lg font-bold text-white">{{ siteConfigStore.siteLogo }}</span>
           </div>
-          <h1 class="text-lg font-bold gradient-text">忘记密码</h1>
+          <h1 class="text-lg font-bold gradient-text">
+            忘记密码
+          </h1>
           <p class="text-gray-500 dark:text-gray-400 mt-1 text-sm">
             {{ step === 1 ? '输入您的邮箱地址' : '验证身份并设置新密码' }}
           </p>
@@ -242,90 +244,125 @@ const goBack = () => {
           </div>
         </div>
 
-        <form @submit.prevent="step === 1 ? handleSendCode() : handleResetPassword()" class="space-y-4">
+        <form
+          class="space-y-4"
+          @submit.prevent="step === 1 ? handleSendCode() : handleResetPassword()"
+        >
           <div>
-            <label for="forgot-email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">邮箱地址</label>
+            <label
+              for="forgot-email"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            >邮箱地址</label>
             <input
+              id="forgot-email"
               v-model="email"
               type="email"
-              id="forgot-email"
               name="email"
               autocomplete="email"
               :disabled="step === 2"
-              @blur="validateEmail"
               :class="[
                 'w-full px-3 py-2.5 bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none transition-colors text-sm',
                 emailError ? 'border-red-500 focus:border-red-500' : 'border-gray-200 dark:border-white/10 focus:border-primary',
                 step === 2 ? 'opacity-60 cursor-not-allowed' : ''
               ]"
               placeholder="请输入注册时使用的邮箱"
-            />
-            <p v-if="emailError" class="mt-1 text-xs text-red-400">{{ emailError }}</p>
+              @blur="validateEmail"
+            >
+            <p
+              v-if="emailError"
+              class="mt-1 text-xs text-red-400"
+            >
+              {{ emailError }}
+            </p>
           </div>
 
           <template v-if="step === 2">
             <div>
-              <label for="forgot-code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">验证码</label>
+              <label
+                for="forgot-code"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+              >验证码</label>
               <div class="flex gap-2">
                 <input
+                  id="forgot-code"
                   v-model="code"
                   type="text"
-                  id="forgot-code"
                   name="code"
                   maxlength="6"
-                  @input="codeError = ''"
                   :class="[
                     'flex-1 px-3 py-2.5 bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none transition-colors text-sm tracking-widest text-center',
                     codeError ? 'border-red-500 focus:border-red-500' : 'border-gray-200 dark:border-white/10 focus:border-primary'
                   ]"
                   placeholder="请输入6位验证码"
-                />
+                  @input="codeError = ''"
+                >
                 <button
                   type="button"
-                  @click="handleResendCode"
                   :disabled="countdown > 0 || isSendingCode"
                   class="px-3 py-2.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-200 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap transition-colors"
+                  @click="handleResendCode"
                 >
                   {{ countdown > 0 ? formatCountdown : (isSendingCode ? '发送中...' : '重新发送') }}
                 </button>
               </div>
-              <p v-if="codeError" class="mt-1 text-xs text-red-400">{{ codeError }}</p>
+              <p
+                v-if="codeError"
+                class="mt-1 text-xs text-red-400"
+              >
+                {{ codeError }}
+              </p>
             </div>
 
             <div>
-              <label for="forgot-new-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">新密码</label>
+              <label
+                for="forgot-new-password"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+              >新密码</label>
               <input
+                id="forgot-new-password"
                 v-model="newPassword"
                 type="password"
-                id="forgot-new-password"
                 name="new-password"
                 autocomplete="new-password"
-                @input="passwordError = ''"
                 :class="[
                   'w-full px-3 py-2.5 bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none transition-colors text-sm',
                   passwordError ? 'border-red-500 focus:border-red-500' : 'border-gray-200 dark:border-white/10 focus:border-primary'
                 ]"
                 placeholder="请输入新密码（至少6位）"
-              />
-              <p v-if="passwordError" class="mt-1 text-xs text-red-400">{{ passwordError }}</p>
+                @input="passwordError = ''"
+              >
+              <p
+                v-if="passwordError"
+                class="mt-1 text-xs text-red-400"
+              >
+                {{ passwordError }}
+              </p>
             </div>
 
             <div>
-              <label for="forgot-confirm-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">确认新密码</label>
+              <label
+                for="forgot-confirm-password"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+              >确认新密码</label>
               <input
+                id="forgot-confirm-password"
                 v-model="confirmPassword"
                 type="password"
-                id="forgot-confirm-password"
                 name="confirm-password"
                 autocomplete="new-password"
-                @input="confirmError = ''"
                 :class="[
                   'w-full px-3 py-2.5 bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none transition-colors text-sm',
                   confirmError ? 'border-red-500 focus:border-red-500' : 'border-gray-200 dark:border-white/10 focus:border-primary'
                 ]"
                 placeholder="请再次输入新密码"
-              />
-              <p v-if="confirmError" class="mt-1 text-xs text-red-400">{{ confirmError }}</p>
+                @input="confirmError = ''"
+              >
+              <p
+                v-if="confirmError"
+                class="mt-1 text-xs text-red-400"
+              >
+                {{ confirmError }}
+              </p>
             </div>
           </template>
 
@@ -334,10 +371,28 @@ const goBack = () => {
             :disabled="!canSubmit || isLoading || isSendingCode"
             class="w-full py-2.5 bg-gradient-to-r from-primary to-accent text-white font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 text-sm"
           >
-            <span v-if="isLoading || isSendingCode" class="flex items-center justify-center gap-2">
-              <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            <span
+              v-if="isLoading || isSendingCode"
+              class="flex items-center justify-center gap-2"
+            >
+              <svg
+                class="animate-spin w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                />
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
               </svg>
               {{ step === 1 ? '发送中...' : '重置中...' }}
             </span>
@@ -346,8 +401,8 @@ const goBack = () => {
 
           <button
             type="button"
-            @click="goBack"
             class="w-full py-2.5 text-gray-500 dark:text-gray-400 hover:text-primary transition-colors text-sm"
+            @click="goBack"
           >
             {{ step === 2 ? '返回上一步' : '返回登录' }}
           </button>
@@ -356,7 +411,12 @@ const goBack = () => {
         <div class="mt-4 text-center">
           <p class="text-gray-500 dark:text-gray-400 text-sm">
             还没有账户？
-            <router-link to="/register" class="text-primary hover:underline">立即注册</router-link>
+            <router-link
+              to="/register"
+              class="text-primary hover:underline"
+            >
+              立即注册
+            </router-link>
           </p>
         </div>
       </div>

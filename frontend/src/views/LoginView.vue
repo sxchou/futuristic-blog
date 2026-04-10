@@ -207,45 +207,71 @@ onMounted(fetchOAuthProviders)
           <div class="w-12 h-12 mx-auto mb-2 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
             <span class="text-base font-bold text-white">{{ siteConfigStore.siteLogo }}</span>
           </div>
-          <h1 class="text-lg font-bold gradient-text">欢迎回来</h1>
-          <p class="text-gray-500 dark:text-gray-400 mt-0.5 text-xs">登录您的账户</p>
+          <h1 class="text-lg font-bold gradient-text">
+            欢迎回来
+          </h1>
+          <p class="text-gray-500 dark:text-gray-400 mt-0.5 text-xs">
+            登录您的账户
+          </p>
         </div>
 
-        <form @submit.prevent="handleLogin" class="space-y-3">
+        <form
+          class="space-y-3"
+          @submit.prevent="handleLogin"
+        >
           <div>
-            <label for="login-username" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">用户名/邮箱</label>
+            <label
+              for="login-username"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >用户名/邮箱</label>
             <input
+              id="login-username"
               v-model="form.username"
               type="text"
-              id="login-username"
               name="username"
               autocomplete="username"
-              @input="onUsernameInput"
               class="w-full px-3 py-2 bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none transition-colors text-sm"
               placeholder="请输入用户名或邮箱"
-            />
-            <p v-if="usernameError" class="mt-1 text-xs text-red-400">{{ usernameError }}</p>
+              @input="onUsernameInput"
+            >
+            <p
+              v-if="usernameError"
+              class="mt-1 text-xs text-red-400"
+            >
+              {{ usernameError }}
+            </p>
           </div>
 
           <div>
-            <label for="login-password" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">密码</label>
+            <label
+              for="login-password"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >密码</label>
             <input
+              id="login-password"
               v-model="form.password"
               type="password"
-              id="login-password"
               name="password"
               autocomplete="current-password"
-              @input="onPasswordInput"
               class="w-full px-3 py-2 bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none transition-colors text-sm"
               placeholder="请输入密码"
-            />
-            <p v-if="passwordError" class="mt-1 text-xs text-red-400">{{ passwordError }}</p>
+              @input="onPasswordInput"
+            >
+            <p
+              v-if="passwordError"
+              class="mt-1 text-xs text-red-400"
+            >
+              {{ passwordError }}
+            </p>
           </div>
 
           <div>
             <div class="flex items-center justify-between mb-1">
               <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">验证</label>
-              <router-link to="/forgot-password" class="text-xs text-gray-500 dark:text-gray-400 hover:text-primary transition-colors">
+              <router-link
+                to="/forgot-password"
+                class="text-xs text-gray-500 dark:text-gray-400 hover:text-primary transition-colors"
+              >
                 忘记密码？
               </router-link>
             </div>
@@ -255,27 +281,37 @@ onMounted(fetchOAuthProviders)
             />
           </div>
 
-          <div v-if="generalError" class="p-2 bg-red-500/10 border border-red-500/20 rounded-lg">
-            <p class="text-red-400 text-xs">{{ generalError }}</p>
+          <div
+            v-if="generalError"
+            class="p-2 bg-red-500/10 border border-red-500/20 rounded-lg"
+          >
+            <p class="text-red-400 text-xs">
+              {{ generalError }}
+            </p>
           </div>
 
-          <div v-if="showResendOption" class="p-2 bg-primary/10 border border-primary/20 rounded-lg">
-            <p class="text-xs text-gray-300 mb-1.5">您的邮箱尚未验证</p>
+          <div
+            v-if="showResendOption"
+            class="p-2 bg-primary/10 border border-primary/20 rounded-lg"
+          >
+            <p class="text-xs text-gray-300 mb-1.5">
+              您的邮箱尚未验证
+            </p>
             <div class="flex gap-2">
               <input
+                id="resend-email"
                 v-model="resendEmail"
                 type="email"
-                id="resend-email"
                 name="resend-email"
                 autocomplete="email"
                 class="flex-1 px-2 py-1.5 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white"
                 placeholder="邮箱地址"
-              />
+              >
               <button
                 type="button"
-                @click="handleResend"
                 :disabled="isResending"
                 class="px-2 py-1.5 text-xs bg-primary text-white rounded hover:bg-primary/80 disabled:opacity-50 whitespace-nowrap"
+                @click="handleResend"
               >
                 {{ isResending ? '发送中' : '重发' }}
               </button>
@@ -287,10 +323,28 @@ onMounted(fetchOAuthProviders)
             :disabled="isLoading"
             class="w-full py-2 bg-gradient-to-r from-primary to-accent text-white font-medium rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 text-sm"
           >
-            <span v-if="isLoading" class="flex items-center justify-center gap-1.5">
-              <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            <span
+              v-if="isLoading"
+              class="flex items-center justify-center gap-1.5"
+            >
+              <svg
+                class="animate-spin w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                />
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
               </svg>
               登录中...
             </span>
@@ -301,14 +355,22 @@ onMounted(fetchOAuthProviders)
         <div class="mt-3 text-center">
           <p class="text-gray-500 dark:text-gray-400 text-xs">
             还没有账户？
-            <router-link to="/register" class="text-primary hover:underline">立即注册</router-link>
+            <router-link
+              to="/register"
+              class="text-primary hover:underline"
+            >
+              立即注册
+            </router-link>
           </p>
         </div>
 
-        <div v-if="oauthProviders.length > 0" class="mt-4">
+        <div
+          v-if="oauthProviders.length > 0"
+          class="mt-4"
+        >
           <div class="relative">
             <div class="absolute inset-0 flex items-center">
-              <div class="w-full border-t border-gray-200 dark:border-white/10"></div>
+              <div class="w-full border-t border-gray-200 dark:border-white/10" />
             </div>
             <div class="relative flex justify-center text-xs">
               <span class="px-2 bg-white dark:bg-dark-100 text-gray-500 dark:text-gray-400">或</span>
@@ -320,10 +382,10 @@ onMounted(fetchOAuthProviders)
               v-for="provider in oauthProviders"
               :key="provider.id"
               type="button"
-              @click="handleOAuthLogin(provider)"
               :disabled="oauthLoading === provider.name || (!provider.is_configured || !provider.is_enabled)"
               :class="getProviderButtonClass(provider)"
               :title="provider.display_name + (!provider.is_configured || !provider.is_enabled ? ' (当前不可用)' : '')"
+              @click="handleOAuthLogin(provider)"
             >
               <svg
                 class="w-5 h-5"

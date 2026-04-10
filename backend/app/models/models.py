@@ -103,6 +103,22 @@ class ArticleLike(Base):
     created_at = Column(DateTime, default=get_db_now)
 
 
+class ArticleBookmark(Base):
+    __tablename__ = "article_bookmarks"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    article_id = Column(Integer, ForeignKey('articles.id', ondelete='CASCADE'), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    created_at = Column(DateTime, default=get_db_now, index=True)
+    
+    article = relationship("Article", backref="bookmarks")
+    user = relationship("User", backref="bookmarks")
+    
+    __table_args__ = (
+        Index('ix_article_bookmarks_user_article', 'user_id', 'article_id'),
+    )
+
+
 class ArticleFile(Base):
     __tablename__ = "article_files"
     

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useBlogStore } from '@/stores'
+import { useBlogStore, useSiteConfigStore } from '@/stores'
 import { useSessionManager, useActivityTracker } from '@/composables/useSessionManager'
 import Navbar from '@/components/common/Navbar.vue'
 import Footer from '@/components/common/Footer.vue'
@@ -11,13 +11,15 @@ import ModalDialog from '@/components/common/ModalDialog.vue'
 
 const route = useRoute()
 const blogStore = useBlogStore()
+const siteConfigStore = useSiteConfigStore()
 
 useSessionManager()
 useActivityTracker()
 
 const isAdminPage = computed(() => route.path.startsWith('/admin'))
 
-onMounted(() => {
+onMounted(async () => {
+  await siteConfigStore.fetchConfigs()
   blogStore.fetchCategories()
   blogStore.fetchTags()
 })
@@ -42,21 +44,36 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-white dark:bg-dark-100 flex flex-col">
+  <div class="min-h-screen bg-white dark:bg-dark-100 flex flex-col transition-colors duration-300">
     <template v-if="!isAdminPage">
       <ReadingProgress />
       <Navbar />
     </template>
-    <main class="flex-1" :class="{ 'pt-16': !isAdminPage }">
-      <div v-if="!isAdminPage" class="blog-container py-8">
+    <main
+      class="flex-1"
+      :class="{ 'pt-16': !isAdminPage }"
+    >
+      <div
+        v-if="!isAdminPage"
+        class="blog-container py-8"
+      >
         <router-view v-slot="{ Component }">
-          <transition name="fade" mode="out-in">
+          <transition
+            name="fade"
+            mode="out-in"
+          >
             <component :is="Component" />
           </transition>
         </router-view>
       </div>
-      <router-view v-else v-slot="{ Component }">
-        <transition name="fade" mode="out-in">
+      <router-view
+        v-else
+        v-slot="{ Component }"
+      >
+        <transition
+          name="fade"
+          mode="out-in"
+        >
           <component :is="Component" />
         </transition>
       </router-view>

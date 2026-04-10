@@ -376,69 +376,111 @@ function getProviderBgColor(provider: string) {
   <div class="p-6">
     <div class="flex items-center justify-between mb-5">
       <div>
-        <h1 class="text-lg font-semibold text-gray-900 dark:text-white">邮件管理</h1>
-        <p class="text-gray-500 dark:text-gray-400 text-xs mt-0.5">配置邮件服务提供商和邮箱账号</p>
+        <h1 class="text-lg font-semibold text-gray-900 dark:text-white">
+          邮件管理
+        </h1>
+        <p class="text-gray-500 dark:text-gray-400 text-xs mt-0.5">
+          配置邮件服务提供商和邮箱账号
+        </p>
       </div>
       <div class="flex gap-2">
         <button
-          @click="activeTab = 'config'"
           :class="[
             'px-3 py-1.5 text-sm rounded-md font-medium transition-colors',
             activeTab === 'config'
               ? 'bg-primary text-white'
               : 'bg-gray-100 dark:bg-dark-100 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-300'
           ]"
+          @click="activeTab = 'config'"
         >
           配置
         </button>
         <button
-          @click="switchToLogs"
           :class="[
             'px-3 py-1.5 text-sm rounded-md font-medium transition-colors',
             activeTab === 'logs'
               ? 'bg-primary text-white'
               : 'bg-gray-100 dark:bg-dark-100 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-300'
           ]"
+          @click="switchToLogs"
         >
           日志
         </button>
       </div>
     </div>
 
-    <div v-if="!isAdmin" class="bg-white dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10 p-8 text-center">
+    <div
+      v-if="!isAdmin"
+      class="bg-white dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10 p-8 text-center"
+    >
       <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
-        <svg class="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        <svg
+          class="w-8 h-8 text-yellow-500"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          />
         </svg>
       </div>
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">权限不足</h2>
-      <p class="text-gray-500 dark:text-gray-400">您没有权限访问此页面，请联系管理员</p>
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+        权限不足
+      </h2>
+      <p class="text-gray-500 dark:text-gray-400">
+        您没有权限访问此页面，请联系管理员
+      </p>
     </div>
 
     <template v-else>
-      <div v-if="activeTab === 'config'" class="space-y-5">
+      <div
+        v-if="activeTab === 'config'"
+        class="space-y-5"
+      >
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div class="bg-white dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10 p-3">
-            <div class="text-xs text-gray-500 dark:text-gray-400">已发送</div>
-            <div class="text-xl font-bold text-green-400">{{ stats.total_sent }}</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">
+              已发送
+            </div>
+            <div class="text-xl font-bold text-green-400">
+              {{ stats.total_sent }}
+            </div>
           </div>
           <div class="bg-white dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10 p-3">
-            <div class="text-xs text-gray-500 dark:text-gray-400">发送失败</div>
-            <div class="text-xl font-bold text-red-400">{{ stats.total_failed }}</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">
+              发送失败
+            </div>
+            <div class="text-xl font-bold text-red-400">
+              {{ stats.total_failed }}
+            </div>
           </div>
           <div class="bg-white dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10 p-3">
-            <div class="text-xs text-gray-500 dark:text-gray-400">已验证</div>
-            <div class="text-xl font-bold text-primary">{{ stats.total_verified }}</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">
+              已验证
+            </div>
+            <div class="text-xl font-bold text-primary">
+              {{ stats.total_verified }}
+            </div>
           </div>
           <div class="bg-white dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10 p-3">
-            <div class="text-xs text-gray-500 dark:text-gray-400">验证率</div>
-            <div class="text-xl font-bold text-accent">{{ stats.verification_rate }}%</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">
+              验证率
+            </div>
+            <div class="text-xl font-bold text-accent">
+              {{ stats.verification_rate }}%
+            </div>
           </div>
         </div>
 
         <div class="bg-white dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden">
           <div class="px-4 py-3 border-b border-gray-200 dark:border-white/10">
-            <h2 class="text-sm font-semibold text-gray-900 dark:text-white">邮件服务提供商</h2>
+            <h2 class="text-sm font-semibold text-gray-900 dark:text-white">
+              邮件服务提供商
+            </h2>
           </div>
           <div class="p-4">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -472,8 +514,13 @@ function getProviderBgColor(provider: string) {
                     当前
                   </span>
                 </div>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mb-1.5">{{ provider.description }}</p>
-                <div v-if="provider.is_api" class="flex items-center gap-2">
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-1.5">
+                  {{ provider.description }}
+                </p>
+                <div
+                  v-if="provider.is_api"
+                  class="flex items-center gap-2"
+                >
                   <span
                     :class="[
                       'px-1.5 py-0.5 text-xs rounded',
@@ -485,7 +532,10 @@ function getProviderBgColor(provider: string) {
                     {{ providerStatus?.has_resend_api_key ? 'API已配置' : 'API未配置' }}
                   </span>
                 </div>
-                <div v-else-if="provider.host" class="text-xs text-gray-400">
+                <div
+                  v-else-if="provider.host"
+                  class="text-xs text-gray-400"
+                >
                   {{ provider.host }}:{{ provider.port }}
                 </div>
               </div>
@@ -493,15 +543,36 @@ function getProviderBgColor(provider: string) {
           </div>
         </div>
 
-        <div v-if="providerStatus?.current_provider === 'resend'" class="p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+        <div
+          v-if="providerStatus?.current_provider === 'resend'"
+          class="p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg"
+        >
           <div class="flex items-start gap-2">
-            <svg class="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              class="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <div class="flex-1">
-              <p class="text-xs text-purple-300 font-medium mb-1">Resend API 配置说明</p>
+              <p class="text-xs text-purple-300 font-medium mb-1">
+                Resend API 配置说明
+              </p>
               <ol class="text-xs text-purple-200 space-y-0.5 list-decimal list-inside">
-                <li>访问 <a href="https://resend.com" target="_blank" class="underline">resend.com</a> 注册账号</li>
+                <li>
+                  访问 <a
+                    href="https://resend.com"
+                    target="_blank"
+                    class="underline"
+                  >resend.com</a> 注册账号
+                </li>
                 <li>在 Dashboard 中创建 API Key</li>
                 <li>在 Railway 环境变量中添加 <code class="bg-purple-500/20 px-1 rounded">RESEND_API_KEY</code></li>
               </ol>
@@ -509,19 +580,24 @@ function getProviderBgColor(provider: string) {
           </div>
         </div>
 
-        <div v-if="providerStatus?.current_provider === 'resend' && providerStatus?.has_resend_api_key" class="bg-white dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10 p-4">
-          <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-3">Resend 测试</h3>
+        <div
+          v-if="providerStatus?.current_provider === 'resend' && providerStatus?.has_resend_api_key"
+          class="bg-white dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10 p-4"
+        >
+          <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-3">
+            Resend 测试
+          </h3>
           <div class="flex gap-2">
             <input
               v-model="testResendEmail"
               type="email"
               placeholder="输入测试邮箱地址"
               class="flex-1 px-3 py-2 text-sm bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-md text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:outline-none"
-            />
+            >
             <button
-              @click="sendResendTestEmail"
               :disabled="isTestingResend"
               class="px-3 py-2 text-sm bg-primary text-white rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
+              @click="sendResendTestEmail"
             >
               {{ isTestingResend ? '发送中...' : '测试' }}
             </button>
@@ -530,194 +606,258 @@ function getProviderBgColor(provider: string) {
 
         <div class="bg-white dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden">
           <div class="px-4 py-3 border-b border-gray-200 dark:border-white/10 flex items-center justify-between">
-            <h2 class="text-sm font-semibold text-gray-900 dark:text-white">邮箱配置列表</h2>
+            <h2 class="text-sm font-semibold text-gray-900 dark:text-white">
+              邮箱配置列表
+            </h2>
             <button
-              @click="openAddModal"
               class="px-3 py-1.5 text-xs bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
+              @click="openAddModal"
             >
               添加配置
             </button>
           </div>
 
-          <div v-if="isLoading" class="flex justify-center py-8">
+          <div
+            v-if="isLoading"
+            class="flex justify-center py-8"
+          >
             <div class="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
           </div>
 
-          <div v-else-if="configs.length === 0" class="text-center py-8 text-gray-500 text-sm">
+          <div
+            v-else-if="configs.length === 0"
+            class="text-center py-8 text-gray-500 text-sm"
+          >
             暂无配置，请添加邮箱配置
           </div>
 
-          <div v-else class="overflow-x-auto">
-          <table class="w-full">
-            <thead>
-              <tr class="border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-dark-100/50">
-                <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5">服务商</th>
-                <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5">邮箱账号</th>
-                <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5">发件人</th>
-                <th class="text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5 w-20">状态</th>
-                <th class="text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5 w-28">操作</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200 dark:divide-white/5">
-              <tr
-                v-for="config in configs"
-                :key="config.id"
-                :class="[
-                  'hover:bg-gray-50/50 dark:hover:bg-dark-200/30 transition-colors',
-                  config.is_active ? 'bg-primary/5' : ''
-                ]"
-              >
-                <td class="px-4 py-3">
-                  <div class="flex items-center gap-2">
-                    <div
-                      class="w-6 h-6 rounded flex items-center justify-center text-white text-xs font-bold"
-                      :class="getProviderBgColor(config.provider)"
-                    >
-                      {{ getProviderName(config.provider).charAt(0) }}
+          <div
+            v-else
+            class="overflow-x-auto"
+          >
+            <table class="w-full">
+              <thead>
+                <tr class="border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-dark-100/50">
+                  <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5">
+                    服务商
+                  </th>
+                  <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5">
+                    邮箱账号
+                  </th>
+                  <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5">
+                    发件人
+                  </th>
+                  <th class="text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5 w-20">
+                    状态
+                  </th>
+                  <th class="text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5 w-28">
+                    操作
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200 dark:divide-white/5">
+                <tr
+                  v-for="config in configs"
+                  :key="config.id"
+                  :class="[
+                    'hover:bg-gray-50/50 dark:hover:bg-dark-200/30 transition-colors',
+                    config.is_active ? 'bg-primary/5' : ''
+                  ]"
+                >
+                  <td class="px-4 py-3">
+                    <div class="flex items-center gap-2">
+                      <div
+                        class="w-6 h-6 rounded flex items-center justify-center text-white text-xs font-bold"
+                        :class="getProviderBgColor(config.provider)"
+                      >
+                        {{ getProviderName(config.provider).charAt(0) }}
+                      </div>
+                      <span :class="['font-medium text-sm', getProviderColor(config.provider)]">
+                        {{ getProviderName(config.provider) }}
+                      </span>
                     </div>
-                    <span :class="['font-medium text-sm', getProviderColor(config.provider)]">
-                      {{ getProviderName(config.provider) }}
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm text-gray-900 dark:text-white">{{ config.smtp_user }}</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="text-sm text-gray-900 dark:text-white">
+                      {{ config.from_name }}
+                    </div>
+                    <div class="text-xs text-gray-500">
+                      {{ config.from_email }}
+                    </div>
+                  </td>
+                  <td class="px-4 py-3 text-center">
+                    <span
+                      v-if="config.is_active"
+                      class="px-2 py-0.5 text-xs rounded-full bg-green-500/20 text-green-400"
+                    >
+                      已激活
                     </span>
-                  </div>
-                </td>
-                <td class="px-4 py-3">
-                  <span class="text-sm text-gray-900 dark:text-white">{{ config.smtp_user }}</span>
-                </td>
-                <td class="px-4 py-3">
-                  <div class="text-sm text-gray-900 dark:text-white">{{ config.from_name }}</div>
-                  <div class="text-xs text-gray-500">{{ config.from_email }}</div>
-                </td>
-                <td class="px-4 py-3 text-center">
-                  <span
-                    v-if="config.is_active"
-                    class="px-2 py-0.5 text-xs rounded-full bg-green-500/20 text-green-400"
-                  >
-                    已激活
-                  </span>
-                  <span
-                    v-else
-                    class="px-2 py-0.5 text-xs rounded-full bg-gray-500/20 text-gray-400"
-                  >
-                    未激活
-                  </span>
-                </td>
-                <td class="px-4 py-3 text-right">
-                  <div class="flex items-center justify-end gap-1">
-                    <button
-                      v-if="!config.is_active"
-                      @click="activateConfig(config)"
-                      class="px-2 py-1 text-xs text-green-400 hover:bg-green-500/10 rounded transition-colors"
+                    <span
+                      v-else
+                      class="px-2 py-0.5 text-xs rounded-full bg-gray-500/20 text-gray-400"
                     >
-                      激活
-                    </button>
-                    <button
-                      @click="openEditModal(config)"
-                      class="px-2 py-1 text-xs text-primary hover:bg-primary/10 rounded transition-colors"
-                    >
-                      编辑
-                    </button>
-                    <button
-                      @click="deleteConfig(config)"
-                      class="px-2 py-1 text-xs text-red-400 hover:bg-red-500/10 rounded transition-colors"
-                    >
-                      删除
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                      未激活
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-right">
+                    <div class="flex items-center justify-end gap-1">
+                      <button
+                        v-if="!config.is_active"
+                        class="px-2 py-1 text-xs text-green-400 hover:bg-green-500/10 rounded transition-colors"
+                        @click="activateConfig(config)"
+                      >
+                        激活
+                      </button>
+                      <button
+                        class="px-2 py-1 text-xs text-primary hover:bg-primary/10 rounded transition-colors"
+                        @click="openEditModal(config)"
+                      >
+                        编辑
+                      </button>
+                      <button
+                        class="px-2 py-1 text-xs text-red-400 hover:bg-red-500/10 rounded transition-colors"
+                        @click="deleteConfig(config)"
+                      >
+                        删除
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
         <div class="bg-white dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10 p-4">
-          <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-3">发送测试邮件</h3>
+          <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-3">
+            发送测试邮件
+          </h3>
           <div class="flex gap-2">
             <input
               v-model="testEmail"
               type="email"
               placeholder="输入测试邮箱地址"
               class="flex-1 px-3 py-2 text-sm bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-md text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:outline-none"
-            />
+            >
             <button
-              @click="sendTestEmail"
               :disabled="isTesting || !activeConfig"
               class="px-3 py-2 text-sm bg-gray-600 dark:bg-gray-700 text-white rounded-md hover:bg-gray-700 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+              @click="sendTestEmail"
             >
               {{ isTesting ? '发送中...' : '测试' }}
             </button>
           </div>
-          <p v-if="!activeConfig" class="mt-2 text-xs text-yellow-500">
+          <p
+            v-if="!activeConfig"
+            class="mt-2 text-xs text-yellow-500"
+          >
             请先激活一个邮箱配置
           </p>
         </div>
       </div>
 
-      <div v-else-if="activeTab === 'logs'" class="bg-white dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden">
+      <div
+        v-else-if="activeTab === 'logs'"
+        class="bg-white dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden"
+      >
         <div class="px-4 py-3 border-b border-gray-200 dark:border-white/10 flex items-center gap-4">
           <select
             v-model="logsFilter.email_type"
-            @change="logsPage = 1; loadLogs()"
             class="px-2 py-1 text-sm bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-md text-gray-900 dark:text-white"
+            @change="logsPage = 1; loadLogs()"
           >
-            <option value="">全部类型</option>
-            <option value="verification">邮箱验证</option>
-            <option value="test">测试邮件</option>
+            <option value="">
+              全部类型
+            </option>
+            <option value="verification">
+              邮箱验证
+            </option>
+            <option value="test">
+              测试邮件
+            </option>
           </select>
           <select
             v-model="logsFilter.status"
-            @change="logsPage = 1; loadLogs()"
             class="px-2 py-1 text-sm bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-md text-gray-900 dark:text-white"
+            @change="logsPage = 1; loadLogs()"
           >
-            <option value="">全部状态</option>
-            <option value="sent">已发送</option>
-            <option value="failed">发送失败</option>
-            <option value="pending">待发送</option>
+            <option value="">
+              全部状态
+            </option>
+            <option value="sent">
+              已发送
+            </option>
+            <option value="failed">
+              发送失败
+            </option>
+            <option value="pending">
+              待发送
+            </option>
           </select>
         </div>
 
-        <div v-if="isLoading" class="flex justify-center py-8">
+        <div
+          v-if="isLoading"
+          class="flex justify-center py-8"
+        >
           <div class="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
         </div>
 
-        <div v-else class="overflow-x-auto">
-        <table class="w-full">
-          <thead>
-            <tr class="border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-dark-100/50">
-              <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5">收件人</th>
-              <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5">类型</th>
-              <th class="text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5 w-24">状态</th>
-              <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5">时间</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-200 dark:divide-white/5">
-            <tr
-              v-for="log in logs"
-              :key="log.id"
-              class="hover:bg-gray-50/50 dark:hover:bg-dark-200/30 transition-colors"
-            >
-              <td class="px-4 py-3">
-                <span class="text-sm text-gray-900 dark:text-white">{{ log.recipient_email }}</span>
-              </td>
-              <td class="px-4 py-3">
-                <span class="text-sm text-gray-600 dark:text-gray-400">
-                  {{ emailTypeLabels[log.email_type] || log.email_type }}
-                </span>
-              </td>
-              <td class="px-4 py-3 text-center">
-                <span :class="['px-2 py-0.5 text-xs rounded-full', statusColors[log.status]]">
-                  {{ statusLabels[log.status] }}
-                </span>
-              </td>
-              <td class="px-4 py-3">
-                <span class="text-sm text-gray-500">{{ formatDate(log.created_at) }}</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div
+          v-else
+          class="overflow-x-auto"
+        >
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-dark-100/50">
+                <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5">
+                  收件人
+                </th>
+                <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5">
+                  类型
+                </th>
+                <th class="text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5 w-24">
+                  状态
+                </th>
+                <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5">
+                  时间
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-white/5">
+              <tr
+                v-for="log in logs"
+                :key="log.id"
+                class="hover:bg-gray-50/50 dark:hover:bg-dark-200/30 transition-colors"
+              >
+                <td class="px-4 py-3">
+                  <span class="text-sm text-gray-900 dark:text-white">{{ log.recipient_email }}</span>
+                </td>
+                <td class="px-4 py-3">
+                  <span class="text-sm text-gray-600 dark:text-gray-400">
+                    {{ emailTypeLabels[log.email_type] || log.email_type }}
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-center">
+                  <span :class="['px-2 py-0.5 text-xs rounded-full', statusColors[log.status]]">
+                    {{ statusLabels[log.status] }}
+                  </span>
+                </td>
+                <td class="px-4 py-3">
+                  <span class="text-sm text-gray-500">{{ formatDate(log.created_at) }}</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
-        <div v-if="logs.length > 0" class="px-4 py-3 border-t border-gray-200 dark:border-white/10 flex items-center justify-between">
+        <div
+          v-if="logs.length > 0"
+          class="px-4 py-3 border-t border-gray-200 dark:border-white/10 flex items-center justify-between"
+        >
           <span class="text-xs text-gray-500">
             共 {{ logsTotal }} 条记录
           </span>
@@ -725,13 +865,13 @@ function getProviderBgColor(provider: string) {
             <button
               v-for="page in totalPages"
               :key="page"
-              @click="changePage(page)"
               :class="[
                 'px-2 py-1 text-xs rounded transition-colors',
                 logsPage === page
                   ? 'bg-primary text-white'
                   : 'bg-gray-100 dark:bg-dark-100 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-300'
               ]"
+              @click="changePage(page)"
             >
               {{ page }}
             </button>
@@ -755,11 +895,21 @@ function getProviderBgColor(provider: string) {
               {{ editingConfig ? '编辑配置' : '添加配置' }}
             </h2>
             <button
-              @click="closeEditModal"
               class="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-dark-200 transition-colors"
+              @click="closeEditModal"
             >
-              <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              <svg
+                class="w-4 h-4 text-gray-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -782,15 +932,18 @@ function getProviderBgColor(provider: string) {
                     ]"
                   >
                     <input
-                      type="radio"
                       v-model="configForm.provider"
+                      type="radio"
                       :value="provider.id"
                       class="w-3.5 h-3.5 text-primary"
                       :disabled="!!editingConfig"
-                    />
+                    >
                     <div>
                       <div :class="['font-medium text-sm', getProviderColor(provider.id)]">{{ provider.name }}</div>
-                      <div v-if="provider.host" class="text-xs text-gray-500">{{ provider.host }}:{{ provider.port }}</div>
+                      <div
+                        v-if="provider.host"
+                        class="text-xs text-gray-500"
+                      >{{ provider.host }}:{{ provider.port }}</div>
                     </div>
                   </label>
                 </div>
@@ -798,25 +951,63 @@ function getProviderBgColor(provider: string) {
 
               <div class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800/50">
                 <div class="flex items-start gap-2">
-                  <svg class="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    class="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                   <div class="text-xs text-blue-700 dark:text-blue-400">
-                    <div v-if="configForm.provider === 'qq'" class="space-y-0.5">
-                      <p class="font-medium">QQ邮箱授权码获取：</p>
-                      <p class="text-blue-200">设置 → 账户 → 开启POP3/SMTP → 生成授权码</p>
+                    <div
+                      v-if="configForm.provider === 'qq'"
+                      class="space-y-0.5"
+                    >
+                      <p class="font-medium">
+                        QQ邮箱授权码获取：
+                      </p>
+                      <p class="text-blue-200">
+                        设置 → 账户 → 开启POP3/SMTP → 生成授权码
+                      </p>
                     </div>
-                    <div v-else-if="configForm.provider === '163'" class="space-y-0.5">
-                      <p class="font-medium">163邮箱授权码获取：</p>
-                      <p class="text-blue-200">设置 → POP3/SMTP/IMAP → 获取授权密码</p>
+                    <div
+                      v-else-if="configForm.provider === '163'"
+                      class="space-y-0.5"
+                    >
+                      <p class="font-medium">
+                        163邮箱授权码获取：
+                      </p>
+                      <p class="text-blue-200">
+                        设置 → POP3/SMTP/IMAP → 获取授权密码
+                      </p>
                     </div>
-                    <div v-else-if="configForm.provider === 'gmail'" class="space-y-0.5">
-                      <p class="font-medium">Gmail应用密码获取：</p>
-                      <p class="text-blue-200">开启两步验证 → myaccount.google.com/apppasswords</p>
+                    <div
+                      v-else-if="configForm.provider === 'gmail'"
+                      class="space-y-0.5"
+                    >
+                      <p class="font-medium">
+                        Gmail应用密码获取：
+                      </p>
+                      <p class="text-blue-200">
+                        开启两步验证 → myaccount.google.com/apppasswords
+                      </p>
                     </div>
-                    <div v-else class="space-y-0.5">
-                      <p class="font-medium">SMTP配置说明：</p>
-                      <p class="text-blue-200">请填写邮箱服务商提供的SMTP账号和密码</p>
+                    <div
+                      v-else
+                      class="space-y-0.5"
+                    >
+                      <p class="font-medium">
+                        SMTP配置说明：
+                      </p>
+                      <p class="text-blue-200">
+                        请填写邮箱服务商提供的SMTP账号和密码
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -824,62 +1015,77 @@ function getProviderBgColor(provider: string) {
 
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label for="email-smtp-user" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  <label
+                    for="email-smtp-user"
+                    class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1"
+                  >
                     邮箱账号 <span class="text-red-500">*</span>
                   </label>
                   <input
+                    id="email-smtp-user"
                     v-model="configForm.smtp_user"
                     type="text"
-                    id="email-smtp-user"
                     name="smtp-user"
                     autocomplete="email"
                     :placeholder="configForm.provider === 'qq' ? 'QQ邮箱' : '邮箱地址'"
                     class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
-                  />
+                  >
                 </div>
                 <div>
-                  <label for="email-smtp-password" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                    {{ configForm.provider === 'qq' ? '授权码' : '密码' }} <span v-if="!editingConfig" class="text-red-500">*</span>
+                  <label
+                    for="email-smtp-password"
+                    class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1"
+                  >
+                    {{ configForm.provider === 'qq' ? '授权码' : '密码' }} <span
+                      v-if="!editingConfig"
+                      class="text-red-500"
+                    >*</span>
                   </label>
                   <input
+                    id="email-smtp-password"
                     v-model="configForm.smtp_password"
                     type="password"
-                    id="email-smtp-password"
                     name="smtp-password"
                     autocomplete="new-password"
                     :placeholder="editingConfig ? '留空保持原值' : '授权码/密码'"
                     class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
-                  />
+                  >
                 </div>
               </div>
 
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label for="email-from-email" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  <label
+                    for="email-from-email"
+                    class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1"
+                  >
                     发件人邮箱 <span class="text-red-500">*</span>
                   </label>
                   <input
+                    id="email-from-email"
                     v-model="configForm.from_email"
                     type="email"
-                    id="email-from-email"
                     name="from-email"
                     autocomplete="email"
                     placeholder="发件人邮箱"
                     class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
-                  />
+                  >
                 </div>
                 <div>
-                  <label for="email-from-name" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  <label
+                    for="email-from-name"
+                    class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1"
+                  >
                     发件人名称
                   </label>
                   <input
+                    id="email-from-name"
                     v-model="configForm.from_name"
                     type="text"
-                    id="email-from-name"
                     name="from-name"
                     placeholder="显示名称"
                     class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
-                  />
+                  >
                 </div>
               </div>
             </div>
@@ -887,18 +1093,21 @@ function getProviderBgColor(provider: string) {
 
           <div class="flex items-center justify-end gap-2 px-4 py-3 border-t border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-dark-100/30">
             <button
-              @click="closeEditModal"
               type="button"
               class="px-3 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-200 transition-colors"
+              @click="closeEditModal"
             >
               取消
             </button>
             <button
-              @click="saveConfig"
               :disabled="isSaving"
               class="px-3 py-1.5 text-sm rounded-md bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+              @click="saveConfig"
             >
-              <div v-if="isSaving" class="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div
+                v-if="isSaving"
+                class="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"
+              />
               {{ isSaving ? '保存中' : '保存' }}
             </button>
           </div>

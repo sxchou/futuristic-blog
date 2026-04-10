@@ -1,54 +1,138 @@
 <template>
   <div class="chart-container">
-    <div class="chart-header" v-if="title || $slots.header">
+    <div
+      v-if="title || $slots.header"
+      class="chart-header"
+    >
       <slot name="header">
-        <h3 class="chart-title">{{ title }}</h3>
+        <h3 class="chart-title">
+          {{ title }}
+        </h3>
       </slot>
       <div class="chart-actions">
         <button
           v-if="showRefresh"
-          @click="handleRefresh"
           class="chart-action-btn"
           :disabled="loading"
           title="刷新数据"
+          @click="handleRefresh"
         >
-          <svg class="w-4 h-4" :class="{ 'animate-spin': loading }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          <svg
+            class="w-4 h-4"
+            :class="{ 'animate-spin': loading }"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
           </svg>
         </button>
-        <div class="export-dropdown" v-if="showExport">
-          <button class="chart-action-btn" title="导出图表">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        <div
+          v-if="showExport"
+          class="export-dropdown"
+        >
+          <button
+            class="chart-action-btn"
+            title="导出图表"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+              />
             </svg>
           </button>
           <div class="export-menu">
-            <button @click="exportChart('png')" class="export-menu-item">导出 PNG</button>
-            <button @click="exportChart('svg')" class="export-menu-item">导出 SVG</button>
-            <button @click="exportData('csv')" class="export-menu-item">导出 CSV</button>
+            <button
+              class="export-menu-item"
+              @click="exportChart('png')"
+            >
+              导出 PNG
+            </button>
+            <button
+              class="export-menu-item"
+              @click="exportChart('svg')"
+            >
+              导出 SVG
+            </button>
+            <button
+              class="export-menu-item"
+              @click="exportData('csv')"
+            >
+              导出 CSV
+            </button>
           </div>
         </div>
         <slot name="actions" />
       </div>
     </div>
     
-    <div class="chart-content" :style="{ height: height + 'px' }">
-      <div v-if="loading" class="chart-loading">
-        <div class="loading-spinner"></div>
+    <div
+      class="chart-content"
+      :style="{ height: height + 'px' }"
+    >
+      <div
+        v-if="loading"
+        class="chart-loading"
+      >
+        <div class="loading-spinner" />
         <span class="loading-text">加载中...</span>
       </div>
       
-      <div v-else-if="error" class="chart-error">
-        <svg class="w-12 h-12 text-red-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      <div
+        v-else-if="error"
+        class="chart-error"
+      >
+        <svg
+          class="w-12 h-12 text-red-400 mb-2"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          />
         </svg>
         <span class="error-text">{{ error }}</span>
-        <button @click="handleRefresh" class="retry-btn">重试</button>
+        <button
+          class="retry-btn"
+          @click="handleRefresh"
+        >
+          重试
+        </button>
       </div>
       
-      <div v-else-if="isEmpty" class="chart-empty">
-        <svg class="w-12 h-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      <div
+        v-else-if="isEmpty"
+        class="chart-empty"
+      >
+        <svg
+          class="w-12 h-12 text-gray-400 mb-2"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+          />
         </svg>
         <span class="empty-text">暂无数据</span>
       </div>

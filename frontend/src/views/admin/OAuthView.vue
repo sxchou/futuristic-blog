@@ -227,118 +227,142 @@ onMounted(fetchProviders)
   <div class="p-6">
     <div class="flex items-center justify-between mb-5">
       <div>
-        <h1 class="text-lg font-semibold text-gray-900 dark:text-white">授权管理</h1>
-        <p class="text-gray-500 dark:text-gray-400 text-xs mt-0.5">配置第三方登录授权</p>
+        <h1 class="text-lg font-semibold text-gray-900 dark:text-white">
+          授权管理
+        </h1>
+        <p class="text-gray-500 dark:text-gray-400 text-xs mt-0.5">
+          配置第三方登录授权
+        </p>
       </div>
     </div>
 
-    <div v-if="isLoading" class="flex justify-center py-8">
+    <div
+      v-if="isLoading"
+      class="flex justify-center py-8"
+    >
       <div class="w-6 h-6 border-3 border-primary/30 border-t-primary rounded-full animate-spin" />
     </div>
 
-    <div v-else class="bg-white dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden">
+    <div
+      v-else
+      class="bg-white dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden"
+    >
       <div class="overflow-x-auto">
-      <table class="w-full">
-        <thead>
-          <tr class="border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-dark-100/50">
-            <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5 w-48">平台</th>
-            <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5">状态</th>
-            <th class="text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5 w-28">登录页显示</th>
-            <th class="text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5 w-24">启用</th>
-            <th class="text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5 w-20">操作</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-200 dark:divide-white/5">
-          <tr
-            v-for="provider in providers"
-            :key="provider.id"
-            class="hover:bg-gray-50/50 dark:hover:bg-dark-200/30 transition-colors"
-          >
-            <td class="px-4 py-3">
-              <div class="flex items-center gap-2.5">
-                <div
-                  class="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0"
-                  :class="getProviderBgColor(provider.name)"
+        <table class="w-full">
+          <thead>
+            <tr class="border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-dark-100/50">
+              <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5 w-48">
+                平台
+              </th>
+              <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5">
+                状态
+              </th>
+              <th class="text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5 w-28">
+                登录页显示
+              </th>
+              <th class="text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5 w-24">
+                启用
+              </th>
+              <th class="text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5 w-20">
+                操作
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 dark:divide-white/5">
+            <tr
+              v-for="provider in providers"
+              :key="provider.id"
+              class="hover:bg-gray-50/50 dark:hover:bg-dark-200/30 transition-colors"
+            >
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2.5">
+                  <div
+                    class="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0"
+                    :class="getProviderBgColor(provider.name)"
+                  >
+                    <svg
+                      class="w-5 h-5"
+                      :class="provider.name === 'google' ? '' : 'text-white'"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                      v-html="getProviderIcon(provider.icon)"
+                    />
+                  </div>
+                  <div>
+                    <div class="font-medium text-gray-900 dark:text-white text-sm">
+                      {{ provider.display_name }}
+                    </div>
+                    <div class="text-xs text-gray-400 dark:text-gray-500">
+                      {{ provider.name }}
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2">
+                  <span
+                    :class="[
+                      'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
+                      provider.is_configured
+                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                    ]"
+                  >
+                    {{ provider.is_configured ? '已配置' : '未配置' }}
+                  </span>
+                  <span
+                    v-if="!provider.is_configured && provider.show_on_login"
+                    class="text-xs text-yellow-600 dark:text-yellow-400"
+                  >
+                    需配置
+                  </span>
+                </div>
+              </td>
+              <td class="px-4 py-3 text-center">
+                <button
+                  :disabled="savingId === provider.id"
+                  :class="[
+                    'relative inline-flex h-4 w-7 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30',
+                    provider.show_on_login ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'
+                  ]"
+                  @click="toggleShowOnLogin(provider)"
                 >
-                  <svg
-                    class="w-5 h-5"
-                    :class="provider.name === 'google' ? '' : 'text-white'"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                    v-html="getProviderIcon(provider.icon)"
+                  <span
+                    :class="[
+                      'inline-block h-3 w-3 transform rounded-full bg-white shadow-sm transition-transform',
+                      provider.show_on_login ? 'translate-x-3.5' : 'translate-x-0.5'
+                    ]"
                   />
-                </div>
-                <div>
-                  <div class="font-medium text-gray-900 dark:text-white text-sm">{{ provider.display_name }}</div>
-                  <div class="text-xs text-gray-400 dark:text-gray-500">{{ provider.name }}</div>
-                </div>
-              </div>
-            </td>
-            <td class="px-4 py-3">
-              <div class="flex items-center gap-2">
-                <span
+                </button>
+              </td>
+              <td class="px-4 py-3 text-center">
+                <button
+                  :disabled="savingId === provider.id"
                   :class="[
-                    'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
-                    provider.is_configured
-                      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                    'relative inline-flex h-4 w-7 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30',
+                    provider.is_enabled ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'
                   ]"
+                  @click="toggleEnabled(provider)"
                 >
-                  {{ provider.is_configured ? '已配置' : '未配置' }}
-                </span>
-                <span
-                  v-if="!provider.is_configured && provider.show_on_login"
-                  class="text-xs text-yellow-600 dark:text-yellow-400"
+                  <span
+                    :class="[
+                      'inline-block h-3 w-3 transform rounded-full bg-white shadow-sm transition-transform',
+                      provider.is_enabled ? 'translate-x-3.5' : 'translate-x-0.5'
+                    ]"
+                  />
+                </button>
+              </td>
+              <td class="px-4 py-3 text-right">
+                <button
+                  class="text-sm text-primary hover:text-primary/80 transition-colors font-medium"
+                  @click="openEditModal(provider)"
                 >
-                  需配置
-                </span>
-              </div>
-            </td>
-            <td class="px-4 py-3 text-center">
-              <button
-                @click="toggleShowOnLogin(provider)"
-                :disabled="savingId === provider.id"
-                :class="[
-                  'relative inline-flex h-4 w-7 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30',
-                  provider.show_on_login ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'
-                ]"
-              >
-                <span
-                  :class="[
-                    'inline-block h-3 w-3 transform rounded-full bg-white shadow-sm transition-transform',
-                    provider.show_on_login ? 'translate-x-3.5' : 'translate-x-0.5'
-                  ]"
-                />
-              </button>
-            </td>
-            <td class="px-4 py-3 text-center">
-              <button
-                @click="toggleEnabled(provider)"
-                :disabled="savingId === provider.id"
-                :class="[
-                  'relative inline-flex h-4 w-7 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30',
-                  provider.is_enabled ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'
-                ]"
-              >
-                <span
-                  :class="[
-                    'inline-block h-3 w-3 transform rounded-full bg-white shadow-sm transition-transform',
-                    provider.is_enabled ? 'translate-x-3.5' : 'translate-x-0.5'
-                  ]"
-                />
-              </button>
-            </td>
-            <td class="px-4 py-3 text-right">
-              <button
-                @click="openEditModal(provider)"
-                class="text-sm text-primary hover:text-primary/80 transition-colors font-medium"
-              >
-                配置
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+                  配置
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -371,11 +395,21 @@ onMounted(fetchProviders)
               </h2>
             </div>
             <button
-              @click="closeEditModal"
               class="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-dark-200 transition-colors"
+              @click="closeEditModal"
             >
-              <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              <svg
+                class="w-4 h-4 text-gray-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -390,68 +424,83 @@ onMounted(fetchProviders)
 
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label for="oauth-display-name" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">显示名称</label>
+                  <label
+                    for="oauth-display-name"
+                    class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1"
+                  >显示名称</label>
                   <input
+                    id="oauth-display-name"
                     v-model="form.display_name"
                     type="text"
-                    id="oauth-display-name"
                     name="display-name"
                     class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all"
-                  />
+                  >
                 </div>
                 <div>
-                  <label for="oauth-scope" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">授权范围</label>
+                  <label
+                    for="oauth-scope"
+                    class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1"
+                  >授权范围</label>
                   <input
+                    id="oauth-scope"
                     v-model="form.scope"
                     type="text"
-                    id="oauth-scope"
                     name="scope"
                     class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all"
-                  />
+                  >
                 </div>
               </div>
 
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label for="oauth-client-id" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  <label
+                    for="oauth-client-id"
+                    class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1"
+                  >
                     Client ID <span class="text-red-500">*</span>
                   </label>
                   <input
+                    id="oauth-client-id"
                     v-model="form.client_id"
                     type="text"
-                    id="oauth-client-id"
                     name="client-id"
                     class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all"
-                  />
+                  >
                 </div>
                 <div>
-                  <label for="oauth-client-secret" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  <label
+                    for="oauth-client-secret"
+                    class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1"
+                  >
                     Client Secret <span class="text-red-500">*</span>
                   </label>
                   <input
+                    id="oauth-client-secret"
                     v-model="form.client_secret"
                     type="password"
-                    id="oauth-client-secret"
                     name="client-secret"
                     autocomplete="new-password"
                     class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all"
                     placeholder="留空保持原值"
-                  />
+                  >
                 </div>
               </div>
 
               <div>
-                <label for="oauth-redirect-uri" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                <label
+                  for="oauth-redirect-uri"
+                  class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1"
+                >
                   回调地址 <span class="text-red-500">*</span>
                 </label>
                 <input
+                  id="oauth-redirect-uri"
                   v-model="form.redirect_uri"
                   type="text"
-                  id="oauth-redirect-uri"
                   name="redirect-uri"
                   class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all"
                   placeholder="http://localhost:3001/oauth/callback/{provider}"
-                />
+                >
               </div>
 
               <div class="border-t border-gray-200 dark:border-white/10 pt-3">
@@ -459,9 +508,9 @@ onMounted(fetchProviders)
                   <span class="text-xs font-medium text-gray-600 dark:text-gray-400">高级配置</span>
                   <button
                     v-if="defaultConfigs[editingProvider?.name || '']"
-                    @click="applyDefaultConfig"
                     type="button"
                     class="text-xs text-primary hover:text-primary/80 transition-colors"
+                    @click="applyDefaultConfig"
                   >
                     应用默认值
                   </button>
@@ -469,34 +518,43 @@ onMounted(fetchProviders)
                 <div class="space-y-2">
                   <div class="grid grid-cols-3 gap-2">
                     <div>
-                      <label for="oauth-authorize-url" class="block text-xs text-gray-500 dark:text-gray-500 mb-0.5">授权端点</label>
+                      <label
+                        for="oauth-authorize-url"
+                        class="block text-xs text-gray-500 dark:text-gray-500 mb-0.5"
+                      >授权端点</label>
                       <input
+                        id="oauth-authorize-url"
                         v-model="form.authorize_url"
                         type="text"
-                        id="oauth-authorize-url"
                         name="authorize-url"
                         class="w-full px-2 py-1 text-xs rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
-                      />
+                      >
                     </div>
                     <div>
-                      <label for="oauth-token-url" class="block text-xs text-gray-500 dark:text-gray-500 mb-0.5">令牌端点</label>
+                      <label
+                        for="oauth-token-url"
+                        class="block text-xs text-gray-500 dark:text-gray-500 mb-0.5"
+                      >令牌端点</label>
                       <input
+                        id="oauth-token-url"
                         v-model="form.token_url"
                         type="text"
-                        id="oauth-token-url"
                         name="token-url"
                         class="w-full px-2 py-1 text-xs rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
-                      />
+                      >
                     </div>
                     <div>
-                      <label for="oauth-userinfo-url" class="block text-xs text-gray-500 dark:text-gray-500 mb-0.5">用户信息端点</label>
+                      <label
+                        for="oauth-userinfo-url"
+                        class="block text-xs text-gray-500 dark:text-gray-500 mb-0.5"
+                      >用户信息端点</label>
                       <input
+                        id="oauth-userinfo-url"
                         v-model="form.userinfo_url"
                         type="text"
-                        id="oauth-userinfo-url"
                         name="userinfo-url"
                         class="w-full px-2 py-1 text-xs rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
-                      />
+                      >
                     </div>
                   </div>
                 </div>
@@ -508,7 +566,7 @@ onMounted(fetchProviders)
                     v-model="form.show_on_login"
                     type="checkbox"
                     class="w-3.5 h-3.5 rounded border-gray-300 text-primary focus:ring-primary"
-                  />
+                  >
                   <span class="text-xs text-gray-600 dark:text-gray-400">登录页显示</span>
                 </label>
                 <label class="flex items-center gap-1.5 cursor-pointer">
@@ -516,7 +574,7 @@ onMounted(fetchProviders)
                     v-model="form.is_enabled"
                     type="checkbox"
                     class="w-3.5 h-3.5 rounded border-gray-300 text-primary focus:ring-primary"
-                  />
+                  >
                   <span class="text-xs text-gray-600 dark:text-gray-400">启用</span>
                 </label>
               </div>
@@ -525,18 +583,21 @@ onMounted(fetchProviders)
 
           <div class="flex items-center justify-end gap-2 px-4 py-3 border-t border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-dark-100/30">
             <button
-              @click="closeEditModal"
               type="button"
               class="px-3 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-200 transition-colors"
+              @click="closeEditModal"
             >
               取消
             </button>
             <button
-              @click="saveConfig"
               :disabled="isSaving"
               class="px-3 py-1.5 text-sm rounded-md bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+              @click="saveConfig"
             >
-              <div v-if="isSaving" class="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div
+                v-if="isSaving"
+                class="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"
+              />
               {{ isSaving ? '保存中' : '保存' }}
             </button>
           </div>

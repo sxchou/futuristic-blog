@@ -357,25 +357,31 @@ defineExpose({
     :class="{ 'fixed inset-4 z-50 bg-gray-900 dark:bg-dark-100': isFullscreen }"
   >
     <div class="flex flex-wrap items-center gap-1 px-3 py-2 bg-gray-100 dark:bg-dark-100 border-b border-gray-200 dark:border-white/10">
-      <template v-for="(item, index) in toolbarActions" :key="index">
+      <template
+        v-for="(item, index) in toolbarActions"
+        :key="index"
+      >
         <button
           v-if="!item.divider"
           type="button"
-          @click="item.action"
           :title="item.title"
           class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/5 rounded transition-colors"
+          @click="item.action"
         >
           {{ item.icon }}
         </button>
-        <div v-else class="w-px h-4 bg-gray-300 dark:bg-white/10 mx-0.5 hidden sm:block" />
+        <div
+          v-else
+          class="w-px h-4 bg-gray-300 dark:bg-white/10 mx-0.5 hidden sm:block"
+        />
       </template>
       
       <div class="lang-selector-container relative">
         <button
           type="button"
-          @click="showLangSelector = !showLangSelector; if (showLangSelector) updateLangSelectorPosition()"
           title="代码块"
           class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/5 rounded transition-colors"
+          @click="showLangSelector = !showLangSelector; if (showLangSelector) updateLangSelectorPosition()"
         >
           { }
         </button>
@@ -392,42 +398,45 @@ defineExpose({
             v-for="lang in programmingLanguages"
             :key="lang.code"
             type="button"
-            @click="insertCodeBlock(lang.code)"
             class="w-full px-2 py-1 text-xs text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+            @click="insertCodeBlock(lang.code)"
           >
             {{ lang.label }}
           </button>
         </div>
       </div>
       
-      <div class="w-px h-4 bg-gray-300 dark:bg-white/10 mx-0.5 hidden sm:block"></div>
+      <div class="w-px h-4 bg-gray-300 dark:bg-white/10 mx-0.5 hidden sm:block" />
       
-      <EmojiPicker position="bottom" @select="insertEmoji" />
+      <EmojiPicker
+        position="bottom"
+        @select="insertEmoji"
+      />
       
-      <div class="w-px h-4 bg-gray-300 dark:bg-white/10 mx-0.5 hidden sm:block"></div>
+      <div class="w-px h-4 bg-gray-300 dark:bg-white/10 mx-0.5 hidden sm:block" />
       
       <button
         type="button"
-        @click="showMarkdownHelp = !showMarkdownHelp"
         title="Markdown 语法帮助"
         class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/5 rounded transition-colors"
+        @click="showMarkdownHelp = !showMarkdownHelp"
       >
         ?
       </button>
       <button
         type="button"
-        @click="togglePreview"
         :title="showPreview ? '隐藏预览' : '显示预览'"
         class="px-2 py-1 text-xs font-medium rounded transition-colors"
         :class="showPreview ? 'text-primary bg-primary/10' : 'text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/5'"
+        @click="togglePreview"
       >
         👁
       </button>
       <button
         type="button"
-        @click="toggleFullscreen"
         :title="isFullscreen ? '退出全屏' : '全屏'"
         class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/5 rounded transition-colors"
+        @click="toggleFullscreen"
       >
         ⛶
       </button>
@@ -439,9 +448,22 @@ defineExpose({
     >
       <div class="flex justify-between items-center mb-3">
         <span class="font-medium text-gray-700 dark:text-gray-300">Markdown 语法参考</span>
-        <button @click="showMarkdownHelp = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        <button
+          class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+          @click="showMarkdownHelp = false"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </button>
       </div>
@@ -535,14 +557,27 @@ defineExpose({
           class="inline-flex items-center gap-1 text-primary hover:underline"
         >
           <span>查看完整 Markdown 语法文档</span>
-          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          <svg
+            class="w-3 h-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+            />
           </svg>
         </a>
       </div>
     </div>
     
-    <div class="editor-container flex" :style="editorContainerStyle">
+    <div
+      class="editor-container flex"
+      :style="editorContainerStyle"
+    >
       <div 
         class="editor-pane flex-1 flex flex-col min-w-0"
         :class="{ 'max-w-[50%]': showPreview }"
@@ -553,12 +588,12 @@ defineExpose({
         <textarea
           ref="editorRef"
           :value="modelValue"
-          @input="handleInput"
-          @keydown="handleKeydown"
-          @scroll="handleEditorScroll"
           :placeholder="placeholder"
           :disabled="disabled"
           class="flex-1 w-full p-3 text-sm bg-white dark:bg-dark-200 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 resize-none focus:outline-none font-mono leading-relaxed"
+          @input="handleInput"
+          @keydown="handleKeydown"
+          @scroll="handleEditorScroll"
         />
       </div>
       

@@ -20,7 +20,10 @@ defineProps<{
       borderRadius: circle ? '50%' : radius || '0.375rem'
     }"
   />
-  <div v-else class="skeleton-lines">
+  <div
+    v-else
+    class="skeleton-lines"
+  >
     <div
       v-for="i in lines"
       :key="i"

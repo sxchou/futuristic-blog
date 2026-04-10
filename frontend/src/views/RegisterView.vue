@@ -68,65 +68,89 @@ const handleRegister = async () => {
           <div class="w-12 h-12 mx-auto mb-2 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
             <span class="text-base font-bold text-white">{{ siteConfigStore.siteLogo }}</span>
           </div>
-          <h1 class="text-lg font-bold gradient-text">创建账户</h1>
-          <p class="text-gray-500 dark:text-gray-400 mt-0.5 text-xs">加入我们的技术社区</p>
+          <h1 class="text-lg font-bold gradient-text">
+            创建账户
+          </h1>
+          <p class="text-gray-500 dark:text-gray-400 mt-0.5 text-xs">
+            加入我们的技术社区
+          </p>
         </div>
 
-        <form @submit.prevent="handleRegister" class="space-y-3">
+        <form
+          class="space-y-3"
+          @submit.prevent="handleRegister"
+        >
           <div>
-            <label for="register-username" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">用户名</label>
+            <label
+              for="register-username"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >用户名</label>
             <input
+              id="register-username"
               v-model="form.username"
               type="text"
-              id="register-username"
               name="username"
               autocomplete="username"
               class="w-full px-3 py-2 bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none transition-colors text-sm"
               placeholder="请输入用户名"
-            />
+            >
           </div>
 
           <div>
-            <label for="register-email" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">邮箱</label>
+            <label
+              for="register-email"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >邮箱</label>
             <input
+              id="register-email"
               v-model="form.email"
               type="email"
-              id="register-email"
               name="email"
               autocomplete="email"
               class="w-full px-3 py-2 bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none transition-colors text-sm"
               placeholder="请输入邮箱"
-            />
+            >
           </div>
 
           <div>
-            <label for="register-password" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">密码</label>
+            <label
+              for="register-password"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >密码</label>
             <input
+              id="register-password"
               v-model="form.password"
               type="password"
-              id="register-password"
               name="new-password"
               autocomplete="new-password"
               class="w-full px-3 py-2 bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none transition-colors text-sm"
               placeholder="请输入密码"
-            />
+            >
           </div>
 
           <div>
-            <label for="register-confirm-password" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">确认密码</label>
+            <label
+              for="register-confirm-password"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >确认密码</label>
             <input
+              id="register-confirm-password"
               v-model="form.confirmPassword"
               type="password"
-              id="register-confirm-password"
               name="confirm-password"
               autocomplete="new-password"
               class="w-full px-3 py-2 bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none transition-colors text-sm"
               placeholder="请再次输入密码"
-            />
+            >
           </div>
 
-          <div v-if="errorMessage" class="p-2 bg-red-500/10 border border-red-500/20 rounded-lg">
-            <p class="text-red-400 text-xs">{{ errorMessage }}</p>
+          <div
+            v-if="errorMessage"
+            class="p-2 bg-red-500/10 border border-red-500/20 rounded-lg"
+          >
+            <p class="text-red-400 text-xs">
+              {{ errorMessage }}
+            </p>
           </div>
 
           <button
@@ -134,10 +158,28 @@ const handleRegister = async () => {
             :disabled="isLoading"
             class="w-full py-2 bg-gradient-to-r from-primary to-accent text-white font-medium rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 text-sm"
           >
-            <span v-if="isLoading" class="flex items-center justify-center gap-1.5">
-              <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            <span
+              v-if="isLoading"
+              class="flex items-center justify-center gap-1.5"
+            >
+              <svg
+                class="animate-spin w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                />
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
               </svg>
               注册中...
             </span>
@@ -148,7 +190,12 @@ const handleRegister = async () => {
         <div class="mt-3 text-center">
           <p class="text-gray-500 dark:text-gray-400 text-xs">
             已有账户？
-            <router-link to="/login" class="text-primary hover:underline">立即登录</router-link>
+            <router-link
+              to="/login"
+              class="text-primary hover:underline"
+            >
+              立即登录
+            </router-link>
           </p>
         </div>
       </div>

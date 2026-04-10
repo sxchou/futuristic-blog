@@ -1,20 +1,44 @@
 <template>
-  <div id="comments" class="comments-section mt-12">
+  <div
+    id="comments"
+    class="comments-section mt-12"
+  >
     <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+      <svg
+        class="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+        />
       </svg>
       评论 ({{ totalComments }})
     </h3>
 
-    <div v-if="!authStore.isAuthenticated" class="bg-gray-100 dark:bg-dark-100/50 border border-gray-200 dark:border-white/10 rounded-lg p-6 text-center">
-      <p class="text-gray-500 dark:text-gray-400 mb-4">登录后才能发表评论</p>
-      <router-link to="/login" class="btn-primary">
+    <div
+      v-if="!authStore.isAuthenticated"
+      class="bg-gray-100 dark:bg-dark-100/50 border border-gray-200 dark:border-white/10 rounded-lg p-6 text-center"
+    >
+      <p class="text-gray-500 dark:text-gray-400 mb-4">
+        登录后才能发表评论
+      </p>
+      <router-link
+        to="/login"
+        class="btn-primary"
+      >
         立即登录
       </router-link>
     </div>
 
-    <div v-else class="comment-form mb-8">
+    <div
+      v-else
+      class="comment-form mb-8"
+    >
       <div class="bg-gray-100 dark:bg-dark-100/50 border border-gray-200 dark:border-white/10 rounded-lg p-4">
         <div class="flex justify-between items-center mb-1">
           <span class="text-xs text-gray-500">支持 Markdown 格式</span>
@@ -27,6 +51,7 @@
           </a>
         </div>
         <CommentEditor
+          ref="commentEditorRef"
           v-model="newComment"
           placeholder="写下你的想法...&#10;&#10;支持 **粗体**、*斜体*、`代码`、[链接](url) 等 Markdown 语法"
           :disabled="submitting"
@@ -34,13 +59,12 @@
           storage-key="new-comment"
           :article-title="articleTitle"
           @submit="submitComment"
-          ref="commentEditorRef"
         />
         <div class="flex justify-end mt-3">
           <button
-            @click="submitComment"
             :disabled="!newComment.trim() || submitting"
             class="btn-primary text-sm px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            @click="submitComment"
           >
             {{ submitting ? '发送中...' : '发表评论' }}
           </button>
@@ -48,15 +72,24 @@
       </div>
     </div>
 
-    <div v-if="loading" class="flex justify-center py-8">
+    <div
+      v-if="loading"
+      class="flex justify-center py-8"
+    >
       <div class="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
     </div>
 
-    <div v-else-if="comments.length === 0" class="text-center py-8 text-gray-500">
+    <div
+      v-else-if="comments.length === 0"
+      class="text-center py-8 text-gray-500"
+    >
       暂无评论，快来发表第一条评论吧！
     </div>
 
-    <div v-else class="comments-list space-y-4">
+    <div
+      v-else
+      class="comments-list space-y-4"
+    >
       <CommentItem
         v-for="comment in comments"
         :key="comment.id"

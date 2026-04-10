@@ -123,20 +123,33 @@ watch(() => props.currentPage, () => {
 
     <div class="pagination-wrapper flex items-center justify-center gap-1 md:gap-2">
       <button
-        @click="goToPrev"
         :disabled="isFirstPage"
         class="pagination-btn pagination-nav"
         :class="{ 'opacity-40 cursor-not-allowed': isFirstPage }"
         :aria-label="'上一页'"
+        @click="goToPrev"
       >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        <svg
+          class="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 19l-7-7 7-7"
+          />
         </svg>
         <span class="hidden md:inline ml-1">上一页</span>
       </button>
 
       <div class="pagination-pages flex items-center gap-1">
-        <template v-for="(page, index) in visiblePages" :key="index">
+        <template
+          v-for="(page, index) in visiblePages"
+          :key="index"
+        >
           <span
             v-if="page === '...'"
             class="pagination-ellipsis"
@@ -145,12 +158,12 @@ watch(() => props.currentPage, () => {
           </span>
           <button
             v-else
-            @click="goToPage(page)"
             class="pagination-btn pagination-page"
             :class="{ 
               'pagination-active': page === currentPage,
               'hover:bg-gray-100 dark:hover:bg-white/10': page !== currentPage
             }"
+            @click="goToPage(page)"
           >
             {{ page }}
           </button>
@@ -158,20 +171,33 @@ watch(() => props.currentPage, () => {
       </div>
 
       <button
-        @click="goToNext"
         :disabled="isLastPage"
         class="pagination-btn pagination-nav"
         :class="{ 'opacity-40 cursor-not-allowed': isLastPage }"
         :aria-label="'下一页'"
+        @click="goToNext"
       >
         <span class="hidden md:inline mr-1">下一页</span>
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        <svg
+          class="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 5l7 7-7 7"
+          />
         </svg>
       </button>
     </div>
 
-    <div v-if="totalPages > 7" class="pagination-jump mt-4 flex items-center justify-center gap-2 text-sm">
+    <div
+      v-if="totalPages > 7"
+      class="pagination-jump mt-4 flex items-center justify-center gap-2 text-sm"
+    >
       <span class="text-gray-500 dark:text-gray-400">跳转至</span>
       <input
         ref="jumpInputRef"
@@ -182,10 +208,10 @@ watch(() => props.currentPage, () => {
         class="pagination-input"
         placeholder="页码"
         @keyup.enter="handleJump"
-      />
+      >
       <button
-        @click="handleJump"
         class="pagination-jump-btn"
+        @click="handleJump"
       >
         确定
       </button>

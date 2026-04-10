@@ -188,6 +188,12 @@
     @apply flex items-center gap-1;
   }
 
+  .article-action-btn {
+    @apply cursor-pointer hover:text-primary transition-colors bg-transparent border-none p-0;
+    position: relative;
+    z-index: 1;
+  }
+
   .category-badge {
     @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium transition-colors;
   }
@@ -398,4 +404,13 @@ mark.search-highlight {
 @keyframes file-highlight-pulse {
   0%, 100% { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2), 0 4px 12px rgba(59, 130, 246, 0.15); }
   50% { box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.3), 0 6px 16px rgba(59, 130, 246, 0.25); }
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }

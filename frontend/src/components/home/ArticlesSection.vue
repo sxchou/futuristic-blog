@@ -116,14 +116,23 @@ onUnmounted(() => {
         <h2 class="text-2xl md:text-3xl font-bold mb-1">
           <span class="gradient-text">最新文章</span>
         </h2>
-        <p class="text-sm text-gray-500 dark:text-gray-400">探索技术前沿，分享工程实践</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          探索技术前沿，分享工程实践
+        </p>
       </div>
 
-      <div v-if="isLoading && blogStore.articles.length === 0" class="flex justify-center py-12">
+      <div
+        v-if="isLoading && blogStore.articles.length === 0"
+        class="flex justify-center py-12"
+      >
         <div class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
 
-      <div v-else ref="articlesSectionRef" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div
+        v-else
+        ref="articlesSectionRef"
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+      >
         <ArticleCard
           v-for="article in displayArticles"
           :key="article.id"
@@ -131,7 +140,10 @@ onUnmounted(() => {
         />
       </div>
 
-      <div v-if="blogStore.pagination.totalPages > 1" class="mt-8">
+      <div
+        v-if="blogStore.pagination.totalPages > 1"
+        class="mt-8"
+      >
         <Pagination
           :current-page="blogStore.pagination.page"
           :total-pages="blogStore.pagination.totalPages"

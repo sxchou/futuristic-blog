@@ -55,40 +55,58 @@ const getArticleLink = () => {
     :to="getArticleLink()"
     class="group glass-card-hover p-4 flex flex-col h-full"
   >
-    <div v-if="article.cover_image" class="relative mb-3 overflow-hidden rounded-lg">
+    <div
+      v-if="article.cover_image"
+      class="relative mb-3 overflow-hidden rounded-lg"
+    >
       <img
         :src="article.cover_image"
         :alt="article.title"
         class="w-full h-32 object-cover transition-transform duration-500 group-hover:scale-110"
-      />
+      >
       <div class="absolute inset-0 bg-gradient-to-t from-dark to-transparent opacity-60" />
     </div>
 
     <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1 group-hover:text-primary transition-colors line-clamp-2 min-h-[3.5rem]">
       <template v-if="article.highlighted_title">
-        <span v-html="article.highlighted_title"></span>
+        <span v-html="article.highlighted_title" />
       </template>
       <template v-else>
         {{ article.title }}
       </template>
     </h3>
 
-    <p v-if="article.summary || article.highlighted_summary" class="text-gray-500 dark:text-gray-400 text-sm mb-2 line-clamp-2 min-h-[2.5rem]">
+    <p
+      v-if="article.summary || article.highlighted_summary"
+      class="text-gray-500 dark:text-gray-400 text-sm mb-2 line-clamp-2 min-h-[2.5rem]"
+    >
       <template v-if="article.highlighted_summary">
-        <span class="inline" v-html="article.highlighted_summary"></span>
+        <span
+          class="inline"
+          v-html="article.highlighted_summary"
+        />
       </template>
       <template v-else>
         {{ article.summary }}
       </template>
     </p>
-    <div v-else class="min-h-[2.5rem] mb-2"></div>
+    <div
+      v-else
+      class="min-h-[2.5rem] mb-2"
+    />
 
-    <div v-if="article.category" class="mb-2">
+    <div
+      v-if="article.category"
+      class="mb-2"
+    >
       <span
         class="inline-flex items-center gap-1 text-sm"
         :style="{ color: article.category.color }"
       >
-        <span class="w-1.5 h-1.5 rounded-full" :style="{ backgroundColor: article.category.color }" />
+        <span
+          class="w-1.5 h-1.5 rounded-full"
+          :style="{ backgroundColor: article.category.color }"
+        />
         {{ article.category.name }}
       </span>
     </div>
@@ -108,15 +126,34 @@ const getArticleLink = () => {
           {{ tag.name }}
         </span>
       </div>
-      <div v-if="article.is_pinned || article.is_featured" class="flex items-center gap-1 flex-shrink-0 ml-2">
-        <span v-if="article.is_pinned" class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500/90 text-white shadow-sm" title="置顶">
-          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
+      <div
+        v-if="article.is_pinned || article.is_featured"
+        class="flex items-center gap-1 flex-shrink-0 ml-2"
+      >
+        <span
+          v-if="article.is_pinned"
+          class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500/90 text-white shadow-sm"
+          title="置顶"
+        >
+          <svg
+            class="w-3 h-3"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" />
           </svg>
         </span>
-        <span v-if="article.is_featured" class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gradient-to-r from-primary to-accent text-white shadow-sm" title="精选">
-          <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        <span
+          v-if="article.is_featured"
+          class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gradient-to-r from-primary to-accent text-white shadow-sm"
+          title="精选"
+        >
+          <svg
+            class="w-3 h-3"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
           </svg>
         </span>
       </div>
@@ -126,26 +163,51 @@ const getArticleLink = () => {
       <span>{{ formatDate(article.created_at) }}</span>
       <div class="flex items-center gap-3">
         <span class="flex items-center gap-1">
-          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          <svg
+            class="w-3 h-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+            />
           </svg>
           {{ article.view_count }}
         </span>
         <button
-          @click="goToComments"
           class="flex items-center gap-1 hover:text-primary transition-colors"
+          @click="goToComments"
         >
-          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          <svg
+            class="w-3 h-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+            />
           </svg>
           {{ article.comment_count || 0 }}
         </button>
         <button
-          @click="handleLike"
           :disabled="isLiking"
           class="flex items-center gap-1 transition-colors"
           :class="isLiked ? 'text-red-500' : 'hover:text-red-500'"
+          @click="handleLike"
         >
           <svg 
             class="w-3 h-3 transition-transform" 
@@ -154,7 +216,12 @@ const getArticleLink = () => {
             stroke="currentColor" 
             viewBox="0 0 24 24"
           >
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+            />
           </svg>
           {{ likeCount }}
         </button>

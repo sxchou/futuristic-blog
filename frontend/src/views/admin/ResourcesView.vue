@@ -128,89 +128,136 @@ onMounted(() => {
 
 <template>
   <div>
-    <div class="flex items-center justify-between mb-4">
-      <h1 class="text-xl font-bold text-gray-900 dark:text-white">资源管理</h1>
+    <div class="flex items-center justify-between mb-4 gap-2">
+      <h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
+        资源管理
+      </h1>
       <button
+        class="px-3 sm:px-4 py-1.5 bg-primary text-white rounded-lg text-xs sm:text-sm hover:bg-primary/90 transition-colors whitespace-nowrap"
         @click="openCreateModal"
-        class="px-4 py-1.5 bg-primary text-white rounded-lg text-sm hover:bg-primary/90 transition-colors"
       >
         添加资源
       </button>
     </div>
 
-    <div v-if="isLoading" class="flex justify-center py-16">
+    <div
+      v-if="isLoading"
+      class="flex justify-center py-16"
+    >
       <div class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
     </div>
 
-    <div v-else class="glass-card overflow-hidden">
+    <div
+      v-else
+      class="glass-card overflow-hidden"
+    >
       <div class="overflow-x-auto">
-      <table class="w-full">
-        <thead class="bg-gray-50 dark:bg-dark-100">
-          <tr>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">资源</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">分类</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">链接</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">状态</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">排序</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">操作</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-200 dark:divide-white/10">
-          <tr v-for="resource in resources" :key="resource.id" class="hover:bg-gray-50 dark:hover:bg-white/5">
-            <td class="px-4 py-3">
-              <div class="flex items-center gap-3">
-                <div v-if="resource.icon" class="w-8 h-8 rounded bg-gray-100 dark:bg-dark-100 flex items-center justify-center text-lg">
-                  {{ resource.icon }}
+        <table class="w-full">
+          <thead class="bg-gray-50 dark:bg-dark-100">
+            <tr>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                资源
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                分类
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                链接
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                状态
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                排序
+              </th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                操作
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 dark:divide-white/10">
+            <tr
+              v-for="resource in resources"
+              :key="resource.id"
+              class="hover:bg-gray-50 dark:hover:bg-white/5"
+            >
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-3">
+                  <div
+                    v-if="resource.icon"
+                    class="w-8 h-8 rounded bg-gray-100 dark:bg-dark-100 flex items-center justify-center text-lg"
+                  >
+                    {{ resource.icon }}
+                  </div>
+                  <div>
+                    <p class="font-medium text-gray-900 dark:text-white text-sm">
+                      {{ resource.title }}
+                    </p>
+                    <p
+                      v-if="resource.description"
+                      class="text-gray-500 text-xs truncate max-w-xs"
+                    >
+                      {{ resource.description }}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p class="font-medium text-gray-900 dark:text-white text-sm">{{ resource.title }}</p>
-                  <p v-if="resource.description" class="text-gray-500 text-xs truncate max-w-xs">{{ resource.description }}</p>
-                </div>
-              </div>
-            </td>
-            <td class="px-4 py-3">
-              <span class="px-2 py-1 text-xs rounded bg-primary/10 text-primary">
-                {{ getCategoryLabel(resource.category) }}
-              </span>
-            </td>
-            <td class="px-4 py-3">
-              <a :href="resource.url" target="_blank" class="text-primary text-sm hover:underline truncate max-w-xs block">
-                {{ resource.url }}
-              </a>
-            </td>
-            <td class="px-4 py-3">
-              <span :class="resource.is_active ? 'text-green-500' : 'text-gray-400'" class="text-xs">
-                {{ resource.is_active ? '启用' : '禁用' }}
-              </span>
-            </td>
-            <td class="px-4 py-3 text-gray-500 text-sm">
-              {{ resource.order }}
-            </td>
-            <td class="px-4 py-3 text-right">
-              <button
-                @click="handleEdit(resource)"
-                class="text-primary hover:text-primary/80 text-sm mr-3"
-              >
-                编辑
-              </button>
-              <button
-                @click="handleDelete(resource)"
-                class="text-red-500 hover:text-red-400 text-sm"
-              >
-                删除
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              </td>
+              <td class="px-4 py-3">
+                <span class="px-2 py-1 text-xs rounded bg-primary/10 text-primary">
+                  {{ getCategoryLabel(resource.category) }}
+                </span>
+              </td>
+              <td class="px-4 py-3">
+                <a
+                  :href="resource.url"
+                  target="_blank"
+                  class="text-primary text-sm hover:underline truncate max-w-xs block"
+                >
+                  {{ resource.url }}
+                </a>
+              </td>
+              <td class="px-4 py-3">
+                <span
+                  :class="resource.is_active ? 'text-green-500' : 'text-gray-400'"
+                  class="text-xs"
+                >
+                  {{ resource.is_active ? '启用' : '禁用' }}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-gray-500 text-sm">
+                {{ resource.order }}
+              </td>
+              <td class="px-4 py-3 text-right">
+                <button
+                  class="text-primary hover:text-primary/80 text-sm mr-3"
+                  @click="handleEdit(resource)"
+                >
+                  编辑
+                </button>
+                <button
+                  class="text-red-500 hover:text-red-400 text-sm"
+                  @click="handleDelete(resource)"
+                >
+                  删除
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <div v-if="resources.length === 0" class="text-center py-12 text-gray-500">
+      <div
+        v-if="resources.length === 0"
+        class="text-center py-12 text-gray-500"
+      >
         暂无资源
       </div>
     </div>
 
-    <div v-if="showEditor" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div
+      v-if="showEditor"
+      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+    >
       <div class="bg-white dark:bg-dark-100 rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div class="p-4 border-b border-gray-200 dark:border-white/10">
           <h2 class="text-base font-semibold text-gray-900 dark:text-white">
@@ -218,36 +265,48 @@ onMounted(() => {
           </h2>
         </div>
 
-        <form @submit.prevent="handleSubmit" class="p-4 space-y-4">
+        <form
+          class="p-4 space-y-4"
+          @submit.prevent="handleSubmit"
+        >
           <div>
-            <label for="resource-title" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">标题 *</label>
+            <label
+              for="resource-title"
+              class="block text-sm text-gray-600 dark:text-gray-400 mb-1"
+            >标题 *</label>
             <input
+              id="resource-title"
               v-model="form.title"
               type="text"
-              id="resource-title"
               name="title"
               required
               class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white text-sm"
-            />
+            >
           </div>
 
           <div>
-            <label for="resource-url" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">链接 *</label>
+            <label
+              for="resource-url"
+              class="block text-sm text-gray-600 dark:text-gray-400 mb-1"
+            >链接 *</label>
             <input
+              id="resource-url"
               v-model="form.url"
               type="url"
-              id="resource-url"
               name="url"
               required
               class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white text-sm"
-            />
+            >
           </div>
 
           <div>
-            <label for="resource-description" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">描述</label>
+            <label
+              for="resource-description"
+              class="block text-sm text-gray-600 dark:text-gray-400 mb-1"
+            >描述</label>
             <textarea
-              v-model="form.description"
               id="resource-description"
+              v-model="form.description"
               name="description"
               rows="2"
               class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white text-sm"
@@ -256,54 +315,67 @@ onMounted(() => {
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label for="resource-category" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">分类</label>
+              <label
+                for="resource-category"
+                class="block text-sm text-gray-600 dark:text-gray-400 mb-1"
+              >分类</label>
               <select
-                v-model="form.category"
                 id="resource-category"
+                v-model="form.category"
                 name="category"
                 class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white text-sm"
               >
-                <option v-for="opt in categoryOptions" :key="opt.value" :value="opt.value">
+                <option
+                  v-for="opt in categoryOptions"
+                  :key="opt.value"
+                  :value="opt.value"
+                >
                   {{ opt.label }}
                 </option>
               </select>
             </div>
 
             <div>
-              <label for="resource-icon" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">图标</label>
+              <label
+                for="resource-icon"
+                class="block text-sm text-gray-600 dark:text-gray-400 mb-1"
+              >图标</label>
               <input
+                id="resource-icon"
                 v-model="form.icon"
                 type="text"
-                id="resource-icon"
                 name="icon"
                 placeholder="emoji 或图标类名"
                 class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white text-sm"
-              />
+              >
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label for="resource-order" class="block text-sm text-gray-600 dark:text-gray-400 mb-1">排序</label>
+              <label
+                for="resource-order"
+                class="block text-sm text-gray-600 dark:text-gray-400 mb-1"
+              >排序</label>
               <input
+                id="resource-order"
                 v-model.number="form.order"
                 type="number"
-                id="resource-order"
                 name="order"
                 min="0"
                 class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white text-sm"
-              />
+              >
             </div>
 
             <div class="flex items-center pt-6">
               <label class="flex items-center gap-2 cursor-pointer">
                 <input
+                  id="resource-is-active"
                   v-model="form.is_active"
                   type="checkbox"
-                  id="resource-is-active"
                   name="is_active"
                   class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
-                />
+                >
                 <span class="text-sm text-gray-600 dark:text-gray-400">启用</span>
               </label>
             </div>
@@ -312,8 +384,8 @@ onMounted(() => {
           <div class="flex justify-end gap-3 pt-4">
             <button
               type="button"
-              @click="showEditor = false; editingResource = null; resetForm()"
               class="px-4 py-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-sm"
+              @click="showEditor = false; editingResource = null; resetForm()"
             >
               取消
             </button>

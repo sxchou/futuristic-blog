@@ -204,22 +204,49 @@ onMounted(() => {
 <template>
   <div class="dashboard">
     <div class="dashboard-header">
-      <h1 class="text-xl font-bold text-gray-900 dark:text-white">仪表盘</h1>
+      <h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
+        仪表盘
+      </h1>
       <div class="header-actions">
         <select 
           v-model="trendDays" 
-          @change="fetchAllData"
           class="trend-select"
+          @change="fetchAllData"
         >
-          <option :value="7">近 7 天</option>
-          <option :value="14">近 14 天</option>
-          <option :value="30">近 30 天</option>
-          <option :value="60">近 60 天</option>
-          <option :value="90">近 90 天</option>
+          <option :value="7">
+            近 7 天
+          </option>
+          <option :value="14">
+            近 14 天
+          </option>
+          <option :value="30">
+            近 30 天
+          </option>
+          <option :value="60">
+            近 60 天
+          </option>
+          <option :value="90">
+            近 90 天
+          </option>
         </select>
-        <button @click="handleRefresh" class="refresh-btn" :disabled="loading">
-          <svg class="w-4 h-4" :class="{ 'animate-spin': loading }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        <button
+          class="refresh-btn"
+          :disabled="loading"
+          @click="handleRefresh"
+        >
+          <svg
+            class="w-4 h-4"
+            :class="{ 'animate-spin': loading }"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
           </svg>
           刷新数据
         </button>
@@ -229,8 +256,18 @@ onMounted(() => {
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-icon bg-primary/20">
-          <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          <svg
+            class="w-5 h-5 text-primary"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
           </svg>
         </div>
         <div class="stat-info">
@@ -242,9 +279,24 @@ onMounted(() => {
 
       <div class="stat-card">
         <div class="stat-icon bg-secondary/20">
-          <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          <svg
+            class="w-5 h-5 text-secondary"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+            />
           </svg>
         </div>
         <div class="stat-info">
@@ -255,8 +307,18 @@ onMounted(() => {
 
       <div class="stat-card">
         <div class="stat-icon bg-accent/20">
-          <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          <svg
+            class="w-5 h-5 text-accent"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+            />
           </svg>
         </div>
         <div class="stat-info">
@@ -267,8 +329,18 @@ onMounted(() => {
 
       <div class="stat-card">
         <div class="stat-icon bg-green-500/20">
-          <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          <svg
+            class="w-5 h-5 text-green-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+            />
           </svg>
         </div>
         <div class="stat-info">
@@ -279,8 +351,18 @@ onMounted(() => {
 
       <div class="stat-card">
         <div class="stat-icon bg-yellow-500/20">
-          <svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          <svg
+            class="w-5 h-5 text-yellow-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+            />
           </svg>
         </div>
         <div class="stat-info">
@@ -292,8 +374,18 @@ onMounted(() => {
 
       <div class="stat-card">
         <div class="stat-icon bg-pink-500/20">
-          <svg class="w-5 h-5 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg
+            class="w-5 h-5 text-pink-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
         </div>
         <div class="stat-info">
@@ -374,7 +466,9 @@ onMounted(() => {
     <div class="rank-section">
       <div class="rank-card">
         <div class="rank-header">
-          <h3 class="rank-title">热门文章排行</h3>
+          <h3 class="rank-title">
+            热门文章排行
+          </h3>
           <div class="rank-tabs">
             <button 
               v-for="sort in ['views', 'likes', 'comments']" 
@@ -387,8 +481,11 @@ onMounted(() => {
           </div>
         </div>
         <div class="rank-list">
-          <div v-if="loadingArticleRank" class="rank-loading">
-            <div class="loading-spinner"></div>
+          <div
+            v-if="loadingArticleRank"
+            class="rank-loading"
+          >
+            <div class="loading-spinner" />
             <span>加载中...</span>
           </div>
           <template v-else>
@@ -397,17 +494,58 @@ onMounted(() => {
               :key="article.id"
               class="rank-item"
             >
-              <span class="rank-number" :class="{ top: index < 3 }">{{ index + 1 }}</span>
+              <span
+                class="rank-number"
+                :class="{ top: index < 3 }"
+              >{{ index + 1 }}</span>
               <div class="rank-content">
                 <span class="rank-name">{{ article.title }}</span>
                 <div class="rank-stats">
-                  <span><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>{{ article.views }}</span>
-                  <span><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>{{ article.likes }}</span>
-                  <span><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>{{ article.comments }}</span>
+                  <span><svg
+                    class="w-3 h-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  ><path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  /><path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                  /></svg>{{ article.views }}</span>
+                  <span><svg
+                    class="w-3 h-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  ><path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                  /></svg>{{ article.likes }}</span>
+                  <span><svg
+                    class="w-3 h-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  ><path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                  /></svg>{{ article.comments }}</span>
                 </div>
               </div>
             </div>
-            <div v-if="articleRank.length === 0" class="rank-empty">
+            <div
+              v-if="articleRank.length === 0"
+              class="rank-empty"
+            >
               暂无数据
             </div>
           </template>
@@ -420,30 +558,58 @@ onMounted(() => {
 <style scoped>
 .dashboard {
   padding: 0;
+  overflow-x: hidden;
 }
 
 .dashboard-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+@media (min-width: 640px) {
+  .dashboard-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
 }
 
 .header-actions {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   align-items: center;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .header-actions {
+    width: auto;
+  }
 }
 
 .trend-select {
-  padding: 8px 12px;
-  font-size: 13px;
+  padding: 6px 10px;
+  font-size: 12px;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.05);
   color: #374151;
   cursor: pointer;
   transition: all 0.2s;
+  min-width: 0;
+  flex: 1;
+}
+
+@media (min-width: 640px) {
+  .trend-select {
+    padding: 8px 12px;
+    font-size: 13px;
+    flex: none;
+  }
 }
 
 .dark .trend-select {
@@ -459,15 +625,24 @@ onMounted(() => {
 .refresh-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  font-size: 13px;
+  gap: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
   color: white;
   background: linear-gradient(135deg, #00d4ff, #7c3aed);
   border: none;
   border-radius: 8px;
   cursor: pointer;
   transition: opacity 0.2s;
+  white-space: nowrap;
+}
+
+@media (min-width: 640px) {
+  .refresh-btn {
+    padding: 8px 16px;
+    font-size: 13px;
+    gap: 6px;
+  }
 }
 
 .refresh-btn:hover {
@@ -481,67 +656,43 @@ onMounted(() => {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
-@media (max-width: 640px) {
+@media (min-width: 640px) {
   .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
-  
-  .stat-card {
-    padding: 12px;
-    gap: 8px;
-  }
-  
-  .stat-icon {
-    width: 36px;
-    height: 36px;
-  }
-  
-  .stat-value {
-    font-size: 16px;
-  }
-  
-  .dashboard-header {
-    flex-direction: column;
+    grid-template-columns: repeat(3, 1fr);
     gap: 12px;
-    align-items: flex-start;
+    margin-bottom: 24px;
   }
-  
-  .header-actions {
-    width: 100%;
-    justify-content: space-between;
-  }
-  
-  .charts-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .rank-content {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-  }
-  
-  .rank-stats {
-    gap: 8px;
+}
+
+@media (min-width: 1024px) {
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   }
 }
 
 .stat-card {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px;
+  gap: 8px;
+  padding: 10px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   backdrop-filter: blur(10px);
   transition: transform 0.2s, box-shadow 0.2s;
+  overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .stat-card {
+    gap: 12px;
+    padding: 16px;
+  }
 }
 
 .dark .stat-card {
@@ -555,8 +706,8 @@ onMounted(() => {
 }
 
 .stat-icon {
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -564,15 +715,30 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
+@media (min-width: 640px) {
+  .stat-icon {
+    width: 44px;
+    height: 44px;
+  }
+}
+
 .stat-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
+  min-width: 0;
 }
 
 .stat-label {
-  font-size: 12px;
+  font-size: 11px;
   color: #6b7280;
+  white-space: nowrap;
+}
+
+@media (min-width: 640px) {
+  .stat-label {
+    font-size: 12px;
+  }
 }
 
 .dark .stat-label {
@@ -580,9 +746,15 @@ onMounted(() => {
 }
 
 .stat-value {
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 700;
   color: #1f2937;
+}
+
+@media (min-width: 640px) {
+  .stat-value {
+    font-size: 20px;
+  }
 }
 
 .dark .stat-value {
@@ -590,20 +762,28 @@ onMounted(() => {
 }
 
 .stat-extra {
-  font-size: 11px;
+  font-size: 10px;
   color: #9ca3af;
+}
+
+@media (min-width: 640px) {
+  .stat-extra {
+    font-size: 11px;
+  }
 }
 
 .charts-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
-@media (max-width: 1200px) {
+@media (min-width: 1200px) {
   .charts-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
   }
 }
 
@@ -611,8 +791,15 @@ onMounted(() => {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
-  padding: 16px;
+  padding: 12px;
   backdrop-filter: blur(10px);
+  overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .chart-card {
+    padding: 16px;
+  }
 }
 
 .dark .chart-card {
@@ -624,24 +811,25 @@ onMounted(() => {
   grid-column: span 1;
 }
 
-@media (min-width: 1200px) {
-  .chart-card-large {
-    grid-column: span 1;
-  }
-}
-
 .rank-section {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 16px;
+  gap: 12px;
 }
 
 .rank-card {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
-  padding: 16px;
+  padding: 12px;
   backdrop-filter: blur(10px);
+  overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .rank-card {
+    padding: 16px;
+  }
 }
 
 .dark .rank-card {
@@ -653,14 +841,22 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .rank-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #1f2937;
   margin: 0;
+}
+
+@media (min-width: 640px) {
+  .rank-title {
+    font-size: 14px;
+  }
 }
 
 .dark .rank-title {
@@ -673,14 +869,21 @@ onMounted(() => {
 }
 
 .rank-tab {
-  padding: 6px 12px;
-  font-size: 12px;
+  padding: 4px 8px;
+  font-size: 11px;
   color: #6b7280;
   background: transparent;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
+}
+
+@media (min-width: 640px) {
+  .rank-tab {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
 }
 
 .dark .rank-tab {
@@ -702,17 +905,24 @@ onMounted(() => {
 .rank-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .rank-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
+  gap: 8px;
+  padding: 8px 10px;
   background: rgba(0, 0, 0, 0.02);
   border-radius: 8px;
   transition: background 0.2s;
+}
+
+@media (min-width: 640px) {
+  .rank-item {
+    gap: 12px;
+    padding: 10px 12px;
+  }
 }
 
 .dark .rank-item {
@@ -728,16 +938,25 @@ onMounted(() => {
 }
 
 .rank-number {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: #6b7280;
   background: rgba(0, 0, 0, 0.05);
   border-radius: 6px;
+  flex-shrink: 0;
+}
+
+@media (min-width: 640px) {
+  .rank-number {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+  }
 }
 
 .dark .rank-number {
@@ -753,18 +972,34 @@ onMounted(() => {
 .rank-content {
   flex: 1;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
   min-width: 0;
 }
 
+@media (min-width: 640px) {
+  .rank-content {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+}
+
 .rank-name {
-  font-size: 13px;
+  font-size: 12px;
   color: #374151;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+@media (min-width: 640px) {
+  .rank-name {
+    font-size: 13px;
+  }
 }
 
 .dark .rank-name {
@@ -773,16 +1008,23 @@ onMounted(() => {
 
 .rank-stats {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   flex-shrink: 0;
 }
 
 .rank-stats span {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 12px;
+  gap: 3px;
+  font-size: 11px;
   color: #9ca3af;
+}
+
+@media (min-width: 640px) {
+  .rank-stats span {
+    font-size: 12px;
+    gap: 4px;
+  }
 }
 
 .rank-stats svg {

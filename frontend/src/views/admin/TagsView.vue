@@ -144,21 +144,29 @@ onMounted(fetchTags)
 
 <template>
   <div>
-    <div class="flex items-center justify-between mb-4">
-      <h1 class="text-xl font-bold text-gray-900 dark:text-white">标签管理</h1>
+    <div class="flex items-center justify-between mb-4 gap-2">
+      <h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
+        标签管理
+      </h1>
       <button
+        class="btn-primary text-xs sm:text-sm px-3 sm:px-4 py-1.5 whitespace-nowrap"
         @click="openCreateModal"
-        class="btn-primary text-sm px-4 py-1.5"
       >
         新建标签
       </button>
     </div>
 
-    <div v-if="isLoading" class="flex justify-center py-16">
+    <div
+      v-if="isLoading"
+      class="flex justify-center py-16"
+    >
       <div class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
     </div>
 
-    <div v-else class="flex flex-wrap gap-3">
+    <div
+      v-else
+      class="flex flex-wrap gap-3"
+    >
       <div
         v-for="tag in blogStore.tags"
         :key="tag.id"
@@ -171,19 +179,23 @@ onMounted(fetchTags)
           {{ tag.name.charAt(0) }}
         </div>
         <div>
-          <h3 class="text-gray-900 dark:text-white font-medium text-sm">{{ tag.name }}</h3>
-          <p class="text-gray-500 text-xs">{{ tag.article_count }} 篇文章</p>
+          <h3 class="text-gray-900 dark:text-white font-medium text-sm">
+            {{ tag.name }}
+          </h3>
+          <p class="text-gray-500 text-xs">
+            {{ tag.article_count }} 篇文章
+          </p>
         </div>
         <div class="flex gap-2 ml-2">
           <button
-            @click="handleEdit(tag)"
             class="text-primary hover:text-primary/80 text-xs"
+            @click="handleEdit(tag)"
           >
             编辑
           </button>
           <button
-            @click="handleDelete(tag)"
             class="text-red-400 hover:text-red-300 text-xs"
+            @click="handleDelete(tag)"
           >
             删除
           </button>
@@ -201,80 +213,117 @@ onMounted(fetchTags)
             {{ editingTag ? '编辑标签' : '新建标签' }}
           </h2>
           <button
-            @click="showEditor = false"
             class="text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            @click="showEditor = false"
           >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
 
-        <form @submit.prevent="handleSubmit" class="space-y-3">
+        <form
+          class="space-y-3"
+          @submit.prevent="handleSubmit"
+        >
           <div>
-            <label for="tag-name" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">名称</label>
+            <label
+              for="tag-name"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            >名称</label>
             <input
+              id="tag-name"
               v-model="form.name"
               type="text"
-              id="tag-name"
               name="name"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
               placeholder="标签名称"
               @input="handleNameInput"
               @blur="handleNameBlur"
-            />
+            >
           </div>
 
           <div>
-            <label for="tag-slug" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Slug (留空自动生成)</label>
+            <label
+              for="tag-slug"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            >Slug (留空自动生成)</label>
             <div class="relative">
               <input
+                id="tag-slug"
                 v-model="form.slug"
                 type="text"
-                id="tag-slug"
                 name="slug"
                 class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none pr-8"
                 placeholder="留空自动生成"
                 @input="handleSlugInput"
-              />
+              >
               <div 
                 v-if="isGeneratingSlug" 
                 class="absolute right-2 top-1/2 -translate-y-1/2"
               >
-                <svg class="w-4 h-4 animate-spin text-gray-400" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <svg
+                  class="w-4 h-4 animate-spin text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                  />
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
                 </svg>
               </div>
             </div>
           </div>
 
           <div>
-            <label for="tag-color" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">颜色</label>
+            <label
+              for="tag-color"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            >颜色</label>
             <div class="flex gap-2">
               <input
+                id="tag-color"
                 v-model="form.color"
                 type="color"
-                id="tag-color"
                 name="color"
                 class="w-10 h-10 rounded-lg cursor-pointer"
-              />
+              >
               <input
+                id="tag-color-text"
                 v-model="form.color"
                 type="text"
-                id="tag-color-text"
                 name="color-text"
                 class="flex-1 px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
                 placeholder="#00d4ff"
-              />
+              >
             </div>
           </div>
 
           <div class="flex justify-end gap-3 pt-2">
             <button
               type="button"
-              @click="showEditor = false"
               class="px-4 py-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              @click="showEditor = false"
             >
               取消
             </button>

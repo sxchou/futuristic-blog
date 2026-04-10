@@ -156,86 +156,112 @@ onMounted(() => {
 
 <template>
   <div>
-    <div class="flex items-center justify-between mb-4">
-      <h1 class="text-xl font-bold text-gray-900 dark:text-white">个人资料管理</h1>
+    <div class="flex items-center justify-between mb-4 gap-2">
+      <h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
+        个人资料管理
+      </h1>
       <button
+        class="btn-primary text-xs sm:text-sm px-3 sm:px-4 py-1.5 whitespace-nowrap"
         @click="handleSave"
-        class="btn-primary text-sm px-4 py-1.5"
       >
         保存更改
       </button>
     </div>
 
-    <div v-if="isLoading" class="flex justify-center py-16">
+    <div
+      v-if="isLoading"
+      class="flex justify-center py-16"
+    >
       <div class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
     </div>
 
-    <div v-else class="glass-card overflow-hidden">
+    <div
+      v-else
+      class="glass-card overflow-hidden"
+    >
       <div class="flex border-b border-gray-200 dark:border-white/10">
         <button
           v-for="tab in tabs"
           :key="tab.key"
-          @click="activeTab = tab.key"
           :class="[
             'px-4 py-3 text-sm font-medium transition-colors',
             activeTab === tab.key
               ? 'text-primary border-b-2 border-primary'
               : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
           ]"
+          @click="activeTab = tab.key"
         >
           {{ tab.label }}
         </button>
       </div>
 
       <div class="p-6">
-        <div v-if="activeTab === 'basic'" class="space-y-4">
+        <div
+          v-if="activeTab === 'basic'"
+          class="space-y-4"
+        >
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label for="profile-name" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">姓名</label>
+              <label
+                for="profile-name"
+                class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+              >姓名</label>
               <input
+                id="profile-name"
                 v-model="form.name"
                 type="text"
-                id="profile-name"
                 name="name"
                 class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
-              />
+              >
             </div>
             <div>
-              <label for="profile-alias" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">别名</label>
+              <label
+                for="profile-alias"
+                class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+              >别名</label>
               <input
+                id="profile-alias"
                 v-model="form.alias"
                 type="text"
-                id="profile-alias"
                 name="alias"
                 class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
-              />
+              >
             </div>
           </div>
 
           <div>
-            <label for="profile-slogan" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">标语</label>
+            <label
+              for="profile-slogan"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            >标语</label>
             <input
+              id="profile-slogan"
               v-model="form.slogan"
               type="text"
-              id="profile-slogan"
               name="slogan"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
-            />
+            >
           </div>
 
           <div>
-            <label for="profile-avatar" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">头像 URL</label>
+            <label
+              for="profile-avatar"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            >头像 URL</label>
             <input
+              id="profile-avatar"
               v-model="form.avatar"
               type="text"
-              id="profile-avatar"
               name="avatar"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
-            />
+            >
           </div>
 
           <div>
-            <label for="profile-new-tag" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">标签</label>
+            <label
+              for="profile-new-tag"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            >标签</label>
             <div class="flex flex-wrap gap-2 mb-2">
               <span
                 v-for="(tag, index) in form.tags"
@@ -243,28 +269,39 @@ onMounted(() => {
                 class="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full flex items-center gap-1"
               >
                 {{ tag }}
-                <button @click="removeTag(index)" class="hover:text-red-400">×</button>
+                <button
+                  class="hover:text-red-400"
+                  @click="removeTag(index)"
+                >×</button>
               </span>
             </div>
             <div class="flex gap-2">
               <input
+                id="profile-new-tag"
                 v-model="newTag"
                 type="text"
-                id="profile-new-tag"
                 name="new-tag"
                 class="flex-1 px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
                 placeholder="输入标签"
                 @keyup.enter="addTag"
-              />
-              <button @click="addTag" class="px-3 py-2 bg-primary text-white text-sm rounded-lg">添加</button>
+              >
+              <button
+                class="px-3 py-2 bg-primary text-white text-sm rounded-lg"
+                @click="addTag"
+              >
+                添加
+              </button>
             </div>
           </div>
 
           <div>
-            <label for="profile-bio" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">个人简介</label>
+            <label
+              for="profile-bio"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            >个人简介</label>
             <textarea
-              v-model="form.bio"
               id="profile-bio"
+              v-model="form.bio"
               name="bio"
               rows="4"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none resize-none"
@@ -272,7 +309,10 @@ onMounted(() => {
           </div>
         </div>
 
-        <div v-if="activeTab === 'tech'" class="space-y-4">
+        <div
+          v-if="activeTab === 'tech'"
+          class="space-y-4"
+        >
           <div
             v-for="(tech, index) in form.tech_stack"
             :key="index"
@@ -284,15 +324,20 @@ onMounted(() => {
                 type="text"
                 class="px-2 py-1 text-sm bg-white dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
                 placeholder="分类名称"
-              />
-              <button @click="removeTechCategory(index)" class="text-red-400 hover:text-red-300 text-sm">删除</button>
+              >
+              <button
+                class="text-red-400 hover:text-red-300 text-sm"
+                @click="removeTechCategory(index)"
+              >
+                删除
+              </button>
             </div>
             <input
               v-model="tech.items"
               type="text"
               class="w-full px-2 py-1 text-sm bg-white dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
               placeholder="技术项（逗号分隔）"
-            />
+            >
           </div>
 
           <div class="p-4 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
@@ -302,21 +347,27 @@ onMounted(() => {
                 type="text"
                 class="px-2 py-1 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
                 placeholder="分类名称"
-              />
+              >
               <input
                 v-model="newTechItems"
                 type="text"
                 class="px-2 py-1 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
                 placeholder="技术项（逗号分隔）"
-              />
+              >
             </div>
-            <button @click="addTechCategory" class="w-full py-2 text-sm text-primary border border-primary/30 rounded-lg hover:bg-primary/10">
+            <button
+              class="w-full py-2 text-sm text-primary border border-primary/30 rounded-lg hover:bg-primary/10"
+              @click="addTechCategory"
+            >
               + 添加技术分类
             </button>
           </div>
         </div>
 
-        <div v-if="activeTab === 'journey'" class="space-y-4">
+        <div
+          v-if="activeTab === 'journey'"
+          class="space-y-4"
+        >
           <div
             v-for="(item, index) in form.journey"
             :key="index"
@@ -324,7 +375,12 @@ onMounted(() => {
           >
             <div class="flex items-center justify-between">
               <span class="text-sm font-medium text-gray-700 dark:text-gray-300">经历 {{ index + 1 }}</span>
-              <button @click="removeJourney(index)" class="text-red-400 hover:text-red-300 text-sm">删除</button>
+              <button
+                class="text-red-400 hover:text-red-300 text-sm"
+                @click="removeJourney(index)"
+              >
+                删除
+              </button>
             </div>
             <div class="grid grid-cols-2 gap-2">
               <input
@@ -332,20 +388,20 @@ onMounted(() => {
                 type="text"
                 class="px-2 py-1 text-sm bg-white dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
                 placeholder="时间段"
-              />
+              >
               <input
                 v-model="item.company"
                 type="text"
                 class="px-2 py-1 text-sm bg-white dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
                 placeholder="公司"
-              />
+              >
             </div>
             <input
               v-model="item.position"
               type="text"
               class="w-full px-2 py-1 text-sm bg-white dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
               placeholder="职位"
-            />
+            >
             <textarea
               v-model="item.achievements"
               rows="2"
@@ -354,68 +410,92 @@ onMounted(() => {
             />
           </div>
 
-          <button @click="addJourney" class="w-full py-2 text-sm text-primary border border-primary/30 rounded-lg hover:bg-primary/10">
+          <button
+            class="w-full py-2 text-sm text-primary border border-primary/30 rounded-lg hover:bg-primary/10"
+            @click="addJourney"
+          >
             + 添加职业经历
           </button>
         </div>
 
-        <div v-if="activeTab === 'education'" class="space-y-4">
-          <div v-if="form.education" class="p-4 bg-gray-50 dark:bg-dark-100 rounded-lg space-y-2">
+        <div
+          v-if="activeTab === 'education'"
+          class="space-y-4"
+        >
+          <div
+            v-if="form.education"
+            class="p-4 bg-gray-50 dark:bg-dark-100 rounded-lg space-y-2"
+          >
             <div class="grid grid-cols-2 gap-2">
               <div>
-                <label for="edu-period" class="block text-xs text-gray-500 mb-1">时间段</label>
+                <label
+                  for="edu-period"
+                  class="block text-xs text-gray-500 mb-1"
+                >时间段</label>
                 <input
+                  id="edu-period"
                   v-model="form.education.period"
                   type="text"
-                  id="edu-period"
                   name="period"
                   class="w-full px-2 py-1 text-sm bg-white dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
-                />
+                >
               </div>
               <div>
-                <label for="edu-school" class="block text-xs text-gray-500 mb-1">学校</label>
+                <label
+                  for="edu-school"
+                  class="block text-xs text-gray-500 mb-1"
+                >学校</label>
                 <input
+                  id="edu-school"
                   v-model="form.education.school"
                   type="text"
-                  id="edu-school"
                   name="school"
                   class="w-full px-2 py-1 text-sm bg-white dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
-                />
+                >
               </div>
             </div>
             <div class="grid grid-cols-2 gap-2">
               <div>
-                <label for="edu-major" class="block text-xs text-gray-500 mb-1">专业</label>
+                <label
+                  for="edu-major"
+                  class="block text-xs text-gray-500 mb-1"
+                >专业</label>
                 <input
+                  id="edu-major"
                   v-model="form.education.major"
                   type="text"
-                  id="edu-major"
                   name="major"
                   class="w-full px-2 py-1 text-sm bg-white dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
-                />
+                >
               </div>
               <div>
-                <label for="edu-degree" class="block text-xs text-gray-500 mb-1">学位</label>
+                <label
+                  for="edu-degree"
+                  class="block text-xs text-gray-500 mb-1"
+                >学位</label>
                 <input
+                  id="edu-degree"
                   v-model="form.education.degree"
                   type="text"
-                  id="edu-degree"
                   name="degree"
                   class="w-full px-2 py-1 text-sm bg-white dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none"
-                />
+                >
               </div>
             </div>
           </div>
           <button
             v-else
-            @click="initEducation"
             class="w-full py-2 text-sm text-primary border border-primary/30 rounded-lg hover:bg-primary/10"
+            @click="initEducation"
           >
             + 添加教育背景
           </button>
         </div>
 
-        <div v-if="activeTab === 'exploration'" class="space-y-4">
+        <div
+          v-if="activeTab === 'exploration'"
+          class="space-y-4"
+        >
           <div class="flex flex-wrap gap-2">
             <span
               v-for="(area, index) in form.exploration_areas"
@@ -423,58 +503,81 @@ onMounted(() => {
               class="px-3 py-1 bg-primary/10 text-primary text-sm rounded-full flex items-center gap-2"
             >
               {{ area }}
-              <button @click="removeExplorationArea(index)" class="hover:text-red-400">×</button>
+              <button
+                class="hover:text-red-400"
+                @click="removeExplorationArea(index)"
+              >×</button>
             </span>
           </div>
           <div class="flex gap-2">
-            <label for="profile-new-exploration" class="sr-only">探索方向</label>
+            <label
+              for="profile-new-exploration"
+              class="sr-only"
+            >探索方向</label>
             <input
+              id="profile-new-exploration"
               v-model="newExplorationArea"
               type="text"
-              id="profile-new-exploration"
               name="new-exploration"
               class="flex-1 px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
               placeholder="输入探索方向"
               @keyup.enter="addExplorationArea"
-            />
-            <button @click="addExplorationArea" class="px-3 py-2 bg-primary text-white text-sm rounded-lg">添加</button>
+            >
+            <button
+              class="px-3 py-2 bg-primary text-white text-sm rounded-lg"
+              @click="addExplorationArea"
+            >
+              添加
+            </button>
           </div>
         </div>
 
-        <div v-if="activeTab === 'social'" class="space-y-4">
+        <div
+          v-if="activeTab === 'social'"
+          class="space-y-4"
+        >
           <div>
-            <label for="profile-github" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">GitHub</label>
+            <label
+              for="profile-github"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            >GitHub</label>
             <input
+              id="profile-github"
               v-model="form.social_github"
               type="text"
-              id="profile-github"
               name="github"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
               placeholder="https://github.com/username"
-            />
+            >
           </div>
           <div>
-            <label for="profile-blog" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">博客</label>
+            <label
+              for="profile-blog"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            >博客</label>
             <input
+              id="profile-blog"
               v-model="form.social_blog"
               type="text"
-              id="profile-blog"
               name="blog"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
               placeholder="https://your-blog.com"
-            />
+            >
           </div>
           <div>
-            <label for="profile-email" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">邮箱</label>
+            <label
+              for="profile-email"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            >邮箱</label>
             <input
+              id="profile-email"
               v-model="form.social_email"
               type="email"
-              id="profile-email"
               name="email"
               autocomplete="email"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
               placeholder="your@email.com"
-            />
+            >
           </div>
         </div>
       </div>

@@ -3,14 +3,17 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { marked } from 'marked'
 import hljs from 'highlight.js'
 import DOMPurify from 'dompurify'
-import { useRoute } from 'vue-router'
-import { articleApi, likeApi, fileApi } from '@/api'
+import { useRoute, useRouter } from 'vue-router'
+import { articleApi, likeApi, bookmarkApi, fileApi } from '@/api'
+import { useAuthStore } from '@/stores'
 import type { Article, ArticleFile } from '@/types'
 import CommentSection from '@/components/comments/CommentSection.vue'
 import FilePreview from '@/components/FilePreview.vue'
 import BlogSidebar from '@/components/common/BlogSidebar.vue'
 
 const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
 const article = ref<Article | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
@@ -18,6 +21,8 @@ const showCopySuccess = ref(false)
 const isLiked = ref(false)
 const likeCount = ref(0)
 const isLiking = ref(false)
+const isBookmarked = ref(false)
+const isBookmarking = ref(false)
 const articleFiles = ref<ArticleFile[]>([])
 const previewFile = ref<ArticleFile | null>(null)
 const showPreview = ref(false)
@@ -141,6 +146,23 @@ const handleLike = async () => {
     console.error('Failed to toggle like:', error)
   } finally {
     isLiking.value = false
+  }
+}
+
+const handleBookmark = async () => {
+  if (!authStore.isAuthenticated) {
+    router.push('/login')
+    return
+  }
+  if (isBookmarking.value || !article.value) return
+  isBookmarking.value = true
+  try {
+    const result = await bookmarkApi.toggle(article.value.id)
+    isBookmarked.value = result.is_bookmarked
+  } catch (error) {
+    console.error('Failed to toggle bookmark:', error)
+  } finally {
+    isBookmarking.value = false
   }
 }
 
@@ -362,7 +384,17 @@ onMounted(async () => {
     article.value = await articleApi.getArticle(slug)
     likeCount.value = article.value?.like_count || 0
     isLiked.value = article.value?.is_liked || false
-    if (article.value?.id) fetchArticleFiles(article.value.id)
+    if (article.value?.id) {
+      fetchArticleFiles(article.value.id)
+      if (authStore.isAuthenticated) {
+        try {
+          const bookmarkStatus = await bookmarkApi.getStatus(article.value.id)
+          isBookmarked.value = bookmarkStatus.is_bookmarked
+        } catch (error) {
+          console.error('Failed to fetch bookmark status:', error)
+        }
+      }
+    }
   } catch (err: unknown) {
     console.error('Failed to fetch article:', err)
     if (err instanceof Error) {
@@ -399,21 +431,42 @@ onUnmounted(() => {
 
 <template>
   <div>
-    <div v-if="loading" class="flex justify-center py-20">
+    <div
+      v-if="loading"
+      class="flex justify-center py-20"
+    >
       <div class="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
     </div>
 
-    <article v-else-if="article" class="flex flex-col lg:flex-row gap-8">
+    <article
+      v-else-if="article"
+      class="flex flex-col lg:flex-row gap-8"
+    >
       <div class="flex-1 min-w-0 max-w-none lg:max-w-[calc(100%-20rem)]">
         <header class="mb-8">
-          <div v-if="article.cover_image" class="relative rounded-2xl overflow-hidden mb-8">
-            <img :src="article.cover_image" :alt="article.title" class="w-full h-48 sm:h-64 md:h-80 object-cover" />
+          <div
+            v-if="article.cover_image"
+            class="relative rounded-2xl overflow-hidden mb-8"
+          >
+            <img
+              :src="article.cover_image"
+              :alt="article.title"
+              class="w-full h-48 sm:h-64 md:h-80 object-cover"
+              loading="eager"
+              decoding="async"
+            >
             <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
           </div>
 
           <div class="flex items-center gap-2 mb-4">
-            <span v-if="article.is_featured" class="px-2.5 py-0.5 bg-gradient-to-r from-primary to-accent text-white text-xs font-medium rounded-full">精选</span>
-            <span v-if="article.is_pinned" class="px-2.5 py-0.5 bg-amber-500/90 text-white text-xs font-medium rounded-full">置顶</span>
+            <span
+              v-if="article.is_featured"
+              class="px-2.5 py-0.5 bg-gradient-to-r from-primary to-accent text-white text-xs font-medium rounded-full"
+            >精选</span>
+            <span
+              v-if="article.is_pinned"
+              class="px-2.5 py-0.5 bg-amber-500/90 text-white text-xs font-medium rounded-full"
+            >置顶</span>
           </div>
 
           <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
@@ -422,15 +475,53 @@ onUnmounted(() => {
 
           <div class="flex flex-wrap items-center gap-3 text-sm text-gray-400 mb-4">
             <span class="flex items-center gap-1.5">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              ><path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              /></svg>
               {{ formatDate(article.created_at) }}
             </span>
-            <span v-if="article.reading_time" class="flex items-center gap-1.5">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <span
+              v-if="article.reading_time"
+              class="flex items-center gap-1.5"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              ><path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              /></svg>
               {{ article.reading_time }} 分钟
             </span>
             <span class="flex items-center gap-1.5">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              ><path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              /><path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+              /></svg>
               {{ article.view_count }}
             </span>
           </div>
@@ -442,7 +533,10 @@ onUnmounted(() => {
               class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors hover:opacity-80"
               :style="{ backgroundColor: article.category.color + '15', color: article.category.color, borderColor: article.category.color + '30' }"
             >
-              <span class="w-1.5 h-1.5 rounded-full" :style="{ backgroundColor: article.category.color }" />
+              <span
+                class="w-1.5 h-1.5 rounded-full"
+                :style="{ backgroundColor: article.category.color }"
+              />
               {{ article.category.name }}
             </router-link>
             <router-link
@@ -456,25 +550,55 @@ onUnmounted(() => {
             </router-link>
           </div>
 
-          <div v-if="article.summary" class="p-4 bg-gray-50 dark:bg-dark-200/50 rounded-xl border border-gray-100 dark:border-white/5 mb-6">
-            <p class="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">{{ article.summary }}</p>
+          <div
+            v-if="article.summary"
+            class="p-4 bg-gray-50 dark:bg-dark-200/50 rounded-xl border border-gray-100 dark:border-white/5 mb-6"
+          >
+            <p class="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
+              {{ article.summary }}
+            </p>
           </div>
         </header>
 
-        <div class="article-content" v-html="renderedContent" />
+        <div
+          class="article-content"
+          v-html="renderedContent"
+        />
 
-        <div v-if="articleFiles.length > 0" class="mt-8 p-4 glass-card">
+        <div
+          v-if="articleFiles.length > 0"
+          class="mt-8 p-4 glass-card"
+        >
           <div class="flex items-center justify-between mb-3">
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+              <svg
+                class="w-4 h-4 text-primary"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              ><path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+              /></svg>
               附件下载
             </h3>
             <div class="flex items-center gap-2">
               <label class="flex items-center gap-1.5 cursor-pointer text-xs text-gray-500">
-                <input type="checkbox" :checked="selectedFileIds.size === articleFiles.length && articleFiles.length > 0" @change="toggleSelectAll" class="w-3.5 h-3.5 rounded border-gray-300 text-primary focus:ring-primary" />
+                <input
+                  type="checkbox"
+                  :checked="selectedFileIds.size === articleFiles.length && articleFiles.length > 0"
+                  class="w-3.5 h-3.5 rounded border-gray-300 text-primary focus:ring-primary"
+                  @change="toggleSelectAll"
+                >
                 全选
               </label>
-              <button v-if="selectedFileIds.size > 0" @click="handleBatchDownload" class="px-2 py-1 text-xs bg-primary/10 text-primary hover:bg-primary/20 rounded transition-colors">
+              <button
+                v-if="selectedFileIds.size > 0"
+                class="px-2 py-1 text-xs bg-primary/10 text-primary hover:bg-primary/20 rounded transition-colors"
+                @click="handleBatchDownload"
+              >
                 下载选中 ({{ selectedFileIds.size }})
               </button>
             </div>
@@ -482,79 +606,235 @@ onUnmounted(() => {
           <div class="space-y-2">
             <div
               v-for="file in articleFiles"
-              :key="file.id"
               :id="`file-${file.id}`"
+              :key="file.id"
               class="flex items-center justify-between p-2.5 bg-gray-50 dark:bg-dark-300/50 rounded-lg border transition-colors scroll-mt-20"
               :class="[selectedFileIds.has(file.id) ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-white/5 hover:border-primary/30']"
             >
               <div class="flex items-center gap-2 min-w-0 flex-1">
-                <input type="checkbox" :checked="selectedFileIds.has(file.id)" @change="toggleFileSelection(file.id)" class="w-3.5 h-3.5 rounded border-gray-300 text-primary focus:ring-primary flex-shrink-0" />
-                <span class="w-7 h-7 flex items-center justify-center rounded flex-shrink-0" :class="[getFileIconInfo(file.file_type, file.mime_type, file.original_filename).bg, getFileIconInfo(file.file_type, file.mime_type, file.original_filename).color]" v-html="getFileIconInfo(file.file_type, file.mime_type, file.original_filename).svg"></span>
+                <input
+                  type="checkbox"
+                  :checked="selectedFileIds.has(file.id)"
+                  class="w-3.5 h-3.5 rounded border-gray-300 text-primary focus:ring-primary flex-shrink-0"
+                  @change="toggleFileSelection(file.id)"
+                >
+                <span
+                  class="w-7 h-7 flex items-center justify-center rounded flex-shrink-0"
+                  :class="[getFileIconInfo(file.file_type, file.mime_type, file.original_filename).bg, getFileIconInfo(file.file_type, file.mime_type, file.original_filename).color]"
+                  v-html="getFileIconInfo(file.file_type, file.mime_type, file.original_filename).svg"
+                />
                 <div class="min-w-0 flex-1">
-                  <div class="text-xs text-gray-900 dark:text-white truncate">{{ file.original_filename }}</div>
-                  <div class="text-[10px] text-gray-500">{{ formatFileSize(file.file_size) }} · {{ file.download_count }} 次下载</div>
+                  <div class="text-xs text-gray-900 dark:text-white truncate">
+                    {{ file.original_filename }}
+                  </div>
+                  <div class="text-[10px] text-gray-500">
+                    {{ formatFileSize(file.file_size) }} · {{ file.download_count }} 次下载
+                  </div>
                 </div>
               </div>
               <div class="flex items-center gap-1 flex-shrink-0 ml-2">
-                <button @click="openPreview(file)" class="w-7 h-7 flex items-center justify-center text-emerald-500 hover:bg-emerald-500/10 rounded transition-colors" title="预览">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                <button
+                  class="w-7 h-7 flex items-center justify-center text-emerald-500 hover:bg-emerald-500/10 rounded transition-colors"
+                  title="预览"
+                  @click="openPreview(file)"
+                >
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  ><path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  /><path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                  /></svg>
                 </button>
-                <button @click="downloadFile(file)" class="w-7 h-7 flex items-center justify-center text-primary hover:bg-primary/10 rounded transition-colors" title="下载">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                <button
+                  class="w-7 h-7 flex items-center justify-center text-primary hover:bg-primary/10 rounded transition-colors"
+                  title="下载"
+                  @click="downloadFile(file)"
+                >
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  ><path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                  /></svg>
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        <FilePreview v-if="showPreview && previewFile" :file="previewFile" @close="closePreview" />
+        <FilePreview
+          v-if="showPreview && previewFile"
+          :file="previewFile"
+          @close="closePreview"
+        />
 
         <div class="mt-8 pt-6 border-t border-gray-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-4">
           <div class="flex items-center gap-2">
-            <button @click="handleLike" :disabled="isLiking" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors" :class="isLiked ? 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-500' : 'bg-gray-50 dark:bg-dark-300 border-gray-200 dark:border-white/5 text-gray-500 hover:text-red-500 hover:border-red-200'">
-              <svg class="w-4 h-4 transition-transform" :class="{ 'scale-110': isLiked }" :fill="isLiked ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+            <button
+              :disabled="isLiking"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors"
+              :class="isLiked ? 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-500' : 'bg-gray-50 dark:bg-dark-300 border-gray-200 dark:border-white/5 text-gray-500 hover:text-red-500 hover:border-red-200'"
+              @click="handleLike"
+            >
+              <svg
+                class="w-4 h-4 transition-transform"
+                :class="{ 'scale-110': isLiked }"
+                :fill="isLiked ? 'currentColor' : 'none'"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              ><path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+              /></svg>
               <span class="text-sm">{{ likeCount }}</span>
             </button>
-            <button @click="copyLink" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 text-gray-500 hover:text-primary hover:border-primary/30 transition-colors relative">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
+            <button
+              :disabled="isBookmarking"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors"
+              :class="isBookmarked ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20 text-amber-500' : 'bg-gray-50 dark:bg-dark-300 border-gray-200 dark:border-white/5 text-gray-500 hover:text-amber-500 hover:border-amber-200'"
+              @click="handleBookmark"
+            >
+              <svg
+                class="w-4 h-4 transition-transform"
+                :class="{ 'scale-110': isBookmarked }"
+                :fill="isBookmarked ? 'currentColor' : 'none'"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              ><path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+              /></svg>
+              <span class="text-sm">{{ isBookmarked ? '已收藏' : '收藏' }}</span>
+            </button>
+            <button
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 text-gray-500 hover:text-primary hover:border-primary/30 transition-colors relative"
+              @click="copyLink"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              ><path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
+              /></svg>
               <span class="text-sm">复制链接</span>
-              <span v-if="showCopySuccess" class="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-cyber-green text-white text-xs rounded">已复制!</span>
+              <span
+                v-if="showCopySuccess"
+                class="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-cyber-green text-white text-xs rounded"
+              >已复制!</span>
             </button>
-            <button @click="shareArticle('twitter')" class="p-1.5 rounded-lg bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 text-gray-400 hover:text-primary hover:border-primary/30 transition-colors" title="Twitter">
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            <button
+              class="p-1.5 rounded-lg bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 text-gray-400 hover:text-primary hover:border-primary/30 transition-colors"
+              title="Twitter"
+              @click="shareArticle('twitter')"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              ><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
             </button>
-            <button @click="shareArticle('weibo')" class="p-1.5 rounded-lg bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 text-gray-400 hover:text-red-500 hover:border-red-200 transition-colors" title="微博">
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M10.098 20.323c-3.977.391-7.414-1.406-7.672-4.02-.259-2.609 2.759-5.047 6.74-5.441 3.979-.394 7.413 1.404 7.671 4.018.259 2.6-2.759 5.049-6.737 5.439l-.002.004z"/></svg>
+            <button
+              class="p-1.5 rounded-lg bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 text-gray-400 hover:text-red-500 hover:border-red-200 transition-colors"
+              title="微博"
+              @click="shareArticle('weibo')"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              ><path d="M10.098 20.323c-3.977.391-7.414-1.406-7.672-4.02-.259-2.609 2.759-5.047 6.74-5.441 3.979-.394 7.413 1.404 7.671 4.018.259 2.6-2.759 5.049-6.737 5.439l-.002.004z" /></svg>
             </button>
           </div>
-          <router-link to="/" class="text-sm text-gray-400 hover:text-primary transition-colors flex items-center gap-1">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+          <router-link
+            to="/"
+            class="text-sm text-gray-400 hover:text-primary transition-colors flex items-center gap-1"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            ><path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            /></svg>
             返回首页
           </router-link>
         </div>
 
-        <CommentSection v-if="article" :article-id="article.id" :article-title="article.title" />
+        <CommentSection
+          v-if="article"
+          :article-id="article.id"
+          :article-title="article.title"
+        />
       </div>
 
       <aside class="hidden lg:block lg:w-72 xl:w-80 flex-shrink-0">
         <div class="lg:sticky lg:top-20 space-y-6">
-          <div v-if="tocItems.length > 0" class="glass-card p-5">
+          <div
+            v-if="tocItems.length > 0"
+            class="glass-card p-5"
+          >
             <div class="flex items-center justify-between mb-3">
-              <h3 class="sidebar-widget-title mb-0 pb-0 border-0">目录</h3>
-              <button @click="showToc = !showToc" class="lg:hidden p-1 rounded hover:bg-gray-100 dark:hover:bg-dark-300">
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="showToc ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7'" /></svg>
+              <h3 class="sidebar-widget-title mb-0 pb-0 border-0">
+                目录
+              </h3>
+              <button
+                class="lg:hidden p-1 rounded hover:bg-gray-100 dark:hover:bg-dark-300"
+                @click="showToc = !showToc"
+              >
+                <svg
+                  class="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                ><path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  :d="showToc ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7'"
+                /></svg>
               </button>
             </div>
-            <nav :class="{ 'hidden lg:block': !showToc }" class="space-y-1 max-h-[60vh] overflow-y-auto">
+            <nav
+              :class="{ 'hidden lg:block': !showToc }"
+              class="space-y-1 max-h-[60vh] overflow-y-auto"
+            >
               <button
                 v-for="item in tocItems"
                 :key="item.id"
-                @click="scrollToHeading(item.id)"
                 class="block w-full text-left text-sm py-1 transition-colors truncate"
                 :class="[
                   activeHeading === item.id ? 'text-primary font-medium' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300',
                   item.level === 1 ? 'pl-0' : item.level === 2 ? 'pl-3' : item.level === 3 ? 'pl-6' : 'pl-9'
                 ]"
+                @click="scrollToHeading(item.id)"
               >
                 {{ item.text }}
               </button>
@@ -566,16 +846,46 @@ onUnmounted(() => {
       </aside>
     </article>
 
-    <div v-else class="text-center py-20">
+    <div
+      v-else
+      class="text-center py-20"
+    >
       <div class="max-w-md mx-auto">
-        <svg class="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <svg
+          class="w-16 h-16 mx-auto mb-4 text-gray-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
         </svg>
-        <p class="text-gray-400 text-lg mb-2">{{ error || '文章不存在' }}</p>
-        <p v-if="error && error.includes('网络')" class="text-gray-500 text-sm mb-4">请检查您的网络连接或尝试刷新页面</p>
+        <p class="text-gray-400 text-lg mb-2">
+          {{ error || '文章不存在' }}
+        </p>
+        <p
+          v-if="error && error.includes('网络')"
+          class="text-gray-500 text-sm mb-4"
+        >
+          请检查您的网络连接或尝试刷新页面
+        </p>
         <div class="flex gap-4 justify-center">
-          <button @click="refreshPage" class="btn-primary">刷新页面</button>
-          <router-link to="/" class="btn-secondary">返回首页</router-link>
+          <button
+            class="btn-primary"
+            @click="refreshPage"
+          >
+            刷新页面
+          </button>
+          <router-link
+            to="/"
+            class="btn-secondary"
+          >
+            返回首页
+          </router-link>
         </div>
       </div>
     </div>

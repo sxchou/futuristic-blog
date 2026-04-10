@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { authApi } from '@/api'
 import type { User, SessionInfo } from '@/types'
+import { useUserInteractionStore } from './userInteraction'
 
 const TOKEN_KEY = 'token'
 const REFRESH_TOKEN_KEY = 'refresh_token'
@@ -48,6 +49,13 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(REFRESH_TOKEN_KEY)
     localStorage.removeItem(TOKEN_EXPIRY_KEY)
+    
+    try {
+      const userInteractionStore = useUserInteractionStore()
+      userInteractionStore.reset()
+    } catch {
+      // Store might not be initialized yet
+    }
   }
 
   const setUser = (userData: User | any) => {

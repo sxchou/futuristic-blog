@@ -10,14 +10,26 @@
         @click.stop
       >
         <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-white/10">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">裁剪头像</h3>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+            裁剪头像
+          </h3>
           <button
             type="button"
-            @click="handleCancel"
             class="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+            @click="handleCancel"
           >
-            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              class="w-5 h-5 text-gray-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -31,7 +43,7 @@
                   :src="imageSrc"
                   class="cropper-image"
                   alt="裁剪图片"
-                />
+                >
                 <div
                   v-if="isLoading"
                   class="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-dark-100"
@@ -46,8 +58,18 @@
                   class="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-dark-100"
                 >
                   <div class="flex flex-col items-center gap-2">
-                    <svg class="w-10 h-10 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    <svg
+                      class="w-10 h-10 text-red-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                      />
                     </svg>
                     <span class="text-sm text-red-500">图片加载失败</span>
                   </div>
@@ -57,110 +79,186 @@
               <div class="flex items-center justify-center gap-2 mt-4">
                 <button
                   type="button"
-                  @click="handleZoomIn"
                   class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
                   :class="{ 'opacity-50 cursor-not-allowed': !cropperReady }"
                   :disabled="!cropperReady"
                   title="放大"
+                  @click="handleZoomIn"
                 >
-                  <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                  <svg
+                    class="w-5 h-5 text-gray-600 dark:text-gray-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
+                    />
                   </svg>
                 </button>
                 <button
                   type="button"
-                  @click="handleZoomOut"
                   class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
                   :class="{ 'opacity-50 cursor-not-allowed': !cropperReady }"
                   :disabled="!cropperReady"
                   title="缩小"
+                  @click="handleZoomOut"
                 >
-                  <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
+                  <svg
+                    class="w-5 h-5 text-gray-600 dark:text-gray-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"
+                    />
                   </svg>
                 </button>
                 <div class="w-px h-6 bg-gray-200 dark:bg-white/10" />
                 <button
                   type="button"
-                  @click="handleRotateLeft"
                   class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
                   :class="{ 'opacity-50 cursor-not-allowed': !cropperReady }"
                   :disabled="!cropperReady"
                   title="向左旋转"
+                  @click="handleRotateLeft"
                 >
-                  <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                  <svg
+                    class="w-5 h-5 text-gray-600 dark:text-gray-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
+                    />
                   </svg>
                 </button>
                 <button
                   type="button"
-                  @click="handleRotateRight"
                   class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
                   :class="{ 'opacity-50 cursor-not-allowed': !cropperReady }"
                   :disabled="!cropperReady"
                   title="向右旋转"
+                  @click="handleRotateRight"
                 >
-                  <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" />
+                  <svg
+                    class="w-5 h-5 text-gray-600 dark:text-gray-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6"
+                    />
                   </svg>
                 </button>
                 <div class="w-px h-6 bg-gray-200 dark:bg-white/10" />
                 <button
                   type="button"
-                  @click="handleFlipHorizontal"
                   class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
                   :class="{ 'opacity-50 cursor-not-allowed': !cropperReady }"
                   :disabled="!cropperReady"
                   title="水平翻转"
+                  @click="handleFlipHorizontal"
                 >
-                  <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10M12 3v18M17 6l4 6-4 6M7 6l-4 6 4 6" />
+                  <svg
+                    class="w-5 h-5 text-gray-600 dark:text-gray-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M7 21h10M12 3v18M17 6l4 6-4 6M7 6l-4 6 4 6"
+                    />
                   </svg>
                 </button>
                 <button
                   type="button"
-                  @click="handleFlipVertical"
                   class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
                   :class="{ 'opacity-50 cursor-not-allowed': !cropperReady }"
                   :disabled="!cropperReady"
                   title="垂直翻转"
+                  @click="handleFlipVertical"
                 >
-                  <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10M21 7v10M6 12h12M6 17l6 4 6-4M6 7l6-4 6 4" />
+                  <svg
+                    class="w-5 h-5 text-gray-600 dark:text-gray-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M3 7v10M21 7v10M6 12h12M6 17l6 4 6-4M6 7l6-4 6 4"
+                    />
                   </svg>
                 </button>
                 <div class="w-px h-6 bg-gray-200 dark:bg-white/10" />
                 <button
                   type="button"
-                  @click="handleReset"
                   class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
                   :class="{ 'opacity-50 cursor-not-allowed': !cropperReady }"
                   :disabled="!cropperReady"
                   title="重置"
+                  @click="handleReset"
                 >
-                  <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  <svg
+                    class="w-5 h-5 text-gray-600 dark:text-gray-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
                   </svg>
                 </button>
               </div>
             </div>
 
             <div class="w-44 flex-shrink-0">
-              <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">预览</p>
+              <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                预览
+              </p>
               <div class="space-y-4">
                 <div>
                   <div
                     ref="previewRef"
                     class="preview-container w-40 h-40 rounded-lg overflow-hidden bg-gray-100 dark:bg-dark-100 border-2 border-gray-200 dark:border-white/10 mx-auto"
                   />
-                  <p class="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">200 × 200 px</p>
+                  <p class="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">
+                    200 × 200 px
+                  </p>
                 </div>
                 <div>
                   <div
                     ref="previewSmallRef"
                     class="preview-container w-20 h-20 rounded-full overflow-hidden bg-gray-100 dark:bg-dark-100 border-2 border-gray-200 dark:border-white/10 mx-auto"
                   />
-                  <p class="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">80 × 80 px</p>
+                  <p class="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">
+                    80 × 80 px
+                  </p>
                 </div>
               </div>
 
@@ -177,20 +275,36 @@
         <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-dark-100/50">
           <button
             type="button"
-            @click="handleCancel"
             class="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+            @click="handleCancel"
           >
             取消
           </button>
           <button
             type="button"
-            @click="handleConfirm"
             :disabled="!cropperReady || isProcessing"
             class="px-6 py-2 text-sm bg-gradient-to-r from-primary to-accent text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            @click="handleConfirm"
           >
-            <svg v-if="isProcessing" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            <svg
+              v-if="isProcessing"
+              class="w-4 h-4 animate-spin"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              />
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
             </svg>
             {{ isProcessing ? '处理中...' : '确认裁剪' }}
           </button>

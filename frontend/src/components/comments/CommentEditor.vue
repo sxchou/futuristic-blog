@@ -372,14 +372,17 @@ defineExpose({
     :class="{ 'fixed inset-0 z-50 bg-white dark:bg-dark-100 p-4': isFullscreen }"
   >
     <!-- 非全屏模式下的工具栏 -->
-    <div v-if="!isFullscreen" class="flex flex-wrap items-center gap-1 mb-2">
+    <div
+      v-if="!isFullscreen"
+      class="flex flex-wrap items-center gap-1 mb-2"
+    >
       <button
         v-for="item in toolbarActions"
         :key="item.icon"
         type="button"
-        @click="item.action"
         :title="item.title"
         class="px-1.5 py-0.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/10 rounded transition-colors"
+        @click="item.action"
       >
         {{ item.icon }}
       </button>
@@ -387,9 +390,9 @@ defineExpose({
       <div class="lang-selector-container relative">
         <button
           type="button"
-          @click="toggleLangSelector($event)"
           title="代码块"
           class="px-1.5 py-0.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/10 rounded transition-colors"
+          @click="toggleLangSelector($event)"
         >
           { }
         </button>
@@ -406,50 +409,95 @@ defineExpose({
             v-for="lang in programmingLanguages"
             :key="lang.code"
             type="button"
-            @click="insertCodeBlock(lang.code)"
             class="w-full px-2 py-1 text-xs text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+            @click="insertCodeBlock(lang.code)"
           >
             {{ lang.label }}
           </button>
         </div>
       </div>
       
-      <div class="w-px h-4 bg-gray-200 dark:bg-white/10 mx-1 hidden sm:block"></div>
+      <div class="w-px h-4 bg-gray-200 dark:bg-white/10 mx-1 hidden sm:block" />
       
-      <EmojiPicker position="bottom" @select="insertEmoji" />
+      <EmojiPicker
+        position="bottom"
+        @select="insertEmoji"
+      />
       
       <button
         type="button"
-        @click="showMarkdownHelp = !showMarkdownHelp"
         class="p-1.5 rounded transition-colors text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/10"
         title="Markdown 语法帮助"
+        @click="showMarkdownHelp = !showMarkdownHelp"
       >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <svg
+          class="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
         </svg>
       </button>
       <button
         type="button"
-        @click="togglePreview"
         class="p-1.5 rounded transition-colors"
         :class="showPreview ? 'text-primary bg-primary/10' : 'text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/10'"
         :title="showPreview ? '隐藏预览' : '显示预览'"
+        @click="togglePreview"
       >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        <svg
+          class="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+          />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+          />
         </svg>
       </button>
       <button
         type="button"
-        @click="toggleFullscreen"
         class="p-1.5 rounded transition-colors"
         :class="isFullscreen ? 'text-primary bg-primary/10' : 'text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/10'"
         :title="isFullscreen ? '退出全屏' : '全屏编辑'"
+        @click="toggleFullscreen"
       >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path v-if="!isFullscreen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-          <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
+        <svg
+          class="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            v-if="!isFullscreen"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
+          />
+          <path
+            v-else
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25"
+          />
         </svg>
       </button>
     </div>
@@ -461,9 +509,22 @@ defineExpose({
     >
       <div class="flex justify-between items-center mb-3">
         <span class="font-medium text-gray-700 dark:text-gray-300">Markdown 语法参考</span>
-        <button @click="showMarkdownHelp = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        <button
+          class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+          @click="showMarkdownHelp = false"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </button>
       </div>
@@ -559,14 +620,23 @@ defineExpose({
     >
       <!-- 上下文信息区域 -->
       <div class="flex-shrink-0 mb-2 p-2 bg-gray-100 dark:bg-dark-100/50 rounded-lg border border-gray-200 dark:border-white/10">
-        <div v-if="replyTo" class="text-sm">
+        <div
+          v-if="replyTo"
+          class="text-sm"
+        >
           <span class="text-gray-500 dark:text-gray-400">回复 </span>
           <span class="text-primary font-medium">@{{ replyTo }}</span>
-          <div v-if="replyToContent" class="mt-1 text-gray-600 dark:text-gray-300 text-xs line-clamp-1 truncate bg-gray-200 dark:bg-dark-100/50 p-2 rounded">
+          <div
+            v-if="replyToContent"
+            class="mt-1 text-gray-600 dark:text-gray-300 text-xs line-clamp-1 truncate bg-gray-200 dark:bg-dark-100/50 p-2 rounded"
+          >
             {{ replyToContent }}
           </div>
         </div>
-        <div v-else-if="articleTitle" class="text-sm">
+        <div
+          v-else-if="articleTitle"
+          class="text-sm"
+        >
           <span class="text-gray-500 dark:text-gray-400">评论文章：</span>
           <span class="text-gray-900 dark:text-white font-medium">{{ articleTitle }}</span>
         </div>
@@ -583,18 +653,18 @@ defineExpose({
                 v-for="item in toolbarActions"
                 :key="item.icon"
                 type="button"
-                @click="item.action"
                 :title="item.title"
                 class="px-1 py-0.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/10 rounded transition-colors"
+                @click="item.action"
               >
                 {{ item.icon }}
               </button>
               <div class="lang-selector-container relative">
                 <button
                   type="button"
-                  @click="toggleLangSelector($event)"
                   title="代码块"
                   class="px-1 py-0.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/10 rounded transition-colors"
+                  @click="toggleLangSelector($event)"
                 >
                   { }
                 </button>
@@ -610,25 +680,28 @@ defineExpose({
                     v-for="lang in programmingLanguages"
                     :key="lang.code"
                     type="button"
-                    @click="insertCodeBlock(lang.code)"
                     class="w-full px-2 py-1 text-xs text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                    @click="insertCodeBlock(lang.code)"
                   >
                     {{ lang.label }}
                   </button>
                 </div>
               </div>
-              <EmojiPicker position="bottom" @select="insertEmoji" />
+              <EmojiPicker
+                position="bottom"
+                @select="insertEmoji"
+              />
             </div>
           </div>
           <textarea
             ref="textareaRef"
             :value="modelValue"
-            @input="handleInput"
-            @keydown="handleKeydown"
-            @scroll="handleEditorScroll"
             :placeholder="replyTo ? `回复 @${replyTo}...` : placeholder"
             :disabled="disabled"
             class="flex-1 w-full p-3 bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 resize-none text-sm leading-relaxed overflow-y-auto rounded-b-lg"
+            @input="handleInput"
+            @keydown="handleKeydown"
+            @scroll="handleEditorScroll"
           />
         </div>
         
@@ -654,16 +727,16 @@ defineExpose({
       <div class="flex-shrink-0 flex justify-end gap-2 mt-2 pt-2 border-t border-gray-200 dark:border-white/10">
         <button
           type="button"
-          @click="toggleFullscreen"
           class="px-4 py-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+          @click="toggleFullscreen"
         >
           取消
         </button>
         <button
           type="button"
-          @click="handleSubmit"
           :disabled="disabled || !modelValue.trim()"
           class="px-4 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          @click="handleSubmit"
         >
           {{ disabled ? '发送中...' : (replyTo ? '发送回复' : '发表评论') }}
         </button>
@@ -676,12 +749,12 @@ defineExpose({
         <textarea
           ref="textareaRef"
           :value="modelValue"
-          @input="handleInput"
-          @keydown="handleKeydown"
           :placeholder="replyTo ? `回复 @${replyTo}...` : placeholder"
           :disabled="disabled"
           :rows="rows"
           class="w-full bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 resize-none text-sm leading-relaxed"
+          @input="handleInput"
+          @keydown="handleKeydown"
         />
       </div>
       
@@ -689,8 +762,13 @@ defineExpose({
         v-if="showPreview && modelValue" 
         class="mt-3 p-3 bg-gray-50 dark:bg-dark-100/50 rounded-lg border border-gray-200 dark:border-white/5"
       >
-        <div class="text-xs text-gray-500 dark:text-gray-400 mb-2">预览</div>
-        <CommentMarkdownPreview :content="previewContent" :show-lang-label="true" />
+        <div class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+          预览
+        </div>
+        <CommentMarkdownPreview
+          :content="previewContent"
+          :show-lang-label="true"
+        />
       </div>
     </template>
     

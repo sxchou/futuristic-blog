@@ -58,19 +58,42 @@ onMounted(() => {
 <template>
   <div class="flex items-center justify-center px-4 pt-8 pb-32">
     <div class="text-center">
-      <div v-if="isLoading" class="space-y-4">
+      <div
+        v-if="isLoading"
+        class="space-y-4"
+      >
         <div class="w-12 h-12 mx-auto border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-        <p class="text-gray-500 dark:text-gray-400">正在验证邮箱...</p>
+        <p class="text-gray-500 dark:text-gray-400">
+          正在验证邮箱...
+        </p>
       </div>
       
-      <div v-else class="space-y-4">
+      <div
+        v-else
+        class="space-y-4"
+      >
         <div class="w-12 h-12 mx-auto rounded-full bg-red-500/10 flex items-center justify-center">
-          <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          <svg
+            class="w-6 h-6 text-red-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </div>
-        <p class="text-red-500">{{ error }}</p>
-        <router-link to="/login" class="text-primary hover:underline">
+        <p class="text-red-500">
+          {{ error }}
+        </p>
+        <router-link
+          to="/login"
+          class="text-primary hover:underline"
+        >
           返回登录
         </router-link>
       </div>

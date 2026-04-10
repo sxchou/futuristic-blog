@@ -84,15 +84,31 @@ const isConfirmType = () => {
             <div class="p-6">
               <div class="flex items-start gap-4">
                 <div :class="['flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-gray-800', getIconClass()]">
-                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="getIconPath()" />
+                  <svg
+                    class="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      :d="getIconPath()"
+                    />
                   </svg>
                 </div>
                 <div class="flex-1 min-w-0">
-                  <h3 v-if="dialogStore.dialogOptions.value.title" class="text-lg font-semibold text-white mb-2">
+                  <h3
+                    v-if="dialogStore.dialogOptions.value.title"
+                    class="text-lg font-semibold text-white mb-2"
+                  >
                     {{ dialogStore.dialogOptions.value.title }}
                   </h3>
-                  <p v-if="dialogStore.dialogOptions.value.message" class="text-gray-300 text-sm leading-relaxed">
+                  <p
+                    v-if="dialogStore.dialogOptions.value.message"
+                    class="text-gray-300 text-sm leading-relaxed"
+                  >
                     {{ dialogStore.dialogOptions.value.message }}
                   </p>
                 </div>
@@ -103,31 +119,31 @@ const isConfirmType = () => {
               <button
                 v-if="isConfirmType()"
                 type="button"
-                @click="handleCancelClick"
                 class="flex-1 px-4 py-3 text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                @click="handleCancelClick"
               >
                 {{ dialogStore.dialogOptions.value.cancelText || '取消' }}
               </button>
               <button
                 v-if="isConfirmType()"
                 type="button"
-                @click="handleConfirmClick"
                 class="flex-1 px-4 py-3 text-sm font-medium text-primary hover:text-primary/80 hover:bg-primary/10 transition-colors"
+                @click="handleConfirmClick"
               >
                 {{ dialogStore.dialogOptions.value.confirmText || '确定' }}
               </button>
               <button
                 v-if="!isConfirmType()"
                 type="button"
-                @click="handleCancelClick"
                 :class="[
                   'flex-1 px-4 py-3 text-sm font-medium transition-colors',
                   dialogStore.dialogOptions.value.type === 'error' 
                     ? 'text-red-400 hover:text-red-300 hover:bg-red-500/10'
                     : dialogStore.dialogOptions.value.type === 'success'
-                    ? 'text-green-400 hover:text-green-300 hover:bg-green-500/10'
-                    : 'text-primary hover:text-primary/80 hover:bg-primary/10'
+                      ? 'text-green-400 hover:text-green-300 hover:bg-green-500/10'
+                      : 'text-primary hover:text-primary/80 hover:bg-primary/10'
                 ]"
+                @click="handleCancelClick"
               >
                 关闭
               </button>

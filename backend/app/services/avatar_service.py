@@ -23,7 +23,7 @@ class AvatarFileService:
         if env_path:
             return Path(env_path) / cls.AVATAR_DIR_NAME
         
-        backend_dir = Path(__file__).parent.parent.parent
+        backend_dir = Path(__file__).parent.parent.parent.parent
         return backend_dir / cls.UPLOAD_DIR_NAME / cls.AVATAR_DIR_NAME
     
     @classmethod

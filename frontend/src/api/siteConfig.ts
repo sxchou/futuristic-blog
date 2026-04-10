@@ -28,5 +28,19 @@ export const siteConfigApi = {
 
   async delete(key: string): Promise<void> {
     await apiClient.delete(`/site-config/${key}`)
+  },
+
+  async uploadLogo(formData: FormData): Promise<SiteConfig> {
+    const response = await apiClient.post('/site-config/upload-logo', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+    return response.data
+  },
+
+  async resetLogo(): Promise<SiteConfig> {
+    const response = await apiClient.post('/site-config/reset-logo')
+    return response.data
   }
 }

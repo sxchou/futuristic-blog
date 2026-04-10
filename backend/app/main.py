@@ -183,7 +183,7 @@ if not IS_VERCEL:
         if not os.path.exists(uploads_dir):
             os.makedirs(uploads_dir, exist_ok=True)
         
-        subdirs = ["avatars", "images", "articles"]
+        subdirs = ["avatars", "images", "articles", "logos"]
         for subdir in subdirs:
             subdir_path = os.path.join(uploads_dir, subdir)
             if not os.path.exists(subdir_path):
@@ -225,12 +225,44 @@ async def background_init():
         init_database()
         logger.info("Database data initialized")
         
+        logger.info("Syncing article comment counts...")
+        sync_article_comment_counts()
+        logger.info("Article comment counts synced")
+        
         asyncio.create_task(cleanup_expired_tokens_task())
         asyncio.create_task(cache_cleanup_task())
         asyncio.create_task(performance_report_task())
         logger.info("=== Application initialized successfully ===")
     except Exception as e:
         logger.error(f"Background init error: {e}", exc_info=True)
+
+
+def sync_article_comment_counts():
+    from sqlalchemy import func
+    from app.models.models import Comment
+    
+    db = SessionLocal()
+    try:
+        articles = db.query(Article).all()
+        updated_count = 0
+        
+        for article in articles:
+            actual_count = db.query(func.count(Comment.id)).filter(
+                Comment.article_id == article.id,
+                Comment.status == 'approved',
+                Comment.is_deleted == False
+            ).scalar()
+            
+            if article.comment_count != actual_count:
+                article.comment_count = actual_count
+                updated_count += 1
+        
+        db.commit()
+        logger.info(f"Synced comment counts for {updated_count} articles")
+    except Exception as e:
+        logger.error(f"Error syncing comment counts: {e}")
+    finally:
+        db.close()
 
 
 @app.get("/")

@@ -93,6 +93,10 @@ export interface ArticleListItem {
   category?: Category
   tags: Tag[]
   is_liked?: boolean
+  liked_at?: string
+  is_bookmarked?: boolean
+  bookmarked_at?: string
+  commented_at?: string
   highlighted_title?: string
   highlighted_summary?: string
   match_type?: string
@@ -102,6 +106,12 @@ export interface LikeResponse {
   article_id: number
   like_count: number
   is_liked: boolean
+}
+
+export interface BookmarkResponse {
+  article_id: number
+  is_bookmarked: boolean
+  bookmark_count?: number
 }
 
 export interface Resource {

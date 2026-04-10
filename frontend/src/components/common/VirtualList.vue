@@ -123,7 +123,10 @@ defineExpose({
           class="virtual-list-item"
           :style="{ height: `${itemHeight}px` }"
         >
-          <slot :item="item" :index="index" />
+          <slot
+            :item="item"
+            :index="index"
+          />
         </div>
       </div>
     </div>

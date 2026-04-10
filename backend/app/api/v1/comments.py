@@ -276,6 +276,10 @@ async def create_comment(
     )
     
     db.add(new_comment)
+    
+    if initial_status == 'approved':
+        article.comment_count = (article.comment_count or 0) + 1
+    
     db.commit()
     db.refresh(new_comment)
     
@@ -346,6 +350,67 @@ async def create_comment(
     )
 
 
+@router.get("/user/commented", response_model=PaginatedResponse)
+async def get_user_commented_articles(
+    page: int = 1,
+    page_size: int = 10,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    from sqlalchemy import func
+    from app.schemas import ArticleListItem
+    
+    subquery = db.query(
+        Comment.article_id,
+        func.max(Comment.created_at).label('last_comment_at')
+    ).filter(
+        Comment.user_id == current_user.id,
+        Comment.is_deleted == False,
+        Comment.status == 'approved'
+    ).group_by(Comment.article_id).subquery()
+    
+    total = db.query(subquery).count()
+    
+    results = db.query(
+        subquery.c.article_id,
+        subquery.c.last_comment_at
+    ).order_by(
+        subquery.c.last_comment_at.desc()
+    ).offset((page - 1) * page_size).limit(page_size).all()
+    
+    articles = []
+    for result in results:
+        article = db.query(Article).filter(Article.id == result.article_id).first()
+        if article:
+            articles.append(ArticleListItem(
+                id=article.id,
+                title=article.title,
+                slug=article.slug,
+                summary=article.summary,
+                cover_image=article.cover_image,
+                view_count=article.view_count,
+                like_count=article.like_count,
+                comment_count=article.comment_count,
+                is_published=article.is_published,
+                is_featured=article.is_featured,
+                is_pinned=article.is_pinned,
+                reading_time=article.reading_time,
+                created_at=article.created_at,
+                published_at=article.published_at,
+                category=article.category,
+                tags=article.tags,
+                commented_at=result.last_comment_at
+            ))
+    
+    return PaginatedResponse(
+        items=articles,
+        total=total,
+        page=page,
+        page_size=page_size,
+        total_pages=(total + page_size - 1) // page_size
+    )
+
+
 @router.delete("/{comment_id}")
 async def delete_comment(
     comment_id: int,
@@ -358,6 +423,11 @@ async def delete_comment(
     
     if comment.user_id != current_user.id and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Not authorized to delete this comment")
+    
+    if not comment.is_deleted and comment.status == 'approved':
+        article = db.query(Article).filter(Article.id == comment.article_id).first()
+        if article and article.comment_count and article.comment_count > 0:
+            article.comment_count -= 1
     
     comment.is_deleted = True
     comment.deleted_by = 'user'
@@ -463,6 +533,14 @@ async def audit_comment(
     
     old_status = comment.status
     comment.status = audit_data.status
+    
+    if old_status != 'approved' and audit_data.status == 'approved':
+        if comment.article:
+            comment.article.comment_count = (comment.article.comment_count or 0) + 1
+    elif old_status == 'approved' and audit_data.status != 'approved':
+        if comment.article and comment.article.comment_count and comment.article.comment_count > 0:
+            comment.article.comment_count -= 1
+    
     db.commit()
     
     audit_log = CommentAuditLog(
@@ -604,6 +682,11 @@ async def admin_delete_comment(
     if not comment:
         raise HTTPException(status_code=404, detail="Comment not found")
     
+    if not comment.is_deleted and comment.status == 'approved':
+        article = db.query(Article).filter(Article.id == comment.article_id).first()
+        if article and article.comment_count and article.comment_count > 0:
+            article.comment_count -= 1
+    
     if keep_record:
         comment.is_deleted = True
         comment.deleted_by = 'admin'
@@ -633,6 +716,14 @@ async def batch_delete_comments(
     if not comments:
         raise HTTPException(status_code=404, detail="No comments found")
     
+    article_comment_changes = {}
+    
+    for comment in comments:
+        if not comment.is_deleted and comment.status == 'approved':
+            if comment.article_id not in article_comment_changes:
+                article_comment_changes[comment.article_id] = 0
+            article_comment_changes[comment.article_id] += 1
+    
     deleted_count = 0
     if delete_data.permanent:
         for comment in comments:
@@ -646,10 +737,45 @@ async def batch_delete_comments(
             comment.content = "此评论已被管理员删除"
             deleted_count += 1
     
+    for article_id, count in article_comment_changes.items():
+        article = db.query(Article).filter(Article.id == article_id).first()
+        if article and article.comment_count:
+            article.comment_count = max(0, article.comment_count - count)
+    
     db.commit()
     
     return {
         "message": f"Successfully deleted {deleted_count} comments",
         "deleted_count": deleted_count,
         "type": "permanent" if delete_data.permanent else "soft"
+    }
+
+
+@router.post("/admin/sync-comment-counts")
+async def sync_comment_counts(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
+):
+    from sqlalchemy import func
+    
+    articles = db.query(Article).all()
+    updated_count = 0
+    
+    for article in articles:
+        actual_count = db.query(func.count(Comment.id)).filter(
+            Comment.article_id == article.id,
+            Comment.status == 'approved',
+            Comment.is_deleted == False
+        ).scalar()
+        
+        if article.comment_count != actual_count:
+            article.comment_count = actual_count
+            updated_count += 1
+    
+    db.commit()
+    
+    return {
+        "message": f"Successfully synced comment counts",
+        "updated_articles": updated_count,
+        "total_articles": len(articles)
     }

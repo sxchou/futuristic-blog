@@ -14,10 +14,16 @@
     @refresh="$emit('refresh')"
     @click="$emit('click', $event)"
   >
-    <template #header v-if="$slots.header">
+    <template
+      v-if="$slots.header"
+      #header
+    >
       <slot name="header" />
     </template>
-    <template #actions v-if="$slots.actions">
+    <template
+      v-if="$slots.actions"
+      #actions
+    >
       <slot name="actions" />
     </template>
   </BaseChart>

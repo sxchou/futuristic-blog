@@ -94,53 +94,84 @@ async function toggleSetting(key: keyof typeof settingsForm.value) {
 <template>
   <div class="space-y-6">
     <div class="flex items-center justify-between">
-      <h1 class="text-xl font-bold text-gray-900 dark:text-white">通知管理</h1>
+      <h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
+        通知管理
+      </h1>
     </div>
 
-    <div v-if="isLoading" class="flex justify-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    <div
+      v-if="isLoading"
+      class="flex justify-center py-12"
+    >
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
     </div>
 
-    <div v-else class="space-y-6">
+    <div
+      v-else
+      class="space-y-6"
+    >
       <div class="glass-card p-5">
         <div class="mb-5">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">评论审核设置</h2>
-          <p class="text-xs text-gray-500 dark:text-gray-400">控制评论是否需要审核后才能显示</p>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+            评论审核设置
+          </h2>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            控制评论是否需要审核后才能显示
+          </p>
         </div>
 
         <div class="flex items-center justify-between p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800/30">
           <div class="flex-1">
-            <h3 class="text-sm font-medium text-gray-900 dark:text-white">启用评论审核</h3>
+            <h3 class="text-sm font-medium text-gray-900 dark:text-white">
+              启用评论审核
+            </h3>
             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
               开启后，新发表的评论将标记为"待审核"状态，需要管理员审核通过后才能在前台显示
             </p>
           </div>
           <button
-            @click="toggleSetting('require_comment_audit')"
             :class="[
               'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
               settingsForm.require_comment_audit ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'
             ]"
             role="switch"
             :aria-checked="settingsForm.require_comment_audit"
+            @click="toggleSetting('require_comment_audit')"
           >
             <span
               :class="[
                 'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
                 settingsForm.require_comment_audit ? 'translate-x-5' : 'translate-x-0'
               ]"
-            ></span>
+            />
           </button>
         </div>
 
-        <div v-if="settingsForm.require_comment_audit" class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800/30">
+        <div
+          v-if="settingsForm.require_comment_audit"
+          class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800/30"
+        >
           <div class="flex items-start gap-2">
-            <svg class="w-5 h-5 text-blue-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              class="w-5 h-5 text-blue-500 mt-0.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <div class="text-xs text-blue-700 dark:text-blue-300">
-              <p class="font-medium">评论审核已启用</p>
-              <p class="mt-1">新评论将不会立即显示，请前往「评论管理」进行审核操作。</p>
+              <p class="font-medium">
+                评论审核已启用
+              </p>
+              <p class="mt-1">
+                新评论将不会立即显示，请前往「评论管理」进行审核操作。
+              </p>
             </div>
           </div>
         </div>
@@ -148,8 +179,12 @@ async function toggleSetting(key: keyof typeof settingsForm.value) {
 
       <div class="glass-card p-5">
         <div class="mb-5">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">邮件通知设置</h2>
-          <p class="text-xs text-gray-500 dark:text-gray-400">配置系统在特定事件发生时是否发送邮件通知</p>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+            邮件通知设置
+          </h2>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            配置系统在特定事件发生时是否发送邮件通知
+          </p>
         </div>
 
         <div class="space-y-3">
@@ -159,42 +194,68 @@ async function toggleSetting(key: keyof typeof settingsForm.value) {
             class="flex items-center justify-between p-3 bg-gray-50 dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10"
           >
             <div class="flex-1">
-              <h3 class="text-sm font-medium text-gray-900 dark:text-white">{{ option.label }}</h3>
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ option.description }}</p>
+              <h3 class="text-sm font-medium text-gray-900 dark:text-white">
+                {{ option.label }}
+              </h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                {{ option.description }}
+              </p>
             </div>
             <button
-              @click="toggleSetting(option.key)"
               :class="[
                 'relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
                 settingsForm[option.key] ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'
               ]"
               role="switch"
               :aria-checked="settingsForm[option.key]"
+              @click="toggleSetting(option.key)"
             >
               <span
                 :class="[
                   'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
                   settingsForm[option.key] ? 'translate-x-4' : 'translate-x-0'
                 ]"
-              ></span>
+              />
             </button>
           </div>
         </div>
 
-        <div v-if="message" class="mt-4 p-2.5 rounded-lg text-sm" :class="message.includes('成功') ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'">
+        <div
+          v-if="message"
+          class="mt-4 p-2.5 rounded-lg text-sm"
+          :class="message.includes('成功') ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'"
+        >
           {{ message }}
         </div>
 
         <div class="mt-5 flex justify-end">
           <button
-            @click="saveSettings"
             :disabled="isSaving"
             class="px-5 py-2 text-sm bg-primary text-white font-medium rounded-lg hover:bg-primary/80 disabled:opacity-50 transition-colors"
+            @click="saveSettings"
           >
-            <span v-if="isSaving" class="flex items-center gap-2">
-              <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            <span
+              v-if="isSaving"
+              class="flex items-center gap-2"
+            >
+              <svg
+                class="animate-spin w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                />
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
               </svg>
               保存中...
             </span>
@@ -204,14 +265,18 @@ async function toggleSetting(key: keyof typeof settingsForm.value) {
       </div>
 
       <div class="glass-card p-5">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">说明</h2>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+          说明
+        </h2>
         <div class="space-y-2 text-xs text-gray-500 dark:text-gray-400">
           <p>• <strong>启用评论审核</strong>：开启后，新评论需要管理员审核通过后才能在前台显示。</p>
           <p>• <strong>新用户注册通知</strong>：当有新用户注册账户时，系统会发送邮件通知所有管理员。</p>
           <p>• <strong>新评论通知</strong>：当用户在文章下发表评论时，系统会发送邮件通知所有管理员。</p>
           <p>• <strong>新点赞通知</strong>：当用户点赞文章时，系统会发送邮件通知所有管理员。</p>
           <p>• <strong>评论回复通知</strong>：当用户回复其他用户的评论时，系统会发送邮件通知被回复的用户。</p>
-          <p class="mt-3 text-xs opacity-75">注意：所有邮件通知都依赖于正确的邮箱配置。请确保已在「邮件管理」中正确配置邮箱服务。</p>
+          <p class="mt-3 text-xs opacity-75">
+            注意：所有邮件通知都依赖于正确的邮箱配置。请确保已在「邮件管理」中正确配置邮箱服务。
+          </p>
         </div>
       </div>
     </div>

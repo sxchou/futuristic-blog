@@ -96,48 +96,121 @@ const formatDate = (date: string) => {
     <div class="flex-1 min-w-0">
       <div class="mb-8">
         <div class="flex items-center gap-2 mb-2">
-          <router-link to="/tags" class="text-sm text-gray-400 hover:text-primary transition-colors">标签</router-link>
-          <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-          <span class="text-sm" :style="{ color: currentTag()?.color || '#6b7280' }">#{{ currentTag()?.name }}</span>
+          <router-link
+            to="/tags"
+            class="text-sm text-gray-400 hover:text-primary transition-colors"
+          >
+            标签
+          </router-link>
+          <svg
+            class="w-4 h-4 text-gray-300"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          ><path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 5l7 7-7 7"
+          /></svg>
+          <span
+            class="text-sm"
+            :style="{ color: currentTag()?.color || '#6b7280' }"
+          >#{{ currentTag()?.name }}</span>
         </div>
         <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
           <span :style="{ color: currentTag()?.color }">#{{ currentTag()?.name || '标签文章' }}</span>
         </h1>
-        <p class="text-sm text-gray-400 mt-2">共 {{ blogStore.pagination.total }} 篇相关文章</p>
+        <p class="text-sm text-gray-400 mt-2">
+          共 {{ blogStore.pagination.total }} 篇相关文章
+        </p>
       </div>
 
-      <div v-if="loading" class="flex justify-center py-20">
+      <div
+        v-if="loading"
+        class="flex justify-center py-20"
+      >
         <div class="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
 
-      <div v-else-if="blogStore.articles.length === 0" class="text-center py-16">
-        <svg class="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      <div
+        v-else-if="blogStore.articles.length === 0"
+        class="text-center py-16"
+      >
+        <svg
+          class="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
         </svg>
-        <p class="text-gray-400">暂无文章</p>
+        <p class="text-gray-400">
+          暂无文章
+        </p>
       </div>
 
-      <div v-else ref="articlesRef" class="space-y-4">
+      <div
+        v-else
+        ref="articlesRef"
+        class="space-y-4"
+      >
         <router-link
           v-for="article in blogStore.articles"
           :key="article.id"
           :to="`/article/${article.slug}`"
           class="article-card group flex flex-col sm:flex-row gap-4"
         >
-          <div v-if="article.cover_image" class="relative sm:w-48 flex-shrink-0 overflow-hidden rounded-xl">
-            <img :src="article.cover_image" :alt="article.title" class="w-full h-32 sm:h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+          <div
+            v-if="article.cover_image"
+            class="relative sm:w-48 flex-shrink-0 overflow-hidden rounded-xl"
+          >
+            <img
+              :src="article.cover_image"
+              :alt="article.title"
+              class="w-full h-32 sm:h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            >
           </div>
           <div class="flex-1 min-w-0 flex flex-col">
-            <h3 class="article-card-title">{{ article.title }}</h3>
-            <p v-if="article.summary" class="article-card-excerpt">{{ article.summary }}</p>
+            <h3 class="article-card-title">
+              {{ article.title }}
+            </h3>
+            <p
+              v-if="article.summary"
+              class="article-card-excerpt"
+            >
+              {{ article.summary }}
+            </p>
             <div class="flex items-center gap-3 mt-auto pt-2">
-              <span v-if="article.category" class="inline-flex items-center gap-1 text-xs font-medium" :style="{ color: article.category.color }">
-                <span class="w-1.5 h-1.5 rounded-full" :style="{ backgroundColor: article.category.color }" />
+              <span
+                v-if="article.category"
+                class="inline-flex items-center gap-1 text-xs font-medium"
+                :style="{ color: article.category.color }"
+              >
+                <span
+                  class="w-1.5 h-1.5 rounded-full"
+                  :style="{ backgroundColor: article.category.color }"
+                />
                 {{ article.category.name }}
               </span>
               <span class="text-xs text-gray-400">{{ formatDate(article.created_at) }}</span>
               <span class="text-xs text-gray-400 flex items-center gap-1">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                <svg
+                  class="w-3 h-3"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                ><path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                /></svg>
                 {{ article.view_count }}
               </span>
             </div>
@@ -145,7 +218,10 @@ const formatDate = (date: string) => {
         </router-link>
       </div>
 
-      <div v-if="blogStore.pagination.totalPages > 1" class="mt-8">
+      <div
+        v-if="blogStore.pagination.totalPages > 1"
+        class="mt-8"
+      >
         <Pagination
           :current-page="blogStore.pagination.page"
           :total-pages="blogStore.pagination.totalPages"
