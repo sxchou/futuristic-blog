@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useSiteConfigStore, useDialogStore } from '@/stores'
+import { useAdminCheck } from '@/composables/useAdminCheck'
 import { clearCacheByPattern } from '@/api/client'
 import AvatarCropper from './AvatarCropper.vue'
 
@@ -15,6 +16,7 @@ const emit = defineEmits<{
 
 const siteConfigStore = useSiteConfigStore()
 const dialogStore = useDialogStore()
+const { requireAdmin } = useAdminCheck()
 
 const isUploading = ref(false)
 const uploadProgress = ref(0)
@@ -40,7 +42,8 @@ const getLogoUrl = (url: string) => {
   return `/${url}`
 }
 
-const triggerUpload = () => {
+const triggerUpload = async () => {
+  if (!await requireAdmin('上传网站Logo')) return
   fileInput.value?.click()
 }
 
@@ -146,6 +149,8 @@ const handleCropConfirm = async (blob: Blob) => {
 }
 
 const handleReset = async () => {
+  if (!await requireAdmin('恢复默认Logo')) return
+  
   const confirmed = await dialogStore.showConfirm({ message: '确定要恢复默认Logo吗？' })
   if (!confirmed) return
   
