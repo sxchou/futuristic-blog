@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [
     vue(),
     compression({
-      algorithm: 'gzip',
+      algorithms: ['gzip'],
       threshold: 1024,
       deleteOriginalAssets: false
     })
