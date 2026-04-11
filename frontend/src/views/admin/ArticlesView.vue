@@ -669,7 +669,7 @@ const handleImageCropConfirm = async (blob: Blob) => {
       uploadAbortController.value.signal,
       editingArticle.value?.id
     )
-    const imageUrl = `/uploads/images/${response.filename}`
+    const imageUrl = response.file_path
     const markdown = `![${file.name}](${imageUrl})`
     
     if (cursorPosition && markdownEditorRef.value) {
@@ -762,7 +762,7 @@ const handleCoverCropConfirm = async (blob: Blob) => {
       uploadAbortController.value.signal,
       editingArticle.value?.id
     )
-    form.value.cover_image = `/uploads/images/${response.filename}`
+    form.value.cover_image = response.file_path
     clearValidationError('cover_image')
   } catch (error: any) {
     if (error.name === 'AbortError' || error.name === 'CanceledError') {
