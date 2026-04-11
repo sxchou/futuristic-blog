@@ -10,6 +10,7 @@ import type { Article, ArticleFile } from '@/types'
 import CommentSection from '@/components/comments/CommentSection.vue'
 import FilePreview from '@/components/FilePreview.vue'
 import BlogSidebar from '@/components/common/BlogSidebar.vue'
+import { getMediaUrl } from '@/utils/media'
 
 const route = useRoute()
 const router = useRouter()
@@ -28,6 +29,8 @@ const previewFile = ref<ArticleFile | null>(null)
 const showPreview = ref(false)
 const selectedFileIds = ref<Set<number>>(new Set())
 const highlightKeyword = ref('')
+
+const coverImageUrl = computed(() => getMediaUrl(article.value?.cover_image))
 const activeHeading = ref('')
 const showToc = ref(false)
 const coverImageHeight = ref<number>(0)
@@ -600,7 +603,7 @@ watch(article, async (newVal) => {
           >
             <img
               ref="coverImageRef"
-              :src="article.cover_image"
+              :src="coverImageUrl"
               :alt="article.title"
               class="w-full h-48 sm:h-64 object-cover"
               loading="eager"
@@ -722,13 +725,13 @@ watch(article, async (newVal) => {
             >
               <img
                 ref="coverImageRef"
-                :src="article.cover_image"
+                :src="coverImageUrl"
                 :alt="article.title"
                 class="w-full h-full object-cover"
                 :style="{ objectPosition: coverObjectPosition }"
                 loading="eager"
                 decoding="async"
-              >
+              />
               <div class="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-transparent" />
             </div>
           </div>

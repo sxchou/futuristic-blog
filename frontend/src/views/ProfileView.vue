@@ -8,6 +8,7 @@ import Pagination from '@/components/common/Pagination.vue'
 import BlogSidebar from '@/components/common/BlogSidebar.vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import { formatDateShort } from '@/utils/date'
+import { getMediaUrl } from '@/utils/media'
 
 const route = useRoute()
 const router = useRouter()
@@ -336,7 +337,7 @@ watch(() => route.path, (newPath) => {
                 class="flex-shrink-0 w-32 h-24 sm:w-40 sm:h-28 rounded-lg overflow-hidden"
               >
                 <img
-                  :src="article.cover_image"
+                  :src="getMediaUrl(article.cover_image)"
                   :alt="article.title"
                   class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   loading="lazy"

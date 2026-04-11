@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import type { ArticleListItem } from '@/types'
 import { likeApi } from '@/api'
 import { formatDateShort } from '@/utils/date'
+import { getMediaUrl } from '@/utils/media'
 
 const props = defineProps<{
   article: ArticleListItem
@@ -16,6 +17,8 @@ const likeCount = ref(props.article.like_count || 0)
 const isLiking = ref(false)
 
 const formatDate = (date: string) => formatDateShort(date)
+
+const coverImageUrl = computed(() => getMediaUrl(props.article.cover_image))
 
 const handleLike = async (e: Event) => {
   e.preventDefault()
@@ -60,7 +63,7 @@ const getArticleLink = () => {
       class="article-card__cover"
     >
       <img
-        :src="article.cover_image"
+        :src="coverImageUrl"
         :alt="article.title"
         class="article-card__cover-img"
         loading="lazy"

@@ -7,6 +7,7 @@ import BlogSidebar from '@/components/common/BlogSidebar.vue'
 import Pagination from '@/components/common/Pagination.vue'
 import { usePageSize } from '@/composables/usePageSize'
 import { formatDateShort } from '@/utils/date'
+import { getMediaUrl } from '@/utils/media'
 
 const route = useRoute()
 const router = useRouter()
@@ -227,7 +228,7 @@ const handlePageChange = (page: number) => {
                     class="relative h-52 overflow-hidden"
                   >
                       <img
-                        :src="currentFeatured.cover_image"
+                        :src="getMediaUrl(currentFeatured.cover_image)"
                         :alt="currentFeatured.title"
                         class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                         loading="eager"
@@ -394,7 +395,7 @@ const handlePageChange = (page: number) => {
               >
                 <div class="relative overflow-hidden rounded-xl w-full h-full">
                   <img
-                    :src="article.cover_image"
+                    :src="getMediaUrl(article.cover_image)"
                     :alt="article.title"
                     class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     loading="lazy"

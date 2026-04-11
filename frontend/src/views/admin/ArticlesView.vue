@@ -5,6 +5,7 @@ import { articleApi, fileApi, categoryApi, tagApi, utilsApi, parseUploadError } 
 import type { ArticleListItem, Article, ArticleFile } from '@/types'
 import { useAdminCheck } from '@/composables/useAdminCheck'
 import { formatDateTime } from '@/utils/date'
+import { getMediaUrl } from '@/utils/media'
 import MarkdownEditor from '@/components/admin/MarkdownEditor.vue'
 import FilePreview from '@/components/FilePreview.vue'
 import ImageCropper from '@/components/common/ImageCropper.vue'
@@ -1571,7 +1572,7 @@ watch(form, () => {
                 class="relative group"
               >
                 <img
-                  :src="form.cover_image"
+                  :src="getMediaUrl(form.cover_image)"
                   alt="封面图预览"
                   class="w-32 h-20 object-cover rounded-lg border border-gray-200 dark:border-white/10"
                 >

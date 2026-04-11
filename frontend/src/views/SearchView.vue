@@ -5,6 +5,7 @@ import { useBlogStore } from '@/stores'
 import BlogSidebar from '@/components/common/BlogSidebar.vue'
 import Pagination from '@/components/common/Pagination.vue'
 import { usePageSize } from '@/composables/usePageSize'
+import { getMediaUrl } from '@/utils/media'
 
 const route = useRoute()
 const router = useRouter()
@@ -199,7 +200,7 @@ const formatDate = (date: string) => {
               class="relative flex-shrink-0 overflow-hidden rounded-xl h-32 sm:w-40 sm:h-24"
             >
               <img
-                :src="article.cover_image"
+                :src="getMediaUrl(article.cover_image)"
                 :alt="article.title"
                 class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               >
