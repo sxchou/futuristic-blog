@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { marked } from 'marked'
 import hljs from 'highlight.js'
 import DOMPurify from 'dompurify'
@@ -30,6 +30,10 @@ const selectedFileIds = ref<Set<number>>(new Set())
 const highlightKeyword = ref('')
 const activeHeading = ref('')
 const showToc = ref(false)
+const coverImageHeight = ref<number>(0)
+const coverObjectPosition = ref<string>('center center')
+const articleHeaderRef = ref<HTMLElement | null>(null)
+const coverImageRef = ref<HTMLImageElement | null>(null)
 
 const tocItems = ref<Array<{ id: string; text: string; level: number }>>([])
 
@@ -193,9 +197,84 @@ const formatFileSize = (bytes: number): string => {
 
 const getFileIconInfo = (fileType: string, mimeType: string, filename: string): { color: string; bg: string; svg: string } => {
   const ext = filename.split('.').pop()?.toLowerCase() || ''
-  if (fileType === 'image') return { color: 'text-white', bg: 'bg-gradient-to-br from-green-400 to-green-600', svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32"><rect x="3" y="3" width="26" height="26" rx="3" fill="rgba(255,255,255,0.2)"/><circle cx="11" cy="11" r="3" fill="white"/><path d="M29 20l-7-7L7 29" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>` }
-  if (mimeType.includes('pdf') || ext === 'pdf') return { color: 'text-white', bg: 'bg-gradient-to-br from-red-500 to-red-700', svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill="rgba(255,255,255,0.3)"/><path d="M18 2v8h8" stroke="white" stroke-width="2" fill="none"/></svg>` }
-  return { color: 'text-white', bg: 'bg-gradient-to-br from-gray-400 to-gray-600', svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill="rgba(255,255,255,0.3)"/><path d="M18 2v8h8" stroke="white" stroke-width="2" fill="none"/></svg>` }
+  
+  if (fileType === 'image' || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico'].includes(ext)) {
+    return { 
+      color: 'text-white', 
+      bg: 'bg-gradient-to-br from-green-400 to-green-600', 
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32"><rect x="3" y="3" width="26" height="26" rx="3" fill="rgba(255,255,255,0.2)"/><circle cx="11" cy="11" r="3" fill="white"/><path d="M29 20l-7-7L7 29" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>` 
+    }
+  }
+  
+  if (mimeType.includes('pdf') || ext === 'pdf') {
+    return { 
+      color: 'text-white', 
+      bg: 'bg-gradient-to-br from-red-500 to-red-700', 
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill="rgba(255,255,255,0.3)"/><path d="M18 2v8h8" stroke="white" stroke-width="2" fill="none"/><text x="16" y="22" text-anchor="middle" fill="white" font-size="8" font-weight="bold" font-family="sans-serif">PDF</text></svg>` 
+    }
+  }
+  
+  if (['doc', 'docx'].includes(ext)) {
+    return { 
+      color: 'text-white', 
+      bg: 'bg-gradient-to-br from-blue-500 to-blue-700', 
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill="rgba(255,255,255,0.3)"/><path d="M18 2v8h8" stroke="white" stroke-width="2" fill="none"/><text x="16" y="22" text-anchor="middle" fill="white" font-size="12" font-weight="bold" font-family="sans-serif">W</text></svg>` 
+    }
+  }
+  
+  if (['xls', 'xlsx'].includes(ext)) {
+    return { 
+      color: 'text-white', 
+      bg: 'bg-gradient-to-br from-emerald-500 to-emerald-700', 
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill="rgba(255,255,255,0.3)"/><path d="M18 2v8h8" stroke="white" stroke-width="2" fill="none"/><text x="16" y="22" text-anchor="middle" fill="white" font-size="12" font-weight="bold" font-family="sans-serif">X</text></svg>` 
+    }
+  }
+  
+  if (['ppt', 'pptx'].includes(ext)) {
+    return { 
+      color: 'text-white', 
+      bg: 'bg-gradient-to-br from-orange-500 to-orange-700', 
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill="rgba(255,255,255,0.3)"/><path d="M18 2v8h8" stroke="white" stroke-width="2" fill="none"/><text x="16" y="22" text-anchor="middle" fill="white" font-size="12" font-weight="bold" font-family="sans-serif">P</text></svg>` 
+    }
+  }
+  
+  if (['txt', 'md', 'csv', 'json', 'xml', 'html', 'css', 'js', 'ts', 'py', 'java', 'c', 'cpp', 'h', 'hpp', 'sql', 'yaml', 'yml', 'ini', 'conf', 'log', 'sh', 'bat'].includes(ext)) {
+    return { 
+      color: 'text-white', 
+      bg: 'bg-gradient-to-br from-slate-500 to-slate-700', 
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill="rgba(255,255,255,0.3)"/><path d="M18 2v8h8" stroke="white" stroke-width="2" fill="none"/><path d="M9 16h14M9 21h10" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg>` 
+    }
+  }
+  
+  if (['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma'].includes(ext) || mimeType.startsWith('audio/')) {
+    return { 
+      color: 'text-white', 
+      bg: 'bg-gradient-to-br from-purple-500 to-purple-700', 
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32"><path d="M12 24V6l16-3v18" fill="rgba(255,255,255,0.5)"/><circle cx="8" cy="24" r="4" fill="white"/><circle cx="24" cy="21" r="4" fill="white"/></svg>` 
+    }
+  }
+  
+  if (['mp4', 'webm', 'avi', 'mov', 'wmv', 'flv', 'mkv'].includes(ext) || mimeType.startsWith('video/')) {
+    return { 
+      color: 'text-white', 
+      bg: 'bg-gradient-to-br from-pink-500 to-pink-700', 
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32"><rect x="2" y="5" width="28" height="22" rx="3" fill="rgba(255,255,255,0.3)"/><polygon points="13,10 22,16 13,22" fill="white"/></svg>` 
+    }
+  }
+  
+  if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) {
+    return { 
+      color: 'text-white', 
+      bg: 'bg-gradient-to-br from-amber-500 to-amber-700', 
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32"><path d="M28 10v18H4V10" fill="rgba(255,255,255,0.3)"/><path d="M30 4H2v6h28V4z" fill="rgba(255,255,255,0.5)"/><rect x="13" y="14" width="6" height="5" fill="white" rx="1"/><rect x="13" y="21" width="6" height="4" fill="rgba(255,255,255,0.5)" rx="1"/></svg>` 
+    }
+  }
+  
+  return { 
+    color: 'text-white', 
+    bg: 'bg-gradient-to-br from-gray-400 to-gray-600', 
+    svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32"><path d="M18 2H6a2 2 0 00-2 2v24a2 2 0 002 2h20a2 2 0 002-2V10l-8-8z" fill="rgba(255,255,255,0.3)"/><path d="M18 2v8h8" stroke="white" stroke-width="2" fill="none"/></svg>` 
+  }
 }
 
 const downloadFile = async (file: ArticleFile) => {
@@ -375,6 +454,7 @@ onMounted(async () => {
   document.addEventListener('click', handleCopyCode)
   document.addEventListener('click', handleFileLinkClick)
   window.addEventListener('scroll', updateActiveHeading, { passive: true })
+  window.addEventListener('resize', updateCoverHeight, { passive: true })
   
   const highlight = route.query.highlight as string
   if (highlight) highlightKeyword.value = highlight
@@ -426,6 +506,73 @@ onUnmounted(() => {
   document.removeEventListener('click', handleCopyCode)
   document.removeEventListener('click', handleFileLinkClick)
   window.removeEventListener('scroll', updateActiveHeading)
+  window.removeEventListener('resize', updateCoverHeight)
+})
+
+const updateCoverHeight = () => {
+  if (!articleHeaderRef.value) return
+  const headerEl = articleHeaderRef.value
+  const coverContainer = headerEl.querySelector('.cover-side-image')
+  if (coverContainer) {
+    const textContent = headerEl.querySelector('.cover-text-content')
+    if (textContent) {
+      const textRect = textContent.getBoundingClientRect()
+      coverImageHeight.value = Math.ceil(textRect.height)
+    }
+  } else {
+    const headerRect = headerEl.getBoundingClientRect()
+    const computedStyle = window.getComputedStyle(headerEl)
+    const marginBottom = parseFloat(computedStyle.marginBottom) || 0
+    coverImageHeight.value = Math.ceil(headerRect.height + marginBottom)
+  }
+}
+
+const computeSmartCrop = (img: HTMLImageElement) => {
+  const naturalWidth = img.naturalWidth
+  const naturalHeight = img.naturalHeight
+  if (!naturalWidth || !naturalHeight) return
+
+  const containerWidth = img.clientWidth
+  const containerHeight = img.clientHeight
+  if (!containerWidth || !containerHeight) return
+
+  const imgRatio = naturalWidth / naturalHeight
+  const containerRatio = containerWidth / containerHeight
+
+  if (imgRatio > containerRatio) {
+    const scale = containerHeight / naturalHeight
+    const displayedWidth = naturalWidth * scale
+    const overflow = displayedWidth - containerWidth
+    const percentOverflow = (overflow / displayedWidth) * 100
+    const centerOffset = Math.min(percentOverflow / 2, 35)
+    coverObjectPosition.value = `${50 + centerOffset}% center`
+  } else {
+    const scale = containerWidth / naturalWidth
+    const displayedHeight = naturalHeight * scale
+    const overflow = displayedHeight - containerHeight
+    const percentOverflow = (overflow / displayedHeight) * 100
+    const topOffset = Math.min(percentOverflow * 0.3, 20)
+    coverObjectPosition.value = `center ${topOffset}%`
+  }
+}
+
+watch(article, async (newVal) => {
+  if (newVal?.cover_image) {
+    await nextTick()
+    if (coverImageRef.value) {
+      if (coverImageRef.value.complete && coverImageRef.value.naturalWidth > 0) {
+        updateCoverHeight()
+        computeSmartCrop(coverImageRef.value)
+      } else {
+        coverImageRef.value.onload = () => {
+          updateCoverHeight()
+          computeSmartCrop(coverImageRef.value!)
+        }
+      }
+    } else {
+      updateCoverHeight()
+    }
+  }
 })
 </script>
 
@@ -443,121 +590,251 @@ onUnmounted(() => {
       class="flex flex-col lg:flex-row gap-8"
     >
       <div class="flex-1 min-w-0 max-w-none lg:max-w-[calc(100%-20rem)]">
-        <header class="mb-8">
+        <header
+          ref="articleHeaderRef"
+          class="mb-8"
+        >
           <div
             v-if="article.cover_image"
-            class="relative rounded-2xl overflow-hidden mb-8"
+            class="relative rounded-2xl overflow-hidden mb-8 md:hidden"
           >
             <img
+              ref="coverImageRef"
               :src="article.cover_image"
               :alt="article.title"
-              class="w-full h-48 sm:h-64 md:h-80 object-cover"
+              class="w-full h-48 sm:h-64 object-cover"
               loading="eager"
               decoding="async"
             >
             <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
           </div>
 
-          <div class="flex items-center gap-2 mb-4">
-            <span
-              v-if="article.is_featured"
-              class="px-2.5 py-0.5 bg-gradient-to-r from-primary to-accent text-white text-xs font-medium rounded-full"
-            >精选</span>
-            <span
-              v-if="article.is_pinned"
-              class="px-2.5 py-0.5 bg-amber-500/90 text-white text-xs font-medium rounded-full"
-            >置顶</span>
-          </div>
-
-          <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
-            {{ article.title }}
-          </h1>
-
-          <div class="flex flex-wrap items-center gap-3 text-sm text-gray-400 mb-4">
-            <span class="flex items-center gap-1.5">
-              <svg
-                class="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              ><path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-              /></svg>
-              {{ formatDate(article.created_at) }}
-            </span>
-            <span
-              v-if="article.reading_time"
-              class="flex items-center gap-1.5"
-            >
-              <svg
-                class="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              ><path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-              /></svg>
-              {{ article.reading_time }} 分钟
-            </span>
-            <span class="flex items-center gap-1.5">
-              <svg
-                class="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              ><path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-              /><path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-              /></svg>
-              {{ article.view_count }}
-            </span>
-          </div>
-
-          <div class="flex flex-wrap items-center gap-2 mb-4">
-            <router-link
-              v-if="article.category"
-              :to="`/categories/${article.category.slug}`"
-              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors hover:opacity-80"
-              :style="{ backgroundColor: article.category.color + '15', color: article.category.color, borderColor: article.category.color + '30' }"
-            >
-              <span
-                class="w-1.5 h-1.5 rounded-full"
-                :style="{ backgroundColor: article.category.color }"
-              />
-              {{ article.category.name }}
-            </router-link>
-            <router-link
-              v-for="tag in article.tags"
-              :key="tag.id"
-              :to="`/tags/${tag.slug}`"
-              class="tag-badge"
-              :style="{ color: tag.color, backgroundColor: tag.color + '10', borderColor: tag.color + '30' }"
-            >
-              #{{ tag.name }}
-            </router-link>
-          </div>
-
           <div
-            v-if="article.summary"
-            class="p-4 bg-gray-50 dark:bg-dark-200/50 rounded-xl border border-gray-100 dark:border-white/5 mb-6"
+            v-if="article.cover_image"
+            class="hidden md:flex gap-6 mb-8 items-stretch"
           >
-            <p class="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
-              {{ article.summary }}
-            </p>
+            <div class="flex-1 min-w-0 cover-text-content">
+              <div class="flex items-center gap-2 mb-4">
+                <span
+                  v-if="article.is_featured"
+                  class="px-2.5 py-0.5 bg-gradient-to-r from-primary to-accent text-white text-xs font-medium rounded-full"
+                >精选</span>
+                <span
+                  v-if="article.is_pinned"
+                  class="px-2.5 py-0.5 bg-amber-500/90 text-white text-xs font-medium rounded-full"
+                >置顶</span>
+              </div>
+
+              <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
+                {{ article.title }}
+              </h1>
+
+              <div class="flex flex-wrap items-center gap-3 text-sm text-gray-400 mb-4">
+                <span class="flex items-center gap-1.5">
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  ><path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  /></svg>
+                  {{ formatDate(article.created_at) }}
+                </span>
+                <span
+                  v-if="article.reading_time"
+                  class="flex items-center gap-1.5"
+                >
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  ><path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  /></svg>
+                  {{ article.reading_time }} 分钟
+                </span>
+                <span class="flex items-center gap-1.5">
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  ><path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  /><path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                  /></svg>
+                  {{ article.view_count }}
+                </span>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-2 mb-4">
+                <router-link
+                  v-if="article.category"
+                  :to="`/categories/${article.category.slug}`"
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors hover:opacity-80"
+                  :style="{ backgroundColor: article.category.color + '15', color: article.category.color, borderColor: article.category.color + '30' }"
+                >
+                  <span
+                    class="w-1.5 h-1.5 rounded-full"
+                    :style="{ backgroundColor: article.category.color }"
+                  />
+                  {{ article.category.name }}
+                </router-link>
+                <router-link
+                  v-for="tag in article.tags"
+                  :key="tag.id"
+                  :to="`/tags/${tag.slug}`"
+                  class="tag-badge"
+                  :style="{ color: tag.color, backgroundColor: tag.color + '10', borderColor: tag.color + '30' }"
+                >
+                  #{{ tag.name }}
+                </router-link>
+              </div>
+
+              <div
+                v-if="article.summary"
+                class="p-4 bg-gray-50 dark:bg-dark-200/50 rounded-xl border border-gray-100 dark:border-white/5"
+              >
+                <p class="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
+                  {{ article.summary }}
+                </p>
+              </div>
+            </div>
+
+            <div
+              class="w-2/5 flex-shrink-0 relative rounded-2xl overflow-hidden cover-side-image"
+              :style="coverImageHeight > 0 ? { height: coverImageHeight + 'px' } : {}"
+            >
+              <img
+                ref="coverImageRef"
+                :src="article.cover_image"
+                :alt="article.title"
+                class="w-full h-full object-cover"
+                :style="{ objectPosition: coverObjectPosition }"
+                loading="eager"
+                decoding="async"
+              >
+              <div class="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-transparent" />
+            </div>
           </div>
+
+          <template v-if="!article.cover_image">
+            <div class="flex items-center gap-2 mb-4">
+              <span
+                v-if="article.is_featured"
+                class="px-2.5 py-0.5 bg-gradient-to-r from-primary to-accent text-white text-xs font-medium rounded-full"
+              >精选</span>
+              <span
+                v-if="article.is_pinned"
+                class="px-2.5 py-0.5 bg-amber-500/90 text-white text-xs font-medium rounded-full"
+              >置顶</span>
+            </div>
+
+            <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
+              {{ article.title }}
+            </h1>
+
+            <div class="flex flex-wrap items-center gap-3 text-sm text-gray-400 mb-4">
+              <span class="flex items-center gap-1.5">
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                ><path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                /></svg>
+                {{ formatDate(article.created_at) }}
+              </span>
+              <span
+                v-if="article.reading_time"
+                class="flex items-center gap-1.5"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                ><path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                /></svg>
+                {{ article.reading_time }} 分钟
+              </span>
+              <span class="flex items-center gap-1.5">
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                ><path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                /><path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                /></svg>
+                {{ article.view_count }}
+              </span>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 mb-4">
+              <router-link
+                v-if="article.category"
+                :to="`/categories/${article.category.slug}`"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors hover:opacity-80"
+                :style="{ backgroundColor: article.category.color + '15', color: article.category.color, borderColor: article.category.color + '30' }"
+              >
+                <span
+                  class="w-1.5 h-1.5 rounded-full"
+                  :style="{ backgroundColor: article.category.color }"
+                />
+                {{ article.category.name }}
+              </router-link>
+              <router-link
+                v-for="tag in article.tags"
+                :key="tag.id"
+                :to="`/tags/${tag.slug}`"
+                class="tag-badge"
+                :style="{ color: tag.color, backgroundColor: tag.color + '10', borderColor: tag.color + '30' }"
+              >
+                #{{ tag.name }}
+              </router-link>
+            </div>
+
+            <div
+              v-if="article.summary"
+              class="p-4 bg-gray-50 dark:bg-dark-200/50 rounded-xl border border-gray-100 dark:border-white/5 mb-6"
+            >
+              <p class="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
+                {{ article.summary }}
+              </p>
+            </div>
+          </template>
         </header>
 
         <div
@@ -758,15 +1035,43 @@ onUnmounted(() => {
               ><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
             </button>
             <button
-              class="p-1.5 rounded-lg bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 text-gray-400 hover:text-red-500 hover:border-red-200 transition-colors"
-              title="微博"
+              class="p-1.5 rounded-lg bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 text-gray-400 hover:text-[#E6162D] hover:border-[#E6162D]/30 hover:bg-[#E6162D]/5 dark:hover:bg-[#E6162D]/10 transition-all duration-200"
+              title="分享到微博"
               @click="shareArticle('weibo')"
             >
               <svg
                 class="w-4 h-4"
-                fill="currentColor"
                 viewBox="0 0 24 24"
-              ><path d="M10.098 20.323c-3.977.391-7.414-1.406-7.672-4.02-.259-2.609 2.759-5.047 6.74-5.441 3.979-.394 7.413 1.404 7.671 4.018.259 2.6-2.759 5.049-6.737 5.439l-.002.004z" /></svg>
+                fill="currentColor"
+              >
+                <ellipse
+                  cx="10"
+                  cy="14"
+                  rx="7"
+                  ry="5"
+                  transform="rotate(-15 10 14)"
+                />
+                <circle
+                  cx="9"
+                  cy="13.5"
+                  r="2"
+                  fill="white"
+                />
+                <path
+                  d="M16 5c2.5 0 4.5 2 4.5 4.5"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  fill="none"
+                />
+                <path
+                  d="M16 2c3.5 0 6 2.5 6 6"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  fill="none"
+                />
+              </svg>
             </button>
           </div>
           <router-link
@@ -893,6 +1198,14 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+.cover-side-image {
+  transition: height 0.3s ease;
+}
+
+.cover-side-image img {
+  transition: object-position 0.3s ease;
+}
+
 .article-content :deep(h1),
 .article-content :deep(h2),
 .article-content :deep(h3),

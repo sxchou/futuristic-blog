@@ -214,19 +214,18 @@ const handlePageChange = (page: number) => {
               :to="`/article/${currentFeatured?.slug}`"
               class="block group"
             >
-              <div class="relative">
-                <Transition
-                  name="carousel-fade"
-                  mode="out-in"
+              <Transition
+                name="carousel-fade"
+                mode="out-in"
+              >
+                <div
+                  :key="currentSlide"
+                  class="relative"
                 >
                   <div
-                    :key="currentSlide"
-                    class="relative"
+                    v-if="currentFeatured?.cover_image"
+                    class="relative h-52 overflow-hidden"
                   >
-                    <div
-                      v-if="currentFeatured?.cover_image"
-                      class="relative h-32 sm:h-40 md:h-48 overflow-hidden"
-                    >
                       <img
                         :src="currentFeatured.cover_image"
                         :alt="currentFeatured.title"
@@ -239,43 +238,37 @@ const handlePageChange = (page: number) => {
                     </div>
                     <div
                       v-else
-                      class="relative h-28 sm:h-36 md:h-44 overflow-hidden"
+                      class="relative h-48 overflow-hidden"
                     >
                       <div class="absolute inset-0 bg-gradient-to-br from-primary/10 via-accent/5 to-primary/10 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-500" />
-                      <div
-                        class="absolute inset-0 opacity-30 dark:opacity-20 transition-opacity duration-500"
-                        style="background-image: radial-gradient(circle at 15% 50%, rgba(0,212,255,0.4), transparent 45%), radial-gradient(circle at 85% 30%, rgba(124,58,237,0.4), transparent 45%), radial-gradient(circle at 50% 80%, rgba(0,212,255,0.2), transparent 40%);"
-                      />
                       <div class="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/20 dark:from-black/50 dark:via-black/30 dark:to-black/40 transition-colors duration-500" />
                       <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent dark:from-black/60 dark:to-transparent transition-colors duration-500" />
-                      <div class="absolute top-5 right-6 w-16 h-16 rounded-full bg-primary/5 dark:bg-primary/10 blur-2xl transition-colors duration-500" />
-                      <div class="absolute bottom-6 left-8 w-14 h-14 rounded-full bg-accent/5 dark:bg-accent/10 blur-xl transition-colors duration-500" />
                     </div>
                     
-                    <div class="absolute bottom-0 left-0 right-0 p-2.5 sm:p-3 md:p-4">
-                      <div class="flex items-center gap-2 mb-1">
-                        <span class="px-2 py-0.5 bg-gradient-to-r from-primary to-accent text-white text-[10px] sm:text-xs font-medium rounded-full shadow-lg">
+                    <div class="absolute bottom-0 left-0 right-0 p-4">
+                      <div class="flex items-center gap-1 mb-2">
+                        <span class="px-1.5 py-0.5 bg-gradient-to-r from-primary to-accent text-white text-xs font-medium rounded-full shadow-lg">
                           精选推荐
                         </span>
                         <span
                           v-if="currentFeatured?.category"
-                          class="px-2 py-0.5 bg-white/20 dark:bg-white/25 backdrop-blur-sm text-white text-[10px] sm:text-xs rounded-full shadow-sm"
+                          class="px-1.5 py-0.5 bg-white/20 dark:bg-white/25 backdrop-blur-sm text-white text-xs rounded-full shadow-sm"
                         >
                           {{ currentFeatured.category.name }}
                         </span>
                       </div>
-                      <h2 class="text-sm sm:text-base md:text-lg font-bold text-white mb-0.5 group-hover:text-primary transition-colors line-clamp-2 drop-shadow-lg">
+                      <h2 class="text-lg font-bold text-white group-hover:text-primary transition-colors overflow-hidden text-ellipsis whitespace-nowrap drop-shadow-lg mb-1">
                         {{ currentFeatured?.title }}
                       </h2>
                       <p
                         v-if="currentFeatured?.summary"
-                        class="text-white/75 dark:text-white/80 text-[11px] sm:text-sm line-clamp-1 max-w-2xl mb-1 drop-shadow-md hidden sm:block"
+                        class="text-white/70 dark:text-white/75 text-sm truncate max-w-xl drop-shadow-md mb-2"
                       >
                         {{ currentFeatured.summary }}
                       </p>
-                      <div class="flex items-center gap-3 text-white/50 dark:text-white/60 text-[11px] sm:text-xs">
+                      <div class="flex items-center gap-2 text-white/50 dark:text-white/60 text-xs">
                         <span class="drop-shadow-sm">{{ formatDate(currentFeatured?.created_at) }}</span>
-                        <span class="flex items-center gap-1 drop-shadow-sm">
+                        <span class="flex items-center gap-0.5 drop-shadow-sm">
                           <svg
                             class="w-3 h-3"
                             fill="none"
@@ -301,29 +294,28 @@ const handlePageChange = (page: number) => {
                     </div>
                   </div>
                 </Transition>
-              </div>
             </router-link>
             
             <div
               v-if="featuredArticles.length > 1"
-              class="flex items-center justify-between px-3 sm:px-4 md:px-5 py-2 border-t border-gray-100 dark:border-white/5"
+              class="flex items-center justify-between px-2 py-1 border-t border-gray-100 dark:border-white/5"
             >
-              <div class="flex gap-1.5">
+              <div class="flex gap-1">
                 <button
                   v-for="(_, index) in featuredArticles"
                   :key="index"
-                  class="h-1.5 rounded-full transition-all duration-300"
-                  :class="currentSlide === index ? 'bg-primary w-5' : 'bg-gray-300 dark:bg-gray-600 w-1.5 hover:bg-primary/50'"
+                  class="h-1 rounded-full transition-all duration-300"
+                  :class="currentSlide === index ? 'bg-primary w-3' : 'bg-gray-300 dark:bg-gray-600 w-1 hover:bg-primary/50'"
                   @click="currentSlide = index"
                 />
               </div>
-              <div class="flex gap-1">
+              <div class="flex gap-0.5">
                 <button
-                  class="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-dark-300 text-gray-400 hover:text-primary transition-colors"
+                  class="p-0.5 rounded hover:bg-gray-100 dark:hover:bg-dark-300 text-gray-400 hover:text-primary transition-colors"
                   @click="prevSlide"
                 >
                   <svg
-                    class="w-3.5 h-3.5"
+                    class="w-3 h-3"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -335,11 +327,11 @@ const handlePageChange = (page: number) => {
                   /></svg>
                 </button>
                 <button
-                  class="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-dark-300 text-gray-400 hover:text-primary transition-colors"
+                  class="p-0.5 rounded hover:bg-gray-100 dark:hover:bg-dark-300 text-gray-400 hover:text-primary transition-colors"
                   @click="nextSlide"
                 >
                   <svg
-                    class="w-3.5 h-3.5"
+                    class="w-3 h-3"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -398,9 +390,9 @@ const handlePageChange = (page: number) => {
             >
               <div
                 v-if="article.cover_image"
-                class="sm:w-48 md:w-56 flex-shrink-0"
+                class="sm:w-44 md:w-48 flex-shrink-0 self-stretch"
               >
-                <div class="relative overflow-hidden rounded-xl aspect-video sm:aspect-square sm:h-full">
+                <div class="relative overflow-hidden rounded-xl w-full h-full">
                   <img
                     :src="article.cover_image"
                     :alt="article.title"

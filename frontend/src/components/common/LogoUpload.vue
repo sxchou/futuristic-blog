@@ -297,6 +297,7 @@ const handleReset = async () => {
       :aspect-ratio="1"
       :output-width="64"
       :output-height="64"
+      title="裁剪Logo"
       @confirm="handleCropConfirm"
     />
   </div>

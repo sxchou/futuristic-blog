@@ -160,7 +160,7 @@ class ArticleBase(BaseModel):
     slug: str = Field(..., min_length=1, max_length=200)
     summary: Optional[str] = None
     content: str
-    cover_image: Optional[str] = None
+    cover_image: str = Field(..., description="封面图为必填项")
     is_published: bool = False
     is_featured: bool = False
     is_pinned: bool = False
@@ -198,6 +198,7 @@ class ArticleResponse(ArticleBase):
     like_count: int
     reading_time: int
     author_id: Optional[int] = None
+    cover_image: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
     published_at: Optional[str] = None
@@ -536,6 +537,22 @@ class ArticleFileResponse(ArticleFileBase):
     @classmethod
     def serialize_created_at(cls, v):
         return serialize_datetime(v)
+    
+    @field_validator('file_path', mode='before')
+    @classmethod
+    def normalize_file_path(cls, v):
+        if not v:
+            return v
+        if v.startswith('http'):
+            return v
+        if v.startswith('/uploads/'):
+            return v
+        import os
+        if os.path.isabs(v):
+            filename = os.path.basename(v)
+            parent_dir = os.path.basename(os.path.dirname(v))
+            return f'/uploads/{parent_dir}/{filename}'
+        return v
     
     class Config:
         from_attributes = True

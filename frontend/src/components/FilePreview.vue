@@ -13,6 +13,7 @@ const emit = defineEmits<{
 
 const loading = ref(true)
 const error = ref('')
+const errorType = ref<'timeout' | 'fetch_failed' | 'unsupported' | 'unknown' | ''>('')
 const textContent = ref('')
 const imageLoaded = ref(false)
 const archiveContent = ref<ArchiveContent | null>(null)
@@ -21,6 +22,13 @@ const expandedDirs = ref<Set<string>>(new Set())
 const searchQuery = ref('')
 const sortField = ref<'name' | 'size' | 'type'>('name')
 const sortDirection = ref<'asc' | 'desc'>('asc')
+
+const OFFICE_PREVIEW_TIMEOUT = 30
+const officePreviewTimeout = ref(false)
+const officePreviewLoading = ref(true)
+const officeLoadTimer = ref<ReturnType<typeof setTimeout> | null>(null)
+const officeLoadStartTime = ref(0)
+const officeLoadProgress = ref(0)
 
 const imageScale = ref(1)
 const imageTranslateX = ref(0)
@@ -90,11 +98,17 @@ const directUrl = computed(() => {
 })
 
 const fileUrl = computed(() => {
-  return directUrl.value || ''
+  if (directUrl.value) {
+    return directUrl.value
+  }
+  return `/api/v1/files/${props.file.id}/content`
 })
 
 const downloadUrl = computed(() => {
-  return directUrl.value || ''
+  if (directUrl.value) {
+    return directUrl.value
+  }
+  return `/api/v1/files/${props.file.id}/download`
 })
 
 const isLocalhost = computed(() => {
@@ -519,13 +533,57 @@ const handleMouseUp = () => {
   isDragging.value = false
 }
 
+const startOfficePreviewTimer = () => {
+  if (officeLoadTimer.value) {
+    clearTimeout(officeLoadTimer.value)
+  }
+  
+  officePreviewLoading.value = true
+  officePreviewTimeout.value = false
+  officeLoadStartTime.value = Date.now()
+  officeLoadProgress.value = 0
+  
+  const updateProgress = () => {
+    const elapsed = (Date.now() - officeLoadStartTime.value) / 1000
+    officeLoadProgress.value = Math.min(95, (elapsed / OFFICE_PREVIEW_TIMEOUT) * 95)
+    
+    if (elapsed < OFFICE_PREVIEW_TIMEOUT && officePreviewLoading.value) {
+      officeLoadTimer.value = setTimeout(updateProgress, 100)
+    }
+  }
+  
+  updateProgress()
+  
+  officeLoadTimer.value = setTimeout(() => {
+    if (officePreviewLoading.value) {
+      officePreviewTimeout.value = true
+      officePreviewLoading.value = false
+      loading.value = false
+      error.value = `预览加载超时（超过 ${OFFICE_PREVIEW_TIMEOUT} 秒）`
+      errorType.value = 'timeout'
+    }
+  }, OFFICE_PREVIEW_TIMEOUT * 1000)
+}
+
+const stopOfficePreviewTimer = () => {
+  if (officeLoadTimer.value) {
+    clearTimeout(officeLoadTimer.value)
+    officeLoadTimer.value = null
+  }
+  officePreviewLoading.value = false
+  officeLoadProgress.value = 100
+}
+
 const handleIframeLoad = () => {
+  stopOfficePreviewTimer()
   loading.value = false
 }
 
 const handleIframeError = () => {
+  stopOfficePreviewTimer()
   loading.value = false
-  error.value = '预览加载失败'
+  error.value = '预览加载失败，文件可能无法访问'
+  errorType.value = 'fetch_failed'
 }
 
 const handleDownload = () => {
@@ -541,6 +599,7 @@ const handleKeydown = (e: KeyboardEvent) => {
 watch(() => props.file, () => {
   loading.value = true
   error.value = ''
+  errorType.value = ''
   textContent.value = ''
   imageLoaded.value = false
   archiveContent.value = null
@@ -551,6 +610,11 @@ watch(() => props.file, () => {
   imageTranslateY.value = 0
   isDragging.value = false
   
+  stopOfficePreviewTimer()
+  officePreviewTimeout.value = false
+  officePreviewLoading.value = true
+  officeLoadProgress.value = 0
+  
   if (previewType.value === 'text') {
     fetchTextContent()
   } else if (previewType.value === 'archive') {
@@ -558,8 +622,15 @@ watch(() => props.file, () => {
     fetchArchiveContent()
   } else if (previewType.value === 'audio' || previewType.value === 'video' || previewType.value === 'unsupported') {
     loading.value = false
-  } else if (previewType.value === 'office' && isLocalhost.value) {
-    loading.value = false
+  } else if (previewType.value === 'office') {
+    if (isLocalhost.value) {
+      loading.value = false
+      officePreviewLoading.value = false
+    } else {
+      startOfficePreviewTimer()
+    }
+  } else if (previewType.value === 'image' || previewType.value === 'pdf') {
+    loading.value = true
   }
 }, { immediate: true })
 
@@ -571,6 +642,7 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown)
   document.body.style.overflow = ''
+  stopOfficePreviewTimer()
 })
 </script>
 
@@ -650,19 +722,78 @@ onUnmounted(() => {
           </div>
 
           <div
-            v-if="error && !loading"
+            v-if="error && !loading && !officePreviewTimeout"
             class="flex items-center justify-center h-full"
           >
-            <div class="text-center">
-              <p class="text-red-400 text-lg mb-4">
+            <div class="text-center max-w-md p-8">
+              <div 
+                class="w-16 h-16 mx-auto mb-4 flex items-center justify-center rounded-full"
+                :class="{
+                  'bg-red-100 dark:bg-red-900/30': errorType === 'fetch_failed' || errorType === 'unknown',
+                  'bg-amber-100 dark:bg-amber-900/30': errorType === 'timeout',
+                  'bg-gray-100 dark:bg-gray-800': errorType === 'unsupported' || !errorType
+                }"
+              >
+                <svg 
+                  class="w-8 h-8"
+                  :class="{
+                    'text-red-500': errorType === 'fetch_failed' || errorType === 'unknown',
+                    'text-amber-500': errorType === 'timeout',
+                    'text-gray-500': errorType === 'unsupported' || !errorType
+                  }"
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path 
+                    v-if="errorType === 'fetch_failed'"
+                    stroke-linecap="round" 
+                    stroke-linejoin="round" 
+                    stroke-width="2" 
+                    d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" 
+                  />
+                  <path 
+                    v-else-if="errorType === 'timeout'"
+                    stroke-linecap="round" 
+                    stroke-linejoin="round" 
+                    stroke-width="2" 
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" 
+                  />
+                  <path 
+                    v-else
+                    stroke-linecap="round" 
+                    stroke-linejoin="round" 
+                    stroke-width="2" 
+                    d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
+                  />
+                </svg>
+              </div>
+              <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                {{ 
+                  errorType === 'fetch_failed' ? '文件获取失败' :
+                  errorType === 'timeout' ? '加载超时' :
+                  errorType === 'unsupported' ? '不支持预览' :
+                  '预览失败'
+                }}
+              </h4>
+              <p class="text-gray-500 dark:text-gray-400 mb-4">
                 {{ error }}
               </p>
-              <button
-                class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
-                @click="handleDownload"
-              >
-                直接下载
-              </button>
+              <div class="flex gap-3 justify-center">
+                <button
+                  v-if="errorType === 'timeout' || errorType === 'unknown'"
+                  class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  @click="() => { error = ''; errorType = ''; loading = true; startOfficePreviewTimer() }"
+                >
+                  重试
+                </button>
+                <button
+                  class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
+                  @click="handleDownload"
+                >
+                  直接下载
+                </button>
+              </div>
             </div>
           </div>
 
@@ -772,17 +903,84 @@ onUnmounted(() => {
 
           <div
             v-else-if="previewType === 'office'"
-            class="h-full"
+            class="h-full relative"
           >
+            <div
+              v-if="officePreviewLoading && !isLocalhost"
+              class="absolute inset-0 flex items-center justify-center bg-white dark:bg-gray-900 z-10"
+            >
+              <div class="flex flex-col items-center gap-4 max-w-sm">
+                <div class="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+                <div class="text-center">
+                  <p class="text-gray-700 dark:text-gray-300 font-medium mb-2">
+                    正在加载 {{ officeFileType }} 预览...
+                  </p>
+                  <div class="w-48 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div 
+                      class="h-full bg-primary transition-all duration-300 rounded-full"
+                      :style="{ width: `${officeLoadProgress}%` }"
+                    />
+                  </div>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    {{ Math.round(officeLoadProgress) }}%
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div
+              v-if="officePreviewTimeout && !isLocalhost"
+              class="absolute inset-0 flex items-center justify-center bg-white dark:bg-gray-900 z-20"
+            >
+              <div class="text-center max-w-md p-8">
+                <div class="w-16 h-16 mx-auto mb-4 flex items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
+                  <svg
+                    class="w-8 h-8 text-amber-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                </div>
+                <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  预览加载超时
+                </h4>
+                <p class="text-gray-500 dark:text-gray-400 mb-4">
+                  预览加载超过 {{ OFFICE_PREVIEW_TIMEOUT }} 秒，可能是网络连接较慢或文件较大。
+                </p>
+                <div class="flex gap-3 justify-center">
+                  <button
+                    class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                    @click="startOfficePreviewTimer"
+                  >
+                    重试
+                  </button>
+                  <button
+                    class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
+                    @click="handleDownload"
+                  >
+                    直接下载
+                  </button>
+                </div>
+              </div>
+            </div>
+            
             <iframe
-              v-if="!isLocalhost"
+              v-if="!isLocalhost && !officePreviewTimeout"
               :src="officePreviewUrl"
               class="w-full h-full border-0"
+              :class="{ 'opacity-0': officePreviewLoading }"
               @load="handleIframeLoad"
               @error="handleIframeError"
             />
             <div
-              v-else
+              v-else-if="isLocalhost"
               class="flex items-center justify-center h-full p-8"
             >
               <div class="text-center max-w-md">

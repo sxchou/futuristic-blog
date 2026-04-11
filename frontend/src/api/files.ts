@@ -172,7 +172,8 @@ export const fileApi = {
   async uploadImage(
     file: File, 
     onProgress?: (event: UploadProgressEvent) => void,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    articleId?: number
   ): Promise<FileUploadResponse> {
     if (file.size > MAX_FILE_SIZE) {
       throw {
@@ -184,6 +185,9 @@ export const fileApi = {
     
     const formData = new FormData()
     formData.append('file', file)
+    if (articleId) {
+      formData.append('article_id', articleId.toString())
+    }
     
     const response = await apiClient.post<FileUploadResponse>('/files/upload-image', formData, {
       headers: {

@@ -21,6 +21,27 @@ from functools import lru_cache
 router = APIRouter(prefix="/articles", tags=["Articles"])
 
 
+def link_files_to_article(db: Session, article_id: int, content: str, cover_image: Optional[str] = None):
+    """关联文章内容中的图片和封面图到文章"""
+    image_urls = set()
+    
+    if content:
+        markdown_pattern = r'!\[.*?\]\((/uploads/images/[^)]+)\)'
+        matches = re.findall(markdown_pattern, content)
+        image_urls.update(matches)
+    
+    if cover_image and cover_image.startswith('/uploads/'):
+        image_urls.add(cover_image)
+    
+    if image_urls:
+        for url in image_urls:
+            db.query(ArticleFile).filter(
+                ArticleFile.file_path == url,
+                ArticleFile.article_id == None
+            ).update({"article_id": article_id})
+        db.commit()
+
+
 @lru_cache(maxsize=1000)
 def get_pinyin_variants(text: str) -> tuple:
     if not text:
@@ -451,6 +472,8 @@ async def create_article(
     db.commit()
     db.refresh(new_article)
     
+    link_files_to_article(db, new_article.id, article_data.content, article_data.cover_image)
+    
     LogService.log_operation(
         db=db,
         user_id=current_user.id,
@@ -493,6 +516,9 @@ async def update_article(
     if "content" in update_data:
         update_data["reading_time"] = calculate_reading_time(update_data["content"])
     
+    if article_data.cover_image is None and "cover_image" not in update_data:
+        update_data["cover_image"] = None
+    
     for field, value in update_data.items():
         setattr(article, field, value)
     
@@ -502,6 +528,8 @@ async def update_article(
     
     db.commit()
     db.refresh(article)
+    
+    link_files_to_article(db, article.id, article.content, article.cover_image)
     
     LogService.log_operation(
         db=db,

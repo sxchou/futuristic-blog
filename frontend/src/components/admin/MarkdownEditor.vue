@@ -345,9 +345,36 @@ onUnmounted(() => {
   if (autoSaveTimer) clearTimeout(autoSaveTimer)
 })
 
+const getCursorPosition = () => {
+  if (!editorRef.value) return null
+  return {
+    start: editorRef.value.selectionStart,
+    end: editorRef.value.selectionEnd
+  }
+}
+
+const insertAtCursor = (text: string, cursorOffset?: number) => {
+  if (!editorRef.value) return
+  
+  const textarea = editorRef.value
+  const start = textarea.selectionStart
+  const end = textarea.selectionEnd
+  
+  const newText = props.modelValue.substring(0, start) + text + props.modelValue.substring(end)
+  emit('update:modelValue', newText)
+  
+  nextTick(() => {
+    textarea.focus({ preventScroll: true })
+    const newPos = cursorOffset !== undefined ? cursorOffset : start + text.length
+    textarea.selectionStart = textarea.selectionEnd = newPos
+  })
+}
+
 defineExpose({
   markAsSaved,
-  clearDraft
+  clearDraft,
+  getCursorPosition,
+  insertAtCursor
 })
 </script>
 

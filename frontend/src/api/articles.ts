@@ -38,7 +38,11 @@ export const articleApi = {
   },
 
   updateArticle: async (id: number, data: Partial<Article>): Promise<Article> => {
-    const response = await apiClient.put(`/articles/${id}`, data)
+    const cleanData = { ...data } as Record<string, unknown>
+    if ('cover_image' in cleanData && cleanData.cover_image === undefined) {
+      cleanData.cover_image = null
+    }
+    const response = await apiClient.put(`/articles/${id}`, cleanData)
     return response.data
   },
 

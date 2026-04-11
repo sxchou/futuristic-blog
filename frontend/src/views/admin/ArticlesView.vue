@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, onUnmounted } from 'vue'
+import { ref, onMounted, watch, onUnmounted, nextTick } from 'vue'
 import { useBlogStore, useDialogStore, useAuthStore } from '@/stores'
 import { articleApi, fileApi, categoryApi, tagApi, utilsApi, parseUploadError } from '@/api'
 import type { ArticleListItem, Article, ArticleFile } from '@/types'
@@ -7,6 +7,7 @@ import { useAdminCheck } from '@/composables/useAdminCheck'
 import { formatDateTime } from '@/utils/date'
 import MarkdownEditor from '@/components/admin/MarkdownEditor.vue'
 import FilePreview from '@/components/FilePreview.vue'
+import ImageCropper from '@/components/common/ImageCropper.vue'
 
 const blogStore = useBlogStore()
 const dialog = useDialogStore()
@@ -33,6 +34,21 @@ const draggedFileIndex = ref<number | null>(null)
 const dragOverIndex = ref<number | null>(null)
 const selectedFileIds = ref<Set<number>>(new Set())
 const isBatchDeleting = ref(false)
+const showCoverSelector = ref(false)
+const showCoverCropper = ref(false)
+const coverCropperImageSrc = ref('')
+const pendingCoverFile = ref<File | null>(null)
+const showImageCropper = ref(false)
+const imageCropperSrc = ref('')
+const pendingImageFile = ref<File | null>(null)
+const pendingImageCursorPosition = ref<{ start: number; end: number } | null>(null)
+
+interface ValidationError {
+  field: string
+  message: string
+}
+
+const validationErrors = ref<ValidationError[]>([])
 
 interface UploadFileInfo {
   name: string
@@ -76,6 +92,7 @@ const form = ref({
   slug: '',
   summary: '',
   content: '',
+  cover_image: undefined as string | undefined,
   category_id: undefined as number | undefined,
   tag_ids: [] as number[],
   is_published: false,
@@ -107,6 +124,7 @@ const loadFormDraft = () => {
         slug: draft.slug || '',
         summary: draft.summary || '',
         content: draft.content || '',
+        cover_image: draft.cover_image || undefined,
         category_id: draft.category_id || undefined,
         tag_ids: draft.tag_ids || [],
         is_published: draft.is_published || false,
@@ -164,6 +182,7 @@ const handleEdit = async (article: ArticleListItem) => {
   if (!await requireAdmin('编辑文章')) return
   
   editingArticle.value = article
+  validationErrors.value = []
   
   try {
     const fullArticle = await articleApi.getAdminArticle(article.slug)
@@ -172,6 +191,7 @@ const handleEdit = async (article: ArticleListItem) => {
       slug: fullArticle.slug,
       summary: fullArticle.summary || '',
       content: fullArticle.content || '',
+      cover_image: fullArticle.cover_image || undefined,
       category_id: fullArticle.category?.id || undefined,
       tag_ids: fullArticle.tags.map(t => t.id),
       is_published: fullArticle.is_published,
@@ -206,18 +226,75 @@ const handleDelete = async (article: ArticleListItem) => {
   }
 }
 
-const handleSubmit = async () => {
-  if (!await requireAdmin('保存文章')) return
+const clearValidationError = (field: string) => {
+  validationErrors.value = validationErrors.value.filter(e => e.field !== field)
+}
+
+const scrollToField = async (fieldId: string) => {
+  await nextTick()
+  const element = document.getElementById(fieldId)
+  if (element) {
+    element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    element.focus({ preventScroll: true })
+  }
+}
+
+const validateForm = async (): Promise<boolean> => {
+  validationErrors.value = []
+  
+  if (!form.value.title.trim()) {
+    validationErrors.value.push({ field: 'title', message: '请输入文章标题' })
+    await scrollToField('article-title')
+    return false
+  }
+  
+  if (!form.value.slug.trim()) {
+    validationErrors.value.push({ field: 'slug', message: '请输入文章 Slug' })
+    await scrollToField('article-slug')
+    return false
+  }
+  
+  if (!form.value.cover_image) {
+    validationErrors.value.push({ field: 'cover_image', message: '请设置文章封面图' })
+    await scrollToField('cover-image-section')
+    return false
+  }
+  
+  if (!form.value.content.trim()) {
+    validationErrors.value.push({ field: 'content', message: '请输入文章内容' })
+    await scrollToField('content-section')
+    return false
+  }
   
   if (!form.value.category_id) {
-    await dialog.showError('请选择文章分类', '验证失败')
-    return
+    validationErrors.value.push({ field: 'category_id', message: '请选择文章分类' })
+    await scrollToField('category-select')
+    return false
   }
   
   if (!form.value.tag_ids || form.value.tag_ids.length === 0) {
-    await dialog.showError('请至少选择一个标签', '验证失败')
-    return
+    validationErrors.value.push({ field: 'tag_ids', message: '请至少选择一个标签' })
+    await scrollToField('tags-section')
+    return false
   }
+  
+  return true
+}
+
+const hasError = (field: string): boolean => {
+  return validationErrors.value.some(e => e.field === field)
+}
+
+const getErrorMessage = (field: string): string => {
+  const error = validationErrors.value.find(e => e.field === field)
+  return error?.message || ''
+}
+
+const handleSubmit = async () => {
+  if (!await requireAdmin('保存文章')) return
+  
+  const isValid = await validateForm()
+  if (!isValid) return
   
   try {
     let savedArticle: Article
@@ -269,6 +346,7 @@ const resetForm = () => {
     slug: '',
     summary: '',
     content: '',
+    cover_image: undefined,
     category_id: undefined,
     tag_ids: [],
     is_published: false,
@@ -278,6 +356,7 @@ const resetForm = () => {
   articleFiles.value = []
   selectedFileIds.value.clear()
   slugManuallyEdited.value = false
+  validationErrors.value = []
   clearFormDraft()
 }
 
@@ -547,6 +626,26 @@ const handleImageUpload = async (event: Event) => {
     return
   }
   
+  if (!file.type.startsWith('image/')) {
+    await dialog.showError('请选择图片文件', '文件格式错误')
+    target.value = ''
+    return
+  }
+  
+  const cursorPosition = markdownEditorRef.value?.getCursorPosition()
+  pendingImageCursorPosition.value = cursorPosition || null
+  pendingImageFile.value = file
+  imageCropperSrc.value = URL.createObjectURL(file)
+  showImageCropper.value = true
+  target.value = ''
+}
+
+const handleImageCropConfirm = async (blob: Blob) => {
+  if (!pendingImageFile.value) return
+  
+  const file = new File([blob], pendingImageFile.value.name, { type: 'image/jpeg' })
+  const cursorPosition = pendingImageCursorPosition.value
+  
   isUploading.value = true
   currentUploadingFile.value = {
     name: file.name,
@@ -567,22 +666,14 @@ const handleImageUpload = async (event: Event) => {
           uploadProgress.value = progressEvent.progress
         }
       },
-      uploadAbortController.value.signal
+      uploadAbortController.value.signal,
+      editingArticle.value?.id
     )
     const imageUrl = `/uploads/images/${response.filename}`
     const markdown = `![${file.name}](${imageUrl})`
     
-    const textarea = document.querySelector('textarea[name="content"]') as HTMLTextAreaElement
-    if (textarea) {
-      const start = textarea.selectionStart
-      const end = textarea.selectionEnd
-      const text = form.value.content
-      form.value.content = text.substring(0, start) + markdown + text.substring(end)
-      
-      setTimeout(() => {
-        textarea.focus()
-        textarea.selectionStart = textarea.selectionEnd = start + markdown.length
-      }, 0)
+    if (cursorPosition && markdownEditorRef.value) {
+      markdownEditorRef.value.insertAtCursor(markdown, cursorPosition.start + markdown.length)
     } else {
       form.value.content += `\n${markdown}\n`
     }
@@ -602,7 +693,106 @@ const handleImageUpload = async (event: Event) => {
     currentUploadingFile.value = null
     uploadProgress.value = 0
     uploadAbortController.value = null
+    pendingImageFile.value = null
+    pendingImageCursorPosition.value = null
+    if (imageCropperSrc.value) {
+      URL.revokeObjectURL(imageCropperSrc.value)
+      imageCropperSrc.value = ''
+    }
+  }
+}
+
+const handleImageCropCancel = () => {
+  pendingImageFile.value = null
+  pendingImageCursorPosition.value = null
+  if (imageCropperSrc.value) {
+    URL.revokeObjectURL(imageCropperSrc.value)
+    imageCropperSrc.value = ''
+  }
+}
+
+const handleCoverUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+  
+  if (file.size > 100 * 1024 * 1024) {
+    await dialog.showError('图片大小不能超过100MB', '文件大小超限')
     target.value = ''
+    return
+  }
+  
+  if (!file.type.startsWith('image/')) {
+    await dialog.showError('请选择图片文件', '文件格式错误')
+    target.value = ''
+    return
+  }
+  
+  pendingCoverFile.value = file
+  coverCropperImageSrc.value = URL.createObjectURL(file)
+  showCoverCropper.value = true
+  target.value = ''
+}
+
+const handleCoverCropConfirm = async (blob: Blob) => {
+  if (!pendingCoverFile.value) return
+  
+  const file = new File([blob], pendingCoverFile.value.name, { type: 'image/jpeg' })
+  
+  isUploading.value = true
+  currentUploadingFile.value = {
+    name: file.name,
+    size: file.size,
+    progress: 0,
+    loaded: 0
+  }
+  uploadProgress.value = 0
+  uploadAbortController.value = new AbortController()
+  
+  try {
+    const response = await fileApi.uploadImage(
+      file,
+      (progressEvent) => {
+        if (currentUploadingFile.value) {
+          currentUploadingFile.value.progress = progressEvent.progress
+          currentUploadingFile.value.loaded = progressEvent.loaded
+          uploadProgress.value = progressEvent.progress
+        }
+      },
+      uploadAbortController.value.signal,
+      editingArticle.value?.id
+    )
+    form.value.cover_image = `/uploads/images/${response.filename}`
+    clearValidationError('cover_image')
+  } catch (error: any) {
+    if (error.name === 'AbortError' || error.name === 'CanceledError') {
+      return
+    }
+    
+    const parsedError = parseUploadError(error)
+    
+    uploadError.value = {
+      fileName: file.name,
+      ...parsedError
+    }
+  } finally {
+    isUploading.value = false
+    currentUploadingFile.value = null
+    uploadProgress.value = 0
+    uploadAbortController.value = null
+    pendingCoverFile.value = null
+    if (coverCropperImageSrc.value) {
+      URL.revokeObjectURL(coverCropperImageSrc.value)
+      coverCropperImageSrc.value = ''
+    }
+  }
+}
+
+const handleCoverCropCancel = () => {
+  pendingCoverFile.value = null
+  if (coverCropperImageSrc.value) {
+    URL.revokeObjectURL(coverCropperImageSrc.value)
+    coverCropperImageSrc.value = ''
   }
 }
 
@@ -1284,32 +1474,40 @@ watch(form, () => {
               <label
                 for="article-title"
                 class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-              >标题</label>
+              >标题 <span class="text-red-500">*</span></label>
               <input
                 id="article-title"
                 v-model="form.title"
                 type="text"
                 name="title"
-                class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+                class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+                :class="hasError('title') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
                 placeholder="请输入文章标题"
-                @input="handleTitleInput"
+                @input="handleTitleInput; clearValidationError('title')"
                 @blur="handleTitleBlur"
               >
+              <p
+                v-if="hasError('title')"
+                class="mt-1 text-xs text-red-500"
+              >
+                {{ getErrorMessage('title') }}
+              </p>
             </div>
             <div>
               <label
                 for="article-slug"
                 class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-              >Slug</label>
+              >Slug <span class="text-red-500">*</span></label>
               <div class="relative">
                 <input
                   id="article-slug"
                   v-model="form.slug"
                   type="text"
                   name="slug"
-                  class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none pr-8"
-                  placeholder="留空自动生成"
-                  @input="handleSlugInput"
+                  class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none pr-8"
+                  :class="hasError('slug') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
+                  placeholder="请输入文章 Slug"
+                  @input="handleSlugInput; clearValidationError('slug')"
                 >
                 <div 
                   v-if="isGeneratingSlug" 
@@ -1336,6 +1534,12 @@ watch(form, () => {
                   </svg>
                 </div>
               </div>
+              <p
+                v-if="hasError('slug')"
+                class="mt-1 text-xs text-red-500"
+              >
+                {{ getErrorMessage('slug') }}
+              </p>
             </div>
           </div>
 
@@ -1354,17 +1558,131 @@ watch(form, () => {
             />
           </div>
 
-          <div>
+          <div id="cover-image-section">
+            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              封面图 <span class="text-red-500">*</span>
+            </label>
+            <div
+              class="flex gap-3 items-start"
+              :class="hasError('cover_image') ? 'p-2 -m-2 rounded-lg bg-red-50 dark:bg-red-900/10' : ''"
+            >
+              <div
+                v-if="form.cover_image"
+                class="relative group"
+              >
+                <img
+                  :src="form.cover_image"
+                  alt="封面图预览"
+                  class="w-32 h-20 object-cover rounded-lg border border-gray-200 dark:border-white/10"
+                >
+                <button
+                  type="button"
+                  class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center shadow-lg"
+                  @click="form.cover_image = undefined; clearValidationError('cover_image')"
+                >
+                  <svg
+                    class="w-3 h-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <div
+                v-else
+                class="w-32 h-20 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center"
+              >
+                <span class="text-xs text-gray-400">暂无封面</span>
+              </div>
+              <div class="flex-1 space-y-2">
+                <div class="flex gap-2">
+                  <label class="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      class="hidden"
+                      :disabled="isUploading"
+                      @change="handleCoverUpload"
+                    >
+                    <span class="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-gradient-to-r from-primary to-accent text-white rounded-lg hover:opacity-90 transition-all shadow-sm">
+                      <svg
+                        class="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                      上传封面
+                    </span>
+                  </label>
+                  <button
+                    v-if="articleFiles.some(f => f.file_type === 'image')"
+                    type="button"
+                    class="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-gray-100 dark:bg-dark-200 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-300 transition-all border border-gray-200 dark:border-white/10"
+                    @click="showCoverSelector = true"
+                  >
+                    <svg
+                      class="w-3.5 h-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+                      />
+                    </svg>
+                    从附件选择
+                  </button>
+                </div>
+                <p class="text-[10px] text-gray-400">
+                  建议尺寸: 1200x630px，支持 JPG、PNG、WebP 格式
+                </p>
+                <p
+                  v-if="hasError('cover_image')"
+                  class="mt-1 text-xs text-red-500"
+                >
+                  {{ getErrorMessage('cover_image') }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div id="content-section">
             <label
               for="article-content"
               class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-            >内容 (Markdown)</label>
-            <MarkdownEditor
-              ref="markdownEditorRef"
-              v-model="form.content"
-              placeholder="请输入文章内容，支持 Markdown 格式"
-              :storage-key="editingArticle?.id ? `article-${editingArticle.id}` : 'new-article'"
-            />
+            >内容 (Markdown) <span class="text-red-500">*</span></label>
+            <div :class="hasError('content') ? 'p-1 rounded-lg bg-red-50 dark:bg-red-900/10' : ''">
+              <MarkdownEditor
+                ref="markdownEditorRef"
+                v-model="form.content"
+                placeholder="请输入文章内容，支持 Markdown 格式"
+                :storage-key="editingArticle?.id ? `article-${editingArticle.id}` : 'new-article'"
+                @update:model-value="clearValidationError('content')"
+              />
+            </div>
+            <p
+              v-if="hasError('content')"
+              class="mt-1 text-xs text-red-500"
+            >
+              {{ getErrorMessage('content') }}
+            </p>
           </div>
 
           <div class="p-3 bg-gray-50 dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10">
@@ -1899,7 +2217,7 @@ watch(form, () => {
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <div class="flex items-center justify-between mb-1.5">
-                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">分类</label>
+                <label for="category-select" class="block text-xs font-medium text-gray-700 dark:text-gray-300">分类 <span class="text-red-500">*</span></label>
                 <button
                   type="button"
                   class="text-xs text-primary hover:text-primary/80"
@@ -1909,8 +2227,11 @@ watch(form, () => {
                 </button>
               </div>
               <select
+                id="category-select"
                 v-model="form.category_id"
-                class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
+                class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
+                :class="hasError('category_id') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
+                @change="clearValidationError('category_id')"
               >
                 <option :value="null">
                   选择分类
@@ -1923,10 +2244,16 @@ watch(form, () => {
                   {{ category.name }}
                 </option>
               </select>
+              <p
+                v-if="hasError('category_id')"
+                class="mt-1 text-xs text-red-500"
+              >
+                {{ getErrorMessage('category_id') }}
+              </p>
             </div>
-            <div>
+            <div id="tags-section">
               <div class="flex items-center justify-between mb-1.5">
-                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">标签</label>
+                <label class="block text-xs font-medium text-gray-700 dark:text-gray-300">标签 <span class="text-red-500">*</span></label>
                 <button
                   type="button"
                   class="text-xs text-primary hover:text-primary/80"
@@ -1935,7 +2262,10 @@ watch(form, () => {
                   + 新建标签
                 </button>
               </div>
-              <div class="flex flex-wrap gap-2 p-2 bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg max-h-32 overflow-y-auto">
+              <div
+                class="flex flex-wrap gap-2 p-2 bg-gray-100 dark:bg-dark-100 border rounded-lg max-h-32 overflow-y-auto"
+                :class="hasError('tag_ids') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
+              >
                 <label
                   v-for="tag in blogStore.tags"
                   :key="tag.id"
@@ -1946,6 +2276,7 @@ watch(form, () => {
                     type="checkbox"
                     :value="tag.id"
                     class="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-100 text-primary focus:ring-primary"
+                    @change="clearValidationError('tag_ids')"
                   >
                   <span 
                     class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full border"
@@ -1959,6 +2290,12 @@ watch(form, () => {
                   </span>
                 </label>
               </div>
+              <p
+                v-if="hasError('tag_ids')"
+                class="mt-1 text-xs text-red-500"
+              >
+                {{ getErrorMessage('tag_ids') }}
+              </p>
             </div>
           </div>
 
@@ -2229,11 +2566,110 @@ watch(form, () => {
         </form>
       </div>
     </div>
+
+    <div
+      v-if="showCoverSelector"
+      class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50"
+    >
+      <div class="glass-card w-full max-w-2xl max-h-[80vh] overflow-hidden m-4 p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-base font-bold text-gray-900 dark:text-white">
+            选择封面图
+          </h3>
+          <button
+            class="text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            @click="showCoverSelector = false"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+        <div
+          v-if="articleFiles.filter(f => f.file_type === 'image').length === 0"
+          class="text-center py-8 text-gray-400"
+        >
+          暂无图片附件
+        </div>
+        <div
+          v-else
+          class="grid grid-cols-4 gap-3 max-h-96 overflow-y-auto"
+        >
+          <button
+            v-for="file in articleFiles.filter(f => f.file_type === 'image')"
+            :key="file.id"
+            type="button"
+            class="relative aspect-video rounded-lg overflow-hidden border-2 border-transparent hover:border-primary transition-all group"
+            :class="{ 'border-primary': form.cover_image === file.file_path }"
+            @click="form.cover_image = file.file_path; showCoverSelector = false"
+          >
+            <img
+              :src="file.file_path"
+              :alt="file.original_filename"
+              class="w-full h-full object-cover"
+            >
+            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <span class="text-white text-xs">选择</span>
+            </div>
+            <div
+              v-if="form.cover_image === file.file_path"
+              class="absolute top-1 right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center"
+            >
+              <svg
+                class="w-3 h-3 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <FilePreview
     v-if="showPreview && previewFile"
     :file="previewFile"
     @close="closePreview"
+  />
+
+  <ImageCropper
+    v-model="showCoverCropper"
+    :image-src="coverCropperImageSrc"
+    :aspect-ratio="1200 / 630"
+    :output-width="1200"
+    :output-height="630"
+    :output-quality="0.9"
+    title="裁剪封面图"
+    @confirm="handleCoverCropConfirm"
+    @cancel="handleCoverCropCancel"
+  />
+
+  <ImageCropper
+    v-model="showImageCropper"
+    :image-src="imageCropperSrc"
+    :aspect-ratio="NaN"
+    :output-quality="0.85"
+    title="裁剪图片"
+    @confirm="handleImageCropConfirm"
+    @cancel="handleImageCropCancel"
   />
 </template>

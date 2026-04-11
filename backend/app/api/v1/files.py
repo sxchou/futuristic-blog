@@ -271,6 +271,7 @@ async def upload_file(
             os.makedirs(dir_path)
         async with aiofiles.open(file_path, 'wb') as f:
             await f.write(content)
+        file_path = f"/uploads/{folder}/{unique_filename}"
     
     db_file = ArticleFile(
         filename=unique_filename,
@@ -294,6 +295,7 @@ async def upload_file(
 @router.post("/upload-image", response_model=ArticleFileResponse)
 async def upload_image(
     file: UploadFile = File(...),
+    article_id: Optional[int] = Form(None),
     db: Session = Depends(get_db),
     current_user = Depends(get_current_active_user)
 ):
@@ -327,6 +329,7 @@ async def upload_image(
         file_path = os.path.join(UPLOAD_DIR, "images", unique_filename)
         async with aiofiles.open(file_path, 'wb') as f:
             await f.write(content)
+        file_path = f"/uploads/images/{unique_filename}"
     
     db_file = ArticleFile(
         filename=unique_filename,
@@ -336,6 +339,7 @@ async def upload_image(
         file_type="image",
         mime_type=mime_type,
         is_image=True,
+        article_id=article_id,
         uploaded_by=current_user.id
     )
     
@@ -388,11 +392,15 @@ async def download_file(
     if db_file.file_path.startswith("http"):
         return RedirectResponse(url=db_file.file_path, status_code=302)
     
-    if not os.path.exists(db_file.file_path):
+    actual_path = db_file.file_path
+    if db_file.file_path.startswith("/uploads/"):
+        actual_path = os.path.join(UPLOAD_DIR, db_file.file_path.replace("/uploads/", ""))
+    
+    if not os.path.exists(actual_path):
         raise HTTPException(status_code=404, detail="文件已被删除")
     
     return FileResponse(
-        path=db_file.file_path,
+        path=actual_path,
         filename=db_file.original_filename,
         media_type=db_file.mime_type
     )
@@ -436,11 +444,15 @@ async def get_file_content(
             }
         )
     
-    if not os.path.exists(db_file.file_path):
+    actual_path = db_file.file_path
+    if db_file.file_path.startswith("/uploads/"):
+        actual_path = os.path.join(UPLOAD_DIR, db_file.file_path.replace("/uploads/", ""))
+    
+    if not os.path.exists(actual_path):
         raise HTTPException(status_code=404, detail="文件已被删除")
     
     return FileResponse(
-        path=db_file.file_path,
+        path=actual_path,
         filename=db_file.original_filename,
         media_type=db_file.mime_type
     )
@@ -492,8 +504,12 @@ async def delete_file(
                 elif "avatars/" in file_path:
                     storage_key = f"avatars/{storage_key}"
                 await supabase_storage.delete_file(storage_key)
-            elif os.path.exists(file_path):
-                os.remove(file_path)
+            else:
+                actual_path = file_path
+                if file_path.startswith("/uploads/"):
+                    actual_path = os.path.join(UPLOAD_DIR, file_path.replace("/uploads/", ""))
+                if os.path.exists(actual_path):
+                    os.remove(actual_path)
     except Exception as e:
         pass
     
@@ -578,20 +594,27 @@ async def get_storage_info(
                 "size_formatted": format_file_size(stats["size"]),
                 "file_count": len(stats["files"]),
                 "files": stats["files"][:20],
-                "is_protected": folder == "avatars" or folder == "logos"
+                "is_protected": folder in {"avatars", "logos", "images"}
             }
     else:
-        db_file_paths = {f.file_path for f in db_files}
-        db_file_map = {f.file_path: f for f in db_files}
+        db_file_paths = set()
+        db_file_map = {}
+        for f in db_files:
+            db_file_paths.add(f.file_path)
+            if f.file_path.startswith('/uploads/'):
+                abs_path = os.path.join(UPLOAD_DIR, f.file_path.replace('/uploads/', ''))
+                db_file_paths.add(abs_path)
+                db_file_map[abs_path] = f
+            db_file_map[f.file_path] = f
         
-        PROTECTED_DIRS = {'avatars', 'logos'}
+        PROTECTED_DIRS = {'avatars', 'logos', 'images'}
         
         if os.path.exists(UPLOAD_DIR):
             for root, dirs, files in os.walk(UPLOAD_DIR):
                 rel_path = os.path.relpath(root, UPLOAD_DIR)
                 dir_name = rel_path if rel_path != "." else "root"
                 
-                is_protected = dir_name in PROTECTED_DIRS or dir_name.startswith('avatars/') or dir_name.startswith('logos/')
+                is_protected = dir_name in PROTECTED_DIRS or dir_name.startswith('avatars/') or dir_name.startswith('logos/') or dir_name.startswith('images/')
                 
                 dir_size = 0
                 dir_files = []
@@ -987,9 +1010,13 @@ async def get_archive_content(
                     temp_file_path = temp_file.name
                 file_path = temp_file_path
         else:
-            if not os.path.exists(db_file.file_path):
+            actual_path = db_file.file_path
+            if db_file.file_path.startswith("/uploads/"):
+                actual_path = os.path.join(UPLOAD_DIR, db_file.file_path.replace("/uploads/", ""))
+            
+            if not os.path.exists(actual_path):
                 raise HTTPException(status_code=404, detail="文件不存在")
-            file_path = db_file.file_path
+            file_path = actual_path
         
         if ext == '.zip':
             result = parse_zip(file_path)

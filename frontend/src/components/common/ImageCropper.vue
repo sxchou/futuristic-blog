@@ -6,12 +6,12 @@
       @click.self="handleCancel"
     >
       <div
-        class="bg-white dark:bg-dark-100 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col"
+        class="bg-white dark:bg-dark-100 rounded-2xl shadow-2xl w-full max-w-4xl mx-2 sm:mx-4 max-h-[90vh] overflow-hidden flex flex-col"
         @click.stop
       >
         <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-white/10">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-            {{ title || '裁剪头像' }}
+            {{ title || '裁剪图片' }}
           </h3>
           <button
             type="button"
@@ -35,9 +35,9 @@
         </div>
 
         <div class="flex-1 overflow-auto p-6">
-          <div class="flex gap-6">
-            <div class="flex-1">
-              <div class="cropper-wrapper bg-gray-100 dark:bg-dark-100 rounded-lg overflow-hidden relative">
+          <div class="flex gap-6 min-h-0">
+            <div class="flex-1 flex flex-col min-h-0">
+              <div class="cropper-wrapper bg-gray-100 dark:bg-dark-100 rounded-lg overflow-hidden relative flex-shrink-0">
                 <img
                   ref="imageRef"
                   :src="imageSrc"
@@ -76,7 +76,7 @@
                 </div>
               </div>
 
-              <div class="flex items-center justify-center gap-2 mt-4">
+              <div class="flex items-center justify-center gap-2 mt-3 flex-wrap flex-shrink-0">
                 <button
                   type="button"
                   class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
@@ -237,32 +237,35 @@
               </div>
             </div>
 
-            <div class="w-44 flex-shrink-0">
+            <div
+              v-if="!isFreeCrop"
+              class="w-48 flex-shrink-0 hidden lg:block"
+            >
               <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                 预览
               </p>
-              <div class="space-y-4">
+              <div class="space-y-3">
                 <div>
                   <div
                     ref="previewRef"
-                    class="preview-container w-40 h-40 rounded-lg overflow-hidden bg-gray-100 dark:bg-dark-100 border-2 border-gray-200 dark:border-white/10 mx-auto"
+                    class="preview-container w-48 h-[100px] rounded-lg overflow-hidden bg-gray-100 dark:bg-dark-100 border-2 border-gray-200 dark:border-white/10"
                   />
-                  <p class="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">
-                    200 × 200 px
+                  <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 text-center">
+                    1200 × 630 px
                   </p>
                 </div>
                 <div>
                   <div
                     ref="previewSmallRef"
-                    class="preview-container w-20 h-20 rounded-full overflow-hidden bg-gray-100 dark:bg-dark-100 border-2 border-gray-200 dark:border-white/10 mx-auto"
+                    class="preview-container w-32 h-[68px] rounded-lg overflow-hidden bg-gray-100 dark:bg-dark-100 border-2 border-gray-200 dark:border-white/10 mx-auto"
                   />
-                  <p class="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">
-                    80 × 80 px
+                  <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 text-center">
+                    800 × 420 px
                   </p>
                 </div>
               </div>
 
-              <div class="mt-6 p-3 bg-gray-50 dark:bg-dark-100/50 rounded-lg">
+              <div class="mt-4 p-3 bg-gray-50 dark:bg-dark-100/50 rounded-lg">
                 <p class="text-xs text-gray-500 dark:text-gray-400">
                   <span class="font-medium text-gray-700 dark:text-gray-300">提示：</span>
                   拖动选择框调整裁剪区域，使用上方按钮进行缩放和旋转。
@@ -315,7 +318,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onUnmounted, nextTick } from 'vue'
+import { ref, watch, onUnmounted, nextTick, computed } from 'vue'
 import Cropper from 'cropperjs'
 import 'cropperjs/dist/cropper.css'
 
@@ -344,6 +347,9 @@ const cropperReady = ref(false)
 const isLoading = ref(true)
 const loadError = ref(false)
 const scaleState = ref({ x: 1, y: 1 })
+
+const COVER_ASPECT_RATIO = 1200 / 630
+const isFreeCrop = computed(() => isNaN(props.aspectRatio ?? 0))
 
 const loadImage = (): Promise<void> => {
   return new Promise((resolve, reject) => {
@@ -384,7 +390,7 @@ const initCropper = async () => {
     return
   }
 
-  if (!previewRef.value || !previewSmallRef.value) {
+  if (!isFreeCrop.value && (!previewRef.value || !previewSmallRef.value)) {
     console.warn('Cropper init: preview refs are null')
     isLoading.value = false
     loadError.value = true
@@ -403,8 +409,7 @@ const initCropper = async () => {
 
     await new Promise(resolve => setTimeout(resolve, 50))
 
-    cropperInstance.value = new Cropper(imageRef.value!, {
-      aspectRatio: props.aspectRatio ?? 1,
+    const cropperOptions: Cropper.Options = {
       viewMode: 1,
       dragMode: 'move',
       autoCropArea: 0.9,
@@ -415,12 +420,20 @@ const initCropper = async () => {
       cropBoxMovable: true,
       cropBoxResizable: true,
       toggleDragModeOnDblclick: false,
-      preview: [previewRef.value!, previewSmallRef.value!],
       ready: () => {
         cropperReady.value = true
         isLoading.value = false
       }
-    })
+    }
+    
+    if (!isFreeCrop.value) {
+      cropperOptions.aspectRatio = props.aspectRatio ?? COVER_ASPECT_RATIO
+      if (previewRef.value && previewSmallRef.value) {
+        cropperOptions.preview = [previewRef.value, previewSmallRef.value]
+      }
+    }
+
+    cropperInstance.value = new Cropper(imageRef.value!, cropperOptions)
   } catch (error) {
     console.error('Failed to initialize cropper:', error)
     isLoading.value = false
@@ -474,12 +487,17 @@ const handleConfirm = async () => {
   isProcessing.value = true
 
   try {
-    const canvas = cropperInstance.value.getCroppedCanvas({
-      width: props.outputWidth || 200,
-      height: props.outputHeight || 200,
+    const canvasOptions: Cropper.GetCroppedCanvasOptions = {
       imageSmoothingEnabled: true,
       imageSmoothingQuality: 'high'
-    })
+    }
+    
+    if (props.outputWidth && props.outputHeight) {
+      canvasOptions.width = props.outputWidth
+      canvasOptions.height = props.outputHeight
+    }
+
+    const canvas = cropperInstance.value.getCroppedCanvas(canvasOptions)
 
     if (!canvas) {
       throw new Error('Failed to create canvas')
@@ -552,6 +570,12 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .cropper-wrapper {
+    height: 280px;
+  }
 }
 
 .cropper-image {

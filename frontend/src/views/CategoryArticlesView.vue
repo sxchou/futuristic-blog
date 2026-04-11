@@ -195,13 +195,13 @@ const formatDate = (date: string) => {
         >
           <div
             v-if="article.cover_image"
-            class="relative sm:w-48 flex-shrink-0 overflow-hidden rounded-xl"
+            class="relative flex-shrink-0 overflow-hidden rounded-xl h-32 sm:w-40 sm:h-24"
           >
             <img
-              :src="article.cover_image"
-              :alt="article.title"
-              class="w-full h-32 sm:h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            >
+                :src="article.cover_image"
+                :alt="article.title"
+                class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              >
           </div>
           <div class="flex-1 min-w-0 flex flex-col">
             <h3 class="article-card-title">
