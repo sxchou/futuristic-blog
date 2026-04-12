@@ -343,14 +343,17 @@ watch(() => route.path, (newPath) => {
                 v-if="article.cover_image"
                 :class="[
                   isStackedLayout 
-                    ? 'relative w-full h-40 sm:w-72 md:w-80 sm:flex-shrink-0' 
+                    ? 'relative w-full h-40 sm:w-72 md:w-80 sm:flex-shrink-0 overflow-hidden' 
                     : 'absolute inset-0 sm:relative sm:w-72 md:w-80 sm:flex-shrink-0'
                 ]"
               >
                 <img
                   :src="getMediaUrl(article.cover_image)"
                   :alt="article.title"
-                  class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  :class="[
+                    'w-full h-full object-cover transition-transform duration-300 group-hover:scale-105',
+                    isStackedLayout ? 'rounded-t-lg' : ''
+                  ]"
                   loading="lazy"
                   decoding="async"
                 >
@@ -374,7 +377,7 @@ watch(() => route.path, (newPath) => {
                 class="relative flex-1 min-w-0 flex flex-col sm:justify-center"
                 :class="[
                   isStackedLayout 
-                    ? 'min-h-0 px-0 py-3' 
+                    ? 'min-h-0 px-1 py-3' 
                     : 'min-h-[160px] sm:min-h-0 p-4 sm:p-0 sm:pl-4 sm:py-4'
                 ]"
               >

@@ -401,14 +401,17 @@ const handlePageChange = (page: number) => {
                   v-if="article.cover_image"
                   :class="[
                     isStackedLayout 
-                      ? 'relative w-full h-40 sm:w-72 md:w-80 sm:flex-shrink-0' 
+                      ? 'relative w-full h-40 sm:w-72 md:w-80 sm:flex-shrink-0 overflow-hidden' 
                       : 'absolute inset-0 sm:relative sm:w-72 md:w-80 sm:flex-shrink-0'
                   ]"
                 >
                   <img
                     :src="getMediaUrl(article.cover_image)"
                     :alt="article.title"
-                    class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    :class="[
+                      'w-full h-full object-cover transition-transform duration-500 group-hover:scale-110',
+                      isStackedLayout ? 'rounded-t-lg' : ''
+                    ]"
                     loading="lazy"
                   >
                   <template v-if="!isStackedLayout">
@@ -431,7 +434,7 @@ const handlePageChange = (page: number) => {
                   class="relative flex-1 min-w-0 flex flex-col sm:justify-center"
                   :class="[
                     isStackedLayout 
-                      ? 'min-h-0 px-0 py-3' 
+                      ? 'min-h-0 px-1 py-3' 
                       : 'min-h-[180px] sm:min-h-0 p-4 sm:p-0 sm:pl-4 sm:py-4'
                   ]"
                 >
