@@ -374,7 +374,7 @@ watch(() => route.path, (newPath) => {
                 class="relative flex-1 min-w-0 flex flex-col sm:justify-center"
                 :class="[
                   isStackedLayout 
-                    ? 'min-h-0 px-3 py-3' 
+                    ? 'min-h-0 px-2 py-3' 
                     : 'min-h-[160px] sm:min-h-0 p-4 sm:p-0 sm:pl-4 sm:py-4'
                 ]"
               >
@@ -540,3 +540,15 @@ watch(() => route.path, (newPath) => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.glass-card {
+  padding: 0;
+}
+
+@media (min-width: 640px) {
+  .glass-card {
+    padding: 1.25rem;
+  }
+}
+</style>
