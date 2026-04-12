@@ -358,12 +358,12 @@ watch(() => route.path, (newPath) => {
                     {{ article.category.name }}
                   </span>
                 </div>
-                <h3 class="text-base font-semibold text-gray-900 dark:text-white group-hover:text-primary transition-colors line-clamp-1">
+                <h3 class="article-card-title line-clamp-1 text-base">
                   {{ article.title }}
                 </h3>
                 <p
                   v-if="article.summary"
-                  class="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mt-1"
+                  class="article-card-excerpt"
                 >
                   {{ article.summary }}
                 </p>
