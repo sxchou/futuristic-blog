@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useBlogStore, useAuthStore, useUserInteractionStore } from '@/stores'
+import { useBlogStore, useAuthStore, useUserInteractionStore, useSiteConfigStore } from '@/stores'
 import { articleApi } from '@/api'
 import BlogSidebar from '@/components/common/BlogSidebar.vue'
 import Pagination from '@/components/common/Pagination.vue'
@@ -14,11 +14,14 @@ const router = useRouter()
 const blogStore = useBlogStore()
 const authStore = useAuthStore()
 const userInteractionStore = useUserInteractionStore()
+const siteConfigStore = useSiteConfigStore()
 const isLoading = ref(false)
 const articlesSectionRef = ref<HTMLElement | null>( null)
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
 const { pageSize } = usePageSize()
+
+const isStackedLayout = computed(() => siteConfigStore.mobileArticleLayout === 'stacked')
 
 const featuredArticlesList = ref<any[]>([])
 const currentSlide = ref(0)
@@ -384,15 +387,23 @@ const handlePageChange = (page: number) => {
             v-for="article in blogStore.articles"
             :key="article.id"
             class="article-card group relative overflow-hidden"
+            :class="{ 'sm:!block': isStackedLayout }"
           >
             <router-link
               :to="`/article/${article.slug}`"
               class="block"
             >
-              <div class="sm:flex sm:flex-row">
+              <div 
+                class="sm:flex sm:flex-row"
+                :class="{ 'flex flex-col': isStackedLayout }"
+              >
                 <div
                   v-if="article.cover_image"
-                  class="absolute inset-0 sm:relative sm:w-72 md:w-80 sm:flex-shrink-0"
+                  :class="[
+                    isStackedLayout 
+                      ? 'relative w-full h-40 sm:w-72 md:w-80 sm:flex-shrink-0' 
+                      : 'absolute inset-0 sm:relative sm:w-72 md:w-80 sm:flex-shrink-0'
+                  ]"
                 >
                   <img
                     :src="getMediaUrl(article.cover_image)"
@@ -400,21 +411,39 @@ const handlePageChange = (page: number) => {
                     class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     loading="lazy"
                   >
-                  <div class="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent sm:hidden" />
-                  <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent sm:hidden" />
+                  <template v-if="!isStackedLayout">
+                    <div class="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent sm:hidden" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent sm:hidden" />
+                  </template>
                 </div>
                 <div
                   v-else
-                  class="absolute inset-0 sm:hidden"
+                  :class="[
+                    isStackedLayout 
+                      ? 'hidden' 
+                      : 'absolute inset-0 sm:hidden'
+                  ]"
                 >
                   <div class="absolute inset-0 bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800" />
                 </div>
 
-                <div class="relative p-4 sm:p-0 sm:pl-4 sm:py-4 flex-1 min-w-0 flex flex-col sm:justify-center min-h-[180px] sm:min-h-0">
+                <div 
+                  class="relative p-4 sm:p-0 sm:pl-4 sm:py-4 flex-1 min-w-0 flex flex-col sm:justify-center"
+                  :class="[
+                    isStackedLayout 
+                      ? 'min-h-0' 
+                      : 'min-h-[180px] sm:min-h-0'
+                  ]"
+                >
                   <div class="flex items-center gap-2 mb-2">
                     <span
                       v-if="article.is_pinned"
-                      class="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-500/20 text-amber-400 sm:bg-amber-500/10 sm:text-amber-600 text-[10px] font-medium rounded"
+                      :class="[
+                        'inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium rounded',
+                        isStackedLayout 
+                          ? 'bg-amber-500/10 text-amber-600' 
+                          : 'bg-amber-500/20 text-amber-400 sm:bg-amber-500/10 sm:text-amber-600'
+                      ]"
                     >
                       <svg
                         class="w-2.5 h-2.5"
@@ -425,7 +454,12 @@ const handlePageChange = (page: number) => {
                     </span>
                     <span
                       v-if="article.is_featured"
-                      class="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-primary/20 text-primary sm:bg-primary/10 text-[10px] font-medium rounded"
+                      :class="[
+                        'inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-primary/20 text-[10px] font-medium rounded',
+                        isStackedLayout 
+                          ? 'bg-primary/10 text-primary' 
+                          : 'bg-primary/20 text-primary sm:bg-primary/10'
+                      ]"
                     >
                       <svg
                         class="w-2.5 h-2.5"
@@ -436,8 +470,13 @@ const handlePageChange = (page: number) => {
                     </span>
                     <span
                       v-if="article.category"
-                      class="inline-flex items-center gap-1 text-xs text-white/90 sm:text-inherit"
-                      :style="article.cover_image ? {} : { color: article.category.color }"
+                      :class="[
+                        'inline-flex items-center gap-1 text-xs',
+                        isStackedLayout 
+                          ? 'text-inherit' 
+                          : 'text-white/90 sm:text-inherit'
+                      ]"
+                      :style="(isStackedLayout || !article.cover_image) ? { color: article.category.color } : {}"
                     >
                       <span
                         class="w-1.5 h-1.5 rounded-full"
@@ -447,12 +486,22 @@ const handlePageChange = (page: number) => {
                     </span>
                   </div>
 
-                  <h3 class="text-base font-bold text-white sm:text-gray-900 dark:sm:text-white leading-snug mb-2 group-hover:text-primary transition-colors line-clamp-2">
+                  <h3 :class="[
+                    'text-base font-bold leading-snug mb-2 group-hover:text-primary transition-colors line-clamp-2',
+                    isStackedLayout 
+                      ? 'text-gray-900 dark:text-white' 
+                      : 'text-white sm:text-gray-900 dark:sm:text-white'
+                  ]">
                     {{ article.title }}
                   </h3>
                   <p
                     v-if="article.summary"
-                    class="text-white/70 sm:text-gray-500 dark:sm:text-gray-400 text-sm leading-relaxed mb-3 line-clamp-2"
+                    :class="[
+                      'text-sm leading-relaxed mb-3 line-clamp-2',
+                      isStackedLayout 
+                        ? 'text-gray-500 dark:text-gray-400' 
+                        : 'text-white/70 sm:text-gray-500 dark:sm:text-gray-400'
+                    ]"
                   >
                     {{ article.summary }}
                   </p>
@@ -461,19 +510,34 @@ const handlePageChange = (page: number) => {
                     <span
                       v-for="tag in article.tags.slice(0, 3)"
                       :key="tag.id"
-                      class="tag-badge text-[10px] bg-white/20 text-white/90 border-white/30 sm:bg-transparent sm:text-inherit sm:border-inherit"
-                      :style="article.cover_image ? {} : { 
+                      :class="[
+                        'tag-badge text-[10px]',
+                        isStackedLayout 
+                          ? '' 
+                          : 'bg-white/20 text-white/90 border-white/30 sm:bg-transparent sm:text-inherit sm:border-inherit'
+                      ]"
+                      :style="(isStackedLayout || !article.cover_image) ? { 
                         color: tag.color, 
                         backgroundColor: tag.color + '10',
                         borderColor: tag.color + '30'
-                      }"
+                      } : {}"
                     >
                       {{ tag.name }}
                     </span>
                   </div>
 
-                  <div class="article-meta mt-auto pt-3 border-t border-white/10 sm:border-gray-100 dark:sm:border-white/5">
-                    <span class="article-meta-item text-white/70 sm:text-inherit">
+                  <div :class="[
+                    'article-meta mt-auto pt-3',
+                    isStackedLayout 
+                      ? 'border-t border-gray-100 dark:border-white/5' 
+                      : 'border-t border-white/10 sm:border-gray-100 dark:sm:border-white/5'
+                  ]">
+                    <span :class="[
+                      'article-meta-item',
+                      isStackedLayout 
+                        ? 'text-inherit' 
+                        : 'text-white/70 sm:text-inherit'
+                    ]">
                       <svg
                         class="w-3.5 h-3.5"
                         fill="none"
@@ -489,7 +553,12 @@ const handlePageChange = (page: number) => {
                       </svg>
                       {{ formatDate(article.created_at) }}
                     </span>
-                    <span class="article-meta-item text-white/70 sm:text-inherit">
+                    <span :class="[
+                      'article-meta-item',
+                      isStackedLayout 
+                        ? 'text-inherit' 
+                        : 'text-white/70 sm:text-inherit'
+                    ]">
                       <svg
                         class="w-3.5 h-3.5"
                         fill="none"
@@ -512,8 +581,13 @@ const handlePageChange = (page: number) => {
                       {{ article.view_count }}
                     </span>
                     <button
-                      class="article-meta-item article-action-btn text-white/70 sm:text-inherit"
-                      :class="{ 'text-red-400': article.is_liked }"
+                      :class="[
+                        'article-meta-item article-action-btn',
+                        isStackedLayout 
+                          ? 'text-inherit' 
+                          : 'text-white/70 sm:text-inherit',
+                        { 'text-red-400': article.is_liked, 'sm:!text-red-400': article.is_liked && isStackedLayout }
+                      ]"
                       @click="handleLike($event, article)"
                     >
                       <svg
@@ -532,7 +606,12 @@ const handlePageChange = (page: number) => {
                       {{ article.like_count }}
                     </button>
                     <button
-                      class="article-meta-item article-action-btn text-white/70 sm:text-inherit"
+                      :class="[
+                        'article-meta-item article-action-btn',
+                        isStackedLayout 
+                          ? 'text-inherit' 
+                          : 'text-white/70 sm:text-inherit'
+                      ]"
                       @click="goToComments($event, article.slug)"
                     >
                       <svg
@@ -551,8 +630,13 @@ const handlePageChange = (page: number) => {
                       {{ article.comment_count || 0 }}
                     </button>
                     <button
-                      class="article-meta-item article-action-btn text-white/70 sm:text-inherit"
-                      :class="{ 'text-amber-500': article.is_bookmarked }"
+                      :class="[
+                        'article-meta-item article-action-btn',
+                        isStackedLayout 
+                          ? 'text-inherit' 
+                          : 'text-white/70 sm:text-inherit',
+                        { 'text-amber-500': article.is_bookmarked }
+                      ]"
                       @click="handleBookmark($event, article)"
                     >
                       <svg

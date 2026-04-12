@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAuthStore, useUserInteractionStore, useBlogStore, useUserProfileStore } from '@/stores'
+import { useAuthStore, useUserInteractionStore, useBlogStore, useUserProfileStore, useSiteConfigStore } from '@/stores'
 import { likeApi, commentApi, bookmarkApi } from '@/api'
 import type { ArticleListItem } from '@/types'
 import Pagination from '@/components/common/Pagination.vue'
@@ -16,6 +16,9 @@ const authStore = useAuthStore()
 const userInteractionStore = useUserInteractionStore()
 const blogStore = useBlogStore()
 const userProfileStore = useUserProfileStore()
+const siteConfigStore = useSiteConfigStore()
+
+const isStackedLayout = computed(() => siteConfigStore.mobileArticleLayout === 'stacked')
 
 const activeTab = ref<'liked' | 'commented' | 'bookmarked'>('liked')
 const articles = ref<ArticleListItem[]>([])
@@ -329,12 +332,20 @@ watch(() => route.path, (newPath) => {
             v-for="article in articles"
             :key="article.id"
             class="glass-card group cursor-pointer overflow-hidden relative"
+            :class="{ 'sm:!block': isStackedLayout }"
             @click="goToArticle(article.slug)"
           >
-            <div class="sm:flex sm:flex-row">
+            <div 
+              class="sm:flex sm:flex-row"
+              :class="{ 'flex flex-col': isStackedLayout }"
+            >
               <div
                 v-if="article.cover_image"
-                class="absolute inset-0 sm:relative sm:w-72 md:w-80 sm:flex-shrink-0"
+                :class="[
+                  isStackedLayout 
+                    ? 'relative w-full h-40 sm:w-72 md:w-80 sm:flex-shrink-0' 
+                    : 'absolute inset-0 sm:relative sm:w-72 md:w-80 sm:flex-shrink-0'
+                ]"
               >
                 <img
                   :src="getMediaUrl(article.cover_image)"
@@ -343,22 +354,40 @@ watch(() => route.path, (newPath) => {
                   loading="lazy"
                   decoding="async"
                 >
-                <div class="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent sm:hidden" />
-                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent sm:hidden" />
+                <template v-if="!isStackedLayout">
+                  <div class="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent sm:hidden" />
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent sm:hidden" />
+                </template>
               </div>
               <div
                 v-else
-                class="absolute inset-0 sm:hidden"
+                :class="[
+                  isStackedLayout 
+                    ? 'hidden' 
+                    : 'absolute inset-0 sm:hidden'
+                ]"
               >
                 <div class="absolute inset-0 bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800" />
               </div>
 
-              <div class="relative p-4 sm:p-0 sm:pl-4 sm:py-4 flex-1 min-w-0 flex flex-col sm:justify-center min-h-[160px] sm:min-h-0">
+              <div 
+                class="relative p-4 sm:p-0 sm:pl-4 sm:py-4 flex-1 min-w-0 flex flex-col sm:justify-center"
+                :class="[
+                  isStackedLayout 
+                    ? 'min-h-0' 
+                    : 'min-h-[160px] sm:min-h-0'
+                ]"
+              >
                 <div class="flex items-center gap-2 mb-2">
                   <span
                     v-if="article.category"
-                    class="inline-flex items-center gap-1 text-xs text-white/90 sm:text-inherit"
-                    :style="article.cover_image ? {} : { color: article.category.color }"
+                    :class="[
+                      'inline-flex items-center gap-1 text-xs',
+                      isStackedLayout 
+                        ? 'text-inherit' 
+                        : 'text-white/90 sm:text-inherit'
+                    ]"
+                    :style="(isStackedLayout || !article.cover_image) ? { color: article.category.color } : {}"
                   >
                     <span
                       class="w-1.5 h-1.5 rounded-full"
@@ -367,16 +396,31 @@ watch(() => route.path, (newPath) => {
                     {{ article.category.name }}
                   </span>
                 </div>
-                <h3 class="text-base font-bold text-white sm:text-gray-900 dark:sm:text-white leading-snug mb-2 group-hover:text-primary transition-colors line-clamp-1">
+                <h3 :class="[
+                  'text-base font-bold leading-snug mb-2 group-hover:text-primary transition-colors line-clamp-1',
+                  isStackedLayout 
+                    ? 'text-gray-900 dark:text-white' 
+                    : 'text-white sm:text-gray-900 dark:sm:text-white'
+                ]">
                   {{ article.title }}
                 </h3>
                 <p
                   v-if="article.summary"
-                  class="text-white/70 sm:text-gray-500 dark:sm:text-gray-400 text-sm leading-relaxed mb-3 line-clamp-2"
+                  :class="[
+                    'text-sm leading-relaxed mb-3 line-clamp-2',
+                    isStackedLayout 
+                      ? 'text-gray-500 dark:text-gray-400' 
+                      : 'text-white/70 sm:text-gray-500 dark:sm:text-gray-400'
+                  ]"
                 >
                   {{ article.summary }}
                 </p>
-                <div class="flex items-center gap-4 text-xs text-white/60 sm:text-gray-400">
+                <div :class="[
+                  'flex items-center gap-4 text-xs',
+                  isStackedLayout 
+                    ? 'text-gray-400' 
+                    : 'text-white/60 sm:text-gray-400'
+                ]">
                   <span class="flex items-center gap-1">
                     <svg
                       class="w-3.5 h-3.5"

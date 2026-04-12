@@ -42,6 +42,7 @@ export const useSiteConfigStore = defineStore('siteConfig', () => {
   const siteDescription = ref('探索前沿技术，分享工程实践')
   const siteKeywords = ref('')
   const siteLogoUrl = ref('')
+  const mobileArticleLayout = ref<'embedded' | 'stacked'>('embedded')
   const loading = ref(false)
   const lastFetchTime = ref(0)
   const CACHE_TTL = 60000
@@ -92,6 +93,11 @@ export const useSiteConfigStore = defineStore('siteConfig', () => {
         if (logoConfig?.value) {
           siteLogoUrl.value = logoConfig.value
           updateFavicon(logoConfig.value)
+        }
+        
+        const layoutConfig = configs.value.find(c => c.key === 'mobile_article_layout')
+        if (layoutConfig?.value && (layoutConfig.value === 'embedded' || layoutConfig.value === 'stacked')) {
+          mobileArticleLayout.value = layoutConfig.value
         }
       } catch (error) {
         console.error('Failed to fetch site configs:', error)
@@ -174,6 +180,19 @@ export const useSiteConfigStore = defineStore('siteConfig', () => {
     }
   }
 
+  const updateMobileArticleLayout = async (layout: 'embedded' | 'stacked') => {
+    try {
+      await siteConfigApi.update('mobile_article_layout', layout, '手机端文章卡片布局方式')
+      mobileArticleLayout.value = layout
+    } catch (error: any) {
+      console.error('Failed to update mobile article layout:', error)
+      if (error.response?.status === 403) {
+        throw new Error('无权限修改网站设置')
+      }
+      throw error
+    }
+  }
+
   return {
     configs,
     siteName,
@@ -181,12 +200,14 @@ export const useSiteConfigStore = defineStore('siteConfig', () => {
     siteKeywords,
     siteLogoUrl,
     siteLogo,
+    mobileArticleLayout,
     loading,
     fetchConfigs,
     updateSiteName,
     updateSiteDescription,
     updateSiteKeywords,
     updateSiteLogo,
-    resetSiteLogo
+    resetSiteLogo,
+    updateMobileArticleLayout
   }
 })
