@@ -428,11 +428,11 @@ const handlePageChange = (page: number) => {
                 </div>
 
                 <div 
-                  class="relative p-4 sm:p-0 sm:pl-4 sm:py-4 flex-1 min-w-0 flex flex-col sm:justify-center"
+                  class="relative flex-1 min-w-0 flex flex-col sm:justify-center"
                   :class="[
                     isStackedLayout 
-                      ? 'min-h-0' 
-                      : 'min-h-[180px] sm:min-h-0'
+                      ? 'min-h-0 px-3 py-3' 
+                      : 'min-h-[180px] sm:min-h-0 p-4 sm:p-0 sm:pl-4 sm:py-4'
                   ]"
                 >
                   <div class="flex items-center gap-2 mb-2">
