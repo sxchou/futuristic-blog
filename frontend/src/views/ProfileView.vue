@@ -328,13 +328,13 @@ watch(() => route.path, (newPath) => {
           <article
             v-for="article in articles"
             :key="article.id"
-            class="glass-card group cursor-pointer overflow-hidden"
+            class="glass-card group cursor-pointer overflow-hidden relative"
             @click="goToArticle(article.slug)"
           >
-            <div class="flex gap-4 p-4">
+            <div class="sm:flex sm:flex-row">
               <div
                 v-if="article.cover_image"
-                class="flex-shrink-0 w-32 h-24 sm:w-40 sm:h-28 rounded-lg overflow-hidden"
+                class="absolute inset-0 sm:relative sm:w-32 sm:flex-shrink-0"
               >
                 <img
                   :src="getMediaUrl(article.cover_image)"
@@ -343,13 +343,22 @@ watch(() => route.path, (newPath) => {
                   loading="lazy"
                   decoding="async"
                 >
+                <div class="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent sm:hidden" />
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent sm:hidden" />
               </div>
-              <div class="flex-1 min-w-0 flex flex-col">
+              <div
+                v-else
+                class="absolute inset-0 sm:hidden"
+              >
+                <div class="absolute inset-0 bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800" />
+              </div>
+
+              <div class="relative p-4 sm:p-0 sm:pl-4 sm:py-4 flex-1 min-w-0 flex flex-col sm:justify-center min-h-[160px] sm:min-h-0">
                 <div class="flex items-center gap-2 mb-2">
                   <span
                     v-if="article.category"
-                    class="inline-flex items-center gap-1 text-xs"
-                    :style="{ color: article.category.color }"
+                    class="inline-flex items-center gap-1 text-xs text-white/90 sm:text-inherit"
+                    :style="article.cover_image ? {} : { color: article.category.color }"
                   >
                     <span
                       class="w-1.5 h-1.5 rounded-full"
@@ -358,16 +367,16 @@ watch(() => route.path, (newPath) => {
                     {{ article.category.name }}
                   </span>
                 </div>
-                <h3 class="article-card-title line-clamp-1 text-base">
+                <h3 class="text-base font-bold text-white sm:text-gray-900 dark:sm:text-white leading-snug mb-2 group-hover:text-primary transition-colors line-clamp-1">
                   {{ article.title }}
                 </h3>
                 <p
                   v-if="article.summary"
-                  class="article-card-excerpt"
+                  class="text-white/70 sm:text-gray-500 dark:sm:text-gray-400 text-sm leading-relaxed mb-3 line-clamp-2"
                 >
                   {{ article.summary }}
                 </p>
-                <div class="flex items-center gap-4 mt-auto pt-2 text-xs text-gray-400">
+                <div class="flex items-center gap-4 text-xs text-white/60 sm:text-gray-400">
                   <span class="flex items-center gap-1">
                     <svg
                       class="w-3.5 h-3.5"

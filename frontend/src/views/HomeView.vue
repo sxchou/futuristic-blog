@@ -239,7 +239,7 @@ const handlePageChange = (page: number) => {
                     </div>
                     <div
                       v-else
-                      class="relative h-48 overflow-hidden"
+                      class="relative h-52 overflow-hidden"
                     >
                       <div class="absolute inset-0 bg-gradient-to-br from-primary/10 via-accent/5 to-primary/10 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-500" />
                       <div class="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/20 dark:from-black/50 dark:via-black/30 dark:to-black/40 transition-colors duration-500" />
@@ -383,186 +383,193 @@ const handlePageChange = (page: number) => {
           <article
             v-for="article in blogStore.articles"
             :key="article.id"
-            class="article-card group"
+            class="article-card group relative overflow-hidden"
           >
             <router-link
               :to="`/article/${article.slug}`"
-              class="flex flex-col sm:flex-row gap-4"
+              class="block"
             >
-              <div
-                v-if="article.cover_image"
-                class="sm:w-44 md:w-48 flex-shrink-0 self-stretch"
-              >
-                <div class="relative overflow-hidden rounded-xl w-full h-full">
+              <div class="sm:flex sm:flex-row">
+                <div
+                  v-if="article.cover_image"
+                  class="absolute inset-0 sm:relative sm:w-44 md:w-48 sm:flex-shrink-0"
+                >
                   <img
                     :src="getMediaUrl(article.cover_image)"
                     :alt="article.title"
                     class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     loading="lazy"
                   >
-                  <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+                  <div class="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent sm:hidden" />
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent sm:hidden" />
                 </div>
-              </div>
-
-              <div class="flex-1 min-w-0 flex flex-col">
-                <div class="flex items-center gap-2 mb-2">
-                  <span
-                    v-if="article.is_pinned"
-                    class="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-500/10 text-amber-600 text-[10px] font-medium rounded"
-                  >
-                    <svg
-                      class="w-2.5 h-2.5"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                    ><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" /></svg>
-                    置顶
-                  </span>
-                  <span
-                    v-if="article.is_featured"
-                    class="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] font-medium rounded"
-                  >
-                    <svg
-                      class="w-2.5 h-2.5"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    ><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                    精选
-                  </span>
-                  <span
-                    v-if="article.category"
-                    class="inline-flex items-center gap-1 text-xs"
-                    :style="{ color: article.category.color }"
-                  >
-                    <span
-                      class="w-1.5 h-1.5 rounded-full"
-                      :style="{ backgroundColor: article.category.color }"
-                    />
-                    {{ article.category.name }}
-                  </span>
-                </div>
-
-                <h3 class="article-card-title">
-                  {{ article.title }}
-                </h3>
-                <p
-                  v-if="article.summary"
-                  class="article-card-excerpt"
+                <div
+                  v-else
+                  class="absolute inset-0 sm:hidden"
                 >
-                  {{ article.summary }}
-                </p>
-
-                <div class="flex flex-wrap gap-1 mb-3">
-                  <span
-                    v-for="tag in article.tags.slice(0, 3)"
-                    :key="tag.id"
-                    class="tag-badge text-[10px]"
-                    :style="{ 
-                      color: tag.color, 
-                      backgroundColor: tag.color + '10',
-                      borderColor: tag.color + '30'
-                    }"
-                  >
-                    {{ tag.name }}
-                  </span>
+                  <div class="absolute inset-0 bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800" />
                 </div>
 
-                <div class="article-meta mt-auto pt-3 border-t border-gray-100 dark:border-white/5">
-                  <span class="article-meta-item">
-                    <svg
-                      class="w-3.5 h-3.5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                <div class="relative p-4 sm:p-0 sm:pl-4 sm:py-4 flex-1 min-w-0 flex flex-col sm:justify-center min-h-[180px] sm:min-h-0">
+                  <div class="flex items-center gap-2 mb-2">
+                    <span
+                      v-if="article.is_pinned"
+                      class="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-500/20 text-amber-400 sm:bg-amber-500/10 sm:text-amber-600 text-[10px] font-medium rounded"
                     >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      />
-                    </svg>
-                    {{ formatDate(article.created_at) }}
-                  </span>
-                  <span class="article-meta-item">
-                    <svg
-                      class="w-3.5 h-3.5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                      <svg
+                        class="w-2.5 h-2.5"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      ><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" /></svg>
+                      置顶
+                    </span>
+                    <span
+                      v-if="article.is_featured"
+                      class="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-primary/20 text-primary sm:bg-primary/10 text-[10px] font-medium rounded"
                     >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      <svg
+                        class="w-2.5 h-2.5"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      ><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                      精选
+                    </span>
+                    <span
+                      v-if="article.category"
+                      class="inline-flex items-center gap-1 text-xs text-white/90 sm:text-inherit"
+                      :style="article.cover_image ? {} : { color: article.category.color }"
+                    >
+                      <span
+                        class="w-1.5 h-1.5 rounded-full"
+                        :style="{ backgroundColor: article.category.color }"
                       />
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                      />
-                    </svg>
-                    {{ article.view_count }}
-                  </span>
-                  <button
-                    class="article-meta-item article-action-btn"
-                    :class="{ 'text-red-400': article.is_liked }"
-                    @click="handleLike($event, article)"
+                      {{ article.category.name }}
+                    </span>
+                  </div>
+
+                  <h3 class="text-base font-bold text-white sm:text-gray-900 dark:sm:text-white leading-snug mb-2 group-hover:text-primary transition-colors line-clamp-2">
+                    {{ article.title }}
+                  </h3>
+                  <p
+                    v-if="article.summary"
+                    class="text-white/70 sm:text-gray-500 dark:sm:text-gray-400 text-sm leading-relaxed mb-3 line-clamp-2"
                   >
-                    <svg
-                      class="w-3.5 h-3.5"
-                      :fill="article.is_liked ? 'currentColor' : 'none'"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                    {{ article.summary }}
+                  </p>
+
+                  <div class="flex flex-wrap gap-1 mb-3">
+                    <span
+                      v-for="tag in article.tags.slice(0, 3)"
+                      :key="tag.id"
+                      class="tag-badge text-[10px] bg-white/20 text-white/90 border-white/30 sm:bg-transparent sm:text-inherit sm:border-inherit"
+                      :style="article.cover_image ? {} : { 
+                        color: tag.color, 
+                        backgroundColor: tag.color + '10',
+                        borderColor: tag.color + '30'
+                      }"
                     >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                      />
-                    </svg>
-                    {{ article.like_count }}
-                  </button>
-                  <button
-                    class="article-meta-item article-action-btn"
-                    @click="goToComments($event, article.slug)"
-                  >
-                    <svg
-                      class="w-3.5 h-3.5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                      {{ tag.name }}
+                    </span>
+                  </div>
+
+                  <div class="article-meta mt-auto pt-3 border-t border-white/10 sm:border-gray-100 dark:sm:border-white/5">
+                    <span class="article-meta-item text-white/70 sm:text-inherit">
+                      <svg
+                        class="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                      {{ formatDate(article.created_at) }}
+                    </span>
+                    <span class="article-meta-item text-white/70 sm:text-inherit">
+                      <svg
+                        class="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                        />
+                      </svg>
+                      {{ article.view_count }}
+                    </span>
+                    <button
+                      class="article-meta-item article-action-btn text-white/70 sm:text-inherit"
+                      :class="{ 'text-red-400': article.is_liked }"
+                      @click="handleLike($event, article)"
                     >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                      />
-                    </svg>
-                    {{ article.comment_count || 0 }}
-                  </button>
-                  <button
-                    class="article-meta-item article-action-btn"
-                    :class="{ 'text-amber-500': article.is_bookmarked }"
-                    @click="handleBookmark($event, article)"
-                  >
-                    <svg
-                      class="w-3.5 h-3.5"
-                      :fill="article.is_bookmarked ? 'currentColor' : 'none'"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                      <svg
+                        class="w-3.5 h-3.5"
+                        :fill="article.is_liked ? 'currentColor' : 'none'"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                        />
+                      </svg>
+                      {{ article.like_count }}
+                    </button>
+                    <button
+                      class="article-meta-item article-action-btn text-white/70 sm:text-inherit"
+                      @click="goToComments($event, article.slug)"
                     >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                      />
-                    </svg>
-                  </button>
+                      <svg
+                        class="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                        />
+                      </svg>
+                      {{ article.comment_count || 0 }}
+                    </button>
+                    <button
+                      class="article-meta-item article-action-btn text-white/70 sm:text-inherit"
+                      :class="{ 'text-amber-500': article.is_bookmarked }"
+                      @click="handleBookmark($event, article)"
+                    >
+                      <svg
+                        class="w-3.5 h-3.5"
+                        :fill="article.is_bookmarked ? 'currentColor' : 'none'"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                        />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
             </router-link>
