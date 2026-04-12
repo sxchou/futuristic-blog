@@ -392,7 +392,7 @@ const handlePageChange = (page: number) => {
               <div class="sm:flex sm:flex-row">
                 <div
                   v-if="article.cover_image"
-                  class="absolute inset-0 sm:relative sm:w-44 md:w-48 sm:flex-shrink-0"
+                  class="absolute inset-0 sm:relative sm:w-52 md:w-56 sm:flex-shrink-0"
                 >
                   <img
                     :src="getMediaUrl(article.cover_image)"
