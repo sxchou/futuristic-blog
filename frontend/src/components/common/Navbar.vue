@@ -211,14 +211,14 @@ onMounted(() => {
 
           <div
             v-if="!authStore.isAuthenticated"
-            class="hidden sm:flex items-center"
+            class="hidden md:flex items-center"
           >
             <AuthMenu />
           </div>
 
           <div
             v-else
-            class="hidden sm:flex items-center"
+            class="hidden md:flex items-center"
           >
             <UserAvatar 
               :profile="userProfileStore.profile" 
@@ -324,6 +324,13 @@ onMounted(() => {
                     </p>
                   </div>
                 </div>
+                <router-link
+                  to="/profile"
+                  class="px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-primary/5 transition-colors block"
+                  @click="isMenuOpen = false"
+                >
+                  个人中心
+                </router-link>
                 <router-link
                   to="/admin/my-profile"
                   class="px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-primary/5 transition-colors block"
