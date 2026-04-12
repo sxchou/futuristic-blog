@@ -374,7 +374,7 @@ watch(() => route.path, (newPath) => {
                 class="relative flex-1 min-w-0 flex flex-col sm:justify-center"
                 :class="[
                   isStackedLayout 
-                    ? 'min-h-0 px-2 py-3' 
+                    ? 'min-h-0 px-0 py-3' 
                     : 'min-h-[160px] sm:min-h-0 p-4 sm:p-0 sm:pl-4 sm:py-4'
                 ]"
               >
