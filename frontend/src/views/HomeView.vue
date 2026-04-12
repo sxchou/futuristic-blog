@@ -225,7 +225,7 @@ const handlePageChange = (page: number) => {
                 >
                   <div
                     v-if="currentFeatured?.cover_image"
-                    class="relative h-64 overflow-hidden"
+                    class="relative h-48 sm:h-56 md:h-64 lg:h-72 xl:h-80 overflow-hidden"
                   >
                       <img
                         :src="getMediaUrl(currentFeatured.cover_image)"
@@ -239,7 +239,7 @@ const handlePageChange = (page: number) => {
                     </div>
                     <div
                       v-else
-                      class="relative h-64 overflow-hidden"
+                      class="relative h-48 sm:h-56 md:h-64 lg:h-72 xl:h-80 overflow-hidden"
                     >
                       <div class="absolute inset-0 bg-gradient-to-br from-primary/10 via-accent/5 to-primary/10 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-500" />
                       <div class="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/20 dark:from-black/50 dark:via-black/30 dark:to-black/40 transition-colors duration-500" />
