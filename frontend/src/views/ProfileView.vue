@@ -332,28 +332,24 @@ watch(() => route.path, (newPath) => {
             v-for="article in articles"
             :key="article.id"
             class="glass-card group cursor-pointer overflow-hidden relative"
-            :class="{ 'sm:!block': isStackedLayout }"
             @click="goToArticle(article.slug)"
           >
             <div 
-              class="sm:flex sm:flex-row"
-              :class="{ 'flex flex-col': isStackedLayout }"
+              class="flex flex-col sm:grid sm:grid-cols-[auto_1fr] sm:gap-4 p-0 sm:p-5"
             >
               <div
                 v-if="article.cover_image"
                 :class="[
                   isStackedLayout 
-                    ? 'relative w-full h-40 sm:w-72 md:w-80 sm:flex-shrink-0 overflow-hidden' 
-                    : 'absolute inset-0 sm:relative sm:w-72 md:w-80 sm:flex-shrink-0 sm:self-stretch'
+                    ? 'relative w-full h-40 sm:w-72 md:w-80 sm:h-full overflow-hidden rounded-t-lg sm:rounded-lg' 
+                    : 'absolute inset-0 sm:relative sm:w-72 md:w-80 sm:h-full overflow-hidden rounded-none sm:rounded-lg'
                 ]"
               >
                 <img
                   :src="getMediaUrl(article.cover_image)"
                   :alt="article.title"
-                  :class="[
-                    'w-full h-full object-cover transition-transform duration-300 group-hover:scale-105',
-                    isStackedLayout ? 'rounded-t-lg' : ''
-                  ]"
+                  class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  :class="isStackedLayout ? 'rounded-t-lg' : ''"
                   loading="lazy"
                   decoding="async"
                 >
@@ -378,7 +374,7 @@ watch(() => route.path, (newPath) => {
                 :class="[
                   isStackedLayout 
                     ? 'min-h-0 px-2 py-3' 
-                    : 'min-h-[160px] sm:min-h-0 px-2 py-4 sm:p-0 sm:pl-4 sm:py-4'
+                    : 'min-h-[160px] sm:min-h-0 px-2 py-4 sm:p-0'
                 ]"
               >
                 <div class="flex items-center gap-2 mb-2">
@@ -546,12 +542,7 @@ watch(() => route.path, (newPath) => {
 
 <style scoped>
 .glass-card {
-  padding: 0;
-}
-
-@media (min-width: 640px) {
-  .glass-card {
-    padding: 1.25rem;
-  }
+  padding: 0 !important;
+  display: block !important;
 }
 </style>

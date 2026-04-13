@@ -387,31 +387,27 @@ const handlePageChange = (page: number) => {
             v-for="article in blogStore.articles"
             :key="article.id"
             class="article-card group relative overflow-hidden"
-            :class="{ 'sm:!block': isStackedLayout }"
           >
             <router-link
               :to="`/article/${article.slug}`"
-              class="block"
+              class="block p-0 sm:p-5"
             >
               <div 
-                class="sm:flex sm:flex-row"
-                :class="{ 'flex flex-col': isStackedLayout }"
+                class="flex flex-col sm:grid sm:grid-cols-[auto_1fr] sm:gap-4"
               >
                 <div
                   v-if="article.cover_image"
                   :class="[
                     isStackedLayout 
-                      ? 'relative w-full h-40 sm:w-72 md:w-80 sm:flex-shrink-0 overflow-hidden' 
-                      : 'absolute inset-0 sm:relative sm:w-72 md:w-80 sm:flex-shrink-0 sm:self-stretch'
+                      ? 'relative w-full h-40 sm:w-72 md:w-80 sm:h-full overflow-hidden rounded-t-lg sm:rounded-lg' 
+                      : 'absolute inset-0 sm:relative sm:w-72 md:w-80 sm:h-full overflow-hidden rounded-none sm:rounded-lg'
                   ]"
                 >
                   <img
                     :src="getMediaUrl(article.cover_image)"
                     :alt="article.title"
-                    :class="[
-                      'w-full h-full object-cover transition-transform duration-500 group-hover:scale-110',
-                      isStackedLayout ? 'rounded-t-lg' : ''
-                    ]"
+                    class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    :class="isStackedLayout ? 'rounded-t-lg' : ''"
                     loading="lazy"
                   >
                   <template v-if="!isStackedLayout">
@@ -435,7 +431,7 @@ const handlePageChange = (page: number) => {
                   :class="[
                     isStackedLayout 
                       ? 'min-h-0 px-2 py-3' 
-                      : 'min-h-[180px] sm:min-h-0 px-2 py-4 sm:p-0 sm:pl-4 sm:py-4'
+                      : 'min-h-[180px] sm:min-h-0 px-2 py-4 sm:p-0'
                   ]"
                 >
                   <div class="flex items-center gap-2 mb-2">
@@ -698,12 +694,7 @@ const handlePageChange = (page: number) => {
 }
 
 .article-card {
-  padding: 0;
-}
-
-@media (min-width: 640px) {
-  .article-card {
-    padding: 1.25rem;
-  }
+  padding: 0 !important;
+  display: block !important;
 }
 </style>
