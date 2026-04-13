@@ -341,15 +341,14 @@ watch(() => route.path, (newPath) => {
                 v-if="article.cover_image"
                 :class="[
                   isStackedLayout 
-                    ? 'relative w-full h-40 sm:w-72 md:w-80 sm:h-full overflow-hidden rounded-t-lg sm:rounded-lg' 
+                    ? 'relative w-full h-40 sm:w-72 md:w-80 sm:h-full overflow-hidden rounded-t-lg sm:rounded-lg px-2 pt-2 sm:p-0' 
                     : 'absolute inset-0 sm:relative sm:w-72 md:w-80 sm:h-full overflow-hidden rounded-none sm:rounded-lg'
                 ]"
               >
                 <img
                   :src="getMediaUrl(article.cover_image)"
                   :alt="article.title"
-                  class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  :class="isStackedLayout ? 'rounded-t-lg' : ''"
+                  class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 rounded-t-lg sm:rounded-lg"
                   loading="lazy"
                   decoding="async"
                 >
