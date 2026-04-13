@@ -402,7 +402,7 @@ const handlePageChange = (page: number) => {
                   :class="[
                     isStackedLayout 
                       ? 'relative w-full h-40 sm:w-72 md:w-80 sm:flex-shrink-0 overflow-hidden' 
-                      : 'absolute inset-0 sm:relative sm:w-72 md:w-80 sm:flex-shrink-0'
+                      : 'absolute inset-0 sm:relative sm:w-72 md:w-80 sm:flex-shrink-0 sm:self-stretch'
                   ]"
                 >
                   <img
