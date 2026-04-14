@@ -2,7 +2,6 @@
 import { computed, ref, onMounted, watch } from 'vue'
 import { useBlogStore, useAuthStore, useUserProfileStore } from '@/stores'
 import { dashboardApi } from '@/api'
-import UserAvatar from './UserAvatar.vue'
 
 const props = defineProps<{
   hideUserCard?: boolean

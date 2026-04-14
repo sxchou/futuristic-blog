@@ -138,10 +138,6 @@ const handleLike = async (e: Event, article: any) => {
   }
 }
 
-const goToArticle = (slug: string) => {
-  router.push(`/article/${slug}`)
-}
-
 const goToComments = (e: Event, slug: string) => {
   e.preventDefault()
   e.stopPropagation()
