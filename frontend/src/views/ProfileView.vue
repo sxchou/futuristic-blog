@@ -634,8 +634,4 @@ watch(() => route.path, (newPath) => {
 </template>
 
 <style scoped>
-.glass-card {
-  padding: 0 !important;
-  display: block !important;
-}
 </style>
