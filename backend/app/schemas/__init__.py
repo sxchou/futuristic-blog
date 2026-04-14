@@ -12,7 +12,8 @@ from .schemas import (
     EmailLogResponse, EmailTestRequest,
     NotificationSettingsBase, NotificationSettingsUpdate, NotificationSettingsResponse,
     PasswordResetRequest, PasswordResetVerify,
-    UserProfileResponse, UserProfileUpdate
+    UserProfileResponse, UserProfileUpdate,
+    AnnouncementBase, AnnouncementCreate, AnnouncementUpdate, AnnouncementResponse
 )
 
 __all__ = [
@@ -29,5 +30,6 @@ __all__ = [
     "EmailLogResponse", "EmailTestRequest",
     "NotificationSettingsBase", "NotificationSettingsUpdate", "NotificationSettingsResponse",
     "PasswordResetRequest", "PasswordResetVerify",
-    "UserProfileResponse", "UserProfileUpdate"
+    "UserProfileResponse", "UserProfileUpdate",
+    "AnnouncementBase", "AnnouncementCreate", "AnnouncementUpdate", "AnnouncementResponse"
 ]

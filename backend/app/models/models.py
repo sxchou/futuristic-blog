@@ -452,3 +452,20 @@ class RefreshToken(Base):
     __table_args__ = (
         Index('ix_refresh_tokens_user_active', 'user_id', 'is_revoked'),
     )
+
+
+class Announcement(Base):
+    __tablename__ = "announcements"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(200), nullable=False)
+    content = Column(Text, nullable=False)
+    type = Column(String(20), default='info')
+    is_active = Column(Boolean, default=True, index=True)
+    order = Column(Integer, default=0)
+    created_at = Column(DateTime, default=get_db_now, index=True)
+    updated_at = Column(DateTime, default=get_db_now, onupdate=get_db_now)
+    
+    __table_args__ = (
+        Index('ix_announcements_active_order', 'is_active', 'order'),
+    )

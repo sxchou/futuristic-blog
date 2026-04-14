@@ -219,6 +219,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '网站设置' }
       },
       {
+        path: 'announcements',
+        name: 'AdminAnnouncements',
+        component: () => import('@/views/admin/AnnouncementsView.vue'),
+        meta: { title: '公告管理' }
+      },
+      {
         path: 'profile',
         name: 'AdminSiteProfile',
         component: () => import('@/views/admin/ProfileView.vue'),

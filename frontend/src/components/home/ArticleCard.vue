@@ -237,7 +237,7 @@ const getArticleLink = () => {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  padding: 1rem;
+  padding: 0.5rem;
   border-radius: 1rem;
   background: white;
   border: 1px solid rgba(0, 0, 0, 0.06);

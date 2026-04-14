@@ -164,12 +164,20 @@
     @apply glass-card p-5;
   }
 
+  .sidebar-widget-compact {
+    @apply p-3;
+  }
+
   .sidebar-widget-title {
     @apply text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4 pb-3 border-b border-gray-200 dark:border-white/5;
   }
 
+  .sidebar-widget-title-compact {
+    @apply text-sm mb-2 pb-2;
+  }
+
   .article-card {
-    @apply glass-card-hover p-5 flex flex-col;
+    @apply glass-card-hover flex flex-col;
   }
 
   @media (min-width: 640px) {

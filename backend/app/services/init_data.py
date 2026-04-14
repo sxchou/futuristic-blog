@@ -81,6 +81,26 @@ def run_database_migrations():
                 conn.commit()
                 print("Migration: Added 'preview_count' column to article_files table")
             
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='announcements'")
+            if not cursor.fetchone():
+                cursor.execute('''
+                    CREATE TABLE announcements (
+                        id INTEGER PRIMARY KEY,
+                        title VARCHAR(200) NOT NULL,
+                        content TEXT NOT NULL,
+                        type VARCHAR(20) DEFAULT 'info',
+                        is_active BOOLEAN DEFAULT 1,
+                        'order' INTEGER DEFAULT 0,
+                        created_at TEXT,
+                        updated_at TEXT
+                    )
+                ''')
+                cursor.execute("CREATE INDEX IF NOT EXISTS ix_announcements_id ON announcements(id)")
+                cursor.execute("CREATE INDEX IF NOT EXISTS ix_announcements_is_active ON announcements(is_active)")
+                cursor.execute("CREATE INDEX IF NOT EXISTS ix_announcements_active_order ON announcements(is_active, 'order')")
+                conn.commit()
+                print("Migration: Created 'announcements' table")
+            
             conn.close()
         elif "postgresql" in db_url:
             db = SessionLocal()
@@ -126,6 +146,26 @@ def run_database_migrations():
                     db.execute(text("ALTER TABLE article_files ADD COLUMN preview_count INTEGER DEFAULT 0"))
                     db.commit()
                     print("Migration: Added 'preview_count' column to article_files table")
+                
+                result = db.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'announcements'"))
+                if not result.fetchone():
+                    db.execute(text('''
+                        CREATE TABLE announcements (
+                            id SERIAL PRIMARY KEY,
+                            title VARCHAR(200) NOT NULL,
+                            content TEXT NOT NULL,
+                            type VARCHAR(20) DEFAULT 'info',
+                            is_active BOOLEAN DEFAULT TRUE,
+                            "order" INTEGER DEFAULT 0,
+                            created_at TIMESTAMP,
+                            updated_at TIMESTAMP
+                        )
+                    '''))
+                    db.execute(text("CREATE INDEX IF NOT EXISTS ix_announcements_id ON announcements(id)"))
+                    db.execute(text("CREATE INDEX IF NOT EXISTS ix_announcements_is_active ON announcements(is_active)"))
+                    db.execute(text("CREATE INDEX IF NOT EXISTS ix_announcements_active_order ON announcements(is_active, \"order\")"))
+                    db.commit()
+                    print("Migration: Created 'announcements' table")
             except Exception as e:
                 print(f"PostgreSQL migration error: {e}")
                 db.rollback()

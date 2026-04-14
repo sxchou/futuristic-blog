@@ -10,6 +10,7 @@ import type { Article, ArticleFile } from '@/types'
 import CommentSection from '@/components/comments/CommentSection.vue'
 import FilePreview from '@/components/FilePreview.vue'
 import BlogSidebar from '@/components/common/BlogSidebar.vue'
+import LeftSidebar from '@/components/common/LeftSidebar.vue'
 import { getMediaUrl } from '@/utils/media'
 
 const route = useRoute()
@@ -590,9 +591,15 @@ watch(article, async (newVal) => {
 
     <article
       v-else-if="article"
-      class="flex flex-col lg:flex-row gap-8"
+      class="flex flex-col lg:flex-row gap-6"
     >
-      <div class="flex-1 min-w-0 max-w-none lg:max-w-[calc(100%-20rem)]">
+      <div class="lg:w-56 flex-shrink-0 hidden lg:block">
+        <div class="lg:sticky lg:top-20">
+          <LeftSidebar />
+        </div>
+      </div>
+      
+      <div class="flex-1 min-w-0">
         <header
           ref="articleHeaderRef"
           class="mb-8"
@@ -1103,7 +1110,7 @@ watch(article, async (newVal) => {
         />
       </div>
 
-      <aside class="hidden lg:block lg:w-72 xl:w-80 flex-shrink-0">
+      <aside class="lg:w-56 flex-shrink-0 hidden lg:block">
         <div class="lg:sticky lg:top-20 space-y-6">
           <div
             v-if="tocItems.length > 0"

@@ -721,3 +721,37 @@ class UserProfileResponse(BaseModel):
 
 class UserProfileUpdate(BaseModel):
     avatar_type: Optional[str] = Field(None, pattern='^(default|custom)$')
+
+
+class AnnouncementBase(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)
+    content: str = Field(..., min_length=1)
+    type: str = Field(default='info', pattern='^(info|warning|success|error)$')
+    is_active: bool = Field(default=True)
+    order: int = Field(default=0)
+
+
+class AnnouncementCreate(AnnouncementBase):
+    pass
+
+
+class AnnouncementUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    content: Optional[str] = Field(None, min_length=1)
+    type: Optional[str] = Field(None, pattern='^(info|warning|success|error)$')
+    is_active: Optional[bool] = None
+    order: Optional[int] = None
+
+
+class AnnouncementResponse(AnnouncementBase):
+    id: int
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+    
+    @field_validator('created_at', 'updated_at', mode='before')
+    @classmethod
+    def serialize_datetime_field(cls, v):
+        return serialize_datetime(v)
+    
+    class Config:
+        from_attributes = True

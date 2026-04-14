@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useBlogStore, useAuthStore, useUserInteractionStore, useSiteConfigStore } from '@/stores'
 import { articleApi } from '@/api'
 import BlogSidebar from '@/components/common/BlogSidebar.vue'
+import LeftSidebar from '@/components/common/LeftSidebar.vue'
 import Pagination from '@/components/common/Pagination.vue'
 import { usePageSize } from '@/composables/usePageSize'
 import { formatDateShort } from '@/utils/date'
@@ -207,7 +208,13 @@ const handlePageChange = (page: number) => {
 
 <template>
   <div>
-    <div class="flex flex-col lg:flex-row gap-8">
+    <div class="flex flex-col lg:flex-row gap-6">
+      <div class="lg:w-56 flex-shrink-0 hidden lg:block">
+        <div class="lg:sticky lg:top-20">
+          <LeftSidebar />
+        </div>
+      </div>
+      
       <div class="flex-1 min-w-0">
         <section
           v-if="featuredArticles.length > 0"
@@ -390,7 +397,7 @@ const handlePageChange = (page: number) => {
           >
             <router-link
               :to="`/article/${article.slug}`"
-              class="block p-0 sm:p-5"
+              class="block p-2"
             >
               <div 
                 class="flex flex-col sm:grid sm:grid-cols-[auto_1fr] sm:gap-4"
@@ -399,8 +406,8 @@ const handlePageChange = (page: number) => {
                   v-if="article.cover_image"
                   :class="[
                     isStackedLayout 
-                      ? 'relative w-full h-40 sm:w-72 md:w-80 sm:h-full overflow-hidden rounded-t-lg sm:rounded-lg px-2 pt-2 sm:p-0' 
-                      : 'absolute inset-0 sm:relative sm:w-72 md:w-80 sm:h-full overflow-hidden rounded-none sm:rounded-lg'
+                      ? 'relative w-full h-40 sm:w-56 md:w-64 sm:h-full overflow-hidden rounded-t-lg sm:rounded-lg px-2 pt-2 sm:p-0' 
+                    : 'absolute inset-0 sm:relative sm:w-56 md:w-64 sm:h-full overflow-hidden rounded-none sm:rounded-lg'
                   ]"
                 >
                   <img
@@ -672,7 +679,7 @@ const handlePageChange = (page: number) => {
         </div>
       </div>
 
-      <div class="lg:w-80 xl:w-84 flex-shrink-0">
+      <div class="lg:w-56 flex-shrink-0 hidden lg:block">
         <div class="lg:sticky lg:top-20">
           <BlogSidebar />
         </div>

@@ -2,6 +2,7 @@
 import { onMounted } from 'vue'
 import { useBlogStore } from '@/stores'
 import BlogSidebar from '@/components/common/BlogSidebar.vue'
+import LeftSidebar from '@/components/common/LeftSidebar.vue'
 
 const blogStore = useBlogStore()
 
@@ -11,7 +12,13 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col lg:flex-row gap-8">
+  <div class="flex flex-col lg:flex-row gap-6">
+    <div class="lg:w-56 flex-shrink-0 hidden lg:block">
+      <div class="lg:sticky lg:top-20">
+        <LeftSidebar />
+      </div>
+    </div>
+    
     <div class="flex-1 min-w-0">
       <div class="mb-8">
         <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -104,7 +111,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <div class="lg:w-80 xl:w-84 flex-shrink-0">
+    <div class="lg:w-56 flex-shrink-0 hidden lg:block">
       <div class="lg:sticky lg:top-20">
         <BlogSidebar />
       </div>
