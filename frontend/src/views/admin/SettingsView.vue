@@ -62,7 +62,7 @@ const handleLogoReset = () => {
   <div class="space-y-6">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+        <div class="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
           <svg
             class="w-5 h-5 text-primary"
             fill="none"
@@ -299,7 +299,7 @@ const handleLogoReset = () => {
           <button
             type="button"
             :disabled="isSaving"
-            class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-primary to-accent text-white text-sm font-medium rounded-lg hover:opacity-90 transition-all disabled:opacity-50 shadow-lg shadow-primary/25"
+            class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-all disabled:opacity-50 shadow-lg shadow-primary/25"
             @click="handleSave"
           >
             <svg
@@ -417,7 +417,7 @@ const handleLogoReset = () => {
             </div>
           </div>
           <div class="p-4 sm:p-6 space-y-3 sm:space-y-4">
-            <div class="p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-dark-200 dark:to-dark-300 rounded-lg border border-gray-200 dark:border-white/5">
+            <div class="p-3 sm:p-4 bg-gray-50 dark:bg-dark-200 rounded-lg border border-gray-200 dark:border-white/5">
               <p class="text-xs text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
                 <svg
                   class="w-3 h-3"
@@ -439,7 +439,7 @@ const handleLogoReset = () => {
               </p>
             </div>
             
-            <div class="p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-dark-200 dark:to-dark-300 rounded-lg border border-gray-200 dark:border-white/5">
+            <div class="p-3 sm:p-4 bg-gray-50 dark:bg-dark-200 rounded-lg border border-gray-200 dark:border-white/5">
               <p class="text-xs text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
                 <svg
                   class="w-3 h-3"
@@ -461,7 +461,7 @@ const handleLogoReset = () => {
               </p>
             </div>
             
-            <div class="p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-dark-200 dark:to-dark-300 rounded-lg border border-gray-200 dark:border-white/5">
+            <div class="p-3 sm:p-4 bg-gray-50 dark:bg-dark-200 rounded-lg border border-gray-200 dark:border-white/5">
               <p class="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1">
                 <svg
                   class="w-3 h-3"
@@ -495,7 +495,7 @@ const handleLogoReset = () => {
               </div>
             </div>
 
-            <div class="p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-dark-200 dark:to-dark-300 rounded-lg border border-gray-200 dark:border-white/5">
+            <div class="p-3 sm:p-4 bg-gray-50 dark:bg-dark-200 rounded-lg border border-gray-200 dark:border-white/5">
               <p class="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1">
                 <svg
                   class="w-3 h-3"

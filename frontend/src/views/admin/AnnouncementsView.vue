@@ -192,7 +192,7 @@ const getTypeStyles = (type: string) => {
   <div class="space-y-6">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+        <div class="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
           <svg
             class="w-5 h-5 text-primary"
             fill="none"
@@ -218,7 +218,7 @@ const getTypeStyles = (type: string) => {
       </div>
       <button
         type="button"
-        class="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-primary to-accent text-white text-sm font-medium rounded-xl hover:opacity-90 transition-all shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5"
+        class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5"
         @click="openEditor()"
       >
         <svg
@@ -238,12 +238,12 @@ const getTypeStyles = (type: string) => {
       </button>
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <div class="glass-card p-4 group hover:shadow-lg transition-all">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div class="glass-card p-3 group hover:shadow-lg transition-all">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-lg bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
             <svg
-              class="w-5 h-5 text-blue-500"
+              class="w-4 h-4 text-blue-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -258,16 +258,16 @@ const getTypeStyles = (type: string) => {
           </div>
           <div>
             <p class="text-xs text-gray-500 dark:text-gray-400">总公告数</p>
-            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.total }}</p>
+            <p class="text-xl font-bold text-gray-900 dark:text-white">{{ stats.total }}</p>
           </div>
         </div>
       </div>
 
-      <div class="glass-card p-4 group hover:shadow-lg transition-all">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500/20 to-emerald-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+      <div class="glass-card p-3 group hover:shadow-lg transition-all">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
             <svg
-              class="w-5 h-5 text-emerald-500"
+              class="w-4 h-4 text-emerald-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -282,16 +282,16 @@ const getTypeStyles = (type: string) => {
           </div>
           <div>
             <p class="text-xs text-gray-500 dark:text-gray-400">已启用</p>
-            <p class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{{ stats.active }}</p>
+            <p class="text-xl font-bold text-emerald-600 dark:text-emerald-400">{{ stats.active }}</p>
           </div>
         </div>
       </div>
 
-      <div class="glass-card p-4 group hover:shadow-lg transition-all">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-gray-500/20 to-gray-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+      <div class="glass-card p-3 group hover:shadow-lg transition-all">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-lg bg-gray-500/10 dark:bg-gray-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
             <svg
-              class="w-5 h-5 text-gray-500"
+              class="w-4 h-4 text-gray-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -306,7 +306,7 @@ const getTypeStyles = (type: string) => {
           </div>
           <div>
             <p class="text-xs text-gray-500 dark:text-gray-400">已禁用</p>
-            <p class="text-2xl font-bold text-gray-600 dark:text-gray-400">{{ stats.inactive }}</p>
+            <p class="text-xl font-bold text-gray-600 dark:text-gray-400">{{ stats.inactive }}</p>
           </div>
         </div>
       </div>
@@ -380,10 +380,10 @@ const getTypeStyles = (type: string) => {
           v-if="showEditor"
           class="bg-white dark:bg-dark-100 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden"
         >
-          <div class="px-6 py-4 border-b border-gray-200 dark:border-white/10 bg-gradient-to-r from-primary/5 to-accent/5">
+          <div class="px-4 py-3 border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-dark-200">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                <div class="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
                   <svg
                     class="w-4 h-4 text-primary"
                     fill="none"
@@ -424,43 +424,43 @@ const getTypeStyles = (type: string) => {
             </div>
           </div>
 
-          <div class="p-6 space-y-5 overflow-y-auto max-h-[calc(90vh-140px)]">
+          <div class="p-4 space-y-3 overflow-y-auto max-h-[calc(90vh-120px)]">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                 公告标题 <span class="text-red-500">*</span>
               </label>
               <input
                 v-model="formData.title"
                 type="text"
-                class="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
+                class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
                 placeholder="请输入公告标题"
               >
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                 公告内容 <span class="text-red-500">*</span>
               </label>
               <textarea
                 v-model="formData.content"
-                rows="5"
-                class="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all resize-none"
+                rows="4"
+                class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all resize-none"
                 placeholder="请输入公告内容"
               />
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                   公告类型
                 </label>
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-2 gap-1.5">
                   <button
                     v-for="option in typeOptions"
                     :key="option.value"
                     type="button"
                     :class="[
-                      'relative flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all',
+                      'relative flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all',
                       formData.type === option.value
                         ? `border-${option.color}-500 bg-${option.color}-500/10`
                         : 'border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20'
@@ -468,7 +468,7 @@ const getTypeStyles = (type: string) => {
                     @click="formData.type = option.value as any"
                   >
                     <svg
-                      class="w-5 h-5"
+                      class="w-4 h-4"
                       :class="formData.type === option.value ? `text-${option.color}-500` : 'text-gray-400'"
                       fill="none"
                       stroke="currentColor"
@@ -494,28 +494,28 @@ const getTypeStyles = (type: string) => {
               </div>
 
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                   排序权重
                 </label>
                 <input
                   v-model.number="formData.order"
                   type="number"
                   min="0"
-                  class="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
+                  class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
                   placeholder="数字越小越靠前"
                 >
-                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   数值越小，显示顺序越靠前
                 </p>
               </div>
             </div>
 
-            <div class="flex items-center gap-3 p-4 bg-gray-50 dark:bg-dark-200 rounded-xl">
+            <div class="flex items-center gap-2 p-3 bg-gray-50 dark:bg-dark-200 rounded-xl">
               <input
                 id="announcement-active"
                 v-model="formData.is_active"
                 type="checkbox"
-                class="w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary"
+                class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
               >
               <label
                 for="announcement-active"
@@ -527,10 +527,10 @@ const getTypeStyles = (type: string) => {
             </div>
           </div>
 
-          <div class="px-6 py-4 border-t border-gray-200 dark:border-white/10 flex justify-end gap-3 bg-gray-50/50 dark:bg-white/[0.02]">
+          <div class="px-4 py-3 border-t border-gray-200 dark:border-white/10 flex justify-end gap-2 bg-gray-50/50 dark:bg-white/[0.02]">
             <button
               type="button"
-              class="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-xl hover:bg-gray-50 dark:hover:bg-dark-300 transition-colors"
+              class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-dark-300 transition-colors"
               @click="closeEditor"
             >
               取消
@@ -538,7 +538,7 @@ const getTypeStyles = (type: string) => {
             <button
               type="button"
               :disabled="isSaving"
-              class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-primary to-accent text-white text-sm font-medium rounded-xl hover:opacity-90 transition-all disabled:opacity-50 shadow-lg shadow-primary/25"
+              class="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-all disabled:opacity-50 shadow-lg shadow-primary/25"
               @click="handleSave"
             >
               <svg
@@ -640,19 +640,19 @@ const getTypeStyles = (type: string) => {
           :key="announcement.id"
           class="glass-card overflow-hidden hover:shadow-xl transition-all group"
         >
-          <div class="p-5">
-            <div class="flex items-start justify-between gap-4">
+          <div class="p-4">
+            <div class="flex items-start justify-between gap-3">
               <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 mb-3">
+                <div class="flex items-center gap-2 mb-2">
                   <div
                     :class="[
-                      'px-2.5 py-1 rounded-lg border flex items-center gap-1.5',
+                      'px-2 py-0.5 rounded-lg border flex items-center gap-1',
                       getTypeStyles(announcement.type).bg,
                       getTypeStyles(announcement.type).border
                     ]"
                   >
                     <svg
-                      class="w-3.5 h-3.5"
+                      class="w-3 h-3"
                       :class="getTypeStyles(announcement.type).icon"
                       fill="none"
                       stroke="currentColor"
@@ -677,20 +677,20 @@ const getTypeStyles = (type: string) => {
                   
                   <span
                     v-if="!announcement.is_active"
-                    class="px-2.5 py-1 text-xs font-medium rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700"
+                    class="px-2 py-0.5 text-xs font-medium rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700"
                   >
                     已禁用
                   </span>
                 </div>
                 
-                <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-primary transition-colors">
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-1 group-hover:text-primary transition-colors">
                   {{ announcement.title }}
                 </h3>
                 <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-2">
                   {{ announcement.content }}
                 </p>
                 
-                <div class="flex items-center gap-3 mt-3 text-xs text-gray-500 dark:text-gray-400">
+                <div class="flex items-center gap-3 mt-2 text-xs text-gray-500 dark:text-gray-400">
                   <span class="flex items-center gap-1">
                     <svg
                       class="w-3.5 h-3.5"
@@ -726,11 +726,11 @@ const getTypeStyles = (type: string) => {
                 </div>
               </div>
               
-              <div class="flex flex-col gap-2">
+              <div class="flex flex-col gap-1.5">
                 <button
                   type="button"
                   :class="[
-                    'p-2.5 rounded-xl transition-all',
+                    'p-2 rounded-lg transition-all',
                     announcement.is_active
                       ? 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/10'
                       : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5'
@@ -739,7 +739,7 @@ const getTypeStyles = (type: string) => {
                   @click="toggleActive(announcement)"
                 >
                   <svg
-                    class="w-5 h-5"
+                    class="w-4 h-4"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -762,12 +762,12 @@ const getTypeStyles = (type: string) => {
                 </button>
                 <button
                   type="button"
-                  class="p-2.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-all"
+                  class="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-all"
                   title="编辑"
                   @click="openEditor(announcement)"
                 >
                   <svg
-                    class="w-5 h-5"
+                    class="w-4 h-4"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -782,12 +782,12 @@ const getTypeStyles = (type: string) => {
                 </button>
                 <button
                   type="button"
-                  class="p-2.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all"
+                  class="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"
                   title="删除"
                   @click="handleDelete(announcement.id)"
                 >
                   <svg
-                    class="w-5 h-5"
+                    class="w-4 h-4"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"

@@ -29,13 +29,13 @@ const getTagSize = (count: number) => {
 
 <template>
   <div class="flex flex-col lg:flex-row gap-6">
-    <div class="lg:w-56 flex-shrink-0 hidden lg:block">
+    <div class="lg:w-56 flex-shrink-0 hidden lg:block lg:order-1">
       <div class="lg:sticky lg:top-20">
         <LeftSidebar />
       </div>
     </div>
     
-    <div class="flex-1 min-w-0">
+    <div class="flex-1 min-w-0 lg:order-2">
       <div class="mb-8">
         <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
           标签云
@@ -128,10 +128,15 @@ const getTagSize = (count: number) => {
       </div>
     </div>
 
-    <div class="lg:w-56 flex-shrink-0 hidden lg:block">
+    <div class="lg:w-56 flex-shrink-0 hidden lg:block lg:order-3">
       <div class="lg:sticky lg:top-20">
         <BlogSidebar />
       </div>
     </div>
+
+    <aside class="lg:hidden mt-8 space-y-4" aria-label="侧边栏内容">
+      <LeftSidebar />
+      <BlogSidebar />
+    </aside>
   </div>
 </template>

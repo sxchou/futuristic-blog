@@ -316,7 +316,7 @@ onMounted(fetchProfile)
         </p>
         <router-link
           to="/admin/profile"
-          class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary to-accent text-white text-sm rounded-lg hover:opacity-90 transition-opacity"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary/90 transition-colors"
         >
           <svg
             class="w-4 h-4"

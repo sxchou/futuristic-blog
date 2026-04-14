@@ -106,7 +106,7 @@ onMounted(() => {
             to="/"
             class="flex items-center gap-2"
           >
-            <span class="text-base font-bold gradient-text">{{ siteConfigStore.siteName }}</span>
+            <span class="text-base font-bold text-gray-900 dark:text-white">{{ siteConfigStore.siteName }}</span>
           </router-link>
         </div>
 
@@ -415,7 +415,7 @@ onMounted(() => {
           <div class="flex items-center gap-2 sm:gap-4">
             <router-link
               to="/"
-              class="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 bg-gradient-to-r from-primary/10 to-accent/10 hover:from-primary/20 hover:to-accent/20 border border-primary/20 hover:border-primary/40 rounded-lg transition-all duration-300 group"
+              class="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 bg-primary/10 hover:bg-primary/20 border border-primary/20 hover:border-primary/40 rounded-lg transition-all duration-300 group"
             >
               <svg
                 class="w-4 h-4 text-primary group-hover:scale-110 transition-transform"
@@ -430,7 +430,7 @@ onMounted(() => {
                   d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
                 />
               </svg>
-              <span class="text-xs sm:text-sm font-medium bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">访问前台</span>
+              <span class="text-xs sm:text-sm font-medium text-primary">访问前台</span>
             </router-link>
           </div>
         </div>

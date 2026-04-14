@@ -206,7 +206,7 @@ const goBack = () => {
     <div class="w-full max-w-sm">
       <div class="glass-card p-6">
         <div class="text-center mb-6">
-          <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+          <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-primary flex items-center justify-center">
             <span class="text-lg font-bold text-white">{{ siteConfigStore.siteLogo }}</span>
           </div>
           <h1 class="text-lg font-bold gradient-text">
@@ -369,7 +369,7 @@ const goBack = () => {
           <button
             type="submit"
             :disabled="!canSubmit || isLoading || isSendingCode"
-            class="w-full py-2.5 bg-gradient-to-r from-primary to-accent text-white font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 text-sm"
+            class="w-full py-2.5 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 text-sm"
           >
             <span
               v-if="isLoading || isSendingCode"

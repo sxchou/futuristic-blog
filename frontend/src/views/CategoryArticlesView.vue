@@ -141,13 +141,13 @@ const handlePageChange = (page: number) => {
 
 <template>
   <div class="flex flex-col lg:flex-row gap-6">
-    <div class="lg:w-56 flex-shrink-0 hidden lg:block">
+    <div class="lg:w-56 flex-shrink-0 hidden lg:block lg:order-1">
       <div class="lg:sticky lg:top-20">
         <LeftSidebar />
       </div>
     </div>
     
-    <div class="flex-1 min-w-0">
+    <main class="flex-1 min-w-0 lg:order-2">
       <div class="mb-8">
         <div class="flex items-center gap-2 mb-2">
           <router-link
@@ -251,13 +251,13 @@ const handlePageChange = (page: number) => {
             class="block p-2"
           >
             <div 
-              class="flex flex-col sm:grid sm:grid-cols-[auto_1fr] sm:gap-4"
+              class="flex flex-col gap-3 sm:grid sm:grid-cols-[auto_1fr] sm:gap-4"
             >
               <div
                 v-if="article.cover_image"
                 :class="[
                   isStackedLayout 
-                    ? 'relative w-full h-40 sm:w-56 md:w-64 sm:h-full overflow-hidden rounded-t-lg sm:rounded-lg px-2 pt-2 sm:p-0' 
+                    ? 'relative w-full h-40 sm:w-56 md:w-64 sm:h-full overflow-hidden rounded-t-lg sm:rounded-lg' 
                     : 'absolute inset-0 sm:relative sm:w-56 md:w-64 sm:h-full overflow-hidden rounded-none sm:rounded-lg'
                 ]"
               >
@@ -287,8 +287,8 @@ const handlePageChange = (page: number) => {
                 class="relative flex-1 min-w-0 flex flex-col"
                 :class="[
                   isStackedLayout 
-                    ? 'min-h-0 px-2 py-3' 
-                    : 'min-h-[180px] sm:min-h-0 px-2 py-4 sm:p-0'
+                    ? 'min-h-0' 
+                    : 'min-h-[180px] sm:min-h-0'
                 ]"
               >
                 <div class="flex items-center gap-2 mb-2">
@@ -528,12 +528,17 @@ const handlePageChange = (page: number) => {
           @page-change="handlePageChange"
         />
       </div>
-    </div>
+    </main>
 
-    <div class="lg:w-56 flex-shrink-0 hidden lg:block">
+    <div class="lg:w-56 flex-shrink-0 hidden lg:block lg:order-3">
       <div class="lg:sticky lg:top-20">
         <BlogSidebar />
       </div>
     </div>
+
+    <aside class="lg:hidden mt-8 space-y-4" aria-label="侧边栏内容">
+      <LeftSidebar />
+      <BlogSidebar />
+    </aside>
   </div>
 </template>

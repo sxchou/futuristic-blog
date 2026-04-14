@@ -248,11 +248,10 @@ watch(() => props.currentPage, () => {
          active:scale-95;
 }
 
-.pagination-active {
-  @apply bg-gradient-to-r from-primary to-accent
+.pagination-page.pagination-active {
+  @apply bg-primary
          text-white
-         border-transparent
-         shadow-lg shadow-primary/25
+         border-primary
          cursor-default;
 }
 

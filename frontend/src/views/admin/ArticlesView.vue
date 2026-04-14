@@ -1305,7 +1305,7 @@ watch(form, () => {
                 <div class="flex items-center gap-2">
                   <span
                     v-if="article.is_pinned"
-                    class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-600 dark:text-amber-400 rounded border border-amber-500/30"
+                    class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded border border-amber-500/30"
                   >
                     <svg
                       class="w-3 h-3"
@@ -1318,7 +1318,7 @@ watch(form, () => {
                   </span>
                   <span
                     v-if="article.is_featured"
-                    class="px-2 py-0.5 text-xs font-medium bg-gradient-to-r from-primary to-accent text-white rounded-full"
+                    class="px-2 py-0.5 text-xs font-medium bg-primary text-white rounded-full"
                   >精选</span>
                   <span class="text-gray-900 dark:text-white">{{ article.title }}</span>
                 </div>
@@ -1384,7 +1384,7 @@ watch(form, () => {
             <div class="flex items-center gap-2 min-w-0">
               <span
                 v-if="article.is_pinned"
-                class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-600 dark:text-amber-400 rounded border border-amber-500/30 flex-shrink-0"
+                class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded border border-amber-500/30 flex-shrink-0"
               >
                 <svg
                   class="w-3 h-3"
@@ -1395,7 +1395,7 @@ watch(form, () => {
               </span>
               <span
                 v-if="article.is_featured"
-                class="px-2 py-0.5 text-xs font-medium bg-gradient-to-r from-primary to-accent text-white rounded-full flex-shrink-0"
+                class="px-2 py-0.5 text-xs font-medium bg-primary text-white rounded-full flex-shrink-0"
               >精选</span>
               <span class="text-gray-900 dark:text-white text-sm font-medium truncate">{{ article.title }}</span>
             </div>
@@ -1612,7 +1612,7 @@ watch(form, () => {
                       :disabled="isUploading"
                       @change="handleCoverUpload"
                     >
-                    <span class="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-gradient-to-r from-primary to-accent text-white rounded-lg hover:opacity-90 transition-all shadow-sm">
+                    <span class="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 transition-all shadow-sm">
                       <svg
                         class="w-3.5 h-3.5"
                         fill="none"
@@ -1700,7 +1700,7 @@ watch(form, () => {
                     :disabled="isUploading"
                     @change="handleImageUpload"
                   >
-                  <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-sm">
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all shadow-sm">
                     <span class="w-4 h-4">
                       <svg
                         viewBox="0 0 24 24"
@@ -1736,7 +1736,7 @@ watch(form, () => {
                     @change="handleFileUpload"
                   >
                   <span 
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gradient-to-r from-primary to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all shadow-sm"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all shadow-sm"
                     :class="{ 'opacity-50 cursor-not-allowed': !editingArticle }"
                   >
                     <span class="w-4 h-4">
@@ -1880,7 +1880,7 @@ watch(form, () => {
                   </div>
                   <div class="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                     <div 
-                      class="h-full bg-gradient-to-r from-primary to-blue-500 transition-all duration-150"
+                      class="h-full bg-primary transition-all duration-150"
                       :style="{ width: overallUploadProgress + '%' }"
                     />
                   </div>

@@ -160,7 +160,7 @@ onMounted(async () => {
               class="glass-card-hover p-6 group"
             >
               <div class="flex items-start gap-4">
-                <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                <div class="w-12 h-12 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
                   <svg
                     class="w-6 h-6 text-primary"
                     fill="none"

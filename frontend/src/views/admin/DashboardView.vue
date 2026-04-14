@@ -629,7 +629,7 @@ onMounted(() => {
   padding: 6px 12px;
   font-size: 12px;
   color: white;
-  background: linear-gradient(135deg, #00d4ff, #7c3aed);
+  background: #00d4ff;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -897,7 +897,7 @@ onMounted(() => {
 }
 
 .rank-tab.active {
-  background: linear-gradient(135deg, #00d4ff, #7c3aed);
+  background: #00d4ff;
   border-color: transparent;
   color: white;
 }
@@ -965,7 +965,7 @@ onMounted(() => {
 }
 
 .rank-number.top {
-  background: linear-gradient(135deg, #00d4ff, #7c3aed);
+  background: #00d4ff;
   color: white;
 }
 

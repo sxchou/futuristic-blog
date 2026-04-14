@@ -143,7 +143,7 @@ const formatDate = (date: string) => {
         <div class="p-4 bg-gray-50/50 dark:bg-white/[0.02] rounded-xl">
           <div class="flex flex-col items-center">
             <div class="relative mb-3 group">
-              <div class="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full blur-xl opacity-60" />
+              <div class="absolute inset-0 bg-primary/10 dark:bg-primary/20 rounded-full blur-xl opacity-60" />
               <div class="relative">
                 <button
                   class="relative cursor-pointer rounded-full overflow-hidden transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/50"
@@ -238,7 +238,7 @@ const formatDate = (date: string) => {
                 </h4>
                 <span
                   v-if="authStore.user.is_admin"
-                  class="inline-flex items-center px-2 py-0.5 bg-gradient-to-r from-primary/20 to-accent/20 text-primary text-xs font-semibold rounded-full border border-primary/30"
+                  class="inline-flex items-center px-2 py-0.5 bg-primary/10 dark:bg-primary/20 text-primary text-xs font-semibold rounded-full border border-primary/30"
                 >
                   管理员
                 </span>
@@ -252,7 +252,7 @@ const formatDate = (date: string) => {
               <span class="text-gray-400 dark:text-gray-500">ID: {{ authStore.user.id }}</span>
               <router-link
                 to="/profile"
-                class="flex items-center gap-1 text-primary hover:text-primary/80 transition-colors font-medium"
+                class="flex items-center gap-1 text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 transition-colors font-medium"
               >
                 <svg
                   class="w-3.5 h-3.5"
@@ -276,7 +276,7 @@ const formatDate = (date: string) => {
       <template v-else>
         <div class="p-4 bg-gray-50/50 dark:bg-white/[0.02] rounded-xl">
           <div class="flex flex-col items-center">
-            <div class="w-14 h-14 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-dark-400 dark:to-dark-500 flex items-center justify-center mb-3">
+            <div class="w-14 h-14 rounded-full bg-gray-200 dark:bg-dark-400 flex items-center justify-center mb-3">
               <svg
                 class="w-7 h-7 text-gray-400 dark:text-gray-500"
                 fill="none"
@@ -310,7 +310,7 @@ const formatDate = (date: string) => {
               </router-link>
               <router-link
                 to="/register"
-                class="flex-1 py-2 text-center text-xs font-medium text-white bg-gradient-to-r from-primary to-accent rounded-lg hover:opacity-90 transition-opacity shadow-sm"
+                class="flex-1 py-2 text-center text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-300 border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-dark-400 transition-colors"
               >
                 注册
               </router-link>
@@ -362,10 +362,10 @@ const formatDate = (date: string) => {
               />
             </svg>
             <div class="flex-1 min-w-0">
-              <h4 class="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-primary transition-colors">
+              <h4 class="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-primary transition-colors mb-2">
                 {{ announcement.title }}
               </h4>
-              <p class="text-xs text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">
+              <p class="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
                 {{ announcement.content }}
               </p>
               <p class="text-xs text-gray-400 dark:text-gray-500 mt-1.5">

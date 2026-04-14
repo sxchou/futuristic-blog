@@ -22,7 +22,7 @@ onMounted(() => {
               data-text="404"
             >{{ glitchText }}</span>
           </h1>
-          <div class="w-24 h-1 bg-gradient-to-r from-primary to-accent mx-auto mb-8" />
+          <div class="w-24 h-1 bg-primary mx-auto mb-8" />
         </div>
 
         <h2 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">

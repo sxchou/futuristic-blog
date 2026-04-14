@@ -161,7 +161,7 @@ onUnmounted(() => {
                 class="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition-colors text-left"
                 @click="goToArticle(article.slug)"
               >
-                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                <div class="w-10 h-10 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
                   <svg
                     class="w-5 h-5 text-primary"
                     fill="none"

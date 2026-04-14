@@ -593,13 +593,13 @@ watch(article, async (newVal) => {
       v-else-if="article"
       class="flex flex-col lg:flex-row gap-6"
     >
-      <div class="lg:w-56 flex-shrink-0 hidden lg:block">
+      <div class="lg:w-56 flex-shrink-0 hidden lg:block lg:order-1">
         <div class="lg:sticky lg:top-20">
           <LeftSidebar />
         </div>
       </div>
       
-      <div class="flex-1 min-w-0">
+      <div class="flex-1 min-w-0 lg:order-2">
         <header
           ref="articleHeaderRef"
           class="mb-8"
@@ -621,125 +621,127 @@ watch(article, async (newVal) => {
 
           <div
             v-if="article.cover_image"
-            class="hidden md:flex gap-6 mb-8 items-stretch"
+            class="hidden md:block mb-8"
           >
-            <div class="flex-1 min-w-0 cover-text-content">
-              <div class="flex items-center gap-2 mb-4">
-                <span
-                  v-if="article.is_featured"
-                  class="px-2.5 py-0.5 bg-gradient-to-r from-primary to-accent text-white text-xs font-medium rounded-full"
-                >精选</span>
-                <span
-                  v-if="article.is_pinned"
-                  class="px-2.5 py-0.5 bg-amber-500/90 text-white text-xs font-medium rounded-full"
-                >置顶</span>
-              </div>
-
-              <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
-                {{ article.title }}
-              </h1>
-
-              <div class="flex flex-wrap items-center gap-3 text-sm text-gray-400 mb-4">
-                <span class="flex items-center gap-1.5">
-                  <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  ><path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  /></svg>
-                  {{ formatDate(article.created_at) }}
-                </span>
-                <span
-                  v-if="article.reading_time"
-                  class="flex items-center gap-1.5"
-                >
-                  <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  ><path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  /></svg>
-                  {{ article.reading_time }} 分钟
-                </span>
-                <span class="flex items-center gap-1.5">
-                  <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  ><path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  /><path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                  /></svg>
-                  {{ article.view_count }}
-                </span>
-              </div>
-
-              <div class="flex flex-wrap items-center gap-2 mb-4">
-                <router-link
-                  v-if="article.category"
-                  :to="`/categories/${article.category.slug}`"
-                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors hover:opacity-80"
-                  :style="{ backgroundColor: article.category.color + '15', color: article.category.color, borderColor: article.category.color + '30' }"
-                >
+            <div class="flex gap-6 items-stretch">
+              <div class="flex-1 min-w-0 cover-text-content">
+                <div class="flex items-center gap-2 mb-4">
                   <span
-                    class="w-1.5 h-1.5 rounded-full"
-                    :style="{ backgroundColor: article.category.color }"
-                  />
-                  {{ article.category.name }}
-                </router-link>
-                <router-link
-                  v-for="tag in article.tags"
-                  :key="tag.id"
-                  :to="`/tags/${tag.slug}`"
-                  class="tag-badge"
-                  :style="{ color: tag.color, backgroundColor: tag.color + '10', borderColor: tag.color + '30' }"
-                >
-                  #{{ tag.name }}
-                </router-link>
+                    v-if="article.is_featured"
+                    class="px-2.5 py-0.5 bg-primary text-white text-xs font-medium rounded-full"
+                  >精选</span>
+                  <span
+                    v-if="article.is_pinned"
+                    class="px-2.5 py-0.5 bg-amber-500/90 text-white text-xs font-medium rounded-full"
+                  >置顶</span>
+                </div>
+
+                <h1 class="text-2xl sm:text-3xl md:text-3xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
+                  {{ article.title }}
+                </h1>
+
+                <div class="flex flex-wrap items-center gap-3 text-sm text-gray-400 mb-4">
+                  <span class="flex items-center gap-1.5">
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    ><path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    /></svg>
+                    {{ formatDate(article.created_at) }}
+                  </span>
+                  <span
+                    v-if="article.reading_time"
+                    class="flex items-center gap-1.5"
+                  >
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    ><path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    /></svg>
+                    {{ article.reading_time }} 分钟
+                  </span>
+                  <span class="flex items-center gap-1.5">
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    ><path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    /><path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                    /></svg>
+                    {{ article.view_count }}
+                  </span>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                  <router-link
+                    v-if="article.category"
+                    :to="`/categories/${article.category.slug}`"
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors hover:opacity-80"
+                    :style="{ backgroundColor: article.category.color + '15', color: article.category.color, borderColor: article.category.color + '30' }"
+                  >
+                    <span
+                      class="w-1.5 h-1.5 rounded-full"
+                      :style="{ backgroundColor: article.category.color }"
+                    />
+                    {{ article.category.name }}
+                  </router-link>
+                  <router-link
+                    v-for="tag in article.tags"
+                    :key="tag.id"
+                    :to="`/tags/${tag.slug}`"
+                    class="tag-badge"
+                    :style="{ color: tag.color, backgroundColor: tag.color + '10', borderColor: tag.color + '30' }"
+                  >
+                    #{{ tag.name }}
+                  </router-link>
+                </div>
               </div>
 
               <div
-                v-if="article.summary"
-                class="p-4 bg-gray-50 dark:bg-dark-200/50 rounded-xl border border-gray-100 dark:border-white/5"
+                class="w-2/5 flex-shrink-0 relative rounded-2xl overflow-hidden cover-side-image"
+                :style="coverImageHeight > 0 ? { height: coverImageHeight + 'px' } : {}"
               >
-                <p class="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
-                  {{ article.summary }}
-                </p>
+                <img
+                  ref="coverImageRef"
+                  :src="coverImageUrl"
+                  :alt="article.title"
+                  class="w-full h-full object-cover"
+                  :style="{ objectPosition: coverObjectPosition }"
+                  loading="eager"
+                  decoding="async"
+                />
+                <div class="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-transparent" />
               </div>
             </div>
 
             <div
-              class="w-2/5 flex-shrink-0 relative rounded-2xl overflow-hidden cover-side-image"
-              :style="coverImageHeight > 0 ? { height: coverImageHeight + 'px' } : {}"
+              v-if="article.summary"
+              class="mt-4 p-4 bg-gray-50 dark:bg-dark-200/50 rounded-xl border border-gray-100 dark:border-white/5"
             >
-              <img
-                ref="coverImageRef"
-                :src="coverImageUrl"
-                :alt="article.title"
-                class="w-full h-full object-cover"
-                :style="{ objectPosition: coverObjectPosition }"
-                loading="eager"
-                decoding="async"
-              />
-              <div class="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-transparent" />
+              <p class="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
+                {{ article.summary }}
+              </p>
             </div>
           </div>
 
@@ -747,7 +749,7 @@ watch(article, async (newVal) => {
             <div class="flex items-center gap-2 mb-4">
               <span
                 v-if="article.is_featured"
-                class="px-2.5 py-0.5 bg-gradient-to-r from-primary to-accent text-white text-xs font-medium rounded-full"
+                class="px-2.5 py-0.5 bg-primary text-white text-xs font-medium rounded-full"
               >精选</span>
               <span
                 v-if="article.is_pinned"
@@ -755,7 +757,7 @@ watch(article, async (newVal) => {
               >置顶</span>
             </div>
 
-            <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
+            <h1 class="text-2xl sm:text-3xl md:text-3xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
               {{ article.title }}
             </h1>
 
@@ -1110,7 +1112,7 @@ watch(article, async (newVal) => {
         />
       </div>
 
-      <aside class="lg:w-56 flex-shrink-0 hidden lg:block">
+      <aside class="lg:w-56 flex-shrink-0 hidden lg:block lg:order-3">
         <div class="lg:sticky lg:top-20 space-y-6">
           <div
             v-if="tocItems.length > 0"
@@ -1158,6 +1160,11 @@ watch(article, async (newVal) => {
 
           <BlogSidebar />
         </div>
+      </aside>
+
+      <aside class="lg:hidden mt-8 space-y-4" aria-label="侧边栏内容">
+        <LeftSidebar />
+        <BlogSidebar />
       </aside>
     </article>
 

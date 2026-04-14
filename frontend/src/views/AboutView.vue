@@ -28,13 +28,13 @@ onMounted(() => {
 
 <template>
   <div class="flex flex-col lg:flex-row gap-6">
-    <div class="lg:w-56 flex-shrink-0 hidden lg:block">
+    <div class="lg:w-56 flex-shrink-0 hidden lg:block lg:order-1">
       <div class="lg:sticky lg:top-20">
         <LeftSidebar />
       </div>
     </div>
     
-    <div class="flex-1 min-w-0">
+    <div class="flex-1 min-w-0 lg:order-2">
       <div class="mb-8">
         <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
           关于我
@@ -55,7 +55,7 @@ onMounted(() => {
         <div class="glass-card p-6 md:p-8 mb-6">
           <div class="flex flex-col sm:flex-row items-center gap-6">
             <div class="relative">
-              <div class="w-24 h-24 md:w-28 md:h-28 rounded-full bg-gradient-to-br from-primary to-accent p-0.5">
+              <div class="w-24 h-24 md:w-28 md:h-28 rounded-full bg-primary p-0.5">
                 <div class="w-full h-full rounded-full bg-gray-100 dark:bg-dark-100 flex items-center justify-center text-3xl md:text-4xl font-bold text-primary">
                   {{ profile.name?.charAt(0)?.toUpperCase() || 'T' }}{{ profile.name?.charAt(1)?.toUpperCase() || 'E' }}
                 </div>
@@ -352,10 +352,15 @@ onMounted(() => {
       </template>
     </div>
 
-    <div class="lg:w-56 flex-shrink-0 hidden lg:block">
+    <div class="lg:w-56 flex-shrink-0 hidden lg:block lg:order-3">
       <div class="lg:sticky lg:top-20">
         <BlogSidebar />
       </div>
     </div>
+
+    <aside class="lg:hidden mt-8 space-y-4" aria-label="侧边栏内容">
+      <LeftSidebar />
+      <BlogSidebar />
+    </aside>
   </div>
 </template>

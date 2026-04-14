@@ -32,9 +32,9 @@ const pagination = ref({
 })
 
 const tabConfig = [
-  { key: 'liked' as const, label: '点赞的文章', icon: 'heart' },
-  { key: 'commented' as const, label: '评论的文章', icon: 'chat' },
-  { key: 'bookmarked' as const, label: '收藏的文章', icon: 'bookmark' }
+  { key: 'liked' as const, label: '我的点赞', icon: 'heart' },
+  { key: 'commented' as const, label: '我的评论', icon: 'chat' },
+  { key: 'bookmarked' as const, label: '我的收藏', icon: 'bookmark' }
 ]
 
 const formatDate = (date: string) => formatDateShort(date)
@@ -168,13 +168,13 @@ watch(() => route.path, (newPath) => {
 <template>
   <div>
     <div class="flex flex-col lg:flex-row gap-6">
-      <div class="lg:w-56 flex-shrink-0 hidden lg:block">
+      <div class="lg:w-56 flex-shrink-0 hidden lg:block lg:order-1">
         <div class="lg:sticky lg:top-20">
           <LeftSidebar />
         </div>
       </div>
       
-      <div class="flex-1 min-w-0">
+      <main class="flex-1 min-w-0 lg:order-2">
         <div class="glass-card p-2 mb-6">
           <div class="flex items-center gap-4 mb-2">
             <div class="relative flex-shrink-0">
@@ -347,13 +347,13 @@ watch(() => route.path, (newPath) => {
               class="block p-2"
             >
               <div 
-                class="flex flex-col sm:grid sm:grid-cols-[auto_1fr] sm:gap-4"
+                class="flex flex-col gap-3 sm:grid sm:grid-cols-[auto_1fr] sm:gap-4"
               >
                 <div
                   v-if="article.cover_image"
                   :class="[
                     isStackedLayout 
-                      ? 'relative w-full h-40 sm:w-56 md:w-64 sm:h-full overflow-hidden rounded-t-lg sm:rounded-lg px-2 pt-2 sm:p-0' 
+                      ? 'relative w-full h-40 sm:w-56 md:w-64 sm:h-full overflow-hidden rounded-t-lg sm:rounded-lg' 
                       : 'absolute inset-0 sm:relative sm:w-56 md:w-64 sm:h-full overflow-hidden rounded-none sm:rounded-lg'
                   ]"
                 >
@@ -383,8 +383,8 @@ watch(() => route.path, (newPath) => {
                   class="relative flex-1 min-w-0 flex flex-col"
                   :class="[
                     isStackedLayout 
-                      ? 'min-h-0 px-2 py-3' 
-                      : 'min-h-[180px] sm:min-h-0 px-2 py-4 sm:p-0'
+                      ? 'min-h-0' 
+                      : 'min-h-[180px] sm:min-h-0'
                   ]"
                 >
                   <div class="flex items-center gap-2 mb-2">
@@ -622,13 +622,18 @@ watch(() => route.path, (newPath) => {
             @page-change="handlePageChange"
           />
         </div>
-      </div>
+      </main>
 
-      <div class="lg:w-56 flex-shrink-0 hidden lg:block">
+      <div class="lg:w-56 flex-shrink-0 hidden lg:block lg:order-3">
         <div class="lg:sticky lg:top-20">
           <BlogSidebar hide-user-card />
         </div>
       </div>
+
+      <aside class="lg:hidden mt-8 space-y-4" aria-label="侧边栏内容">
+        <LeftSidebar />
+        <BlogSidebar hide-user-card />
+      </aside>
     </div>
   </div>
 </template>
