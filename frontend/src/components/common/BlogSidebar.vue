@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, watch } from 'vue'
 import { useBlogStore, useAuthStore, useUserProfileStore } from '@/stores'
-import { dashboardApi } from '@/api'
+import { dashboardApi, announcementApi, type Announcement } from '@/api'
 
 const props = defineProps<{
   hideUserCard?: boolean
@@ -17,6 +17,8 @@ const stats = ref({
   likes: 0,
   comments: 0
 })
+
+const announcements = ref<Announcement[]>([])
 
 const popularArticles = computed(() => {
   return [...blogStore.articles]
@@ -44,6 +46,43 @@ const fetchStats = async () => {
   }
 }
 
+const fetchAnnouncements = async () => {
+  try {
+    announcements.value = await announcementApi.getAnnouncements(true)
+  } catch (error) {
+    console.error('Failed to fetch announcements:', error)
+  }
+}
+
+const getTypeIcon = (type: string) => {
+  const icons = {
+    info: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+    warning: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
+    success: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+    error: 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z'
+  }
+  return icons[type as keyof typeof icons] || icons.info
+}
+
+const getTypeColor = (type: string) => {
+  const colors = {
+    info: 'text-blue-500',
+    warning: 'text-amber-500',
+    success: 'text-emerald-500',
+    error: 'text-red-500'
+  }
+  return colors[type as keyof typeof colors] || colors.info
+}
+
+const formatDate = (date: string) => {
+  if (!date) return ''
+  const d = new Date(date)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 watch(() => authStore.isAuthenticated, (isAuthenticated) => {
   if (isAuthenticated) {
     userProfileStore.fetchProfile()
@@ -54,6 +93,7 @@ watch(() => authStore.isAuthenticated, (isAuthenticated) => {
 
 onMounted(() => {
   fetchStats()
+  fetchAnnouncements()
   if (authStore.isAuthenticated && !userProfileStore.profile) {
     userProfileStore.fetchProfile()
   }
@@ -62,6 +102,63 @@ onMounted(() => {
 
 <template>
   <aside class="blog-sidebar">
+    <div
+      v-if="announcements.length > 0"
+      class="sidebar-widget sidebar-widget-compact"
+    >
+      <h3 class="sidebar-widget-title sidebar-widget-title-compact flex items-center gap-2">
+        <svg
+          class="w-4 h-4 text-primary"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"
+          />
+        </svg>
+        公告
+      </h3>
+      
+      <div class="space-y-3">
+        <div
+          v-for="announcement in announcements"
+          :key="announcement.id"
+          class="group"
+        >
+          <div class="flex items-start gap-2">
+            <svg
+              :class="['w-4 h-4 mt-0.5 flex-shrink-0', getTypeColor(announcement.type)]"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                :d="getTypeIcon(announcement.type)"
+              />
+            </svg>
+            <div class="flex-1 min-w-0">
+              <h4 class="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-primary transition-colors mb-2">
+                {{ announcement.title }}
+              </h4>
+              <p class="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                {{ announcement.content }}
+              </p>
+              <p class="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
+                {{ formatDate(announcement.updated_at || announcement.created_at) }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="sidebar-widget sidebar-widget-compact">
       <h3 class="sidebar-widget-title sidebar-widget-title-compact flex items-center gap-2">
         <svg

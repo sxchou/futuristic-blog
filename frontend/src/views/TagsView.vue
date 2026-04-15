@@ -29,7 +29,7 @@ const getTagSize = (count: number) => {
 
 <template>
   <div class="flex flex-col lg:flex-row gap-6">
-    <div class="lg:w-56 flex-shrink-0 hidden lg:block lg:order-1">
+    <div class="lg:w-72 flex-shrink-0 hidden lg:block lg:order-1">
       <div class="lg:sticky lg:top-20">
         <LeftSidebar />
       </div>
@@ -128,7 +128,7 @@ const getTagSize = (count: number) => {
       </div>
     </div>
 
-    <div class="lg:w-56 flex-shrink-0 hidden lg:block lg:order-3">
+    <div class="lg:w-72 flex-shrink-0 hidden lg:block lg:order-3">
       <div class="lg:sticky lg:top-20">
         <BlogSidebar />
       </div>

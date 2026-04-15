@@ -166,9 +166,8 @@ watch(() => route.path, (newPath) => {
 </script>
 
 <template>
-  <div>
-    <div class="flex flex-col lg:flex-row gap-6">
-      <div class="lg:w-56 flex-shrink-0 hidden lg:block lg:order-1">
+  <div class="flex flex-col lg:flex-row gap-6">
+      <div class="lg:w-72 flex-shrink-0 hidden lg:block lg:order-1">
         <div class="lg:sticky lg:top-20">
           <LeftSidebar />
         </div>
@@ -537,8 +536,7 @@ watch(() => route.path, (newPath) => {
                         'article-meta-item article-action-btn',
                         isStackedLayout 
                           ? 'text-inherit' 
-                          : 'text-white/70 sm:text-inherit',
-                        { 'text-red-400': article.is_liked, 'sm:!text-red-400': article.is_liked && isStackedLayout }
+                          : 'text-white/70 sm:text-inherit'
                       ]"
                       @click="handleLike($event, article)"
                     >
@@ -624,7 +622,7 @@ watch(() => route.path, (newPath) => {
         </div>
       </main>
 
-      <div class="lg:w-56 flex-shrink-0 hidden lg:block lg:order-3">
+      <div class="lg:w-72 flex-shrink-0 hidden lg:block lg:order-3">
         <div class="lg:sticky lg:top-20">
           <BlogSidebar hide-user-card />
         </div>
@@ -635,7 +633,6 @@ watch(() => route.path, (newPath) => {
         <BlogSidebar hide-user-card />
       </aside>
     </div>
-  </div>
 </template>
 
 <style scoped>

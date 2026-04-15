@@ -1,7 +1,8 @@
 import os
 import logging
 import time
-from typing import List
+import httpx
+from typing import List, Optional
 from pathlib import Path
 from io import BytesIO
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
@@ -19,6 +20,9 @@ logger = logging.getLogger(__name__)
 
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".ico", ".svg"}
 MAX_FILE_SIZE = 2 * 1024 * 1024
+
+GITHUB_CACHE = {"data": None, "timestamp": 0, "repo_url": ""}
+GITHUB_CACHE_TTL = 600
 
 
 def get_logo_base_path() -> Path:
@@ -106,6 +110,78 @@ def get_site_configs(db: Session = Depends(get_db)):
     return configs
 
 
+def parse_github_repo_url(repo_url: str) -> Optional[tuple]:
+    if not repo_url:
+        return None
+    repo_url = repo_url.strip()
+    if repo_url.endswith('.git'):
+        repo_url = repo_url[:-4]
+    if repo_url.endswith('/'):
+        repo_url = repo_url[:-1]
+    parts = repo_url.split('/')
+    if len(parts) >= 2:
+        owner = parts[-2]
+        repo = parts[-1]
+        return (owner, repo)
+    return None
+
+
+@router.get("/github-stats")
+async def get_github_stats(db: Session = Depends(get_db)):
+    global GITHUB_CACHE
+    
+    github_repo_config = db.query(SiteConfig).filter(SiteConfig.key == "github_repo_url").first()
+    repo_url = github_repo_config.value if github_repo_config else ""
+    
+    if not repo_url:
+        return {"enabled": False, "stars": 0, "forks": 0, "watchers": 0, "open_issues": 0}
+    
+    parsed = parse_github_repo_url(repo_url)
+    if not parsed:
+        return {"enabled": False, "stars": 0, "forks": 0, "watchers": 0, "open_issues": 0}
+    
+    owner, repo = parsed
+    
+    current_time = time.time()
+    if (GITHUB_CACHE["data"] and 
+        GITHUB_CACHE["repo_url"] == repo_url and 
+        current_time - GITHUB_CACHE["timestamp"] < GITHUB_CACHE_TTL):
+        return {"enabled": True, **GITHUB_CACHE["data"]}
+    
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                f"https://api.github.com/repos/{owner}/{repo}",
+                headers={"Accept": "application/vnd.github.v3+json"}
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                stats = {
+                    "stars": data.get("stargazers_count", 0),
+                    "forks": data.get("forks_count", 0),
+                    "watchers": data.get("watchers_count", 0),
+                    "open_issues": data.get("open_issues_count", 0),
+                    "full_name": data.get("full_name", f"{owner}/{repo}"),
+                    "html_url": data.get("html_url", repo_url)
+                }
+                
+                GITHUB_CACHE = {
+                    "data": stats,
+                    "timestamp": current_time,
+                    "repo_url": repo_url
+                }
+                
+                return {"enabled": True, **stats}
+            else:
+                logger.warning(f"GitHub API returned status {response.status_code}")
+                return {"enabled": False, "stars": 0, "forks": 0, "watchers": 0, "open_issues": 0}
+                
+    except Exception as e:
+        logger.error(f"Failed to fetch GitHub stats: {e}")
+        return {"enabled": False, "stars": 0, "forks": 0, "watchers": 0, "open_issues": 0}
+
+
 @router.get("/{key}", response_model=SiteConfigResponse)
 def get_site_config(key: str, db: Session = Depends(get_db)):
     config = db.query(SiteConfig).filter(SiteConfig.key == key).first()
@@ -122,6 +198,8 @@ def update_site_config(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
+    global GITHUB_CACHE
+    
     if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="无权限修改网站设置")
     
@@ -141,6 +219,9 @@ def update_site_config(
     
     db.commit()
     db.refresh(config)
+    
+    if key == "github_repo_url":
+        GITHUB_CACHE = {"data": None, "timestamp": 0, "repo_url": ""}
     
     LogService.log_operation(
         db=db,

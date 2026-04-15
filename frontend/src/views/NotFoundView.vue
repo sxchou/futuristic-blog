@@ -13,7 +13,7 @@ onMounted(() => {
 
 <template>
   <div class="min-h-screen flex items-center justify-center pb-20">
-    <div class="container mx-auto px-4">
+    <div class="blog-container">
       <div class="max-w-2xl mx-auto text-center">
         <div class="mb-8">
           <h1 class="text-8xl md:text-9xl font-bold mb-4 relative">

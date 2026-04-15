@@ -50,7 +50,7 @@ onMounted(async () => {
 
 <template>
   <div class="pb-16">
-    <div class="container mx-auto px-4">
+    <div class="blog-container">
       <div class="text-center mb-8">
         <h1 class="text-2xl md:text-3xl font-bold mb-1">
           <span class="gradient-text">资源导航</span>

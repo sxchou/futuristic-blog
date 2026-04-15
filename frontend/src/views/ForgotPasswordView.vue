@@ -202,12 +202,21 @@ const goBack = () => {
 </script>
 
 <template>
-  <div class="flex items-center justify-center px-4 pt-8 pb-32">
+  <div class="flex items-center justify-center px-4 pb-32">
     <div class="w-full max-w-sm">
       <div class="glass-card p-6">
         <div class="text-center mb-6">
-          <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-primary flex items-center justify-center">
-            <span class="text-lg font-bold text-white">{{ siteConfigStore.siteLogo }}</span>
+          <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-primary flex items-center justify-center overflow-hidden">
+            <img
+              v-if="siteConfigStore.siteLogoUrl"
+              :src="siteConfigStore.siteLogoUrl"
+              :alt="siteConfigStore.siteName"
+              class="w-full h-full object-cover"
+            >
+            <span
+              v-else
+              class="text-lg font-bold text-white"
+            >{{ siteConfigStore.siteLogo }}</span>
           </div>
           <h1 class="text-lg font-bold gradient-text">
             忘记密码

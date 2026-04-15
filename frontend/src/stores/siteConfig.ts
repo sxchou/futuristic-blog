@@ -43,6 +43,8 @@ export const useSiteConfigStore = defineStore('siteConfig', () => {
   const siteKeywords = ref('')
   const siteLogoUrl = ref('')
   const mobileArticleLayout = ref<'embedded' | 'stacked'>('embedded')
+  const githubRepoUrl = ref('')
+  const showGithubStats = ref(false)
   const loading = ref(false)
   const lastFetchTime = ref(0)
   const CACHE_TTL = 60000
@@ -98,6 +100,16 @@ export const useSiteConfigStore = defineStore('siteConfig', () => {
         const layoutConfig = configs.value.find(c => c.key === 'mobile_article_layout')
         if (layoutConfig?.value && (layoutConfig.value === 'embedded' || layoutConfig.value === 'stacked')) {
           mobileArticleLayout.value = layoutConfig.value
+        }
+        
+        const githubRepoConfig = configs.value.find(c => c.key === 'github_repo_url')
+        if (githubRepoConfig?.value) {
+          githubRepoUrl.value = githubRepoConfig.value
+        }
+        
+        const showGithubConfig = configs.value.find(c => c.key === 'show_github_stats')
+        if (showGithubConfig?.value) {
+          showGithubStats.value = showGithubConfig.value === 'true'
         }
       } catch (error) {
         console.error('Failed to fetch site configs:', error)
@@ -193,6 +205,32 @@ export const useSiteConfigStore = defineStore('siteConfig', () => {
     }
   }
 
+  const updateGithubRepoUrl = async (url: string) => {
+    try {
+      await siteConfigApi.update('github_repo_url', url, 'GitHub仓库地址')
+      githubRepoUrl.value = url
+    } catch (error: any) {
+      console.error('Failed to update github repo url:', error)
+      if (error.response?.status === 403) {
+        throw new Error('无权限修改网站设置')
+      }
+      throw error
+    }
+  }
+
+  const updateShowGithubStats = async (show: boolean) => {
+    try {
+      await siteConfigApi.update('show_github_stats', show ? 'true' : 'false', '是否显示GitHub统计信息')
+      showGithubStats.value = show
+    } catch (error: any) {
+      console.error('Failed to update show github stats:', error)
+      if (error.response?.status === 403) {
+        throw new Error('无权限修改网站设置')
+      }
+      throw error
+    }
+  }
+
   return {
     configs,
     siteName,
@@ -201,6 +239,8 @@ export const useSiteConfigStore = defineStore('siteConfig', () => {
     siteLogoUrl,
     siteLogo,
     mobileArticleLayout,
+    githubRepoUrl,
+    showGithubStats,
     loading,
     fetchConfigs,
     updateSiteName,
@@ -208,6 +248,8 @@ export const useSiteConfigStore = defineStore('siteConfig', () => {
     updateSiteKeywords,
     updateSiteLogo,
     resetSiteLogo,
-    updateMobileArticleLayout
+    updateMobileArticleLayout,
+    updateGithubRepoUrl,
+    updateShowGithubStats
   }
 })
