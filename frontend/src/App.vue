@@ -22,6 +22,7 @@ onMounted(async () => {
   await siteConfigStore.fetchConfigs()
   blogStore.fetchCategories()
   blogStore.fetchTags()
+  blogStore.fetchAnnouncements()
 })
 
 const handleKeydown = (e: KeyboardEvent) => {

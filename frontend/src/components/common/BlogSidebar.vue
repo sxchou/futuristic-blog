@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, watch } from 'vue'
 import { useBlogStore, useAuthStore, useUserProfileStore } from '@/stores'
-import { dashboardApi, announcementApi, type Announcement } from '@/api'
+import { dashboardApi } from '@/api'
 
 const props = defineProps<{
   hideUserCard?: boolean
@@ -18,7 +18,7 @@ const stats = ref({
   comments: 0
 })
 
-const announcements = ref<Announcement[]>([])
+const announcements = computed(() => blogStore.announcements)
 
 const popularArticles = computed(() => {
   return [...blogStore.articles]
@@ -43,14 +43,6 @@ const fetchStats = async () => {
     }
   } catch (error) {
     console.error('Failed to fetch stats:', error)
-  }
-}
-
-const fetchAnnouncements = async () => {
-  try {
-    announcements.value = await announcementApi.getAnnouncements(true)
-  } catch (error) {
-    console.error('Failed to fetch announcements:', error)
   }
 }
 
@@ -93,7 +85,6 @@ watch(() => authStore.isAuthenticated, (isAuthenticated) => {
 
 onMounted(() => {
   fetchStats()
-  fetchAnnouncements()
   if (authStore.isAuthenticated && !userProfileStore.profile) {
     userProfileStore.fetchProfile()
   }

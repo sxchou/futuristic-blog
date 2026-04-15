@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { articleApi, categoryApi, tagApi } from '@/api'
+import { articleApi, categoryApi, tagApi, announcementApi } from '@/api'
 import type { ArticleListItem, Category, Tag } from '@/types'
+import type { Announcement } from '@/api/announcements'
 
 let fetchArticlesController: AbortController | null = null
 
@@ -9,6 +10,7 @@ export const useBlogStore = defineStore('blog', () => {
   const articles = ref<ArticleListItem[]>([])
   const categories = ref<Category[]>([])
   const tags = ref<Tag[]>([])
+  const announcements = ref<Announcement[]>([])
   const currentArticle = ref<ArticleListItem | null>(null)
   const loading = ref(false)
   const lastFetchTime = ref(0)
@@ -86,6 +88,19 @@ export const useBlogStore = defineStore('blog', () => {
     }
   }
 
+  const fetchAnnouncements = async (force = false) => {
+    if (!force && announcements.value.length > 0) {
+      return
+    }
+    
+    try {
+      const data = await announcementApi.getAnnouncements(true)
+      announcements.value = data
+    } catch (error) {
+      console.error('Failed to fetch announcements:', error)
+    }
+  }
+
   const addCategory = (category: Category) => {
     const existingIndex = categories.value.findIndex(c => c.id === category.id)
     if (existingIndex >= 0) {
@@ -137,6 +152,7 @@ export const useBlogStore = defineStore('blog', () => {
     articles,
     categories,
     tags,
+    announcements,
     currentArticle,
     loading,
     pagination,
@@ -144,6 +160,7 @@ export const useBlogStore = defineStore('blog', () => {
     fetchArticles,
     fetchCategories,
     fetchTags,
+    fetchAnnouncements,
     addCategory,
     removeCategory,
     addTag,
