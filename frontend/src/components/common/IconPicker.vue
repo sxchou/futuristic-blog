@@ -256,7 +256,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { h } from 'vue'
 
 const props = defineProps<{
@@ -592,7 +592,7 @@ const togglePicker = () => {
   showPicker.value = !showPicker.value
 }
 
-const selectIcon = (icon: string, type: string) => {
+const selectIcon = (icon: string, _type: string) => {
   emit('update:modelValue', icon)
 }
 

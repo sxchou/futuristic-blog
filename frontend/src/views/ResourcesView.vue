@@ -29,12 +29,6 @@ const fetchResources = async () => {
   }
 }
 
-const getCategoryName = (categoryId?: number | null) => {
-  if (!categoryId) return '未分类'
-  const category = categories.value.find(c => c.id === categoryId)
-  return category ? category.name : '未分类'
-}
-
 const getCategoryIcon = (categoryId?: number | null) => {
   if (!categoryId) return null
   const category = categories.value.find(c => c.id === categoryId)
@@ -53,18 +47,19 @@ const groupedResources = computed(() => {
   const categoryMap = new Map<number | null, Resource[]>()
   
   filteredResources.value.forEach(r => {
-    if (!categoryMap.has(r.category_id)) {
-      categoryMap.set(r.category_id, [])
+    const catId = r.category_id ?? null
+    if (!categoryMap.has(catId)) {
+      categoryMap.set(catId, [])
     }
-    categoryMap.get(r.category_id)!.push(r)
+    categoryMap.get(catId)!.push(r)
   })
   
   activeCategories.value.forEach(category => {
-    const resources = categoryMap.get(category.id)
+    const resources = categoryMap.get(category.id ?? null)
     if (resources && resources.length > 0) {
       groups.push({
         categoryName: category.name,
-        categoryId: category.id,
+        categoryId: category.id ?? null,
         resources
       })
     }
@@ -172,7 +167,7 @@ onMounted(async () => {
         >
           <div
             v-for="group in groupedResources"
-            :key="group.categoryId"
+            :key="`category-${group.categoryId}`"
           >
             <h2 class="text-lg md:text-xl font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-3">
               <span class="w-9 h-9 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">

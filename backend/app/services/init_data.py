@@ -1,4 +1,4 @@
-from app.core.database import SessionLocal, engine
+﻿from app.core.database import SessionLocal, engine
 from app.core.config import settings
 from app.models import User, Category, Tag, Article, Resource, ResourceCategory, SiteConfig, OAuthProvider
 from app.utils import get_password_hash
