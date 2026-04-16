@@ -5,6 +5,13 @@ import type { Resource } from '@/types'
 import type { ResourceCategory } from '@/api/resourceCategories'
 import { useDialogStore } from '@/stores'
 import { useAdminCheck } from '@/composables/useAdminCheck'
+import { 
+  updateArrayItem, 
+  addArrayItem, 
+  removeArrayItem,
+  toggleItemStatus 
+} from '@/utils/reactiveUpdate'
+import IconPicker from '@/components/common/IconPicker.vue'
 
 const dialog = useDialogStore()
 const { requireAdmin } = useAdminCheck()
@@ -12,6 +19,7 @@ const { requireAdmin } = useAdminCheck()
 const resources = ref<Resource[]>([])
 const categories = ref<ResourceCategory[]>([])
 const isLoading = ref(false)
+const isSubmitting = ref(false)
 const activeTab = ref<'resources' | 'categories'>('resources')
 
 const showResourceEditor = ref(false)
@@ -50,7 +58,7 @@ const fetchCategories = async () => {
 const fetchResources = async () => {
   isLoading.value = true
   try {
-    resources.value = await resourceApi.getResources()
+    resources.value = await resourceApi.getAdminResources()
   } catch (error) {
     console.error('Failed to fetch resources:', error)
   } finally {
@@ -62,6 +70,12 @@ const getCategoryName = (categoryId?: number | null) => {
   if (!categoryId) return '未分类'
   const category = categories.value.find(c => c.id === categoryId)
   return category ? category.name : '未分类'
+}
+
+const getCategoryColor = (categoryId?: number | null) => {
+  if (!categoryId) return '#6b7280'
+  const category = categories.value.find(c => c.id === categoryId)
+  return category?.icon ? '#00d4ff' : '#6b7280'
 }
 
 const handleEditResource = async (resource: Resource) => {
@@ -90,7 +104,7 @@ const handleDeleteResource = async (resource: Resource) => {
   
   try {
     await resourceApi.deleteResource(resource.id)
-    await fetchResources()
+    await removeArrayItem(resources, resource.id)
     await dialog.showSuccess('资源已删除', '成功')
   } catch (error: any) {
     console.error('Failed to delete resource:', error)
@@ -98,24 +112,50 @@ const handleDeleteResource = async (resource: Resource) => {
   }
 }
 
+const handleToggleResourceStatus = async (resource: Resource) => {
+  if (!await requireAdmin('切换资源状态')) return
+  
+  try {
+    await toggleItemStatus(
+      resources,
+      resource.id,
+      (newStatus) => resourceApi.updateResource(resource.id, { is_active: newStatus })
+    )
+    dialog.showSuccess(resource.is_active ? '资源已启用' : '资源已禁用', '成功')
+  } catch (error: any) {
+    console.error('Failed to toggle resource status:', error)
+    await dialog.showError(error.response?.data?.detail || '状态切换失败', '错误')
+  }
+}
+
 const handleSubmitResource = async () => {
   if (!await requireAdmin('保存资源')) return
   
+  isSubmitting.value = true
   try {
     const isEditing = !!editingResource.value
+    
     if (editingResource.value) {
-      await resourceApi.updateResource(editingResource.value.id, resourceForm.value)
+      const resource = editingResource.value
+      await updateArrayItem(resources, resource.id, () =>
+        resourceApi.updateResource(resource.id, resourceForm.value)
+      )
     } else {
-      await resourceApi.createResource(resourceForm.value)
+      await addArrayItem(resources, () =>
+        resourceApi.createResource(resourceForm.value)
+      )
     }
+    
     showResourceEditor.value = false
     editingResource.value = null
     resetResourceForm()
-    await fetchResources()
+    
     await dialog.showSuccess(isEditing ? '资源已更新' : '资源已创建', '成功')
   } catch (error: any) {
     console.error('Failed to save resource:', error)
     await dialog.showError(error.response?.data?.detail || '保存失败', '错误')
+  } finally {
+    isSubmitting.value = false
   }
 }
 
@@ -248,6 +288,10 @@ const moveCategoryDown = async (index: number) => {
 
 const activeCategories = computed(() => categories.value.filter(c => c.is_active))
 
+const getResourceCount = (categoryId: number) => {
+  return resources.value.filter(r => r.category_id === categoryId).length
+}
+
 onMounted(async () => {
   await Promise.all([fetchCategories(), fetchResources()])
 })
@@ -259,337 +303,319 @@ onMounted(async () => {
       <h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
         资源管理
       </h1>
-      <div class="flex items-center gap-2">
-        <button
-          v-if="activeTab === 'resources'"
-          class="px-3 sm:px-4 py-1.5 bg-primary text-white rounded-lg text-xs sm:text-sm hover:bg-primary/90 transition-colors whitespace-nowrap"
-          @click="openCreateResourceModal"
-        >
-          添加资源
-        </button>
-        <button
-          v-else
-          class="px-3 sm:px-4 py-1.5 bg-primary text-white rounded-lg text-xs sm:text-sm hover:bg-primary/90 transition-colors whitespace-nowrap"
-          @click="openCreateCategoryModal"
-        >
-          添加分类
-        </button>
-      </div>
+      <button
+        class="btn-primary text-xs sm:text-sm px-3 sm:px-4 py-1.5 whitespace-nowrap"
+        @click="activeTab === 'resources' ? openCreateResourceModal() : openCreateCategoryModal()"
+      >
+        {{ activeTab === 'resources' ? '新建资源' : '新建分类' }}
+      </button>
     </div>
 
-    <div class="flex gap-2 mb-4">
+    <div class="flex gap-1 mb-4 p-1 bg-gray-100 dark:bg-dark-200 rounded-lg w-fit">
       <button
-        class="px-4 py-2 text-sm rounded-lg transition-colors"
-        :class="activeTab === 'resources' ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-dark-300 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-400'"
+        class="px-4 py-1.5 text-sm rounded-md transition-all"
+        :class="activeTab === 'resources' 
+          ? 'bg-white dark:bg-dark-400 text-gray-900 dark:text-white shadow-sm' 
+          : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
         @click="activeTab = 'resources'"
       >
-        资源列表
+        资源
       </button>
       <button
-        class="px-4 py-2 text-sm rounded-lg transition-colors"
-        :class="activeTab === 'categories' ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-dark-300 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-400'"
+        class="px-4 py-1.5 text-sm rounded-md transition-all"
+        :class="activeTab === 'categories' 
+          ? 'bg-white dark:bg-dark-400 text-gray-900 dark:text-white shadow-sm' 
+          : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
         @click="activeTab = 'categories'"
       >
-        分类管理
+        分类
       </button>
     </div>
 
-    <div
-      v-if="isLoading && activeTab === 'resources'"
-      class="flex justify-center py-16"
-    >
-      <div class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-    </div>
+    <template v-if="isLoading && activeTab === 'resources'">
+      <div class="flex justify-center py-16">
+        <div class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+      </div>
+    </template>
 
     <template v-else-if="activeTab === 'resources'">
-      <div class="glass-card overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-gray-50 dark:bg-dark-100">
-              <tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  资源
-                </th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  分类
-                </th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  链接
-                </th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  状态
-                </th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  排序
-                </th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  操作
-                </th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200 dark:divide-white/10">
-              <tr
-                v-for="resource in resources"
-                :key="resource.id"
-                class="hover:bg-gray-50 dark:hover:bg-white/5"
-              >
-                <td class="px-4 py-3">
-                  <div class="flex items-center gap-3">
-                    <div
-                      v-if="resource.icon"
-                      class="w-8 h-8 rounded bg-gray-100 dark:bg-dark-100 flex items-center justify-center text-lg"
-                    >
-                      {{ resource.icon }}
-                    </div>
-                    <div>
-                      <p class="font-medium text-gray-900 dark:text-white text-sm">
-                        {{ resource.title }}
-                      </p>
-                      <p
-                        v-if="resource.description"
-                        class="text-gray-500 text-xs truncate max-w-xs"
-                      >
-                        {{ resource.description }}
-                      </p>
-                    </div>
-                  </div>
-                </td>
-                <td class="px-4 py-3">
-                  <span class="px-2 py-1 text-xs rounded bg-primary/10 text-primary">
-                    {{ getCategoryName(resource.category_id) }}
-                  </span>
-                </td>
-                <td class="px-4 py-3">
-                  <a
-                    :href="resource.url"
-                    target="_blank"
-                    class="text-primary text-sm hover:underline truncate max-w-xs block"
-                  >
-                    {{ resource.url }}
-                  </a>
-                </td>
-                <td class="px-4 py-3">
-                  <span
-                    :class="resource.is_active ? 'text-green-500' : 'text-gray-400'"
-                    class="text-xs"
-                  >
-                    {{ resource.is_active ? '启用' : '禁用' }}
-                  </span>
-                </td>
-                <td class="px-4 py-3 text-gray-500 text-sm">
-                  {{ resource.order }}
-                </td>
-                <td class="px-4 py-3 text-right">
-                  <button
-                    class="text-primary hover:text-primary/80 text-sm mr-3"
-                    @click="handleEditResource(resource)"
-                  >
-                    编辑
-                  </button>
-                  <button
-                    class="text-red-500 hover:text-red-400 text-sm"
-                    @click="handleDeleteResource(resource)"
-                  >
-                    删除
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+      <div>
+        <div
+          v-if="resources.length === 0"
+          class="text-center py-16 text-gray-500"
+        >
+          暂无资源，点击右上角按钮添加
         </div>
 
         <div
-          v-if="resources.length === 0"
-          class="text-center py-12 text-gray-500"
+          v-else
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
         >
-          暂无资源
+          <div
+            v-for="resource in resources"
+            :key="resource.id"
+            class="glass-card p-4 flex flex-col min-h-[120px]"
+            :class="resource.is_active ? '' : 'border-gray-300 dark:border-gray-600'"
+          >
+            <div class="flex items-center gap-2 mb-2">
+              <div
+                class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                :style="{ backgroundColor: getCategoryColor(resource.category_id) + '20' }"
+              >
+                <span
+                  v-if="resource.icon"
+                  class="text-base"
+                >{{ resource.icon }}</span>
+                <svg
+                  v-else
+                  class="w-4 h-4"
+                  :style="{ color: getCategoryColor(resource.category_id) }"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                  />
+                </svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <h3 class="text-gray-900 dark:text-white font-medium text-sm truncate">
+                  {{ resource.title }}
+                </h3>
+                <p class="text-gray-500 text-xs truncate">
+                  {{ getCategoryName(resource.category_id) }}
+                </p>
+              </div>
+            </div>
+            
+            <p
+              class="text-gray-500 dark:text-gray-400 text-xs mb-2 flex-1 line-clamp-2"
+            >
+              {{ resource.description || '暂无描述' }}
+            </p>
+            
+            <div class="flex items-center justify-between mt-auto pt-2 border-t border-gray-100 dark:border-dark-300">
+              <button
+                class="flex items-center gap-1.5 text-xs transition-colors"
+                :class="resource.is_active ? 'text-green-500' : 'text-gray-400'"
+                @click="handleToggleResourceStatus(resource)"
+              >
+                <span
+                  class="w-2 h-2 rounded-full"
+                  :class="resource.is_active ? 'bg-green-500' : 'bg-gray-400'"
+                />
+                {{ resource.is_active ? '已启用' : '已禁用' }}
+              </button>
+              <div class="flex gap-2">
+                <button
+                  class="text-primary hover:text-primary/80 text-xs"
+                  @click="handleEditResource(resource)"
+                >
+                  编辑
+                </button>
+                <button
+                  class="text-red-400 hover:text-red-300 text-xs"
+                  @click="handleDeleteResource(resource)"
+                >
+                  删除
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </template>
 
     <template v-else>
-      <div class="glass-card overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-gray-50 dark:bg-dark-100">
-              <tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-12">
-                  排序
-                </th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  分类
-                </th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  标识
-                </th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  状态
-                </th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  操作
-                </th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200 dark:divide-white/10">
-              <tr
-                v-for="(category, index) in categories"
-                :key="category.id"
-                class="hover:bg-gray-50 dark:hover:bg-white/5"
-              >
-                <td class="px-4 py-3">
-                  <div class="flex items-center gap-1">
-                    <button
-                      class="p-1 text-gray-400 hover:text-primary disabled:opacity-30"
-                      :disabled="index === 0"
-                      @click="moveCategoryUp(index)"
-                    >
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                      </svg>
-                    </button>
-                    <button
-                      class="p-1 text-gray-400 hover:text-primary disabled:opacity-30"
-                      :disabled="index === categories.length - 1"
-                      @click="moveCategoryDown(index)"
-                    >
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
-                  </div>
-                </td>
-                <td class="px-4 py-3">
-                  <div class="flex items-center gap-3">
-                    <div
-                      v-if="category.icon"
-                      class="w-8 h-8 rounded bg-gray-100 dark:bg-dark-100 flex items-center justify-center text-lg"
-                    >
-                      {{ category.icon }}
-                    </div>
-                    <div>
-                      <p class="font-medium text-gray-900 dark:text-white text-sm">
-                        {{ category.name }}
-                      </p>
-                      <p
-                        v-if="category.description"
-                        class="text-gray-500 text-xs truncate max-w-xs"
-                      >
-                        {{ category.description }}
-                      </p>
-                    </div>
-                  </div>
-                </td>
-                <td class="px-4 py-3">
-                  <code class="text-xs bg-gray-100 dark:bg-dark-300 px-2 py-1 rounded">
-                    {{ category.slug }}
-                  </code>
-                </td>
-                <td class="px-4 py-3">
-                  <span
-                    :class="category.is_active ? 'text-green-500' : 'text-gray-400'"
-                    class="text-xs"
-                  >
-                    {{ category.is_active ? '启用' : '禁用' }}
-                  </span>
-                </td>
-                <td class="px-4 py-3 text-right">
-                  <button
-                    class="text-primary hover:text-primary/80 text-sm mr-3"
-                    @click="handleEditCategory(category)"
-                  >
-                    编辑
-                  </button>
-                  <button
-                    class="text-red-500 hover:text-red-400 text-sm"
-                    @click="handleDeleteCategory(category)"
-                  >
-                    删除
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+      <div
+        v-if="categories.length === 0"
+        class="text-center py-16 text-gray-500"
+      >
+        暂无分类，点击右上角按钮添加
+      </div>
 
+      <div
+        v-else
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+      >
         <div
-          v-if="categories.length === 0"
-          class="text-center py-12 text-gray-500"
+          v-for="(category, index) in categories"
+          :key="category.id"
+          class="glass-card p-4 flex flex-col min-h-[120px]"
         >
-          暂无分类，请先添加分类
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <span
+                v-if="category.icon"
+                class="text-base"
+              >{{ category.icon }}</span>
+              <svg
+                v-else
+                class="w-4 h-4 text-primary"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                />
+              </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="text-gray-900 dark:text-white font-medium text-sm truncate">
+                {{ category.name }}
+              </h3>
+              <p class="text-gray-500 text-xs truncate">
+                {{ category.slug }}
+              </p>
+            </div>
+          </div>
+          
+          <p class="text-gray-500 dark:text-gray-400 text-xs mb-2 flex-1 line-clamp-2">
+            {{ category.description || '暂无描述' }}
+          </p>
+          
+          <div class="flex items-center justify-between mt-auto pt-2 border-t border-gray-100 dark:border-dark-300">
+            <div class="flex items-center gap-2">
+              <span class="text-gray-500 text-xs">{{ getResourceCount(category.id) }} 个资源</span>
+              <div class="flex items-center gap-0.5">
+                <button
+                  class="p-1 text-gray-400 hover:text-primary disabled:opacity-30 transition-colors"
+                  :disabled="index === 0"
+                  @click="moveCategoryUp(index)"
+                >
+                  <svg
+                    class="w-3.5 h-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M5 15l7-7 7 7"
+                    />
+                  </svg>
+                </button>
+                <button
+                  class="p-1 text-gray-400 hover:text-primary disabled:opacity-30 transition-colors"
+                  :disabled="index === categories.length - 1"
+                  @click="moveCategoryDown(index)"
+                >
+                  <svg
+                    class="w-3.5 h-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button
+                class="text-primary hover:text-primary/80 text-xs"
+                @click="handleEditCategory(category)"
+              >
+                编辑
+              </button>
+              <button
+                class="text-red-400 hover:text-red-300 text-xs"
+                @click="handleDeleteCategory(category)"
+              >
+                删除
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </template>
 
     <div
       v-if="showResourceEditor"
-      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
     >
-      <div class="bg-white dark:bg-dark-100 rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div class="p-4 border-b border-gray-200 dark:border-white/10">
-          <h2 class="text-base font-semibold text-gray-900 dark:text-white">
-            {{ editingResource ? '编辑资源' : '添加资源' }}
+      <div class="glass-card w-full max-w-md m-4 p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-base font-bold text-gray-900 dark:text-white">
+            {{ editingResource ? '编辑资源' : '新建资源' }}
           </h2>
+          <button
+            class="text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            @click="showResourceEditor = false; editingResource = null; resetResourceForm()"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
         </div>
 
         <form
-          class="p-4 space-y-4"
+          class="space-y-3"
           @submit.prevent="handleSubmitResource"
         >
           <div>
-            <label
-              for="resource-title"
-              class="block text-sm text-gray-600 dark:text-gray-400 mb-1"
-            >标题 *</label>
+            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">标题</label>
             <input
-              id="resource-title"
               v-model="resourceForm.title"
               type="text"
-              name="title"
               required
-              class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white text-sm"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              placeholder="资源标题"
             >
           </div>
 
           <div>
-            <label
-              for="resource-url"
-              class="block text-sm text-gray-600 dark:text-gray-400 mb-1"
-            >链接 *</label>
+            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">链接</label>
             <input
-              id="resource-url"
               v-model="resourceForm.url"
               type="url"
-              name="url"
               required
-              class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white text-sm"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              placeholder="https://example.com"
             >
           </div>
 
           <div>
-            <label
-              for="resource-description"
-              class="block text-sm text-gray-600 dark:text-gray-400 mb-1"
-            >描述</label>
+            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">描述</label>
             <textarea
-              id="resource-description"
               v-model="resourceForm.description"
-              name="description"
               rows="2"
-              class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white text-sm"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none resize-none"
+              placeholder="资源描述"
             />
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-2 gap-3">
             <div>
-              <label
-                for="resource-category"
-                class="block text-sm text-gray-600 dark:text-gray-400 mb-1"
-              >分类</label>
+              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">分类</label>
               <select
-                id="resource-category"
                 v-model="resourceForm.category_id"
-                name="category_id"
-                class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white text-sm"
+                class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
               >
                 <option :value="null">
                   未分类
@@ -605,64 +631,60 @@ onMounted(async () => {
             </div>
 
             <div>
-              <label
-                for="resource-icon"
-                class="block text-sm text-gray-600 dark:text-gray-400 mb-1"
-              >图标</label>
-              <input
-                id="resource-icon"
-                v-model="resourceForm.icon"
-                type="text"
-                name="icon"
-                placeholder="emoji 或图标类名"
-                class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white text-sm"
-              >
+              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">图标</label>
+              <IconPicker v-model="resourceForm.icon" />
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-2 gap-3">
             <div>
-              <label
-                for="resource-order"
-                class="block text-sm text-gray-600 dark:text-gray-400 mb-1"
-              >排序</label>
+              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">排序</label>
               <input
-                id="resource-order"
                 v-model.number="resourceForm.order"
                 type="number"
-                name="order"
                 min="0"
-                class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white text-sm"
+                class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
               >
             </div>
 
-            <div class="flex items-center pt-6">
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input
-                  id="resource-is-active"
-                  v-model="resourceForm.is_active"
-                  type="checkbox"
-                  name="is_active"
-                  class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
-                >
-                <span class="text-sm text-gray-600 dark:text-gray-400">启用</span>
-              </label>
+            <div>
+              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">状态</label>
+              <select
+                v-model="resourceForm.is_active"
+                class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:outline-none"
+              >
+                <option :value="true">
+                  启用
+                </option>
+                <option :value="false">
+                  禁用
+                </option>
+              </select>
             </div>
           </div>
 
-          <div class="flex justify-end gap-3 pt-4">
+          <div class="flex justify-end gap-3 pt-2">
             <button
               type="button"
-              class="px-4 py-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-sm"
+              class="px-4 py-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              :disabled="isSubmitting"
               @click="showResourceEditor = false; editingResource = null; resetResourceForm()"
             >
               取消
             </button>
             <button
               type="submit"
-              class="px-4 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary/90"
+              class="btn-primary text-sm px-4 py-1.5"
+              :disabled="isSubmitting"
             >
-              保存
+              <span v-if="isSubmitting" class="flex items-center gap-2">
+                <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                保存中...
+              </span>
+              <span v-else>保存</span>
             </button>
           </div>
         </form>
@@ -671,122 +693,108 @@ onMounted(async () => {
 
     <div
       v-if="showCategoryEditor"
-      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
     >
-      <div class="bg-white dark:bg-dark-100 rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div class="p-4 border-b border-gray-200 dark:border-white/10">
-          <h2 class="text-base font-semibold text-gray-900 dark:text-white">
-            {{ editingCategory ? '编辑分类' : '添加分类' }}
+      <div class="glass-card w-full max-w-md m-4 p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-base font-bold text-gray-900 dark:text-white">
+            {{ editingCategory ? '编辑分类' : '新建分类' }}
           </h2>
+          <button
+            class="text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            @click="showCategoryEditor = false; editingCategory = null; resetCategoryForm()"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
         </div>
 
         <form
-          class="p-4 space-y-4"
+          class="space-y-3"
           @submit.prevent="handleSubmitCategory"
         >
-          <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">名称</label>
+            <input
+              v-model="categoryForm.name"
+              type="text"
+              required
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              placeholder="分类名称"
+            >
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Slug</label>
+            <input
+              v-model="categoryForm.slug"
+              type="text"
+              required
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              placeholder="category-slug"
+            >
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">描述</label>
+            <textarea
+              v-model="categoryForm.description"
+              rows="2"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none resize-none"
+              placeholder="分类描述"
+            />
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
             <div>
-              <label
-                for="category-name"
-                class="block text-sm text-gray-600 dark:text-gray-400 mb-1"
-              >名称 *</label>
-              <input
-                id="category-name"
-                v-model="categoryForm.name"
-                type="text"
-                name="name"
-                required
-                class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white text-sm"
-              >
+              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">图标</label>
+              <IconPicker v-model="categoryForm.icon" />
             </div>
 
             <div>
-              <label
-                for="category-slug"
-                class="block text-sm text-gray-600 dark:text-gray-400 mb-1"
-              >标识 *</label>
+              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">排序</label>
               <input
-                id="category-slug"
-                v-model="categoryForm.slug"
-                type="text"
-                name="slug"
-                required
-                placeholder="如: tool, framework"
-                class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white text-sm"
+                v-model.number="categoryForm.order"
+                type="number"
+                min="0"
+                class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
               >
             </div>
           </div>
 
           <div>
-            <label
-              for="category-description"
-              class="block text-sm text-gray-600 dark:text-gray-400 mb-1"
-            >描述</label>
-            <textarea
-              id="category-description"
-              v-model="categoryForm.description"
-              name="description"
-              rows="2"
-              class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white text-sm"
-            />
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label
-                for="category-icon"
-                class="block text-sm text-gray-600 dark:text-gray-400 mb-1"
-              >图标</label>
-              <input
-                id="category-icon"
-                v-model="categoryForm.icon"
-                type="text"
-                name="icon"
-                placeholder="emoji 或图标类名"
-                class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white text-sm"
-              >
-            </div>
-
-            <div>
-              <label
-                for="category-order"
-                class="block text-sm text-gray-600 dark:text-gray-400 mb-1"
-              >排序</label>
-              <input
-                id="category-order"
-                v-model.number="categoryForm.order"
-                type="number"
-                name="order"
-                min="0"
-                class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white text-sm"
-              >
-            </div>
-          </div>
-
-          <div class="flex items-center">
             <label class="flex items-center gap-2 cursor-pointer">
               <input
-                id="category-is-active"
                 v-model="categoryForm.is_active"
                 type="checkbox"
-                name="is_active"
-                class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                class="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-100 text-primary focus:ring-primary"
               >
-              <span class="text-sm text-gray-600 dark:text-gray-400">启用</span>
+              <span class="text-gray-700 dark:text-gray-300 text-sm">启用</span>
             </label>
           </div>
 
-          <div class="flex justify-end gap-3 pt-4">
+          <div class="flex justify-end gap-3 pt-2">
             <button
               type="button"
-              class="px-4 py-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-sm"
+              class="px-4 py-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
               @click="showCategoryEditor = false; editingCategory = null; resetCategoryForm()"
             >
               取消
             </button>
             <button
               type="submit"
-              class="px-4 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary/90"
+              class="btn-primary text-sm px-4 py-1.5"
             >
               保存
             </button>

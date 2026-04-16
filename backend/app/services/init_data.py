@@ -1,6 +1,6 @@
 from app.core.database import SessionLocal, engine
 from app.core.config import settings
-from app.models import User, Category, Tag, Article, Resource, SiteConfig, OAuthProvider
+from app.models import User, Category, Tag, Article, Resource, ResourceCategory, SiteConfig, OAuthProvider
 from app.utils import get_password_hash
 from app.utils.timezone import get_db_now
 from datetime import datetime
@@ -28,6 +28,15 @@ def run_database_migrations():
             
             cursor.execute("PRAGMA table_info(articles)")
             article_columns = [column[1] for column in cursor.fetchall()]
+            
+            cursor.execute("PRAGMA index_list(articles)")
+            indexes = cursor.fetchall()
+            has_unique_slug = any('slug' in str(idx) and idx[2] == 1 for idx in indexes)
+            
+            if not has_unique_slug:
+                cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS ix_articles_slug ON articles(slug)")
+                conn.commit()
+                print("Migration: Added unique index on articles.slug")
             
             if 'is_pinned' not in article_columns:
                 cursor.execute("ALTER TABLE articles ADD COLUMN is_pinned BOOLEAN DEFAULT 0")
@@ -101,6 +110,72 @@ def run_database_migrations():
                 conn.commit()
                 print("Migration: Created 'announcements' table")
             
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='resource_categories'")
+            if not cursor.fetchone():
+                cursor.execute('''
+                    CREATE TABLE resource_categories (
+                        id INTEGER PRIMARY KEY,
+                        name VARCHAR(50) NOT NULL,
+                        slug VARCHAR(50) NOT NULL UNIQUE,
+                        description TEXT,
+                        icon VARCHAR(50),
+                        'order' INTEGER DEFAULT 0,
+                        is_active BOOLEAN DEFAULT 1,
+                        created_at TEXT
+                    )
+                ''')
+                cursor.execute("CREATE INDEX IF NOT EXISTS ix_resource_categories_id ON resource_categories(id)")
+                cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS ix_resource_categories_slug ON resource_categories(slug)")
+                conn.commit()
+                print("Migration: Created 'resource_categories' table")
+            
+            cursor.execute("PRAGMA table_info(resources)")
+            resource_columns = [column[1] for column in cursor.fetchall()]
+            
+            if 'category_id' not in resource_columns:
+                cursor.execute("ALTER TABLE resources ADD COLUMN category_id INTEGER")
+                cursor.execute("CREATE INDEX IF NOT EXISTS ix_resources_category_id ON resources(category_id)")
+                conn.commit()
+                print("Migration: Added 'category_id' column to resources table")
+            
+            cursor.execute("PRAGMA table_info(resources)")
+            resource_columns = [column[1] for column in cursor.fetchall()]
+            
+            cursor.execute("PRAGMA index_list(resources)")
+            indexes = cursor.fetchall()
+            has_unique_url = any('url' in str(idx) for idx in indexes)
+            
+            needs_migration = not has_unique_url
+            
+            if needs_migration:
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS resources_new (
+                        id INTEGER PRIMARY KEY,
+                        title VARCHAR(100) NOT NULL,
+                        description TEXT,
+                        url VARCHAR(500) NOT NULL UNIQUE,
+                        icon VARCHAR(50),
+                        category_id INTEGER,
+                        category VARCHAR(50),
+                        is_active BOOLEAN DEFAULT 1,
+                        "order" INTEGER DEFAULT 0,
+                        resource_type VARCHAR(20) DEFAULT 'link',
+                        created_at TEXT
+                    )
+                ''')
+                cursor.execute('''
+                    INSERT OR IGNORE INTO resources_new 
+                    SELECT id, title, description, url, icon, category_id, category, is_active, "order", resource_type, created_at
+                    FROM resources
+                ''')
+                cursor.execute('DROP TABLE resources')
+                cursor.execute('ALTER TABLE resources_new RENAME TO resources')
+                cursor.execute("CREATE INDEX IF NOT EXISTS ix_resources_id ON resources(id)")
+                cursor.execute("CREATE INDEX IF NOT EXISTS ix_resources_category_id ON resources(category_id)")
+                cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS ix_resources_url ON resources(url)")
+                conn.commit()
+                print("Migration: Updated resources table with unique URL constraint")
+            
             conn.close()
         elif "postgresql" in db_url:
             db = SessionLocal()
@@ -166,6 +241,32 @@ def run_database_migrations():
                     db.execute(text("CREATE INDEX IF NOT EXISTS ix_announcements_active_order ON announcements(is_active, \"order\")"))
                     db.commit()
                     print("Migration: Created 'announcements' table")
+                
+                result = db.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'resource_categories'"))
+                if not result.fetchone():
+                    db.execute(text('''
+                        CREATE TABLE resource_categories (
+                            id SERIAL PRIMARY KEY,
+                            name VARCHAR(50) NOT NULL,
+                            slug VARCHAR(50) NOT NULL UNIQUE,
+                            description TEXT,
+                            icon VARCHAR(50),
+                            "order" INTEGER DEFAULT 0,
+                            is_active BOOLEAN DEFAULT TRUE,
+                            created_at TIMESTAMP
+                        )
+                    '''))
+                    db.execute(text("CREATE INDEX IF NOT EXISTS ix_resource_categories_id ON resource_categories(id)"))
+                    db.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_resource_categories_slug ON resource_categories(slug)"))
+                    db.commit()
+                    print("Migration: Created 'resource_categories' table")
+                
+                result = db.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'resources' AND column_name = 'category_id'"))
+                if not result.fetchone():
+                    db.execute(text("ALTER TABLE resources ADD COLUMN category_id INTEGER"))
+                    db.execute(text("CREATE INDEX IF NOT EXISTS ix_resources_category_id ON resources(category_id)"))
+                    db.commit()
+                    print("Migration: Added 'category_id' column to resources table")
             except Exception as e:
                 print(f"PostgreSQL migration error: {e}")
                 db.rollback()
@@ -240,21 +341,72 @@ def init_database():
         
         db.commit()
         
+        resource_categories_data = [
+            {"name": "部署平台", "slug": "deployment-platforms", "description": "应用部署与托管平台", "icon": "🚀", "order": 1, "is_active": True},
+            {"name": "常用工具", "slug": "common-tools", "description": "日常开发常用工具集合", "icon": "🔧", "order": 2, "is_active": True},
+            {"name": "学习网站", "slug": "learning-sites", "description": "优质学习资源网站", "icon": "📚", "order": 3, "is_active": True},
+            {"name": "开发工具", "slug": "dev-tools", "description": "常用开发工具", "icon": "🛠️", "order": 4, "is_active": True},
+            {"name": "设计灵感", "slug": "design-inspiration", "description": "设计参考与灵感", "icon": "🎨", "order": 5, "is_active": True},
+            {"name": "API服务", "slug": "api-services", "description": "API接口服务", "icon": "🔌", "order": 6, "is_active": True},
+        ]
+        
+        resource_categories_map = {}
+        for cat_data in resource_categories_data:
+            existing = db.query(ResourceCategory).filter(ResourceCategory.slug == cat_data["slug"]).first()
+            if not existing:
+                category = ResourceCategory(**cat_data)
+                db.add(category)
+                db.commit()
+                db.refresh(category)
+                resource_categories_map[cat_data["name"]] = category.id
+            else:
+                resource_categories_map[cat_data["name"]] = existing.id
+        
+        db.commit()
+        
         resources_data = [
-            {"title": "MDN Web Docs", "description": "Mozilla开发者网络文档", "url": "https://developer.mozilla.org", "icon": "book", "category": "学习网站", "order": 1},
-            {"title": "Vue.js 官方文档", "description": "Vue 3 官方中文文档", "url": "https://cn.vuejs.org", "icon": "vuejs", "category": "学习网站", "order": 2},
-            {"title": "FastAPI 官方文档", "description": "FastAPI 官方文档", "url": "https://fastapi.tiangolo.com", "icon": "python", "category": "学习网站", "order": 3},
-            {"title": "VS Code", "description": "强大的代码编辑器", "url": "https://code.visualstudio.com", "icon": "code", "category": "开发工具", "order": 1},
-            {"title": "GitHub", "description": "代码托管平台", "url": "https://github.com", "icon": "github", "category": "开发工具", "order": 2},
-            {"title": "Dribbble", "description": "设计师作品展示平台", "url": "https://dribbble.com", "icon": "palette", "category": "设计灵感", "order": 1},
-            {"title": "OpenAI API", "description": "OpenAI API文档", "url": "https://platform.openai.com", "icon": "robot", "category": "API服务", "order": 1},
+            {"title": "MDN Web Docs", "description": "Mozilla开发者网络文档", "url": "https://developer.mozilla.org", "icon": "📖", "category_id": resource_categories_map.get("学习网站"), "order": 1},
+            {"title": "Vue.js 官方文档", "description": "Vue 3 官方中文文档", "url": "https://cn.vuejs.org", "icon": "💚", "category_id": resource_categories_map.get("学习网站"), "order": 2},
+            {"title": "FastAPI 官方文档", "description": "FastAPI 官方文档", "url": "https://fastapi.tiangolo.com", "icon": "⚡", "category_id": resource_categories_map.get("学习网站"), "order": 3},
+            {"title": "VS Code", "description": "强大的代码编辑器", "url": "https://code.visualstudio.com", "icon": "💻", "category_id": resource_categories_map.get("开发工具"), "order": 1},
+            {"title": "GitHub", "description": "代码托管平台", "url": "https://github.com", "icon": "🐙", "category_id": resource_categories_map.get("开发工具"), "order": 2},
+            {"title": "Dribbble", "description": "设计师作品展示平台", "url": "https://dribbble.com", "icon": "🏀", "category_id": resource_categories_map.get("设计灵感"), "order": 1},
+            {"title": "OpenAI API", "description": "OpenAI API文档", "url": "https://platform.openai.com", "icon": "🤖", "category_id": resource_categories_map.get("API服务"), "order": 1},
+            {"title": "Vercel", "description": "前端应用部署平台，支持 Next.js、Vue、React 等框架", "url": "https://vercel.com", "icon": "▲", "category_id": resource_categories_map.get("部署平台"), "order": 1},
+            {"title": "Render", "description": "后端服务部署平台，支持 Python、Node.js、Go 等语言", "url": "https://render.com", "icon": "🔵", "category_id": resource_categories_map.get("部署平台"), "order": 2},
+            {"title": "Neon", "description": "无服务器 PostgreSQL 数据库，支持自动扩缩容", "url": "https://neon.tech", "icon": "💚", "category_id": resource_categories_map.get("部署平台"), "order": 3},
+            {"title": "Supabase", "description": "开源 Firebase 替代方案，提供数据库、认证、存储等服务", "url": "https://supabase.com", "icon": "⚡", "category_id": resource_categories_map.get("部署平台"), "order": 4},
+            {"title": "Resend", "description": "开发者友好的邮件发送服务，简单易用的 API", "url": "https://resend.com", "icon": "📧", "category_id": resource_categories_map.get("部署平台"), "order": 5},
+            {"title": "UptimeRobot", "description": "免费的网站监控服务，支持定时检测和告警", "url": "https://uptimerobot.com", "icon": "🤖", "category_id": resource_categories_map.get("部署平台"), "order": 6},
+            {"title": "Cloudflare", "description": "全球 CDN 服务，提供 DDoS 防护和 DNS 解析", "url": "https://cloudflare.com", "icon": "☁️", "category_id": resource_categories_map.get("部署平台"), "order": 7},
+            {"title": "Hero SMS", "description": "在线短信接收平台，用于验证码接收和测试", "url": "https://hero-sms.com/cn", "icon": "📱", "category_id": resource_categories_map.get("常用工具"), "order": 1},
+            {"title": "DokiDoki Web", "description": "实用工具导航网站，汇集各类在线工具和资源", "url": "https://dokidokiweb.com/", "icon": "🔮", "category_id": resource_categories_map.get("常用工具"), "order": 2},
+            {"title": "Remove.bg", "description": "智能图片背景去除工具，一键移除图片背景", "url": "https://www.remove.bg/zh", "icon": "✂️", "category_id": resource_categories_map.get("常用工具"), "order": 3},
+            {"title": "SQLPub", "description": "免费的 MySQL 无服务器数据库平台，支持自动扩缩容", "url": "https://www.sqlpub.com/", "icon": "🗄️", "category_id": resource_categories_map.get("常用工具"), "order": 4},
+            {"title": "Regex 快速参考", "description": "正则表达式快速参考手册，包含常用语法和示例", "url": "https://quickref.cn/docs/regex.html", "icon": "📋", "category_id": resource_categories_map.get("常用工具"), "order": 5},
+            {"title": "PCRE 文档", "description": "PCRE 正则表达式完整文档，详细的语法说明", "url": "https://www.pcre.org/current/doc/html/index.html", "icon": "📖", "category_id": resource_categories_map.get("常用工具"), "order": 6},
+            {"title": "Regex101", "description": "在线正则表达式测试工具，支持多种语言和实时调试", "url": "https://regex101.com/", "icon": "🧪", "category_id": resource_categories_map.get("常用工具"), "order": 7},
         ]
         
         for res_data in resources_data:
-            existing = db.query(Resource).filter(Resource.url == res_data["url"]).first()
-            if not existing:
-                resource = Resource(**res_data)
-                db.add(resource)
+            try:
+                existing = db.query(Resource).filter(Resource.url == res_data["url"]).first()
+                if not existing:
+                    resource = Resource(**res_data)
+                    db.add(resource)
+                    db.flush()
+                else:
+                    if existing.category_id is None and res_data.get("category_id"):
+                        existing.category_id = res_data["category_id"]
+                        if res_data.get("icon"):
+                            existing.icon = res_data["icon"]
+            except Exception as e:
+                db.rollback()
+                existing = db.query(Resource).filter(Resource.url == res_data["url"]).first()
+                if existing and existing.category_id is None and res_data.get("category_id"):
+                    existing.category_id = res_data["category_id"]
+                    if res_data.get("icon"):
+                        existing.icon = res_data["icon"]
         
         db.commit()
         
@@ -1123,7 +1275,7 @@ if response.choices[0].message.tool_calls:
 
 ```python
 def get_embedding(text, model="text-embedding-3-small"):
-    text = text.replace("\\n", " ")
+    text = text.replace("\n", " ")
     return client.embeddings.create(
         input=[text],
         model=model

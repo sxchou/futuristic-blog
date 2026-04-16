@@ -83,8 +83,13 @@ watch(() => authStore.isAuthenticated, (isAuthenticated) => {
   }
 })
 
-onMounted(() => {
+onMounted(async () => {
   fetchStats()
+  
+  if (blogStore.articles.length === 0) {
+    await blogStore.fetchArticles({ page: 1, page_size: 100 })
+  }
+  
   if (authStore.isAuthenticated && !userProfileStore.profile) {
     userProfileStore.fetchProfile()
   }

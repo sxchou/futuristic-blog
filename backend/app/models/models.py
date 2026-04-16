@@ -160,7 +160,7 @@ class Resource(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(100), nullable=False)
     description = Column(Text, nullable=True)
-    url = Column(String(500), nullable=False)
+    url = Column(String(500), nullable=False, unique=True, index=True)
     icon = Column(String(50), nullable=True)
     category_id = Column(Integer, ForeignKey('resource_categories.id'), nullable=True, index=True)
     category = Column(String(50), nullable=True)

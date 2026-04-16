@@ -7,6 +7,11 @@ export const resourceApi = {
     return response.data
   },
 
+  getAdminResources: async (): Promise<Resource[]> => {
+    const response = await apiClient.get('/resources/admin')
+    return response.data
+  },
+
   createResource: async (data: Partial<Resource>): Promise<Resource> => {
     const response = await apiClient.post('/resources', data)
     return response.data
