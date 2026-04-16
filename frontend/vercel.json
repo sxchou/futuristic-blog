@@ -3,6 +3,12 @@
   "outputDirectory": "dist",
   "framework": "vue",
   "installCommand": "npm install",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://futuristic-blog-backend.onrender.com/api/:path*"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
