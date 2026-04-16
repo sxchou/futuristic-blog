@@ -134,11 +134,15 @@ export const useSiteConfigStore = defineStore('siteConfig', () => {
   }
 
   const fetchGithubStats = async () => {
-    if (!showGithubStats.value) return
+    if (!githubRepoUrl.value) {
+      githubStats.value = { enabled: false, stars: 0, forks: 0, watchers: 0, open_issues: 0 }
+      return
+    }
     try {
       githubStats.value = await siteConfigApi.getGitHubStats()
     } catch (error) {
       console.error('Failed to fetch GitHub stats:', error)
+      githubStats.value = { enabled: false, stars: 0, forks: 0, watchers: 0, open_issues: 0 }
     }
   }
 

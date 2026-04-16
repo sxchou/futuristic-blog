@@ -102,10 +102,10 @@ watch(() => authStore.isAuthenticated, (isAuthenticated) => {
 })
 
 watch(() => siteConfigStore.showGithubStats, (show) => {
-  if (show) {
+  if (show && !siteConfigStore.githubStats) {
     siteConfigStore.fetchGithubStats()
   }
-})
+}, { immediate: true })
 
 watch(() => siteConfigStore.githubRepoUrl, () => {
   if (siteConfigStore.showGithubStats) {
