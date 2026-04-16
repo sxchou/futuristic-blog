@@ -53,7 +53,19 @@ const handleRegister = async () => {
       }
     })
   } catch (error: any) {
-    errorMessage.value = error.response?.data?.detail || '注册失败，请稍后重试'
+    if (!error.response) {
+      if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
+        errorMessage.value = '网络连接失败，请检查网络后重试'
+      } else if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        errorMessage.value = '请求超时，请稍后重试'
+      } else {
+        errorMessage.value = '服务暂时不可用，请稍后重试'
+      }
+    } else if (error.response.status >= 500) {
+      errorMessage.value = '服务器繁忙，请稍后重试'
+    } else {
+      errorMessage.value = error.response?.data?.detail || '注册失败，请稍后重试'
+    }
   } finally {
     isLoading.value = false
   }

@@ -42,7 +42,7 @@ onUnmounted(() => {
 <template>
   <div class="auth-menu-container relative">
     <button
-      class="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 rounded-lg text-gray-600 dark:text-gray-400 hover:text-primary hover:border-primary/30 transition-all"
+      class="flex items-center gap-1 p-1.5 bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 rounded-lg text-gray-600 dark:text-gray-400 hover:text-primary hover:border-primary/30 transition-all"
       @click.stop="toggleDropdown"
     >
       <svg
@@ -58,7 +58,6 @@ onUnmounted(() => {
           d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
         />
       </svg>
-      <span class="text-sm">菜单</span>
       <svg
         class="w-3 h-3 transition-transform duration-200"
         :class="{ 'rotate-180': isDropdownOpen }"

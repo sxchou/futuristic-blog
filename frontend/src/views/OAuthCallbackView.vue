@@ -122,7 +122,19 @@ const handleCallback = async () => {
     await router.push(redirect || '/')
     window.location.reload()
   } catch (err: any) {
-    error.value = err.response?.data?.detail || '登录失败，请重试'
+    if (!err.response) {
+      if (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
+        error.value = '网络连接失败，请检查网络后重试'
+      } else if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+        error.value = '请求超时，请稍后重试'
+      } else {
+        error.value = '服务暂时不可用，请稍后重试'
+      }
+    } else if (err.response.status >= 500) {
+      error.value = '服务器繁忙，请稍后重试'
+    } else {
+      error.value = err.response?.data?.detail || '登录失败，请重试'
+    }
     isLoading.value = false
   }
 }
@@ -148,7 +160,21 @@ const submitEmail = async () => {
       query: { temp_token: tempToken.value }
     })
   } catch (err: any) {
-    dialog.showError(err.response?.data?.detail || '发送验证邮件失败')
+    let errorMsg: string
+    if (!err.response) {
+      if (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
+        errorMsg = '网络连接失败，请检查网络后重试'
+      } else if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+        errorMsg = '请求超时，请稍后重试'
+      } else {
+        errorMsg = '服务暂时不可用，请稍后重试'
+      }
+    } else if (err.response.status >= 500) {
+      errorMsg = '服务器繁忙，请稍后重试'
+    } else {
+      errorMsg = err.response?.data?.detail || '发送验证邮件失败'
+    }
+    dialog.showError(errorMsg)
   } finally {
     isSubmitting.value = false
   }

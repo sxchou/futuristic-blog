@@ -44,7 +44,21 @@ const handleOAuthLogin = async (provider: OAuthProviderResponse) => {
     const response = await oauthApi.getLoginUrl(provider.name)
     window.location.href = response.authorize_url
   } catch (error: any) {
-    await dialog.showError(error.response?.data?.detail || '登录失败，请重试', '错误')
+    let errorMsg: string
+    if (!error.response) {
+      if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
+        errorMsg = '网络连接失败，请检查网络后重试'
+      } else if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        errorMsg = '请求超时，请稍后重试'
+      } else {
+        errorMsg = '服务暂时不可用，请稍后重试'
+      }
+    } else if (error.response.status >= 500) {
+      errorMsg = '服务器繁忙，请稍后重试'
+    } else {
+      errorMsg = error.response?.data?.detail || '登录失败，请重试'
+    }
+    await dialog.showError(errorMsg, '错误')
   } finally {
     oauthLoading.value = null
   }
@@ -160,15 +174,43 @@ const handleLogin = async () => {
       return
     }
     
-    const detail = responseData?.detail || '登录失败，请检查用户名和密码'
-    const message = typeof detail === 'string' ? detail : detail.message || '登录失败'
+    let message: string
     
-    if (message.includes('用户不存在')) {
-      usernameError.value = '用户名/邮箱不存在'
-    } else if (message.includes('密码错误')) {
-      passwordError.value = message
-    } else {
+    if (!error.response) {
+      if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
+        message = '网络连接失败，请检查网络后重试'
+      } else if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        message = '请求超时，请稍后重试'
+      } else {
+        message = '服务暂时不可用，请稍后重试'
+      }
       generalError.value = message
+    } else {
+      const status = error.response.status
+      const detail = responseData?.detail
+      message = typeof detail === 'string' ? detail : detail?.message || ''
+      
+      if (status >= 500) {
+        generalError.value = '服务器繁忙，请稍后重试'
+      } else if (status === 401) {
+        if (message.includes('用户不存在')) {
+          usernameError.value = '用户名/邮箱不存在'
+        } else if (message.includes('密码错误')) {
+          passwordError.value = '密码错误'
+        } else {
+          generalError.value = message || '用户名或密码错误'
+        }
+      } else if (message) {
+        if (message.includes('用户不存在')) {
+          usernameError.value = '用户名/邮箱不存在'
+        } else if (message.includes('密码错误')) {
+          passwordError.value = message
+        } else {
+          generalError.value = message
+        }
+      } else {
+        generalError.value = '登录失败，请稍后重试'
+      }
     }
     
     if (captchaRef.value) {
