@@ -3,6 +3,16 @@ import { ref, computed, watch } from 'vue'
 import { siteConfigApi } from '@/api'
 import type { SiteConfig } from '@/types'
 
+export interface GitHubStats {
+  enabled: boolean
+  stars: number
+  forks: number
+  watchers: number
+  open_issues: number
+  full_name?: string
+  html_url?: string
+}
+
 let fetchConfigsPromise: Promise<void> | null = null
 
 const updateFavicon = (logoUrl: string) => {
@@ -45,6 +55,7 @@ export const useSiteConfigStore = defineStore('siteConfig', () => {
   const mobileArticleLayout = ref<'embedded' | 'stacked'>('embedded')
   const githubRepoUrl = ref('')
   const showGithubStats = ref(false)
+  const githubStats = ref<GitHubStats | null>(null)
   const loading = ref(false)
   const lastFetchTime = ref(0)
   const CACHE_TTL = 60000
@@ -120,6 +131,15 @@ export const useSiteConfigStore = defineStore('siteConfig', () => {
     })()
     
     return fetchConfigsPromise
+  }
+
+  const fetchGithubStats = async () => {
+    if (!showGithubStats.value) return
+    try {
+      githubStats.value = await siteConfigApi.getGitHubStats()
+    } catch (error) {
+      console.error('Failed to fetch GitHub stats:', error)
+    }
   }
 
   const updateSiteName = async (name: string) => {
@@ -241,8 +261,10 @@ export const useSiteConfigStore = defineStore('siteConfig', () => {
     mobileArticleLayout,
     githubRepoUrl,
     showGithubStats,
+    githubStats,
     loading,
     fetchConfigs,
+    fetchGithubStats,
     updateSiteName,
     updateSiteDescription,
     updateSiteKeywords,

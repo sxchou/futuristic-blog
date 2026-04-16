@@ -20,6 +20,7 @@ const isAdminPage = computed(() => route.path.startsWith('/admin'))
 
 onMounted(async () => {
   await siteConfigStore.fetchConfigs()
+  siteConfigStore.fetchGithubStats()
   blogStore.fetchCategories()
   blogStore.fetchTags()
   blogStore.fetchAnnouncements()

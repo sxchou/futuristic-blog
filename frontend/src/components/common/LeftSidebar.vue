@@ -2,7 +2,6 @@
 import { ref, onMounted, watch, computed } from 'vue'
 import { useAuthStore, useUserProfileStore, useDialogStore, useSiteConfigStore } from '@/stores'
 import { userProfileApi } from '@/api/userProfile'
-import { siteConfigApi, type GitHubStats } from '@/api'
 import UserAvatar from './UserAvatar.vue'
 import AvatarCropper from './AvatarCropper.vue'
 
@@ -16,10 +15,9 @@ const isUploading = ref(false)
 const uploadProgress = ref(0)
 const showCropper = ref(false)
 const selectedImageSrc = ref('')
-const githubStats = ref<GitHubStats | null>(null)
 
 const showGithubSection = computed(() => {
-  return siteConfigStore.showGithubStats && githubStats.value?.enabled
+  return siteConfigStore.showGithubStats && siteConfigStore.githubStats?.enabled
 })
 
 const formatCount = (count: number) => {
@@ -27,15 +25,6 @@ const formatCount = (count: number) => {
     return (count / 1000).toFixed(1) + 'k'
   }
   return count.toString()
-}
-
-const fetchGithubStats = async () => {
-  if (!siteConfigStore.showGithubStats) return
-  try {
-    githubStats.value = await siteConfigApi.getGitHubStats()
-  } catch (error) {
-    console.error('Failed to fetch GitHub stats:', error)
-  }
 }
 
 const triggerUpload = () => {
@@ -114,22 +103,20 @@ watch(() => authStore.isAuthenticated, (isAuthenticated) => {
 
 watch(() => siteConfigStore.showGithubStats, (show) => {
   if (show) {
-    fetchGithubStats()
+    siteConfigStore.fetchGithubStats()
   }
 })
 
 watch(() => siteConfigStore.githubRepoUrl, () => {
   if (siteConfigStore.showGithubStats) {
-    fetchGithubStats()
+    siteConfigStore.fetchGithubStats()
   }
 })
 
-onMounted(async () => {
+onMounted(() => {
   if (authStore.isAuthenticated && !userProfileStore.profile) {
     userProfileStore.fetchProfile()
   }
-  await siteConfigStore.fetchConfigs()
-  fetchGithubStats()
 })
 </script>
 
@@ -333,7 +320,7 @@ onMounted(async () => {
       </h3>
       
       <a
-        :href="githubStats?.html_url"
+        :href="siteConfigStore.githubStats?.html_url"
         target="_blank"
         rel="noopener noreferrer"
         class="block group"
@@ -351,7 +338,7 @@ onMounted(async () => {
               <span class="text-xs text-gray-600 dark:text-gray-400">Stars</span>
             </div>
             <span class="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-primary transition-colors">
-              {{ formatCount(githubStats?.stars || 0) }}
+              {{ formatCount(siteConfigStore.githubStats?.stars || 0) }}
             </span>
           </div>
           
@@ -373,7 +360,7 @@ onMounted(async () => {
               <span class="text-xs text-gray-600 dark:text-gray-400">Forks</span>
             </div>
             <span class="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-primary transition-colors">
-              {{ formatCount(githubStats?.forks || 0) }}
+              {{ formatCount(siteConfigStore.githubStats?.forks || 0) }}
             </span>
           </div>
           
@@ -401,7 +388,7 @@ onMounted(async () => {
               <span class="text-xs text-gray-600 dark:text-gray-400">Watchers</span>
             </div>
             <span class="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-primary transition-colors">
-              {{ formatCount(githubStats?.watchers || 0) }}
+              {{ formatCount(siteConfigStore.githubStats?.watchers || 0) }}
             </span>
           </div>
           
