@@ -20,6 +20,7 @@ const navLinks = computed(() => [
   { name: '分类', path: '/categories' },
   { name: '标签', path: '/tags' },
   { name: '归档', path: '/archive' },
+  { name: '资源', path: '/resources' },
   { name: '关于', path: '/about' }
 ])
 

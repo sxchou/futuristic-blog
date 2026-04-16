@@ -1,43 +1,23 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { resourceApi } from '@/api'
+import { resourceApi, resourceCategoryApi } from '@/api'
 import type { Resource } from '@/types'
+import type { ResourceCategory } from '@/api/resourceCategories'
 
 const resources = ref<Resource[]>([])
+const categories = ref<ResourceCategory[]>([])
 const loading = ref(true)
-const activeCategory = ref('全部')
+const activeCategory = ref<number | null>(null)
 
-const categories = computed(() => {
-  const cats = new Set(resources.value.map(r => r.category))
-  return ['全部', ...cats]
-})
-
-const filteredResources = computed(() => {
-  if (activeCategory.value === '全部') {
-    return resources.value
+const fetchCategories = async () => {
+  try {
+    categories.value = await resourceCategoryApi.getCategories()
+  } catch (error) {
+    console.error('Failed to fetch categories:', error)
   }
-  return resources.value.filter(r => r.category === activeCategory.value)
-})
-
-const groupedResources = computed(() => {
-  const groups: Record<string, Resource[]> = {}
-  filteredResources.value.forEach(r => {
-    if (!groups[r.category]) {
-      groups[r.category] = []
-    }
-    groups[r.category].push(r)
-  })
-  return groups
-})
-
-const categoryIcons: Record<string, string> = {
-  '学习网站': 'book',
-  '开发工具': 'code',
-  '设计灵感': 'palette',
-  'API服务': 'api'
 }
 
-onMounted(async () => {
+const fetchResources = async () => {
   try {
     resources.value = await resourceApi.getResources()
   } catch (error) {
@@ -45,6 +25,37 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
+}
+
+const getCategoryName = (categoryId?: number | null) => {
+  if (!categoryId) return '未分类'
+  const category = categories.value.find(c => c.id === categoryId)
+  return category ? category.name : '未分类'
+}
+
+const filteredResources = computed(() => {
+  if (activeCategory.value === null) {
+    return resources.value
+  }
+  return resources.value.filter(r => r.category_id === activeCategory.value)
+})
+
+const groupedResources = computed(() => {
+  const groups: Record<string, Resource[]> = {}
+  filteredResources.value.forEach(r => {
+    const catName = getCategoryName(r.category_id)
+    if (!groups[catName]) {
+      groups[catName] = []
+    }
+    groups[catName].push(r)
+  })
+  return groups
+})
+
+const activeCategories = computed(() => categories.value.filter(c => c.is_active))
+
+onMounted(async () => {
+  await Promise.all([fetchCategories(), fetchResources()])
 })
 </script>
 
@@ -62,15 +73,24 @@ onMounted(async () => {
 
       <div class="flex flex-wrap justify-center gap-3 mb-12">
         <button
-          v-for="category in categories"
-          :key="category"
           class="px-4 py-2 rounded-full border transition-all duration-300"
-          :class="activeCategory === category
+          :class="activeCategory === null
             ? 'bg-primary/20 border-primary text-primary'
             : 'bg-gray-100 dark:bg-dark-100/50 border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:border-primary/50'"
-          @click="activeCategory = category"
+          @click="activeCategory = null"
         >
-          {{ category }}
+          全部
+        </button>
+        <button
+          v-for="category in activeCategories"
+          :key="category.id"
+          class="px-4 py-2 rounded-full border transition-all duration-300"
+          :class="activeCategory === category.id
+            ? 'bg-primary/20 border-primary text-primary'
+            : 'bg-gray-100 dark:bg-dark-100/50 border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:border-primary/50'"
+          @click="activeCategory = category.id"
+        >
+          {{ category.name }}
         </button>
       </div>
 
@@ -92,7 +112,6 @@ onMounted(async () => {
           <h2 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
             <span class="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
               <svg
-                v-if="categoryIcons[category] === 'book'"
                 class="w-5 h-5 text-primary"
                 fill="none"
                 stroke="currentColor"
@@ -102,49 +121,7 @@ onMounted(async () => {
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                />
-              </svg>
-              <svg
-                v-else-if="categoryIcons[category] === 'code'"
-                class="w-5 h-5 text-primary"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
-                />
-              </svg>
-              <svg
-                v-else-if="categoryIcons[category] === 'palette'"
-                class="w-5 h-5 text-primary"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
-                />
-              </svg>
-              <svg
-                v-else
-                class="w-5 h-5 text-primary"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
                 />
               </svg>
             </span>
@@ -161,7 +138,12 @@ onMounted(async () => {
             >
               <div class="flex items-start gap-4">
                 <div class="w-12 h-12 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                  <span
+                    v-if="resource.icon"
+                    class="text-xl"
+                  >{{ resource.icon }}</span>
                   <svg
+                    v-else
                     class="w-6 h-6 text-primary"
                     fill="none"
                     stroke="currentColor"

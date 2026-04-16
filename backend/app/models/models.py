@@ -141,6 +141,19 @@ class ArticleFile(Base):
     uploader = relationship("User", backref="uploaded_files")
 
 
+class ResourceCategory(Base):
+    __tablename__ = "resource_categories"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(50), nullable=False)
+    slug = Column(String(50), nullable=False, unique=True)
+    description = Column(Text, nullable=True)
+    icon = Column(String(50), nullable=True)
+    order = Column(Integer, default=0)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=get_db_now)
+
+
 class Resource(Base):
     __tablename__ = "resources"
     
@@ -149,11 +162,14 @@ class Resource(Base):
     description = Column(Text, nullable=True)
     url = Column(String(500), nullable=False)
     icon = Column(String(50), nullable=True)
-    category = Column(String(50), nullable=False)
+    category_id = Column(Integer, ForeignKey('resource_categories.id'), nullable=True, index=True)
+    category = Column(String(50), nullable=True)
     is_active = Column(Boolean, default=True)
     order = Column(Integer, default=0)
     resource_type = Column(String(20), default='link')
     created_at = Column(DateTime, default=get_db_now)
+    
+    category_relation = relationship("ResourceCategory", backref="resources")
 
 
 class Comment(Base):

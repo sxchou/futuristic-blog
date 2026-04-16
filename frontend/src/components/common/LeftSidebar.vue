@@ -288,13 +288,13 @@ onMounted(() => {
             <div class="w-full flex gap-2">
               <router-link
                 to="/login"
-                class="flex-1 py-2 text-center text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-300 border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-dark-400 transition-colors"
+                class="flex-1 py-2 text-center text-xs font-medium text-primary bg-primary/10 border border-primary/30 rounded-lg hover:bg-primary/20 hover:border-primary/50 transition-colors"
               >
                 登录
               </router-link>
               <router-link
                 to="/register"
-                class="flex-1 py-2 text-center text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-300 border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-dark-400 transition-colors"
+                class="flex-1 py-2 text-center text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors shadow-sm"
               >
                 注册
               </router-link>
@@ -392,10 +392,10 @@ onMounted(() => {
             </span>
           </div>
           
-          <div class="mt-2 p-3 bg-gradient-to-r from-primary/5 to-accent/5 dark:from-primary/10 dark:to-accent/10 rounded-lg border border-primary/10 dark:border-primary/20">
-            <div class="flex items-center gap-2 mb-2">
+          <div class="mt-2 p-3 bg-gray-50 dark:bg-white/[0.02] rounded-lg border border-gray-200/60 dark:border-white/5">
+            <div class="flex items-center gap-2 mb-1.5">
               <svg
-                class="w-4 h-4 text-primary"
+                class="w-3.5 h-3.5 text-primary"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -404,13 +404,13 @@ onMounted(() => {
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
                 />
               </svg>
               <span class="text-xs font-medium text-gray-700 dark:text-gray-300">欢迎 Fork 本项目</span>
             </div>
             <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed flex items-center gap-1 flex-wrap">
-              如果觉得这个项目不错，欢迎 Star ⭐ 和 
+              欢迎Star ⭐ 和
               <svg
                 class="w-3.5 h-3.5 text-blue-500 inline-block"
                 fill="none"
@@ -424,7 +424,7 @@ onMounted(() => {
                   d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
                 />
               </svg>
-              Fork 支持！
+              Fork 支持
             </p>
           </div>
         </div>

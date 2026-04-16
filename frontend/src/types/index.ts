@@ -120,7 +120,8 @@ export interface Resource {
   description?: string
   url: string
   icon?: string
-  category: string
+  category_id?: number | null
+  category?: string
   is_active: boolean
   order: number
   created_at: string
