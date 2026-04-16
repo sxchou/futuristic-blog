@@ -77,7 +77,6 @@ const handleDesktopDropdownClickOutside = (event: MouseEvent) => {
 }
 
 onMounted(() => {
-  siteConfigStore.fetchConfigs()
   if (authStore.isAuthenticated) {
     userProfileStore.fetchProfile()
   }

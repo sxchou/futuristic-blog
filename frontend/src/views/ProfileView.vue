@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAuthStore, useUserInteractionStore, useBlogStore, useUserProfileStore, useSiteConfigStore } from '@/stores'
+import { useAuthStore, useUserInteractionStore, useUserProfileStore, useSiteConfigStore } from '@/stores'
 import { likeApi, commentApi, bookmarkApi } from '@/api'
 import type { ArticleListItem } from '@/types'
 import Pagination from '@/components/common/Pagination.vue'
@@ -15,7 +15,6 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const userInteractionStore = useUserInteractionStore()
-const blogStore = useBlogStore()
 const userProfileStore = useUserProfileStore()
 const siteConfigStore = useSiteConfigStore()
 
@@ -151,8 +150,6 @@ onMounted(async () => {
   }
   await Promise.all([
     userInteractionStore.initialize(),
-    blogStore.fetchCategories(),
-    blogStore.fetchTags(),
     userProfileStore.fetchProfile()
   ])
   fetchArticles()

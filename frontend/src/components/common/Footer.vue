@@ -7,7 +7,6 @@ const socialLinksStore = useSocialLinksStore()
 const currentYear = new Date().getFullYear()
 
 onMounted(() => {
-  siteConfigStore.fetchConfigs()
   socialLinksStore.fetchProfile()
 })
 

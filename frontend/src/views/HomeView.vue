@@ -183,8 +183,6 @@ onMounted(async () => {
   
   await Promise.all([
     blogStore.fetchArticles({ page: pageFromUrl, page_size: pageSize.value }),
-    blogStore.fetchCategories(),
-    blogStore.fetchTags(),
     fetchFeaturedArticles()
   ])
   

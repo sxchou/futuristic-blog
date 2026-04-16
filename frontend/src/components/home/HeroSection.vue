@@ -68,8 +68,6 @@ const fetchFeaturedArticles = async () => {
 
 onMounted(async () => {
   await Promise.all([
-    blogStore.fetchCategories(),
-    blogStore.fetchTags(),
     fetchStats(),
     fetchFeaturedArticles()
   ])

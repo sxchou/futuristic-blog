@@ -5,6 +5,9 @@ import type { ArticleListItem, Category, Tag } from '@/types'
 import type { Announcement } from '@/api/announcements'
 
 let fetchArticlesController: AbortController | null = null
+let fetchCategoriesPromise: Promise<void> | null = null
+let fetchTagsPromise: Promise<void> | null = null
+let fetchAnnouncementsPromise: Promise<void> | null = null
 
 export const useBlogStore = defineStore('blog', () => {
   const articles = ref<ArticleListItem[]>([])
@@ -67,12 +70,22 @@ export const useBlogStore = defineStore('blog', () => {
       return
     }
     
-    try {
-      const data = await categoryApi.getCategories()
-      categories.value = data
-    } catch (error) {
-      console.error('Failed to fetch categories:', error)
+    if (fetchCategoriesPromise) {
+      return fetchCategoriesPromise
     }
+    
+    fetchCategoriesPromise = (async () => {
+      try {
+        const data = await categoryApi.getCategories()
+        categories.value = data
+      } catch (error) {
+        console.error('Failed to fetch categories:', error)
+      } finally {
+        fetchCategoriesPromise = null
+      }
+    })()
+    
+    return fetchCategoriesPromise
   }
 
   const fetchTags = async (force = false) => {
@@ -80,12 +93,22 @@ export const useBlogStore = defineStore('blog', () => {
       return
     }
     
-    try {
-      const data = await tagApi.getTags()
-      tags.value = data
-    } catch (error) {
-      console.error('Failed to fetch tags:', error)
+    if (fetchTagsPromise) {
+      return fetchTagsPromise
     }
+    
+    fetchTagsPromise = (async () => {
+      try {
+        const data = await tagApi.getTags()
+        tags.value = data
+      } catch (error) {
+        console.error('Failed to fetch tags:', error)
+      } finally {
+        fetchTagsPromise = null
+      }
+    })()
+    
+    return fetchTagsPromise
   }
 
   const fetchAnnouncements = async (force = false) => {
@@ -93,12 +116,22 @@ export const useBlogStore = defineStore('blog', () => {
       return
     }
     
-    try {
-      const data = await announcementApi.getAnnouncements(true)
-      announcements.value = data
-    } catch (error) {
-      console.error('Failed to fetch announcements:', error)
+    if (fetchAnnouncementsPromise) {
+      return fetchAnnouncementsPromise
     }
+    
+    fetchAnnouncementsPromise = (async () => {
+      try {
+        const data = await announcementApi.getAnnouncements(true)
+        announcements.value = data
+      } catch (error) {
+        console.error('Failed to fetch announcements:', error)
+      } finally {
+        fetchAnnouncementsPromise = null
+      }
+    })()
+    
+    return fetchAnnouncementsPromise
   }
 
   const addCategory = (category: Category) => {

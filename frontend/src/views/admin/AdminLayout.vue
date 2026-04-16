@@ -85,7 +85,6 @@ const showSidebarAvatarInitial = computed(() => {
 })
 
 onMounted(() => {
-  siteConfigStore.fetchConfigs()
   if (authStore.isAuthenticated) {
     userProfileStore.fetchProfile()
   }
