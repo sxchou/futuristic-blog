@@ -53,11 +53,21 @@ class BaiduPushService:
                         "not_valid": result.get("not_valid", [])
                     }
                 else:
-                    logger.error(f"Baidu push failed: {response.status_code} - {result}")
+                    error_code = result.get("error", "Unknown error")
+                    error_message = result.get("message", "Push failed")
+                    
+                    if error_code == 400 and "site init fail" in error_message:
+                        logger.warning(
+                            f"Baidu push: Site not verified. Please verify your site at "
+                            f"https://ziyuan.baidu.com/site/siteadd. Site: {self.site}"
+                        )
+                    else:
+                        logger.error(f"Baidu push failed: {response.status_code} - {result}")
+                    
                     return {
                         "success": 0,
-                        "error": result.get("error", "Unknown error"),
-                        "message": result.get("message", "Push failed")
+                        "error": error_code,
+                        "message": error_message
                     }
                     
         except httpx.TimeoutException:
