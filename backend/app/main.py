@@ -300,7 +300,7 @@ def sync_article_comment_counts():
         db.close()
 
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 async def root():
     return {
         "message": "Welcome to Futuristic Blog API",
