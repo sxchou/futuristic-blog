@@ -274,6 +274,8 @@ def update_site_config(
     db.commit()
     db.refresh(config)
     
+    invalidate_site_config_cache()
+    
     if key == "github_repo_url":
         GITHUB_CACHE = {"data": None, "timestamp": 0, "repo_url": ""}
     
@@ -315,6 +317,8 @@ def create_site_config(
     db.add(config)
     db.commit()
     db.refresh(config)
+    
+    invalidate_site_config_cache()
     
     LogService.log_operation(
         db=db,
@@ -363,6 +367,8 @@ async def upload_logo(
         db.commit()
         db.refresh(config)
         
+        invalidate_site_config_cache()
+        
         if old_logo_url:
             delete_logo_file(old_logo_url)
         
@@ -406,6 +412,8 @@ async def reset_logo(
         db.commit()
         db.refresh(config)
     
+    invalidate_site_config_cache()
+    
     LogService.log_operation(
         db=db,
         user_id=current_user.id,
@@ -443,6 +451,8 @@ def delete_site_config(
     
     db.delete(config)
     db.commit()
+    
+    invalidate_site_config_cache()
     
     LogService.log_operation(
         db=db,

@@ -486,6 +486,8 @@ async def create_article(
     db.commit()
     db.refresh(new_article)
     
+    invalidate_articles_cache()
+    
     link_files_to_article(db, new_article.id, article_data.content, article_data.cover_image)
     
     LogService.log_operation(
@@ -554,6 +556,8 @@ async def update_article(
         else:
             raise HTTPException(status_code=400, detail="保存失败，数据冲突")
     
+    invalidate_articles_cache()
+    
     link_files_to_article(db, article.id, article.content, article.cover_image)
     
     LogService.log_operation(
@@ -606,6 +610,8 @@ async def delete_article(
         
         db.delete(article)
         db.commit()
+        
+        invalidate_articles_cache()
         
         LogService.log_operation(
             db=db,
