@@ -6,8 +6,15 @@ from app.models.models import Announcement
 from app.schemas.schemas import AnnouncementCreate, AnnouncementUpdate, AnnouncementResponse
 from app.utils.auth import get_current_user
 from app.services.log_service import LogService
+from app.utils.cache import cache_manager
 
 router = APIRouter(prefix="/announcements", tags=["Announcements"])
+
+CACHE_NAME = "announcements"
+
+
+def invalidate_announcements_cache():
+    cache_manager.clear_cache(CACHE_NAME)
 
 
 @router.get("", response_model=List[AnnouncementResponse])
@@ -15,11 +22,19 @@ def get_announcements(
     active_only: bool = False,
     db: Session = Depends(get_db)
 ):
+    cache_key = f"announcements_{active_only}"
+    cached = cache_manager.get(CACHE_NAME, cache_key)
+    if cached:
+        return cached
+    
     query = db.query(Announcement)
     if active_only:
         query = query.filter(Announcement.is_active == True)
     announcements = query.order_by(Announcement.order, Announcement.created_at.desc()).all()
-    return announcements
+    result = [AnnouncementResponse.model_validate(a).model_dump() for a in announcements]
+    
+    cache_manager.set(CACHE_NAME, cache_key, result)
+    return result
 
 
 @router.get("/{announcement_id}", response_model=AnnouncementResponse)
@@ -53,6 +68,8 @@ def create_announcement(
     db.add(announcement)
     db.commit()
     db.refresh(announcement)
+    
+    invalidate_announcements_cache()
     
     LogService.log_operation(
         db=db,
@@ -92,6 +109,8 @@ def update_announcement(
     db.commit()
     db.refresh(announcement)
     
+    invalidate_announcements_cache()
+    
     LogService.log_operation(
         db=db,
         user_id=current_user.id,
@@ -125,6 +144,8 @@ def delete_announcement(
     title = announcement.title
     db.delete(announcement)
     db.commit()
+    
+    invalidate_announcements_cache()
     
     LogService.log_operation(
         db=db,

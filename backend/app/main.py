@@ -55,7 +55,26 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
         
-        if request.url.path.startswith("/api"):
+        CACHEABLE_PATHS = [
+            '/api/articles',
+            '/api/categories',
+            '/api/tags',
+            '/api/resources',
+            '/api/resource-categories',
+            '/api/site-config',
+            '/api/profile',
+            '/api/announcements',
+            '/api/dashboard/public-stats',
+        ]
+        
+        is_cacheable = any(
+            request.url.path.startswith(path) for path in CACHEABLE_PATHS
+        ) and request.method == "GET"
+        
+        if is_cacheable:
+            response.headers["Cache-Control"] = "public, max-age=60, s-maxage=60, stale-while-revalidate=300"
+            response.headers["CDN-Cache-Control"] = "public, max-age=60"
+        elif request.url.path.startswith("/api"):
             response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate"
             response.headers["Pragma"] = "no-cache"
             response.headers["Expires"] = "0"

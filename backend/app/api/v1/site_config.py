@@ -14,6 +14,7 @@ from app.utils.auth import get_current_user
 from app.services.log_service import LogService
 from app.services.supabase_storage import supabase_storage
 from app.core.config import settings
+from app.utils.cache import cache_manager
 
 router = APIRouter(prefix="/site-config", tags=["Site Configuration"])
 logger = logging.getLogger(__name__)
@@ -23,6 +24,12 @@ MAX_FILE_SIZE = 2 * 1024 * 1024
 
 GITHUB_CACHE = {"data": None, "timestamp": 0, "repo_url": ""}
 GITHUB_CACHE_TTL = 600
+
+CACHE_NAME = "site_config"
+
+
+def invalidate_site_config_cache():
+    cache_manager.clear_cache(CACHE_NAME)
 
 
 def get_logo_base_path() -> Path:
@@ -106,8 +113,16 @@ def delete_logo_file(logo_url: str) -> bool:
 
 @router.get("", response_model=List[SiteConfigResponse])
 def get_site_configs(db: Session = Depends(get_db)):
+    cache_key = "all_configs"
+    cached = cache_manager.get(CACHE_NAME, cache_key)
+    if cached:
+        return cached
+    
     configs = db.query(SiteConfig).all()
-    return configs
+    result = [SiteConfigResponse.model_validate(c).model_dump() for c in configs]
+    
+    cache_manager.set(CACHE_NAME, cache_key, result)
+    return result
 
 
 def parse_github_repo_url(repo_url: str) -> Optional[tuple]:

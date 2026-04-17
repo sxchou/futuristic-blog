@@ -6,14 +6,29 @@ from app.models import ResourceCategory, Resource
 from app.schemas import ResourceCategoryCreate, ResourceCategoryUpdate, ResourceCategoryResponse
 from app.utils import get_current_user
 from app.services.log_service import LogService
+from app.utils.cache import cache_manager
 
 router = APIRouter(prefix="/resource-categories", tags=["Resource Categories"])
+
+CACHE_NAME = "resource_categories"
+
+
+def invalidate_resource_categories_cache():
+    cache_manager.clear_cache(CACHE_NAME)
 
 
 @router.get("", response_model=List[ResourceCategoryResponse])
 async def get_categories(db: Session = Depends(get_db)):
+    cache_key = "all_categories"
+    cached = cache_manager.get(CACHE_NAME, cache_key)
+    if cached:
+        return cached
+    
     categories = db.query(ResourceCategory).order_by(ResourceCategory.order).all()
-    return [ResourceCategoryResponse.model_validate(c) for c in categories]
+    result = [ResourceCategoryResponse.model_validate(c).model_dump() for c in categories]
+    
+    cache_manager.set(CACHE_NAME, cache_key, result)
+    return result
 
 
 @router.post("", response_model=ResourceCategoryResponse)
@@ -34,6 +49,8 @@ async def create_category(
     db.add(new_category)
     db.commit()
     db.refresh(new_category)
+    
+    invalidate_resource_categories_cache()
     
     LogService.log_operation(
         db=db,
@@ -81,6 +98,8 @@ async def update_category(
     db.commit()
     db.refresh(category)
     
+    invalidate_resource_categories_cache()
+    
     LogService.log_operation(
         db=db,
         user_id=current_user.id,
@@ -118,6 +137,8 @@ async def delete_category(
     category_name = category.name
     db.delete(category)
     db.commit()
+    
+    invalidate_resource_categories_cache()
     
     LogService.log_operation(
         db=db,

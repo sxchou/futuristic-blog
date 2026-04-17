@@ -1,4 +1,4 @@
-﻿from typing import List
+﻿﻿﻿﻿﻿from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.core.database import get_db
@@ -6,14 +6,29 @@ from app.models import Resource
 from app.schemas import ResourceCreate, ResourceUpdate, ResourceResponse
 from app.utils import get_current_user
 from app.services.log_service import LogService
+from app.utils.cache import cache_manager
 
 router = APIRouter(prefix="/resources", tags=["Resources"])
+
+CACHE_NAME = "resources"
+
+
+def invalidate_resources_cache():
+    cache_manager.clear_cache(CACHE_NAME)
 
 
 @router.get("", response_model=List[ResourceResponse])
 async def get_resources(db: Session = Depends(get_db)):
+    cache_key = "active_resources"
+    cached = cache_manager.get(CACHE_NAME, cache_key)
+    if cached:
+        return cached
+    
     resources = db.query(Resource).filter(Resource.is_active == True).order_by(Resource.order).all()
-    return [ResourceResponse.model_validate(r) for r in resources]
+    result = [ResourceResponse.model_validate(r).model_dump() for r in resources]
+    
+    cache_manager.set(CACHE_NAME, cache_key, result)
+    return result
 
 
 @router.get("/admin", response_model=List[ResourceResponse])
@@ -41,6 +56,8 @@ async def create_resource(
     db.add(new_resource)
     db.commit()
     db.refresh(new_resource)
+    
+    invalidate_resources_cache()
     
     LogService.log_operation(
         db=db,
@@ -80,6 +97,8 @@ async def update_resource(
     db.commit()
     db.refresh(resource)
     
+    invalidate_resources_cache()
+    
     LogService.log_operation(
         db=db,
         user_id=current_user.id,
@@ -113,6 +132,8 @@ async def delete_resource(
     resource_title = resource.title
     db.delete(resource)
     db.commit()
+    
+    invalidate_resources_cache()
     
     LogService.log_operation(
         db=db,

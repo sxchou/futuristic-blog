@@ -12,6 +12,7 @@ from app.utils import get_current_user, get_current_active_user, generate_slug, 
 from app.utils.helpers import generate_unique_slug
 from app.services.log_service import LogService
 from app.services.baidu_push_service import baidu_push_service
+from app.utils.cache import cache_manager
 import asyncio
 import os
 import re
@@ -19,6 +20,12 @@ from pypinyin import lazy_pinyin, Style
 from functools import lru_cache
 
 router = APIRouter(prefix="/articles", tags=["Articles"])
+
+CACHE_NAME = "articles"
+
+
+def invalidate_articles_cache():
+    cache_manager.clear_cache(CACHE_NAME)
 
 
 def link_files_to_article(db: Session, article_id: int, content: str, cover_image: Optional[str] = None):
@@ -354,6 +361,11 @@ async def get_admin_articles(
 
 @router.get("/archive/list")
 async def get_article_archive(db: Session = Depends(get_db)):
+    cache_key = "article_archive"
+    cached = cache_manager.get(CACHE_NAME, cache_key)
+    if cached:
+        return cached
+    
     from app.utils.timezone import to_local
     
     articles = db.query(Article).filter(
@@ -403,6 +415,7 @@ async def get_article_archive(db: Session = Depends(get_db)):
             })
         result.append(year_data)
     
+    cache_manager.set(CACHE_NAME, cache_key, result)
     return result
 
 
