@@ -1,4 +1,4 @@
-from typing import List
+﻿from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.core.database import get_db
@@ -25,9 +25,9 @@ async def get_resources(db: Session = Depends(get_db)):
         return cached
     
     resources = db.query(Resource).filter(Resource.is_active == True).order_by(Resource.order).all()
-    result = [ResourceResponse.model_validate(r).model_dump() for r in resources]
+    result = [ResourceResponse.model_validate(r) for r in resources]
     
-    cache_manager.set(CACHE_NAME, cache_key, result)
+    cache_manager.set(CACHE_NAME, cache_key, [r.model_dump() for r in result])
     return result
 
 

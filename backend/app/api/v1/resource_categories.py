@@ -25,9 +25,9 @@ async def get_categories(db: Session = Depends(get_db)):
         return cached
     
     categories = db.query(ResourceCategory).order_by(ResourceCategory.order).all()
-    result = [ResourceCategoryResponse.model_validate(c).model_dump() for c in categories]
+    result = [ResourceCategoryResponse.model_validate(c) for c in categories]
     
-    cache_manager.set(CACHE_NAME, cache_key, result)
+    cache_manager.set(CACHE_NAME, cache_key, [r.model_dump() for r in result])
     return result
 
 

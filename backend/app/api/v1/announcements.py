@@ -31,9 +31,9 @@ def get_announcements(
     if active_only:
         query = query.filter(Announcement.is_active == True)
     announcements = query.order_by(Announcement.order, Announcement.created_at.desc()).all()
-    result = [AnnouncementResponse.model_validate(a).model_dump() for a in announcements]
+    result = [AnnouncementResponse.model_validate(a) for a in announcements]
     
-    cache_manager.set(CACHE_NAME, cache_key, result)
+    cache_manager.set(CACHE_NAME, cache_key, [r.model_dump() for r in result])
     return result
 
 

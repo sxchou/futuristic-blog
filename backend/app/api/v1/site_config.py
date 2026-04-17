@@ -120,9 +120,9 @@ def get_site_configs(db: Session = Depends(get_db)):
         return cached
     
     configs = db.query(SiteConfig).all()
-    result = [SiteConfigResponse.model_validate(c).model_dump() for c in configs]
+    result = [SiteConfigResponse.model_validate(c) for c in configs]
     
-    cache_manager.set(CACHE_NAME, cache_key, result)
+    cache_manager.set(CACHE_NAME, cache_key, [r.model_dump() for r in result])
     return result
 
 
