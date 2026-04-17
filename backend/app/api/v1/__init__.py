@@ -3,7 +3,7 @@ from app.api.v1 import auth, articles, categories, tags, resources, resource_cat
 
 router = APIRouter()
 
-@router.get("/health")
+@router.api_route("/health", methods=["GET", "HEAD"])
 async def health_check():
     return {"status": "ok", "service": "futuristic-blog-backend"}
 

@@ -309,7 +309,7 @@ async def root():
     }
 
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 async def health_check(request: Request):
     logger.info(f"Health check requested from: {request.headers.get('host', 'unknown')}")
     return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
