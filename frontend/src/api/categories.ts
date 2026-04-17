@@ -1,4 +1,4 @@
-import apiClient from './client'
+import apiClient, { clearCacheByPattern } from './client'
 import type { Category } from '@/types'
 
 export const categoryApi = {
@@ -14,15 +14,18 @@ export const categoryApi = {
 
   createCategory: async (data: Partial<Category>): Promise<Category> => {
     const response = await apiClient.post('/categories', data)
+    clearCacheByPattern('/categories')
     return response.data
   },
 
   updateCategory: async (id: number, data: Partial<Category>): Promise<Category> => {
     const response = await apiClient.put(`/categories/${id}`, data)
+    clearCacheByPattern('/categories')
     return response.data
   },
 
   deleteCategory: async (id: number): Promise<void> => {
     await apiClient.delete(`/categories/${id}`)
+    clearCacheByPattern('/categories')
   }
 }

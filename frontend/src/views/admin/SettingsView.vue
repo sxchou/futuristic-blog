@@ -44,6 +44,16 @@ const handleSave = async () => {
     await siteConfigStore.updateMobileArticleLayout(formData.value.mobileArticleLayout)
     await siteConfigStore.updateGithubRepoUrl(formData.value.githubRepoUrl)
     await siteConfigStore.updateShowGithubStats(formData.value.showGithubStats)
+    
+    formData.value = {
+      siteName: siteConfigStore.siteName,
+      siteDescription: siteConfigStore.siteDescription,
+      siteKeywords: siteConfigStore.siteKeywords,
+      mobileArticleLayout: siteConfigStore.mobileArticleLayout,
+      githubRepoUrl: siteConfigStore.githubRepoUrl,
+      showGithubStats: siteConfigStore.showGithubStats
+    }
+    
     saveMessage.value = '保存成功！'
     setTimeout(() => {
       saveMessage.value = ''

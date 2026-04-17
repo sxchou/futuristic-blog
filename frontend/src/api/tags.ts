@@ -1,4 +1,4 @@
-import apiClient from './client'
+import apiClient, { clearCacheByPattern } from './client'
 import type { Tag } from '@/types'
 
 export const tagApi = {
@@ -14,15 +14,18 @@ export const tagApi = {
 
   createTag: async (data: Partial<Tag>): Promise<Tag> => {
     const response = await apiClient.post('/tags', data)
+    clearCacheByPattern('/tags')
     return response.data
   },
 
   updateTag: async (id: number, data: Partial<Tag>): Promise<Tag> => {
     const response = await apiClient.put(`/tags/${id}`, data)
+    clearCacheByPattern('/tags')
     return response.data
   },
 
   deleteTag: async (id: number): Promise<void> => {
     await apiClient.delete(`/tags/${id}`)
+    clearCacheByPattern('/tags')
   }
 }

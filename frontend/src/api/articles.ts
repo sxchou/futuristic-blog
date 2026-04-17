@@ -1,4 +1,4 @@
-import apiClient from './client'
+import apiClient, { clearCacheByPattern } from './client'
 import type { Article, ArticleListItem, PaginatedResponse } from '@/types'
 
 export const articleApi = {
@@ -34,6 +34,7 @@ export const articleApi = {
 
   createArticle: async (data: Partial<Article>): Promise<Article> => {
     const response = await apiClient.post('/articles', data)
+    clearCacheByPattern('/articles')
     return response.data
   },
 
@@ -43,10 +44,12 @@ export const articleApi = {
       cleanData.cover_image = null
     }
     const response = await apiClient.put(`/articles/${id}`, cleanData)
+    clearCacheByPattern('/articles')
     return response.data
   },
 
   deleteArticle: async (id: number): Promise<void> => {
     await apiClient.delete(`/articles/${id}`)
+    clearCacheByPattern('/articles')
   }
 }

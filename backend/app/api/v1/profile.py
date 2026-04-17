@@ -114,6 +114,8 @@ async def update_profile(
     db.commit()
     db.refresh(profile)
     
+    cache.delete(PROFILE_CACHE_KEY)
+    
     LogService.log_operation(
         db=db,
         user_id=current_user.id,

@@ -1,4 +1,4 @@
-import apiClient from './client'
+import apiClient, { clearCacheByPattern } from './client'
 import type { Profile } from '@/types'
 
 export const profileApi = {
@@ -9,6 +9,7 @@ export const profileApi = {
 
   updateProfile: async (data: Partial<Profile>): Promise<Profile> => {
     const response = await apiClient.put('/profile', data)
+    clearCacheByPattern('/profile')
     return response.data
   }
 }

@@ -72,8 +72,8 @@ const handleSave = async () => {
   
   try {
     await profileApi.updateProfile(form.value)
-    await dialog.showSuccess('保存成功', '成功')
     await fetchProfile()
+    await dialog.showSuccess('保存成功', '成功')
   } catch (error: any) {
     await dialog.showError(error.response?.data?.detail || '保存失败', '错误')
   }

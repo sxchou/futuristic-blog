@@ -1,4 +1,4 @@
-import apiClient from './client'
+import apiClient, { clearCacheByPattern } from './client'
 import type { SiteConfig } from '@/types'
 
 export interface GitHubStats {
@@ -28,16 +28,19 @@ export const siteConfigApi = {
       value,
       description
     })
+    clearCacheByPattern('/site-config')
     return response.data
   },
 
   async create(data: { key: string; value?: string; description?: string }): Promise<SiteConfig> {
     const response = await apiClient.post('/site-config', data)
+    clearCacheByPattern('/site-config')
     return response.data
   },
 
   async delete(key: string): Promise<void> {
     await apiClient.delete(`/site-config/${key}`)
+    clearCacheByPattern('/site-config')
   },
 
   async uploadLogo(formData: FormData): Promise<SiteConfig> {
@@ -46,11 +49,13 @@ export const siteConfigApi = {
         'Content-Type': 'multipart/form-data'
       }
     })
+    clearCacheByPattern('/site-config')
     return response.data
   },
 
   async resetLogo(): Promise<SiteConfig> {
     const response = await apiClient.post('/site-config/reset-logo')
+    clearCacheByPattern('/site-config')
     return response.data
   },
 
