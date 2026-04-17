@@ -7,6 +7,8 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: ./
     envVars:
+      - key: RENDER
+        value: "true"
       - key: DATABASE_URL
         sync: false
       - key: REDIS_URL

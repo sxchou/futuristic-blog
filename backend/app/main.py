@@ -22,6 +22,8 @@ from contextlib import contextmanager
 from datetime import datetime
 
 IS_VERCEL = os.environ.get("VERCEL") == "1"
+IS_RENDER = os.environ.get("RENDER") == "true"
+IS_CLOUD_PLATFORM = IS_VERCEL or IS_RENDER
 
 logging.basicConfig(
     level=logging.INFO,
@@ -202,15 +204,29 @@ if not IS_VERCEL:
 async def startup_event():
     logger.info("=== Application startup event triggered ===")
     logger.info(f"Database URL: {str(engine.url)[:50]}...")
+    logger.info(f"IS_VERCEL: {IS_VERCEL}, IS_RENDER: {IS_RENDER}, IS_CLOUD_PLATFORM: {IS_CLOUD_PLATFORM}")
     
-    if IS_VERCEL:
+    if IS_CLOUD_PLATFORM:
+        logger.info("Running in cloud platform environment, executing synchronous initialization...")
         try:
+            logger.info("Creating database tables...")
             Base.metadata.create_all(bind=engine)
+            logger.info("Database tables created successfully")
+            
+            logger.info("Initializing database data...")
             init_database()
-            logger.info("Database initialized for Vercel")
+            logger.info("Database data initialized successfully")
+            
+            logger.info("Syncing article comment counts...")
+            sync_article_comment_counts()
+            logger.info("Article comment counts synced successfully")
+            
+            logger.info("=== Application initialized successfully for cloud platform ===")
         except Exception as e:
-            logger.error(f"Database init error: {e}")
+            logger.error(f"Database initialization error: {e}", exc_info=True)
+            raise
     else:
+        logger.info("Running in local environment, executing asynchronous initialization...")
         asyncio.create_task(background_init())
 
 

@@ -1,4 +1,4 @@
-﻿from app.core.database import SessionLocal, engine
+﻿﻿from app.core.database import SessionLocal, engine
 from app.core.config import settings
 from app.models import User, Category, Tag, Article, Resource, ResourceCategory, SiteConfig, OAuthProvider
 from app.utils import get_password_hash
@@ -350,6 +350,7 @@ def init_database():
             {"name": "API服务", "slug": "api-services", "description": "API接口服务", "icon": "🔌", "order": 6, "is_active": True},
         ]
         
+        print("\n=== Initializing resource categories ===")
         resource_categories_map = {}
         for cat_data in resource_categories_data:
             existing = db.query(ResourceCategory).filter(ResourceCategory.slug == cat_data["slug"]).first()
@@ -359,10 +360,13 @@ def init_database():
                 db.commit()
                 db.refresh(category)
                 resource_categories_map[cat_data["name"]] = category.id
+                print(f"✓ Created resource category: {cat_data['name']} (ID: {category.id})")
             else:
                 resource_categories_map[cat_data["name"]] = existing.id
+                print(f"✓ Found existing resource category: {cat_data['name']} (ID: {existing.id})")
         
         db.commit()
+        print(f"Resource categories map: {resource_categories_map}")
         
         resources_data = [
             {"title": "MDN Web Docs", "description": "Mozilla开发者网络文档", "url": "https://developer.mozilla.org", "icon": "📖", "category_id": resource_categories_map.get("学习网站"), "order": 1},
@@ -388,6 +392,11 @@ def init_database():
             {"title": "Regex101", "description": "在线正则表达式测试工具，支持多种语言和实时调试", "url": "https://regex101.com/", "icon": "🧪", "category_id": resource_categories_map.get("常用工具"), "order": 7},
         ]
         
+        print("\n=== Initializing resources ===")
+        created_count = 0
+        updated_count = 0
+        error_count = 0
+        
         for res_data in resources_data:
             try:
                 existing = db.query(Resource).filter(Resource.url == res_data["url"]).first()
@@ -395,12 +404,18 @@ def init_database():
                     resource = Resource(**res_data)
                     db.add(resource)
                     db.flush()
+                    created_count += 1
+                    print(f"✓ Created resource: {res_data['title']} (Category: {res_data.get('category_id')})")
                 else:
                     if existing.category_id is None and res_data.get("category_id"):
                         existing.category_id = res_data["category_id"]
                         if res_data.get("icon"):
                             existing.icon = res_data["icon"]
+                        updated_count += 1
+                        print(f"✓ Updated resource: {res_data['title']}")
             except Exception as e:
+                error_count += 1
+                print(f"✗ Error creating resource {res_data['title']}: {e}")
                 db.rollback()
                 existing = db.query(Resource).filter(Resource.url == res_data["url"]).first()
                 if existing and existing.category_id is None and res_data.get("category_id"):
@@ -409,6 +424,9 @@ def init_database():
                         existing.icon = res_data["icon"]
         
         db.commit()
+        print(f"\n=== Resource initialization completed ===")
+        print(f"Created: {created_count}, Updated: {updated_count}, Errors: {error_count}")
+        print(f"Total resources in database: {db.query(Resource).count()}")
         
         articles_data = [
             {
