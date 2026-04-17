@@ -22,10 +22,7 @@ class BaiduPushService:
         if not urls:
             return {"success": 0, "message": "No URLs to push"}
         
-        params = {
-            "site": self.site,
-            "token": self.token
-        }
+        push_url = f"{self.BAIDU_PUSH_URL}?site={self.site}&token={self.token}"
         
         headers = {
             "Content-Type": "text/plain"
@@ -36,8 +33,7 @@ class BaiduPushService:
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
                 response = await client.post(
-                    self.BAIDU_PUSH_URL,
-                    params=params,
+                    push_url,
                     headers=headers,
                     content=body
                 )
