@@ -337,7 +337,25 @@ const handleSubmit = async () => {
     resetForm()
   } catch (error: any) {
     console.error('Failed to save article:', error)
-    await dialog.showError(error.response?.data?.detail || '保存失败', '错误')
+    
+    const errorDetail = error.response?.data?.detail
+    if (typeof errorDetail === 'object' && errorDetail.field) {
+      validationErrors.value = [{
+        field: errorDetail.field,
+        message: errorDetail.message
+      }]
+      
+      const elementId = `article-${errorDetail.field}`
+      const element = document.getElementById(elementId)
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        element.focus()
+      }
+      
+      await dialog.showError(errorDetail.message, '验证错误')
+    } else {
+      await dialog.showError(errorDetail || '保存失败', '错误')
+    }
   }
 }
 

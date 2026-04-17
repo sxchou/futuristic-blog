@@ -2,6 +2,7 @@ from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import func, or_
+from sqlalchemy.exc import IntegrityError
 from app.core.database import get_db
 from app.models import Article, Category, Tag, Comment, ArticleLike, ArticleFile
 from app.schemas import (
@@ -539,8 +540,19 @@ async def update_article(
         tags = db.query(Tag).filter(Tag.id.in_(article_data.tag_ids)).all()
         article.tags = tags
     
-    db.commit()
-    db.refresh(article)
+    try:
+        db.commit()
+        db.refresh(article)
+    except IntegrityError as e:
+        db.rollback()
+        error_msg = str(e)
+        if "ix_articles_slug" in error_msg or "slug" in error_msg.lower():
+            raise HTTPException(
+                status_code=400,
+                detail={"message": "该slug已存在，请使用其他slug", "field": "slug"}
+            )
+        else:
+            raise HTTPException(status_code=400, detail="保存失败，数据冲突")
     
     link_files_to_article(db, article.id, article.content, article.cover_image)
     
