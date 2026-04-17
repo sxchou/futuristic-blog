@@ -23,7 +23,8 @@ ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".ico", ".svg"}
 MAX_FILE_SIZE = 2 * 1024 * 1024
 
 GITHUB_CACHE = {"data": None, "timestamp": 0, "repo_url": ""}
-GITHUB_CACHE_TTL = 600
+GITHUB_CACHE_TTL = 3600
+GITHUB_RATE_LIMIT_CACHE = {"reset_time": 0}
 
 CACHE_NAME = "site_config"
 
@@ -143,7 +144,15 @@ def parse_github_repo_url(repo_url: str) -> Optional[tuple]:
 
 @router.get("/github-stats")
 async def get_github_stats(db: Session = Depends(get_db)):
-    global GITHUB_CACHE
+    global GITHUB_CACHE, GITHUB_RATE_LIMIT_CACHE
+    
+    current_time = time.time()
+    
+    if current_time < GITHUB_RATE_LIMIT_CACHE["reset_time"]:
+        logger.info(f"GitHub API rate limited, using cached data. Reset in {int(GITHUB_RATE_LIMIT_CACHE['reset_time'] - current_time)}s")
+        if GITHUB_CACHE["data"]:
+            return {"enabled": True, **GITHUB_CACHE["data"]}
+        return {"enabled": False, "stars": 0, "forks": 0, "watchers": 0, "open_issues": 0}
     
     github_repo_config = db.query(SiteConfig).filter(SiteConfig.key == "github_repo_url").first()
     repo_url = github_repo_config.value if github_repo_config else ""
@@ -157,17 +166,26 @@ async def get_github_stats(db: Session = Depends(get_db)):
     
     owner, repo = parsed
     
-    current_time = time.time()
     if (GITHUB_CACHE["data"] and 
         GITHUB_CACHE["repo_url"] == repo_url and 
         current_time - GITHUB_CACHE["timestamp"] < GITHUB_CACHE_TTL):
         return {"enabled": True, **GITHUB_CACHE["data"]}
     
     try:
+        github_token = os.getenv("GITHUB_TOKEN")
+        
+        headers = {
+            "Accept": "application/vnd.github.v3+json",
+            "User-Agent": "Futuristic-Blog/1.0"
+        }
+        
+        if github_token:
+            headers["Authorization"] = f"token {github_token}"
+        
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.get(
                 f"https://api.github.com/repos/{owner}/{repo}",
-                headers={"Accept": "application/vnd.github.v3+json"}
+                headers=headers
             )
             
             if response.status_code == 200:
@@ -188,12 +206,33 @@ async def get_github_stats(db: Session = Depends(get_db)):
                 }
                 
                 return {"enabled": True, **stats}
+            elif response.status_code == 403:
+                rate_limit_remaining = response.headers.get("X-RateLimit-Remaining", "0")
+                rate_limit_reset = response.headers.get("X-RateLimit-Reset", "0")
+                
+                logger.warning(f"GitHub API rate limit exceeded. Remaining: {rate_limit_remaining}, Reset: {rate_limit_reset}")
+                
+                if rate_limit_reset:
+                    GITHUB_RATE_LIMIT_CACHE["reset_time"] = int(rate_limit_reset)
+                
+                if GITHUB_CACHE["data"]:
+                    return {"enabled": True, **GITHUB_CACHE["data"]}
+                
+                return {"enabled": False, "stars": 0, "forks": 0, "watchers": 0, "open_issues": 0}
             else:
                 logger.warning(f"GitHub API returned status {response.status_code}")
+                
+                if GITHUB_CACHE["data"]:
+                    return {"enabled": True, **GITHUB_CACHE["data"]}
+                
                 return {"enabled": False, "stars": 0, "forks": 0, "watchers": 0, "open_issues": 0}
                 
     except Exception as e:
         logger.error(f"Failed to fetch GitHub stats: {e}")
+        
+        if GITHUB_CACHE["data"]:
+            return {"enabled": True, **GITHUB_CACHE["data"]}
+        
         return {"enabled": False, "stars": 0, "forks": 0, "watchers": 0, "open_issues": 0}
 
 

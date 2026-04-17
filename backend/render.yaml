@@ -13,6 +13,8 @@ services:
         sync: false
       - key: REDIS_URL
         sync: false
+      - key: GITHUB_TOKEN
+        sync: false
       - key: SECRET_KEY
         generateValue: true
       - key: ALGORITHM
