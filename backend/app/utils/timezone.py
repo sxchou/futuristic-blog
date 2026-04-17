@@ -33,6 +33,11 @@ def get_db_now() -> datetime:
 def to_local(dt: datetime) -> datetime:
     if dt is None:
         return None
+    if isinstance(dt, str):
+        try:
+            dt = datetime.fromisoformat(dt.replace('Z', '+00:00'))
+        except (ValueError, AttributeError):
+            return dt
     if ZoneInfo is None:
         return dt
     if dt.tzinfo is None:
@@ -43,6 +48,11 @@ def to_local(dt: datetime) -> datetime:
 def to_utc(dt: datetime) -> datetime:
     if dt is None:
         return None
+    if isinstance(dt, str):
+        try:
+            dt = datetime.fromisoformat(dt.replace('Z', '+00:00'))
+        except (ValueError, AttributeError):
+            return dt
     if ZoneInfo is None:
         return dt
     if dt.tzinfo is None:
