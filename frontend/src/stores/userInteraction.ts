@@ -69,6 +69,18 @@ export const useUserInteractionStore = defineStore('userInteraction', () => {
     }
   }
 
+  const setLikedIds = (ids: number[]) => {
+    likedArticleIds.value = new Set(ids)
+  }
+
+  const setBookmarkedIds = (ids: number[]) => {
+    bookmarkedArticleIds.value = new Set(ids)
+  }
+
+  const markInitialized = () => {
+    isInitialized.value = true
+  }
+
   const toggleLike = async (articleId: number): Promise<{ is_liked: boolean; like_count: number } | null> => {
     const authStore = useAuthStore()
     if (!authStore.isAuthenticated) return null
@@ -120,6 +132,9 @@ export const useUserInteractionStore = defineStore('userInteraction', () => {
     isBookmarked,
     setLiked,
     setBookmarked,
+    setLikedIds,
+    setBookmarkedIds,
+    markInitialized,
     toggleLike,
     toggleBookmark,
     clear,

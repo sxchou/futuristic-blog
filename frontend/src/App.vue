@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useBlogStore, useSiteConfigStore } from '@/stores'
+import { useSiteConfigStore } from '@/stores'
 import { useSessionManager, useActivityTracker } from '@/composables/useSessionManager'
 import Navbar from '@/components/common/Navbar.vue'
 import Footer from '@/components/common/Footer.vue'
@@ -10,7 +10,6 @@ import ReadingProgress from '@/components/common/ReadingProgress.vue'
 import ModalDialog from '@/components/common/ModalDialog.vue'
 
 const route = useRoute()
-const blogStore = useBlogStore()
 const siteConfigStore = useSiteConfigStore()
 
 useSessionManager()
@@ -20,10 +19,6 @@ const isAdminPage = computed(() => route.path.startsWith('/admin'))
 
 onMounted(async () => {
   await siteConfigStore.fetchConfigs()
-  siteConfigStore.fetchGithubStats()
-  blogStore.fetchCategories()
-  blogStore.fetchTags()
-  blogStore.fetchAnnouncements()
 })
 
 const handleKeydown = (e: KeyboardEvent) => {

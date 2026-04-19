@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useBlogStore, useAuthStore, useUserInteractionStore, useSiteConfigStore } from '@/stores'
-import { articleApi } from '@/api'
+import { useBlogStore, useAuthStore, useUserInteractionStore, useSiteConfigStore, useInitStore } from '@/stores'
 import BlogSidebar from '@/components/common/BlogSidebar.vue'
 import LeftSidebar from '@/components/common/LeftSidebar.vue'
 import Pagination from '@/components/common/Pagination.vue'
@@ -16,8 +15,9 @@ const blogStore = useBlogStore()
 const authStore = useAuthStore()
 const userInteractionStore = useUserInteractionStore()
 const siteConfigStore = useSiteConfigStore()
+const initStore = useInitStore()
 const isLoading = ref(false)
-const articlesSectionRef = ref<HTMLElement | null>( null)
+const articlesSectionRef = ref<HTMLElement | null>(null)
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
 const activeTooltip = ref<{ articleId: number; action: string } | null>(null)
@@ -38,7 +38,10 @@ const { pageSize } = usePageSize()
 
 const isStackedLayout = computed(() => siteConfigStore.mobileArticleLayout === 'stacked')
 
-const featuredArticlesList = ref<any[]>([])
+const featuredArticlesList = computed(() => 
+  blogStore.articles.filter(a => a.is_featured).slice(0, 5)
+)
+
 const currentSlide = ref(0)
 let slideInterval: ReturnType<typeof setInterval> | null = null
 
@@ -54,15 +57,6 @@ const nextSlide = () => {
 const prevSlide = () => {
   if (featuredArticles.value.length > 0) {
     currentSlide.value = currentSlide.value === 0 ? featuredArticles.value.length - 1 : currentSlide.value - 1
-  }
-}
-
-const fetchFeaturedArticles = async () => {
-  try {
-    const response = await articleApi.getArticles({ is_featured: true, page: 1, page_size: 5 })
-    featuredArticlesList.value = response.items
-  } catch (error) {
-    console.error('Failed to fetch featured articles:', error)
   }
 }
 
@@ -191,17 +185,13 @@ watch(() => route.path, async (newPath) => {
 onMounted(async () => {
   const pageFromUrl = parseInt(route.query.page as string) || 1
   
-  if (authStore.isAuthenticated) {
-    await userInteractionStore.initialize()
-  }
-  
-  await Promise.all([
-    blogStore.fetchArticles({ page: pageFromUrl, page_size: pageSize.value }),
-    fetchFeaturedArticles()
-  ])
+  await initStore.initialize({ 
+    page: pageFromUrl, 
+    page_size: pageSize.value,
+    featured_page_size: 5
+  })
   
   applyInteractionState(blogStore.articles)
-  applyInteractionState(featuredArticlesList.value)
   
   if (featuredArticles.value.length > 1) {
     slideInterval = setInterval(nextSlide, 6000)

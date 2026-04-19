@@ -133,7 +133,49 @@ export const useSiteConfigStore = defineStore('siteConfig', () => {
     return fetchConfigsPromise
   }
 
+  const setConfigs = (configList: SiteConfig[]) => {
+    configs.value = configList
+    lastFetchTime.value = Date.now()
+    
+    const nameConfig = configList.find(c => c.key === 'site_name')
+    if (nameConfig?.value) {
+      siteName.value = nameConfig.value
+    }
+    
+    const descConfig = configList.find(c => c.key === 'site_description')
+    if (descConfig?.value) {
+      siteDescription.value = descConfig.value
+    }
+    
+    const keywordsConfig = configList.find(c => c.key === 'site_keywords')
+    if (keywordsConfig?.value) {
+      siteKeywords.value = keywordsConfig.value
+    }
+    
+    const logoConfig = configList.find(c => c.key === 'site_logo')
+    if (logoConfig?.value) {
+      siteLogoUrl.value = logoConfig.value
+      updateFavicon(logoConfig.value)
+    }
+    
+    const layoutConfig = configList.find(c => c.key === 'mobile_article_layout')
+    if (layoutConfig?.value && (layoutConfig.value === 'embedded' || layoutConfig.value === 'stacked')) {
+      mobileArticleLayout.value = layoutConfig.value
+    }
+    
+    const githubRepoConfig = configList.find(c => c.key === 'github_repo_url')
+    if (githubRepoConfig?.value) {
+      githubRepoUrl.value = githubRepoConfig.value
+    }
+    
+    const showGithubConfig = configList.find(c => c.key === 'show_github_stats')
+    if (showGithubConfig?.value) {
+      showGithubStats.value = showGithubConfig.value === 'true'
+    }
+  }
+
   const fetchGithubStats = async () => {
+    if (githubStats.value?.enabled !== undefined) return
     if (!githubRepoUrl.value) {
       githubStats.value = { enabled: false, stars: 0, forks: 0, watchers: 0, open_issues: 0 }
       return
@@ -276,6 +318,7 @@ export const useSiteConfigStore = defineStore('siteConfig', () => {
     resetSiteLogo,
     updateMobileArticleLayout,
     updateGithubRepoUrl,
-    updateShowGithubStats
+    updateShowGithubStats,
+    setConfigs
   }
 })
