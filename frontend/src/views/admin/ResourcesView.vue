@@ -115,13 +115,15 @@ const handleDeleteResource = async (resource: Resource) => {
 const handleToggleResourceStatus = async (resource: Resource) => {
   if (!await requireAdmin('切换资源状态')) return
   
+  const previousStatus = resource.is_active
+  
   try {
     await toggleItemStatus(
       resources,
       resource.id,
       (newStatus) => resourceApi.updateResource(resource.id, { is_active: newStatus })
     )
-    dialog.showSuccess(resource.is_active ? '资源已启用' : '资源已禁用', '成功')
+    dialog.showSuccess(previousStatus ? '资源已禁用' : '资源已启用', '成功')
   } catch (error: any) {
     console.error('Failed to toggle resource status:', error)
     await dialog.showError(error.response?.data?.detail || '状态切换失败', '错误')

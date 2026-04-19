@@ -544,43 +544,6 @@ function getProviderBgColor(provider: string) {
         </div>
 
         <div
-          v-if="providerStatus?.current_provider === 'resend'"
-          class="p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg"
-        >
-          <div class="flex items-start gap-2">
-            <svg
-              class="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <div class="flex-1">
-              <p class="text-xs text-purple-300 font-medium mb-1">
-                Resend API 配置说明
-              </p>
-              <ol class="text-xs text-purple-200 space-y-0.5 list-decimal list-inside">
-                <li>
-                  访问 <a
-                    href="https://resend.com"
-                    target="_blank"
-                    class="underline"
-                  >resend.com</a> 注册账号
-                </li>
-                <li>在 Dashboard 中创建 API Key</li>
-                <li>在 Railway 环境变量中添加 <code class="bg-purple-500/20 px-1 rounded">RESEND_API_KEY</code></li>
-              </ol>
-            </div>
-          </div>
-        </div>
-
-        <div
           v-if="providerStatus?.current_provider === 'resend' && providerStatus?.has_resend_api_key"
           class="bg-white dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10 p-4"
         >
