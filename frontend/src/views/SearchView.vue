@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useBlogStore } from '@/stores'
+import { useBlogStore, useAuthStore, useUserInteractionStore } from '@/stores'
 import { useSiteConfigStore } from '@/stores/siteConfig'
-import { likeApi } from '@/api'
 import BlogSidebar from '@/components/common/BlogSidebar.vue'
 import LeftSidebar from '@/components/common/LeftSidebar.vue'
 import Pagination from '@/components/common/Pagination.vue'
@@ -13,6 +12,8 @@ import { getMediaUrl } from '@/utils/media'
 const route = useRoute()
 const router = useRouter()
 const blogStore = useBlogStore()
+const authStore = useAuthStore()
+const userInteractionStore = useUserInteractionStore()
 const siteConfigStore = useSiteConfigStore()
 
 const searchQuery = ref('')
@@ -41,12 +42,43 @@ const isTooltipVisible = (articleId: number, action: string) => {
 const handleLike = async (e: Event, article: any) => {
   e.preventDefault()
   e.stopPropagation()
+  if (!authStore.isAuthenticated) {
+    router.push('/login')
+    return
+  }
+  if (article._liking) return
+  article._liking = true
   try {
-    const result = await likeApi.toggle(article.id)
-    article.is_liked = result.is_liked
-    article.like_count = result.like_count
+    const result = await userInteractionStore.toggleLike(article.id)
+    if (result) {
+      article.is_liked = result.is_liked
+      article.like_count = result.like_count
+    }
   } catch (error) {
     console.error('Failed to toggle like:', error)
+  } finally {
+    article._liking = false
+  }
+}
+
+const handleBookmark = async (e: Event, article: any) => {
+  e.preventDefault()
+  e.stopPropagation()
+  if (!authStore.isAuthenticated) {
+    router.push('/login')
+    return
+  }
+  if (article._bookmarking) return
+  article._bookmarking = true
+  try {
+    const result = await userInteractionStore.toggleBookmark(article.id)
+    if (result) {
+      article.is_bookmarked = result.is_bookmarked
+    }
+  } catch (error) {
+    console.error('Failed to toggle bookmark:', error)
+  } finally {
+    article._bookmarking = false
   }
 }
 
@@ -68,6 +100,15 @@ const scrollToResults = () => {
   })
 }
 
+const applyInteractionState = (articles: any[]) => {
+  articles.forEach(article => {
+    if (userInteractionStore.isInitialized) {
+      article.is_liked = userInteractionStore.isLiked(article.id)
+      article.is_bookmarked = userInteractionStore.isBookmarked(article.id)
+    }
+  })
+}
+
 const performSearch = async (page: number = 1, updateUrl: boolean = true, shouldScroll: boolean = false) => {
   const keyword = currentSearchKeyword || searchQuery.value.trim()
   if (!keyword) return
@@ -79,6 +120,7 @@ const performSearch = async (page: number = 1, updateUrl: boolean = true, should
       page: page,
       page_size: pageSize.value
     })
+    applyInteractionState(blogStore.articles)
     if (updateUrl) {
       const newQuery: Record<string, string> = { q: keyword }
       if (page !== 1) newQuery.page = page.toString()
@@ -111,7 +153,10 @@ watch(() => route.query.q, (newQuery) => {
   }
 }, { immediate: true })
 
-onMounted(() => {
+onMounted(async () => {
+  if (authStore.isAuthenticated) {
+    await userInteractionStore.initialize()
+  }
   const query = route.query.q as string
   if (query) {
     searchQuery.value = query
@@ -490,6 +535,38 @@ const formatDate = (date: string) => {
                         class="action-tooltip"
                       >
                         评论
+                      </span>
+                    </button>
+                    <button
+                      :class="[
+                        'article-meta-item article-action-btn relative',
+                        isStackedLayout 
+                          ? 'text-inherit' 
+                          : 'text-white/70 sm:text-inherit',
+                        { 'text-amber-500': article.is_bookmarked }
+                      ]"
+                      @click="handleBookmark($event, article)"
+                      @mouseenter="showTooltip(article.id, 'bookmark')"
+                      @mouseleave="hideTooltip"
+                    >
+                      <svg
+                        class="w-3.5 h-3.5"
+                        :fill="article.is_bookmarked ? 'currentColor' : 'none'"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                        />
+                      </svg>
+                      <span
+                        v-if="isTooltipVisible(article.id, 'bookmark')"
+                        class="action-tooltip"
+                      >
+                        {{ article.is_bookmarked ? '取消收藏' : '收藏' }}
                       </span>
                     </button>
                   </div>

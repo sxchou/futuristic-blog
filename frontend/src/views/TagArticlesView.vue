@@ -99,9 +99,11 @@ const handleLike = async (e: Event, article: any) => {
   if (article._liking) return
   article._liking = true
   try {
-    await userInteractionStore.toggleLike(article.id)
-    article.is_liked = !article.is_liked
-    article.like_count += article.is_liked ? 1 : -1
+    const result = await userInteractionStore.toggleLike(article.id)
+    if (result) {
+      article.is_liked = result.is_liked
+      article.like_count = result.like_count
+    }
   } catch (error) {
     console.error('Failed to toggle like:', error)
   } finally {
@@ -119,8 +121,10 @@ const handleBookmark = async (e: Event, article: any) => {
   if (article._bookmarking) return
   article._bookmarking = true
   try {
-    await userInteractionStore.toggleBookmark(article.id)
-    article.is_bookmarked = !article.is_bookmarked
+    const result = await userInteractionStore.toggleBookmark(article.id)
+    if (result) {
+      article.is_bookmarked = result.is_bookmarked
+    }
   } catch (error) {
     console.error('Failed to toggle bookmark:', error)
   } finally {
@@ -134,6 +138,15 @@ const goToComments = (e: Event, slug: string) => {
   router.push(`/article/${slug}#comments`)
 }
 
+const applyInteractionState = (articles: any[]) => {
+  articles.forEach(article => {
+    if (userInteractionStore.isInitialized) {
+      article.is_liked = userInteractionStore.isLiked(article.id)
+      article.is_bookmarked = userInteractionStore.isBookmarked(article.id)
+    }
+  })
+}
+
 onMounted(async () => {
   const pageFromUrl = parseInt(route.query.page as string) || 1
   await blogStore.fetchTags()
@@ -141,6 +154,15 @@ onMounted(async () => {
     await userInteractionStore.initialize()
   }
   await fetchArticles(pageFromUrl, false, false)
+  applyInteractionState(blogStore.articles)
+})
+
+watch(() => route.params.slug, async (newSlug, oldSlug) => {
+  if (newSlug && newSlug !== oldSlug) {
+    const pageFromUrl = parseInt(route.query.page as string) || 1
+    await fetchArticles(pageFromUrl, false, false)
+    applyInteractionState(blogStore.articles)
+  }
 })
 
 const currentTag = () => {
@@ -148,8 +170,9 @@ const currentTag = () => {
   return blogStore.getTagBySlug(slug)
 }
 
-const handlePageChange = (page: number) => {
-  fetchArticles(page, true, true)
+const handlePageChange = async (page: number) => {
+  await fetchArticles(page, true, true)
+  applyInteractionState(blogStore.articles)
 }
 </script>
 
