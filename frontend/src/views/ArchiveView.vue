@@ -37,6 +37,16 @@ const searchQuery = ref('')
 const selectedYear = ref<number | null>(null)
 const expandedMonths = ref<Set<string>>(new Set())
 
+const activeTooltip = ref<string | null>(null)
+
+const showTooltip = (name: string) => {
+  activeTooltip.value = name
+}
+
+const hideTooltip = () => {
+  activeTooltip.value = null
+}
+
 const totalArticles = computed(() => {
   return archiveData.value.reduce((total, year) => {
     return total + year.months.reduce((monthTotal, month) => monthTotal + month.count, 0)
@@ -210,9 +220,10 @@ onMounted(() => {
         </select>
         <div class="flex items-center gap-1">
           <button
-            class="px-2 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-primary/10 rounded transition-colors"
-            title="展开全部"
+            class="px-2 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-primary/10 rounded transition-colors relative"
             @click="expandAll"
+            @mouseenter="showTooltip('expand')"
+            @mouseleave="hideTooltip"
           >
             <svg
               class="w-4 h-4"
@@ -225,11 +236,18 @@ onMounted(() => {
               stroke-width="2"
               d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
             /></svg>
+            <span
+              v-if="activeTooltip === 'expand'"
+              class="action-tooltip"
+            >
+              展开全部
+            </span>
           </button>
           <button
-            class="px-2 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-primary/10 rounded transition-colors"
-            title="收起全部"
+            class="px-2 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-primary/10 rounded transition-colors relative"
             @click="collapseAll"
+            @mouseenter="showTooltip('collapse')"
+            @mouseleave="hideTooltip"
           >
             <svg
               class="w-4 h-4"
@@ -242,6 +260,12 @@ onMounted(() => {
               stroke-width="2"
               d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25"
             /></svg>
+            <span
+              v-if="activeTooltip === 'collapse'"
+              class="action-tooltip"
+            >
+              收起全部
+            </span>
           </button>
         </div>
       </div>
@@ -361,7 +385,7 @@ onMounted(() => {
                       v-html="highlightText(article.category.name, searchQuery)"
                     />
                     <span
-                      class="flex-1 text-sm text-gray-700 dark:text-gray-300 truncate group-hover:text-primary transition-colors"
+                      class="flex-1 text-sm text-gray-700 dark:text-gray-300 break-all group-hover:text-primary transition-colors"
                       v-html="highlightText(article.title, searchQuery)"
                     />
                     <div class="flex items-center gap-2 text-xs text-gray-400 flex-shrink-0">
@@ -422,3 +446,39 @@ onMounted(() => {
     </aside>
   </div>
 </template>
+
+<style scoped>
+.action-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background: #ffffff;
+  color: #1a1a2e;
+  font-size: 12px;
+  font-weight: normal;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 9999;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  animation: tooltip-fade-in 0.15s ease;
+}
+
+.dark .action-tooltip {
+  background: #0f0f1a;
+  color: #f1f5f9;
+}
+
+@keyframes tooltip-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+</style>

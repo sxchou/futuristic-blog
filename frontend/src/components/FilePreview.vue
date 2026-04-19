@@ -39,6 +39,16 @@ const dragStartY = ref(0)
 const lastTranslateX = ref(0)
 const lastTranslateY = ref(0)
 
+const activeTooltip = ref<string | null>(null)
+
+const showTooltip = (name: string) => {
+  activeTooltip.value = name
+}
+
+const hideTooltip = () => {
+  activeTooltip.value = null
+}
+
 const getFileExtension = (filename: string): string => {
   return filename.split('.').pop()?.toLowerCase() || ''
 }
@@ -669,9 +679,10 @@ onUnmounted(() => {
           </div>
           <div class="flex items-center gap-1 flex-shrink-0 ml-2">
             <button
-              title="下载"
-              class="p-1.5 text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded transition-colors"
+              class="p-1.5 text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded transition-colors relative"
               @click="handleDownload"
+              @mouseenter="showTooltip('download')"
+              @mouseleave="hideTooltip"
             >
               <svg
                 class="w-4 h-4"
@@ -686,6 +697,12 @@ onUnmounted(() => {
                   d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
                 />
               </svg>
+              <span
+                v-if="activeTooltip === 'download'"
+                class="action-tooltip"
+              >
+                下载
+              </span>
             </button>
             <button
               class="p-1.5 text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded transition-colors"
@@ -804,9 +821,10 @@ onUnmounted(() => {
             <div class="absolute top-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg border border-gray-200 dark:border-gray-700">
               <button
                 :disabled="imageScale <= 0.25"
-                class="p-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="缩小"
+                class="p-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
                 @click="zoomOut"
+                @mouseenter="showTooltip('zoomout')"
+                @mouseleave="hideTooltip"
               >
                 <svg
                   class="w-5 h-5"
@@ -821,13 +839,20 @@ onUnmounted(() => {
                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"
                   />
                 </svg>
+                <span
+                  v-if="activeTooltip === 'zoomout'"
+                  class="action-tooltip"
+                >
+                  缩小
+                </span>
               </button>
               <div class="flex items-center gap-2 px-2">
                 <span class="text-sm text-gray-700 dark:text-gray-300 min-w-[60px] text-center">{{ Math.round(imageScale * 100) }}%</span>
                 <button
-                  class="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-                  title="重置"
+                  class="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors relative"
                   @click="resetZoom"
+                  @mouseenter="showTooltip('reset')"
+                  @mouseleave="hideTooltip"
                 >
                   <svg
                     class="w-4 h-4"
@@ -842,13 +867,20 @@ onUnmounted(() => {
                       d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                     />
                   </svg>
+                  <span
+                    v-if="activeTooltip === 'reset'"
+                    class="action-tooltip"
+                  >
+                    重置
+                  </span>
                 </button>
               </div>
               <button
                 :disabled="imageScale >= 5"
-                class="p-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="放大"
+                class="p-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
                 @click="zoomIn"
+                @mouseenter="showTooltip('zoomin')"
+                @mouseleave="hideTooltip"
               >
                 <svg
                   class="w-5 h-5"
@@ -863,6 +895,12 @@ onUnmounted(() => {
                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"
                   />
                 </svg>
+                <span
+                  v-if="activeTooltip === 'zoomin'"
+                  class="action-tooltip"
+                >
+                  放大
+                </span>
               </button>
             </div>
             
@@ -1409,7 +1447,37 @@ pre::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.15);
 }
 
-.dark pre::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+.action-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background: #ffffff;
+  color: #1a1a2e;
+  font-size: 12px;
+  font-weight: normal;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 9999;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  animation: tooltip-fade-in 0.15s ease;
+}
+
+.dark .action-tooltip {
+  background: #0f0f1a;
+  color: #f1f5f9;
+}
+
+@keyframes tooltip-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 </style>

@@ -79,11 +79,12 @@
               <div class="flex items-center justify-center gap-2 mt-4">
                 <button
                   type="button"
-                  class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
+                  class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors relative"
                   :class="{ 'opacity-50 cursor-not-allowed': !cropperReady }"
                   :disabled="!cropperReady"
-                  title="放大"
                   @click="handleZoomIn"
+                  @mouseenter="showTooltip('zoomin')"
+                  @mouseleave="hideTooltip"
                 >
                   <svg
                     class="w-5 h-5 text-gray-600 dark:text-gray-300"
@@ -98,14 +99,21 @@
                       d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
                     />
                   </svg>
+                  <span
+                    v-if="activeTooltip === 'zoomin'"
+                    class="action-tooltip"
+                  >
+                    放大
+                  </span>
                 </button>
                 <button
                   type="button"
-                  class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
+                  class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors relative"
                   :class="{ 'opacity-50 cursor-not-allowed': !cropperReady }"
                   :disabled="!cropperReady"
-                  title="缩小"
                   @click="handleZoomOut"
+                  @mouseenter="showTooltip('zoomout')"
+                  @mouseleave="hideTooltip"
                 >
                   <svg
                     class="w-5 h-5 text-gray-600 dark:text-gray-300"
@@ -120,15 +128,22 @@
                       d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"
                     />
                   </svg>
+                  <span
+                    v-if="activeTooltip === 'zoomout'"
+                    class="action-tooltip"
+                  >
+                    缩小
+                  </span>
                 </button>
                 <div class="w-px h-6 bg-gray-200 dark:bg-white/10" />
                 <button
                   type="button"
-                  class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
+                  class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors relative"
                   :class="{ 'opacity-50 cursor-not-allowed': !cropperReady }"
                   :disabled="!cropperReady"
-                  title="向左旋转"
                   @click="handleRotateLeft"
+                  @mouseenter="showTooltip('rotateleft')"
+                  @mouseleave="hideTooltip"
                 >
                   <svg
                     class="w-5 h-5 text-gray-600 dark:text-gray-300"
@@ -143,14 +158,21 @@
                       d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
                     />
                   </svg>
+                  <span
+                    v-if="activeTooltip === 'rotateleft'"
+                    class="action-tooltip"
+                  >
+                    向左旋转
+                  </span>
                 </button>
                 <button
                   type="button"
-                  class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
+                  class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors relative"
                   :class="{ 'opacity-50 cursor-not-allowed': !cropperReady }"
                   :disabled="!cropperReady"
-                  title="向右旋转"
                   @click="handleRotateRight"
+                  @mouseenter="showTooltip('rotateright')"
+                  @mouseleave="hideTooltip"
                 >
                   <svg
                     class="w-5 h-5 text-gray-600 dark:text-gray-300"
@@ -165,15 +187,22 @@
                       d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6"
                     />
                   </svg>
+                  <span
+                    v-if="activeTooltip === 'rotateright'"
+                    class="action-tooltip"
+                  >
+                    向右旋转
+                  </span>
                 </button>
                 <div class="w-px h-6 bg-gray-200 dark:bg-white/10" />
                 <button
                   type="button"
-                  class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
+                  class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors relative"
                   :class="{ 'opacity-50 cursor-not-allowed': !cropperReady }"
                   :disabled="!cropperReady"
-                  title="水平翻转"
                   @click="handleFlipHorizontal"
+                  @mouseenter="showTooltip('fliph')"
+                  @mouseleave="hideTooltip"
                 >
                   <svg
                     class="w-5 h-5 text-gray-600 dark:text-gray-300"
@@ -188,14 +217,21 @@
                       d="M7 21h10M12 3v18M17 6l4 6-4 6M7 6l-4 6 4 6"
                     />
                   </svg>
+                  <span
+                    v-if="activeTooltip === 'fliph'"
+                    class="action-tooltip"
+                  >
+                    水平翻转
+                  </span>
                 </button>
                 <button
                   type="button"
-                  class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
+                  class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors relative"
                   :class="{ 'opacity-50 cursor-not-allowed': !cropperReady }"
                   :disabled="!cropperReady"
-                  title="垂直翻转"
                   @click="handleFlipVertical"
+                  @mouseenter="showTooltip('flipv')"
+                  @mouseleave="hideTooltip"
                 >
                   <svg
                     class="w-5 h-5 text-gray-600 dark:text-gray-300"
@@ -210,15 +246,22 @@
                       d="M3 7v10M21 7v10M6 12h12M6 17l6 4 6-4M6 7l6-4 6 4"
                     />
                   </svg>
+                  <span
+                    v-if="activeTooltip === 'flipv'"
+                    class="action-tooltip"
+                  >
+                    垂直翻转
+                  </span>
                 </button>
                 <div class="w-px h-6 bg-gray-200 dark:bg-white/10" />
                 <button
                   type="button"
-                  class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
+                  class="cropper-btn p-2 rounded-lg bg-gray-100 dark:bg-dark-100 hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors relative"
                   :class="{ 'opacity-50 cursor-not-allowed': !cropperReady }"
                   :disabled="!cropperReady"
-                  title="重置"
                   @click="handleReset"
+                  @mouseenter="showTooltip('reset')"
+                  @mouseleave="hideTooltip"
                 >
                   <svg
                     class="w-5 h-5 text-gray-600 dark:text-gray-300"
@@ -233,6 +276,12 @@
                       d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                     />
                   </svg>
+                  <span
+                    v-if="activeTooltip === 'reset'"
+                    class="action-tooltip"
+                  >
+                    重置
+                  </span>
                 </button>
               </div>
             </div>
@@ -344,6 +393,16 @@ const cropperReady = ref(false)
 const isLoading = ref(true)
 const loadError = ref(false)
 const scaleState = ref({ x: 1, y: 1 })
+
+const activeTooltip = ref<string | null>(null)
+
+const showTooltip = (name: string) => {
+  activeTooltip.value = name
+}
+
+const hideTooltip = () => {
+  activeTooltip.value = null
+}
 
 const loadImage = (): Promise<void> => {
   return new Promise((resolve, reject) => {
@@ -571,6 +630,40 @@ onUnmounted(() => {
 
 .preview-container {
   overflow: hidden;
+}
+
+.action-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background: #ffffff;
+  color: #1a1a2e;
+  font-size: 12px;
+  font-weight: normal;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 9999;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  animation: tooltip-fade-in 0.15s ease;
+}
+
+.dark .action-tooltip {
+  background: #0f0f1a;
+  color: #f1f5f9;
+}
+
+@keyframes tooltip-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 </style>
 

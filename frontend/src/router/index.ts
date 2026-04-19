@@ -272,14 +272,14 @@ const router = createRouter({
             const docHeight = document.documentElement.scrollHeight
             const viewportHeight = window.innerHeight
             
-            if (docHeight >= targetTop + viewportHeight || attempts >= 20) {
+            if (docHeight >= targetTop + viewportHeight || attempts >= 50) {
               resolve({
                 left: targetLeft,
                 top: targetTop,
                 behavior: 'auto'
               })
             } else {
-              setTimeout(() => checkContent(attempts + 1), 50)
+              setTimeout(() => checkContent(attempts + 1), 100)
             }
           })
         }
@@ -289,7 +289,7 @@ const router = createRouter({
     }
     
     if (from.name === undefined) {
-      return false
+      return { top: 0, behavior: 'auto' }
     }
     
     return { top: 0, behavior: 'smooth' }

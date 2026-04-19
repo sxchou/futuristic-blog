@@ -20,6 +20,20 @@ const isLoading = ref(false)
 const articlesSectionRef = ref<HTMLElement | null>( null)
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
+const activeTooltip = ref<{ articleId: number; action: string } | null>(null)
+
+const showTooltip = (articleId: number, action: string) => {
+  activeTooltip.value = { articleId, action }
+}
+
+const hideTooltip = () => {
+  activeTooltip.value = null
+}
+
+const isTooltipVisible = (articleId: number, action: string) => {
+  return activeTooltip.value?.articleId === articleId && activeTooltip.value?.action === action
+}
+
 const { pageSize } = usePageSize()
 
 const isStackedLayout = computed(() => siteConfigStore.mobileArticleLayout === 'stacked')
@@ -440,12 +454,7 @@ const handlePageChange = (page: number) => {
                   <div class="flex items-center gap-2 mb-2">
                     <span
                       v-if="article.is_pinned"
-                      :class="[
-                        'inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium rounded',
-                        isStackedLayout 
-                          ? 'bg-amber-500/10 text-amber-600' 
-                          : 'bg-amber-500/20 text-amber-400 sm:bg-amber-500/10 sm:text-amber-600'
-                      ]"
+                      class="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium rounded bg-amber-500/10 text-amber-600"
                     >
                       <svg
                         class="w-2.5 h-2.5"
@@ -456,12 +465,7 @@ const handlePageChange = (page: number) => {
                     </span>
                     <span
                       v-if="article.is_featured"
-                      :class="[
-                        'inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-primary/20 text-[10px] font-medium rounded',
-                        isStackedLayout 
-                          ? 'bg-primary/10 text-primary' 
-                          : 'bg-primary/20 text-primary sm:bg-primary/10'
-                      ]"
+                      class="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium rounded bg-primary/10 text-primary"
                     >
                       <svg
                         class="w-2.5 h-2.5"
@@ -472,13 +476,8 @@ const handlePageChange = (page: number) => {
                     </span>
                     <span
                       v-if="article.category"
-                      :class="[
-                        'inline-flex items-center gap-1 text-xs',
-                        isStackedLayout 
-                          ? 'text-inherit' 
-                          : 'text-white/90 sm:text-inherit'
-                      ]"
-                      :style="(isStackedLayout || !article.cover_image) ? { color: article.category.color } : {}"
+                      class="inline-flex items-center gap-1 text-xs"
+                      :style="{ color: article.category.color }"
                     >
                       <span
                         class="w-1.5 h-1.5 rounded-full"
@@ -512,17 +511,12 @@ const handlePageChange = (page: number) => {
                     <span
                       v-for="tag in article.tags.slice(0, 3)"
                       :key="tag.id"
-                      :class="[
-                        'tag-badge text-[10px]',
-                        isStackedLayout 
-                          ? '' 
-                          : 'bg-white/20 text-white/90 border-white/30 sm:bg-transparent sm:text-inherit sm:border-inherit'
-                      ]"
-                      :style="(isStackedLayout || !article.cover_image) ? { 
+                      class="tag-badge text-[10px]"
+                      :style="{ 
                         color: tag.color, 
                         backgroundColor: tag.color + '10',
                         borderColor: tag.color + '30'
-                      } : {}"
+                      }"
                     >
                       {{ tag.name }}
                     </span>
@@ -555,12 +549,16 @@ const handlePageChange = (page: number) => {
                       </svg>
                       {{ formatDate(article.created_at) }}
                     </span>
-                    <span :class="[
-                      'article-meta-item',
-                      isStackedLayout 
-                        ? 'text-inherit' 
-                        : 'text-white/70 sm:text-inherit'
-                    ]">
+                    <span 
+                      :class="[
+                        'article-meta-item relative',
+                        isStackedLayout 
+                          ? 'text-inherit' 
+                          : 'text-white/70 sm:text-inherit'
+                      ]"
+                      @mouseenter="showTooltip(article.id, 'view')"
+                      @mouseleave="hideTooltip"
+                    >
                       <svg
                         class="w-3.5 h-3.5"
                         fill="none"
@@ -581,15 +579,24 @@ const handlePageChange = (page: number) => {
                         />
                       </svg>
                       {{ article.view_count }}
+                      <span
+                        v-if="isTooltipVisible(article.id, 'view')"
+                        class="action-tooltip"
+                      >
+                        浏览量
+                      </span>
                     </span>
                     <button
                       :class="[
-                        'article-meta-item article-action-btn',
+                        'article-meta-item article-action-btn relative',
                         isStackedLayout 
                           ? 'text-inherit' 
-                          : 'text-white/70 sm:text-inherit'
+                          : 'text-white/70 sm:text-inherit',
+                        { 'text-red-500': article.is_liked }
                       ]"
                       @click="handleLike($event, article)"
+                      @mouseenter="showTooltip(article.id, 'like')"
+                      @mouseleave="hideTooltip"
                     >
                       <svg
                         class="w-3.5 h-3.5"
@@ -605,15 +612,23 @@ const handlePageChange = (page: number) => {
                         />
                       </svg>
                       {{ article.like_count }}
+                      <span
+                        v-if="isTooltipVisible(article.id, 'like')"
+                        class="action-tooltip"
+                      >
+                        {{ article.is_liked ? '取消点赞' : '点赞' }}
+                      </span>
                     </button>
                     <button
                       :class="[
-                        'article-meta-item article-action-btn',
+                        'article-meta-item article-action-btn relative',
                         isStackedLayout 
                           ? 'text-inherit' 
                           : 'text-white/70 sm:text-inherit'
                       ]"
                       @click="goToComments($event, article.slug)"
+                      @mouseenter="showTooltip(article.id, 'comment')"
+                      @mouseleave="hideTooltip"
                     >
                       <svg
                         class="w-3.5 h-3.5"
@@ -629,16 +644,24 @@ const handlePageChange = (page: number) => {
                         />
                       </svg>
                       {{ article.comment_count || 0 }}
+                      <span
+                        v-if="isTooltipVisible(article.id, 'comment')"
+                        class="action-tooltip"
+                      >
+                        评论
+                      </span>
                     </button>
                     <button
                       :class="[
-                        'article-meta-item article-action-btn',
+                        'article-meta-item article-action-btn relative',
                         isStackedLayout 
                           ? 'text-inherit' 
                           : 'text-white/70 sm:text-inherit',
                         { 'text-amber-500': article.is_bookmarked }
                       ]"
                       @click="handleBookmark($event, article)"
+                      @mouseenter="showTooltip(article.id, 'bookmark')"
+                      @mouseleave="hideTooltip"
                     >
                       <svg
                         class="w-3.5 h-3.5"
@@ -653,6 +676,12 @@ const handlePageChange = (page: number) => {
                           d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
                         />
                       </svg>
+                      <span
+                        v-if="isTooltipVisible(article.id, 'bookmark')"
+                        class="action-tooltip"
+                      >
+                        {{ article.is_bookmarked ? '取消收藏' : '收藏' }}
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -702,5 +731,39 @@ const handlePageChange = (page: number) => {
 .article-card {
   padding: 0 !important;
   display: block !important;
+}
+
+.action-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background: #ffffff;
+  color: #1a1a2e;
+  font-size: 12px;
+  font-weight: normal;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 9999;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  animation: tooltip-fade-in 0.15s ease;
+}
+
+.dark .action-tooltip {
+  background: #0f0f1a;
+  color: #f1f5f9;
+}
+
+@keyframes tooltip-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 </style>

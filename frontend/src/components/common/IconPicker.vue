@@ -182,7 +182,6 @@
                 'w-12 h-12 flex flex-col items-center justify-center gap-1 hover:bg-primary/10 rounded transition-colors',
                 modelValue === icon ? 'bg-primary/20 ring-2 ring-primary' : ''
               ]"
-              :title="icon"
               @click.stop="selectIcon(icon, 'fontawesome')"
             >
               <i :class="icon" />
@@ -203,7 +202,6 @@
               'w-12 h-12 flex flex-col items-center justify-center gap-1 hover:bg-primary/10 rounded transition-colors',
               modelValue === icon ? 'bg-primary/20 ring-2 ring-primary' : ''
             ]"
-            :title="icon"
             @click.stop="selectIcon(icon, 'material')"
           >
             <span class="material-icons text-xl">{{ icon }}</span>
@@ -223,7 +221,6 @@
               'w-full h-16 flex flex-col items-center justify-center gap-1 hover:bg-primary/10 rounded transition-colors',
               modelValue === icon ? 'bg-primary/20 ring-2 ring-primary' : ''
             ]"
-            :title="icon"
             @click.stop="selectIcon(icon, 'heroicon')"
           >
             <component

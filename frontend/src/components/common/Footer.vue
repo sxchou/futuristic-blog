@@ -1,10 +1,20 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useSiteConfigStore, useSocialLinksStore } from '@/stores'
 
 const siteConfigStore = useSiteConfigStore()
 const socialLinksStore = useSocialLinksStore()
 const currentYear = new Date().getFullYear()
+
+const activeTooltip = ref<string | null>(null)
+
+const showTooltip = (id: string) => {
+  activeTooltip.value = id
+}
+
+const hideTooltip = () => {
+  activeTooltip.value = null
+}
 
 onMounted(() => {
   socialLinksStore.fetchProfile()
@@ -100,8 +110,9 @@ const getLogoUrl = (url: string) => {
               :href="link.url"
               :target="link.type === 'link' ? '_blank' : undefined"
               :rel="link.type === 'link' ? 'noopener noreferrer' : undefined"
-              class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-dark-300 border border-gray-200 dark:border-white/5 flex items-center justify-center text-gray-400 hover:text-primary hover:border-primary/30 transition-all"
-              :title="link.name"
+              class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-dark-300 border border-gray-200 dark:border-white/5 flex items-center justify-center text-gray-400 hover:text-primary hover:border-primary/30 transition-all relative"
+              @mouseenter="showTooltip(link.id)"
+              @mouseleave="hideTooltip"
             >
               <svg
                 v-if="link.icon === 'github'"
@@ -139,6 +150,12 @@ const getLogoUrl = (url: string) => {
                   d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
                 />
               </svg>
+              <span
+                v-if="activeTooltip === link.id"
+                class="action-tooltip"
+              >
+                {{ link.name }}
+              </span>
             </a>
           </div>
         </div>
@@ -217,3 +234,39 @@ const getLogoUrl = (url: string) => {
     </div>
   </footer>
 </template>
+
+<style scoped>
+.action-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background: #ffffff;
+  color: #1a1a2e;
+  font-size: 12px;
+  font-weight: normal;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 9999;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  animation: tooltip-fade-in 0.15s ease;
+}
+
+.dark .action-tooltip {
+  background: #0f0f1a;
+  color: #f1f5f9;
+}
+
+@keyframes tooltip-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+</style>

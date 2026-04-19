@@ -28,6 +28,15 @@ const isCaptchaVerified = ref(false)
 const captchaRef = ref<InstanceType<typeof SliderCaptcha> | null>(null)
 const oauthProviders = ref<OAuthProviderResponse[]>([])
 const oauthLoading = ref<string | null>(null)
+const activeTooltip = ref<number | null>(null)
+
+const showTooltip = (id: number) => {
+  activeTooltip.value = id
+}
+
+const hideTooltip = () => {
+  activeTooltip.value = null
+}
 
 const fetchOAuthProviders = async () => {
   try {
@@ -429,25 +438,61 @@ onMounted(fetchOAuthProviders)
           </div>
 
           <div class="mt-3 flex items-center justify-center gap-2 flex-wrap">
-            <button
+            <div
               v-for="provider in oauthProviders"
               :key="provider.id"
-              type="button"
-              :disabled="oauthLoading === provider.name || (!provider.is_configured || !provider.is_enabled)"
-              :class="getProviderButtonClass(provider)"
-              :title="provider.display_name + (!provider.is_configured || !provider.is_enabled ? ' (当前不可用)' : '')"
-              @click="handleOAuthLogin(provider)"
+              class="relative"
+              @mouseenter="showTooltip(provider.id)"
+              @mouseleave="hideTooltip"
             >
-              <svg
-                class="w-5 h-5"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-                v-html="getProviderIcon(provider.icon)"
-              />
-            </button>
+              <button
+                type="button"
+                :disabled="oauthLoading === provider.name || (!provider.is_configured || !provider.is_enabled)"
+                :class="getProviderButtonClass(provider)"
+                @click="handleOAuthLogin(provider)"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                  v-html="getProviderIcon(provider.icon)"
+                />
+              </button>
+              <span
+                v-if="activeTooltip === provider.id"
+                class="oauth-btn-tooltip"
+              >
+                {{ provider.display_name }}{{ !provider.is_configured || !provider.is_enabled ? ' (当前不可用)' : '' }}
+              </span>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
 </template>
+
+<style>
+.oauth-btn-tooltip {
+  position: absolute !important;
+  bottom: calc(100% + 8px) !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  padding: 4px 8px !important;
+  background: #ffffff !important;
+  color: #1a1a2e !important;
+  font-size: 12px !important;
+  font-weight: normal !important;
+  border-radius: 4px !important;
+  white-space: nowrap !important;
+  pointer-events: none !important;
+  z-index: 9999 !important;
+  opacity: 1 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+html.dark .oauth-btn-tooltip {
+  background: #0f0f1a !important;
+  color: #f1f5f9 !important;
+}
+</style>

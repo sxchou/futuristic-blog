@@ -2,9 +2,10 @@
   <div class="emoji-picker relative inline-block">
     <button
       type="button"
-      class="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
-      title="选择表情"
+      class="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-white/10 transition-colors relative"
       @click="showPicker = !showPicker"
+      @mouseenter="showTooltip = true"
+      @mouseleave="showTooltip = false"
     >
       <svg
         class="w-5 h-5 text-gray-500 dark:text-gray-400"
@@ -19,6 +20,12 @@
           d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
         />
       </svg>
+      <span
+        v-if="showTooltip && !showPicker"
+        class="action-tooltip"
+      >
+        选择表情
+      </span>
     </button>
     
     <div
@@ -94,6 +101,7 @@ const emit = defineEmits<{
 }>()
 
 const showPicker = ref(false)
+const showTooltip = ref(false)
 const activeCategory = ref('smileys')
 
 const categories = [
@@ -169,3 +177,39 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
 })
 </script>
+
+<style scoped>
+.action-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background: #ffffff;
+  color: #1a1a2e;
+  font-size: 12px;
+  font-weight: normal;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 9999;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  animation: tooltip-fade-in 0.15s ease;
+}
+
+.dark .action-tooltip {
+  background: #0f0f1a;
+  color: #f1f5f9;
+}
+
+@keyframes tooltip-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+</style>

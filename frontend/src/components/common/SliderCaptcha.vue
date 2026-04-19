@@ -16,12 +16,13 @@ const hasFailed = ref(false)
 const trackRef = ref<HTMLElement | null>(null)
 
 const targetPosition = ref(0)
-const tolerance = 8
+const tolerance = 15
 
 const maxWidth = computed(() => trackWidth.value - buttonWidth)
 
 const sliderStyle = computed(() => ({
-  transform: `translateX(${sliderPosition.value}px)`
+  transform: `translateX(${sliderPosition.value}px)`,
+  transition: isDragging.value ? 'none' : 'transform 0.15s ease-out'
 }))
 
 const targetStyle = computed(() => ({
@@ -51,19 +52,26 @@ onMounted(() => {
 
 const handleMouseDown = (e: MouseEvent) => {
   if (isVerified.value) return
+  e.preventDefault()
   hasFailed.value = false
   isDragging.value = true
   startX.value = e.clientX - sliderPosition.value
-  document.addEventListener('mousemove', handleMouseMove)
+  document.addEventListener('mousemove', handleMouseMove, { passive: false })
   document.addEventListener('mouseup', handleMouseUp)
 }
 
 const handleMouseMove = (e: MouseEvent) => {
   if (!isDragging.value) return
+  e.preventDefault()
   
   let newPosition = e.clientX - startX.value
   if (newPosition < 0) newPosition = 0
   if (newPosition > maxWidth.value) newPosition = maxWidth.value
+  
+  const distance = Math.abs(newPosition - targetPosition.value)
+  if (distance <= tolerance) {
+    newPosition = targetPosition.value
+  }
   
   sliderPosition.value = newPosition
 }
@@ -94,6 +102,7 @@ const handleMouseUp = () => {
 
 const handleTouchStart = (e: TouchEvent) => {
   if (isVerified.value) return
+  e.preventDefault()
   hasFailed.value = false
   isDragging.value = true
   startX.value = e.touches[0].clientX - sliderPosition.value
@@ -101,10 +110,16 @@ const handleTouchStart = (e: TouchEvent) => {
 
 const handleTouchMove = (e: TouchEvent) => {
   if (!isDragging.value) return
+  e.preventDefault()
   
   let newPosition = e.touches[0].clientX - startX.value
   if (newPosition < 0) newPosition = 0
   if (newPosition > maxWidth.value) newPosition = maxWidth.value
+  
+  const distance = Math.abs(newPosition - targetPosition.value)
+  if (distance <= tolerance) {
+    newPosition = targetPosition.value
+  }
   
   sliderPosition.value = newPosition
 }
@@ -167,7 +182,7 @@ defineExpose({ reset })
       />
 
       <div 
-        class="slider-button absolute left-0 top-0 w-10 h-10 flex items-center justify-center transition-all duration-150 cursor-pointer rounded-lg"
+        class="slider-button absolute left-0 top-0 w-10 h-10 flex items-center justify-center cursor-pointer rounded-lg"
         :class="[
           isVerified 
             ? 'bg-green-500 cursor-default' 
@@ -179,8 +194,8 @@ defineExpose({ reset })
         ]"
         :style="sliderStyle"
         @mousedown="handleMouseDown"
-        @touchstart="handleTouchStart"
-        @touchmove="handleTouchMove"
+        @touchstart.prevent="handleTouchStart"
+        @touchmove.prevent="handleTouchMove"
         @touchend="handleTouchEnd"
       >
         <template v-if="!isVerified">
@@ -251,18 +266,31 @@ defineExpose({ reset })
 .slider-captcha {
   user-select: none;
   -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 .slider-track {
   touch-action: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .slider-button {
   touch-action: none;
+  will-change: transform;
+  -webkit-tap-highlight-color: transparent;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .slider-button:active {
   transform: scale(0.95);
+}
+
+.slider-target {
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 @keyframes shake {

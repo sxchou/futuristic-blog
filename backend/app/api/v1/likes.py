@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from app.core.database import get_db
@@ -11,25 +11,13 @@ from typing import Optional
 router = APIRouter(prefix="/likes", tags=["likes"])
 
 
-def get_client_ip(request: Request) -> str:
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    return request.client.host if request.client else "unknown"
-
-
-def check_user_liked(db: Session, article_id: int, user_id: Optional[int], ip_address: Optional[str]) -> bool:
+def check_user_liked(db: Session, article_id: int, user_id: Optional[int]) -> bool:
     if user_id:
         like = db.query(ArticleLike).filter(
             and_(ArticleLike.article_id == article_id, ArticleLike.user_id == user_id)
         ).first()
-    elif ip_address:
-        like = db.query(ArticleLike).filter(
-            and_(ArticleLike.article_id == article_id, ArticleLike.ip_address == ip_address)
-        ).first()
-    else:
-        return False
-    return like is not None
+        return like is not None
+    return False
 
 
 def send_like_notification_bg(article_title: str, article_slug: str, liker_name: str):
@@ -101,27 +89,19 @@ async def get_user_liked_articles(
 @router.post("/{article_id}", response_model=LikeResponse)
 async def toggle_like(
     article_id: int,
-    request: Request,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    current_user: Optional[User] = Depends(get_current_user_optional)
+    current_user: User = Depends(get_current_user)
 ):
     article = db.query(Article).filter(Article.id == article_id).first()
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
     
-    user_id = current_user.id if current_user else None
-    ip_address = get_client_ip(request) if not user_id else None
+    user_id = current_user.id
     
-    existing_like = None
-    if user_id:
-        existing_like = db.query(ArticleLike).filter(
-            and_(ArticleLike.article_id == article_id, ArticleLike.user_id == user_id)
-        ).first()
-    elif ip_address:
-        existing_like = db.query(ArticleLike).filter(
-            and_(ArticleLike.article_id == article_id, ArticleLike.ip_address == ip_address)
-        ).first()
+    existing_like = db.query(ArticleLike).filter(
+        and_(ArticleLike.article_id == article_id, ArticleLike.user_id == user_id)
+    ).first()
     
     if existing_like:
         db.delete(existing_like)
@@ -131,13 +111,13 @@ async def toggle_like(
         new_like = ArticleLike(
             article_id=article_id,
             user_id=user_id,
-            ip_address=ip_address
+            ip_address=None
         )
         db.add(new_like)
         article.like_count += 1
         is_liked = True
         
-        liker_name = current_user.username if current_user else "匿名用户"
+        liker_name = current_user.username
         article_title = article.title
         article_slug = article.slug
         background_tasks.add_task(send_like_notification_bg, article_title, article_slug, liker_name)
@@ -155,7 +135,6 @@ async def toggle_like(
 @router.get("/{article_id}", response_model=LikeResponse)
 async def get_like_status(
     article_id: int,
-    request: Request,
     db: Session = Depends(get_db),
     current_user: Optional[User] = Depends(get_current_user_optional)
 ):
@@ -164,9 +143,8 @@ async def get_like_status(
         raise HTTPException(status_code=404, detail="Article not found")
     
     user_id = current_user.id if current_user else None
-    ip_address = get_client_ip(request) if not user_id else None
     
-    is_liked = check_user_liked(db, article_id, user_id, ip_address)
+    is_liked = check_user_liked(db, article_id, user_id)
     
     return LikeResponse(
         article_id=article_id,

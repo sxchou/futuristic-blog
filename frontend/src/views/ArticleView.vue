@@ -31,6 +31,20 @@ const showPreview = ref(false)
 const selectedFileIds = ref<Set<number>>(new Set())
 const highlightKeyword = ref('')
 
+const activeTooltip = ref<string | null>(null)
+
+const showTooltip = (action: string) => {
+  activeTooltip.value = action
+}
+
+const hideTooltip = () => {
+  activeTooltip.value = null
+}
+
+const isTooltipVisible = (action: string) => {
+  return activeTooltip.value === action
+}
+
 const coverImageUrl = computed(() => getMediaUrl(article.value?.cover_image))
 const activeHeading = ref('')
 const showToc = ref(false)
@@ -144,6 +158,10 @@ const formatDate = (date: string) => {
 }
 
 const handleLike = async () => {
+  if (!authStore.isAuthenticated) {
+    router.push('/login')
+    return
+  }
   if (isLiking.value || !article.value) return
   isLiking.value = true
   try {
@@ -913,7 +931,7 @@ watch(article, async (newVal) => {
                   v-html="getFileIconInfo(file.file_type, file.mime_type, file.original_filename).svg"
                 />
                 <div class="min-w-0 flex-1">
-                  <div class="text-xs text-gray-900 dark:text-white truncate">
+                  <div class="text-xs text-gray-900 dark:text-white break-all">
                     {{ file.original_filename }}
                   </div>
                   <div class="text-[10px] text-gray-500">
@@ -923,9 +941,10 @@ watch(article, async (newVal) => {
               </div>
               <div class="flex items-center gap-1 flex-shrink-0 ml-2">
                 <button
-                  class="w-7 h-7 flex items-center justify-center text-emerald-500 hover:bg-emerald-500/10 rounded transition-colors"
-                  title="预览"
+                  class="w-7 h-7 flex items-center justify-center text-emerald-500 hover:bg-emerald-500/10 rounded transition-colors relative"
                   @click="openPreview(file)"
+                  @mouseenter="showTooltip('preview-' + file.id)"
+                  @mouseleave="hideTooltip"
                 >
                   <svg
                     class="w-4 h-4"
@@ -943,11 +962,18 @@ watch(article, async (newVal) => {
                     stroke-width="2"
                     d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                   /></svg>
+                  <span
+                    v-if="isTooltipVisible('preview-' + file.id)"
+                    class="action-tooltip"
+                  >
+                    预览
+                  </span>
                 </button>
                 <button
-                  class="w-7 h-7 flex items-center justify-center text-primary hover:bg-primary/10 rounded transition-colors"
-                  title="下载"
+                  class="w-7 h-7 flex items-center justify-center text-primary hover:bg-primary/10 rounded transition-colors relative"
                   @click="downloadFile(file)"
+                  @mouseenter="showTooltip('download-' + file.id)"
+                  @mouseleave="hideTooltip"
                 >
                   <svg
                     class="w-4 h-4"
@@ -960,6 +986,12 @@ watch(article, async (newVal) => {
                     stroke-width="2"
                     d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
                   /></svg>
+                  <span
+                    v-if="isTooltipVisible('download-' + file.id)"
+                    class="action-tooltip"
+                  >
+                    下载
+                  </span>
                 </button>
               </div>
             </div>
@@ -976,13 +1008,17 @@ watch(article, async (newVal) => {
           <div class="flex items-center gap-2">
             <button
               :disabled="isLiking"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors"
-              :class="isLiked ? 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-500' : 'bg-gray-50 dark:bg-dark-300 border-gray-200 dark:border-white/5 text-gray-500 hover:text-red-500 hover:border-red-200'"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all duration-200 relative"
+              :class="isLiked 
+                ? 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-500 hover:bg-red-100 dark:hover:bg-red-500/20' 
+                : 'bg-gray-50 dark:bg-dark-300 border-gray-200 dark:border-white/5 text-gray-500 hover:text-red-500 hover:border-red-200 hover:bg-red-50 dark:hover:bg-red-500/10'"
               @click="handleLike"
+              @mouseenter="showTooltip('like')"
+              @mouseleave="hideTooltip"
             >
               <svg
-                class="w-4 h-4 transition-transform"
-                :class="{ 'scale-110': isLiked }"
+                class="w-4 h-4 transition-transform duration-200"
+                :class="{ 'scale-110': isLiked, 'group-hover:scale-110': !isLiked }"
                 :fill="isLiked ? 'currentColor' : 'none'"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -993,16 +1029,26 @@ watch(article, async (newVal) => {
                 d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
               /></svg>
               <span class="text-sm">{{ likeCount }}</span>
+              <span
+                v-if="isTooltipVisible('like')"
+                class="action-tooltip"
+              >
+                {{ isLiked ? '取消点赞' : '点赞' }}
+              </span>
             </button>
             <button
               :disabled="isBookmarking"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors"
-              :class="isBookmarked ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20 text-amber-500' : 'bg-gray-50 dark:bg-dark-300 border-gray-200 dark:border-white/5 text-gray-500 hover:text-amber-500 hover:border-amber-200'"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all duration-200 relative"
+              :class="isBookmarked 
+                ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20 text-amber-500 hover:bg-amber-100 dark:hover:bg-amber-500/20' 
+                : 'bg-gray-50 dark:bg-dark-300 border-gray-200 dark:border-white/5 text-gray-500 hover:text-amber-500 hover:border-amber-200 hover:bg-amber-50 dark:hover:bg-amber-500/10'"
               @click="handleBookmark"
+              @mouseenter="showTooltip('bookmark')"
+              @mouseleave="hideTooltip"
             >
               <svg
-                class="w-4 h-4 transition-transform"
-                :class="{ 'scale-110': isBookmarked }"
+                class="w-4 h-4 transition-transform duration-200"
+                :class="{ 'scale-110': isBookmarked, 'group-hover:scale-110': !isBookmarked }"
                 :fill="isBookmarked ? 'currentColor' : 'none'"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -1013,10 +1059,18 @@ watch(article, async (newVal) => {
                 d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
               /></svg>
               <span class="text-sm">{{ isBookmarked ? '已收藏' : '收藏' }}</span>
+              <span
+                v-if="isTooltipVisible('bookmark')"
+                class="action-tooltip"
+              >
+                {{ isBookmarked ? '取消收藏' : '收藏' }}
+              </span>
             </button>
             <button
               class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 text-gray-500 hover:text-primary hover:border-primary/30 transition-colors relative"
               @click="copyLink"
+              @mouseenter="showTooltip('copy')"
+              @mouseleave="hideTooltip"
             >
               <svg
                 class="w-4 h-4"
@@ -1034,22 +1088,36 @@ watch(article, async (newVal) => {
                 v-if="showCopySuccess"
                 class="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-cyber-green text-white text-xs rounded"
               >已复制!</span>
+              <span
+                v-if="isTooltipVisible('copy') && !showCopySuccess"
+                class="action-tooltip"
+              >
+                复制链接
+              </span>
             </button>
             <button
-              class="p-1.5 rounded-lg bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 text-gray-400 hover:text-primary hover:border-primary/30 transition-colors"
-              title="Twitter"
+              class="p-1.5 rounded-lg bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 text-gray-400 hover:text-primary hover:border-primary/30 transition-colors relative"
               @click="shareArticle('twitter')"
+              @mouseenter="showTooltip('twitter')"
+              @mouseleave="hideTooltip"
             >
               <svg
                 class="w-4 h-4"
                 fill="currentColor"
                 viewBox="0 0 24 24"
               ><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
+              <span
+                v-if="isTooltipVisible('twitter')"
+                class="action-tooltip"
+              >
+                分享到 X
+              </span>
             </button>
             <button
-              class="p-1.5 rounded-lg bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 text-gray-400 hover:text-[#E6162D] hover:border-[#E6162D]/30 hover:bg-[#E6162D]/5 dark:hover:bg-[#E6162D]/10 transition-all duration-200"
-              title="分享到微博"
+              class="p-1.5 rounded-lg bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 text-gray-400 hover:text-[#E6162D] hover:border-[#E6162D]/30 hover:bg-[#E6162D]/5 dark:hover:bg-[#E6162D]/10 transition-all duration-200 relative"
               @click="shareArticle('weibo')"
+              @mouseenter="showTooltip('weibo')"
+              @mouseleave="hideTooltip"
             >
               <svg
                 class="w-4 h-4"
@@ -1084,6 +1152,12 @@ watch(article, async (newVal) => {
                   fill="none"
                 />
               </svg>
+              <span
+                v-if="isTooltipVisible('weibo')"
+                class="action-tooltip"
+              >
+                分享到微博
+              </span>
             </button>
           </div>
           <router-link
@@ -1302,5 +1376,39 @@ watch(article, async (newVal) => {
 @keyframes file-highlight-pulse {
   0%, 100% { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2), 0 4px 12px rgba(59, 130, 246, 0.15); }
   50% { box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.3), 0 6px 16px rgba(59, 130, 246, 0.25); }
+}
+
+.action-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background: #ffffff;
+  color: #1a1a2e;
+  font-size: 12px;
+  font-weight: normal;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 9999;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  animation: tooltip-fade-in 0.15s ease;
+}
+
+.dark .action-tooltip {
+  background: #0f0f1a;
+  color: #f1f5f9;
+}
+
+@keyframes tooltip-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 </style>

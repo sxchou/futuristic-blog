@@ -285,26 +285,36 @@ const markAsSaved = () => {
   clearDraft()
 }
 
+const activeTooltip = ref<string | null>(null)
+
+const showTooltip = (name: string) => {
+  activeTooltip.value = name
+}
+
+const hideTooltip = () => {
+  activeTooltip.value = null
+}
+
 const toolbarActions = [
-  { icon: 'B', title: '粗体', action: () => insertText('**', '**') },
-  { icon: 'I', title: '斜体', action: () => insertText('*', '*') },
-  { icon: 'S', title: '删除线', action: () => insertText('~~', '~~') },
+  { icon: 'B', title: '粗体', key: 'bold', action: () => insertText('**', '**') },
+  { icon: 'I', title: '斜体', key: 'italic', action: () => insertText('*', '*') },
+  { icon: 'S', title: '删除线', key: 'strikethrough', action: () => insertText('~~', '~~') },
   { divider: true },
-  { icon: 'H1', title: '标题1', action: () => insertText('# ', '', true) },
-  { icon: 'H2', title: '标题2', action: () => insertText('## ', '', true) },
-  { icon: 'H3', title: '标题3', action: () => insertText('### ', '', true) },
+  { icon: 'H1', title: '标题1', key: 'h1', action: () => insertText('# ', '', true) },
+  { icon: 'H2', title: '标题2', key: 'h2', action: () => insertText('## ', '', true) },
+  { icon: 'H3', title: '标题3', key: 'h3', action: () => insertText('### ', '', true) },
   { divider: true },
-  { icon: '•', title: '无序列表', action: () => insertText('- ', '', true) },
-  { icon: '1.', title: '有序列表', action: () => insertText('1. ', '', true) },
-  { icon: '□', title: '任务列表', action: () => insertText('- [ ] ', '', true) },
+  { icon: '•', title: '无序列表', key: 'ul', action: () => insertText('- ', '', true) },
+  { icon: '1.', title: '有序列表', key: 'ol', action: () => insertText('1. ', '', true) },
+  { icon: '□', title: '任务列表', key: 'task', action: () => insertText('- [ ] ', '', true) },
   { divider: true },
-  { icon: '🔗', title: '链接', action: openLinkDialog },
-  { icon: '🖼', title: '图片', action: () => insertText('![alt](', ')') },
-  { icon: '</>', title: '行内代码', action: () => insertText('`', '`') },
+  { icon: '🔗', title: '链接', key: 'link', action: openLinkDialog },
+  { icon: '🖼', title: '图片', key: 'image', action: () => insertText('![alt](', ')') },
+  { icon: '</>', title: '行内代码', key: 'code', action: () => insertText('`', '`') },
   { divider: true },
-  { icon: '|', title: '表格', action: () => insertText('\n| 列1 | 列2 | 列3 |\n| --- | --- | --- |\n| 内容 | 内容 | 内容 |\n') },
-  { icon: '—', title: '分割线', action: () => insertText('\n---\n') },
-  { icon: '>', title: '引用', action: () => insertText('> ', '', true) },
+  { icon: '|', title: '表格', key: 'table', action: () => insertText('\n| 列1 | 列2 | 列3 |\n| --- | --- | --- |\n| 内容 | 内容 | 内容 |\n') },
+  { icon: '—', title: '分割线', key: 'hr', action: () => insertText('\n---\n') },
+  { icon: '>', title: '引用', key: 'quote', action: () => insertText('> ', '', true) },
 ]
 
 watch(() => props.modelValue, (newVal) => {
@@ -391,11 +401,18 @@ defineExpose({
         <button
           v-if="!item.divider"
           type="button"
-          :title="item.title"
-          class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/5 rounded transition-colors"
+          class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/5 rounded transition-colors relative"
           @click="item.action"
+          @mouseenter="item.key && showTooltip(item.key)"
+          @mouseleave="hideTooltip"
         >
           {{ item.icon }}
+          <span
+            v-if="activeTooltip === item.key"
+            class="action-tooltip"
+          >
+            {{ item.title }}
+          </span>
         </button>
         <div
           v-else
@@ -406,11 +423,18 @@ defineExpose({
       <div class="lang-selector-container relative">
         <button
           type="button"
-          title="代码块"
-          class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/5 rounded transition-colors"
+          class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/5 rounded transition-colors relative"
           @click="showLangSelector = !showLangSelector; if (showLangSelector) updateLangSelectorPosition()"
+          @mouseenter="showTooltip('codeblock')"
+          @mouseleave="hideTooltip"
         >
           { }
+          <span
+            v-if="activeTooltip === 'codeblock'"
+            class="action-tooltip"
+          >
+            代码块
+          </span>
         </button>
         
         <div
@@ -444,28 +468,49 @@ defineExpose({
       
       <button
         type="button"
-        title="Markdown 语法帮助"
-        class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/5 rounded transition-colors"
+        class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/5 rounded transition-colors relative"
         @click="showMarkdownHelp = !showMarkdownHelp"
+        @mouseenter="showTooltip('help')"
+        @mouseleave="hideTooltip"
       >
         ?
+        <span
+          v-if="activeTooltip === 'help'"
+          class="action-tooltip"
+        >
+          Markdown 语法帮助
+        </span>
       </button>
       <button
         type="button"
-        :title="showPreview ? '隐藏预览' : '显示预览'"
-        class="px-2 py-1 text-xs font-medium rounded transition-colors"
+        class="px-2 py-1 text-xs font-medium rounded transition-colors relative"
         :class="showPreview ? 'text-primary bg-primary/10' : 'text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/5'"
         @click="togglePreview"
+        @mouseenter="showTooltip('preview')"
+        @mouseleave="hideTooltip"
       >
         👁
+        <span
+          v-if="activeTooltip === 'preview'"
+          class="action-tooltip"
+        >
+          {{ showPreview ? '隐藏预览' : '显示预览' }}
+        </span>
       </button>
       <button
         type="button"
-        :title="isFullscreen ? '退出全屏' : '全屏'"
-        class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/5 rounded transition-colors"
+        class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/5 rounded transition-colors relative"
         @click="toggleFullscreen"
+        @mouseenter="showTooltip('fullscreen')"
+        @mouseleave="hideTooltip"
       >
         ⛶
+        <span
+          v-if="activeTooltip === 'fullscreen'"
+          class="action-tooltip"
+        >
+          {{ isFullscreen ? '退出全屏' : '全屏' }}
+        </span>
       </button>
     </div>
     
@@ -778,6 +823,40 @@ defineExpose({
   .markdown-editor-container .lang-selector-container .fixed {
     width: 100px;
     left: 0 !important;
+  }
+}
+
+.action-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background: #ffffff;
+  color: #1a1a2e;
+  font-size: 12px;
+  font-weight: normal;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 9999;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  animation: tooltip-fade-in 0.15s ease;
+}
+
+.dark .action-tooltip {
+  background: #0f0f1a;
+  color: #f1f5f9;
+}
+
+@keyframes tooltip-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
   }
 }
 </style>

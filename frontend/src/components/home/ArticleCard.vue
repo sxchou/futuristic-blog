@@ -3,8 +3,10 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import type { ArticleListItem } from '@/types'
 import { likeApi } from '@/api'
+import { bookmarkApi } from '@/api/bookmarks'
 import { formatDateShort } from '@/utils/date'
 import { getMediaUrl } from '@/utils/media'
+import { useAuthStore } from '@/stores'
 
 const props = defineProps<{
   article: ArticleListItem
@@ -12,17 +14,35 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
+const authStore = useAuthStore()
 const isLiked = ref(props.article.is_liked || false)
 const likeCount = ref(props.article.like_count || 0)
 const isLiking = ref(false)
+const isBookmarked = ref(props.article.is_bookmarked || false)
+const isBookmarking = ref(false)
+
+const activeTooltip = ref<string | null>(null)
 
 const formatDate = (date: string) => formatDateShort(date)
 
 const coverImageUrl = computed(() => getMediaUrl(props.article.cover_image))
 
+const showTooltip = (name: string) => {
+  activeTooltip.value = name
+}
+
+const hideTooltip = () => {
+  activeTooltip.value = null
+}
+
 const handleLike = async (e: Event) => {
   e.preventDefault()
   e.stopPropagation()
+
+  if (!authStore.isAuthenticated) {
+    router.push('/login')
+    return
+  }
 
   if (isLiking.value) return
 
@@ -35,6 +55,28 @@ const handleLike = async (e: Event) => {
     console.error('Failed to toggle like:', error)
   } finally {
     isLiking.value = false
+  }
+}
+
+const handleBookmark = async (e: Event) => {
+  e.preventDefault()
+  e.stopPropagation()
+
+  if (!authStore.isAuthenticated) {
+    router.push('/login')
+    return
+  }
+
+  if (isBookmarking.value) return
+
+  isBookmarking.value = true
+  try {
+    const result = await bookmarkApi.toggle(props.article.id)
+    isBookmarked.value = result.is_bookmarked
+  } catch (error) {
+    console.error('Failed to toggle bookmark:', error)
+  } finally {
+    isBookmarking.value = false
   }
 }
 
@@ -94,8 +136,9 @@ const getArticleLink = () => {
         >
           <span
             v-if="article.is_pinned"
-            class="article-card__badge article-card__badge--pinned"
-            title="置顶"
+            class="article-card__badge article-card__badge--pinned relative"
+            @mouseenter="showTooltip('pinned')"
+            @mouseleave="hideTooltip"
           >
             <svg
               class="w-2.5 h-2.5"
@@ -104,11 +147,18 @@ const getArticleLink = () => {
             >
               <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" />
             </svg>
+            <span
+              v-if="activeTooltip === 'pinned'"
+              class="badge-tooltip"
+            >
+              置顶
+            </span>
           </span>
           <span
             v-if="article.is_featured"
-            class="article-card__badge article-card__badge--featured"
-            title="精选"
+            class="article-card__badge article-card__badge--featured relative"
+            @mouseenter="showTooltip('featured')"
+            @mouseleave="hideTooltip"
           >
             <svg
               class="w-2.5 h-2.5"
@@ -117,6 +167,12 @@ const getArticleLink = () => {
             >
               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
             </svg>
+            <span
+              v-if="activeTooltip === 'featured'"
+              class="badge-tooltip"
+            >
+              精选
+            </span>
           </span>
         </div>
       </div>
@@ -163,7 +219,11 @@ const getArticleLink = () => {
       <div class="article-card__meta">
         <span class="article-card__meta-date">{{ formatDate(article.created_at) }}</span>
         <div class="article-card__meta-actions">
-          <span class="article-card__meta-item">
+          <span 
+            class="article-card__meta-item"
+            @mouseenter="showTooltip('view')"
+            @mouseleave="hideTooltip"
+          >
             <svg
               class="w-3 h-3"
               fill="none"
@@ -184,10 +244,18 @@ const getArticleLink = () => {
               />
             </svg>
             {{ article.view_count }}
+            <span
+              v-if="activeTooltip === 'view'"
+              class="article-card__tooltip"
+            >
+              浏览量
+            </span>
           </span>
           <button
-            class="article-card__meta-item article-card__meta-btn"
+            class="article-card__meta-btn"
             @click="goToComments"
+            @mouseenter="showTooltip('comment')"
+            @mouseleave="hideTooltip"
           >
             <svg
               class="w-3 h-3"
@@ -203,15 +271,23 @@ const getArticleLink = () => {
               />
             </svg>
             {{ article.comment_count || 0 }}
+            <span
+              v-if="activeTooltip === 'comment'"
+              class="article-card__tooltip"
+            >
+              评论
+            </span>
           </button>
           <button
             :disabled="isLiking"
-            class="article-card__meta-item article-card__meta-btn"
+            class="article-card__meta-btn"
             :class="isLiked ? 'article-card__meta-btn--liked' : ''"
             @click="handleLike"
+            @mouseenter="showTooltip('like')"
+            @mouseleave="hideTooltip"
           >
             <svg
-              class="w-3 h-3 transition-transform"
+              class="w-3 h-3 transition-transform duration-200"
               :class="{ 'scale-110': isLiked }"
               :fill="isLiked ? 'currentColor' : 'none'"
               stroke="currentColor"
@@ -225,6 +301,41 @@ const getArticleLink = () => {
               />
             </svg>
             {{ likeCount }}
+            <span
+              v-if="activeTooltip === 'like'"
+              class="article-card__tooltip"
+            >
+              {{ isLiked ? '取消点赞' : '点赞' }}
+            </span>
+          </button>
+          <button
+            :disabled="isBookmarking"
+            class="article-card__meta-btn"
+            :class="isBookmarked ? 'article-card__meta-btn--bookmarked' : ''"
+            @click="handleBookmark"
+            @mouseenter="showTooltip('bookmark')"
+            @mouseleave="hideTooltip"
+          >
+            <svg
+              class="w-3 h-3 transition-transform duration-200"
+              :class="{ 'scale-110': isBookmarked }"
+              :fill="isBookmarked ? 'currentColor' : 'none'"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+              />
+            </svg>
+            <span
+              v-if="activeTooltip === 'bookmark'"
+              class="article-card__tooltip"
+            >
+              {{ isBookmarked ? '取消收藏' : '收藏' }}
+            </span>
           </button>
         </div>
       </div>
@@ -411,6 +522,9 @@ const getArticleLink = () => {
   display: flex;
   align-items: center;
   gap: 0.125rem;
+  pointer-events: auto;
+  position: relative;
+  cursor: default;
 }
 
 .article-card__meta-btn {
@@ -418,11 +532,17 @@ const getArticleLink = () => {
   background: transparent;
   border: none;
   padding: 0;
-  transition: color 0.3s ease;
+  transition: all 0.2s ease;
+  pointer-events: auto;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
 }
 
 .article-card__meta-btn:hover {
   color: #00d4ff;
+  transform: scale(1.05);
 }
 
 .article-card__meta-btn--liked {
@@ -430,6 +550,73 @@ const getArticleLink = () => {
 }
 
 .article-card__meta-btn--liked:hover {
-  color: #ef4444;
+  color: #dc2626;
+  transform: scale(1.05);
+}
+
+.article-card__meta-btn--bookmarked {
+  color: #f59e0b;
+}
+
+.article-card__meta-btn--bookmarked:hover {
+  color: #d97706;
+  transform: scale(1.05);
+}
+
+.article-card__tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background: #ffffff;
+  color: #1a1a2e;
+  font-size: 12px;
+  font-weight: normal;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 9999;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  animation: tooltip-fade-in 0.15s ease;
+}
+
+.dark .article-card__tooltip {
+  background: #0f0f1a;
+  color: #f1f5f9;
+}
+
+@keyframes tooltip-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.badge-tooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 6px;
+  background: #ffffff;
+  color: #1a1a2e;
+  font-size: 11px;
+  font-weight: normal;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 9999;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  animation: tooltip-fade-in 0.15s ease;
+}
+
+.dark .badge-tooltip {
+  background: #0f0f1a;
+  color: #f1f5f9;
 }
 </style>

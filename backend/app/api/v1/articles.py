@@ -11,6 +11,7 @@ from app.schemas import (
 )
 from app.utils import get_current_user, get_current_active_user, generate_slug, calculate_reading_time
 from app.utils.helpers import generate_unique_slug
+from app.utils.auth import get_current_user_optional
 from app.services.log_service import LogService
 from app.services.baidu_push_service import baidu_push_service
 from app.utils.cache import cache_manager
@@ -18,6 +19,16 @@ import asyncio
 import os
 import re
 from pypinyin import lazy_pinyin, Style
+
+
+def check_user_liked(db: Session, article_id: int, user_id: Optional[int]) -> bool:
+    from sqlalchemy import and_
+    if user_id:
+        like = db.query(ArticleLike).filter(
+            and_(ArticleLike.article_id == article_id, ArticleLike.user_id == user_id)
+        ).first()
+        return like is not None
+    return False
 from functools import lru_cache
 
 router = APIRouter(prefix="/articles", tags=["Articles"])
@@ -434,7 +445,12 @@ async def get_admin_article(
 
 
 @router.get("/{slug}", response_model=ArticleResponse)
-async def get_article(slug: str, db: Session = Depends(get_db)):
+async def get_article(
+    slug: str, 
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user_optional)
+):
     article = db.query(Article).filter(Article.slug == slug, Article.is_published == True).first()
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
@@ -442,7 +458,13 @@ async def get_article(slug: str, db: Session = Depends(get_db)):
     article.view_count += 1
     db.commit()
     
-    return ArticleResponse.model_validate(article)
+    user_id = current_user.id if current_user else None
+    is_liked = check_user_liked(db, article.id, user_id)
+    
+    response = ArticleResponse.model_validate(article)
+    response.is_liked = is_liked
+    
+    return response
 
 
 @router.post("", response_model=ArticleResponse)
