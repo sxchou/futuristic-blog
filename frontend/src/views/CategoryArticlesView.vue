@@ -271,7 +271,7 @@ const handlePageChange = (page: number) => {
                 v-if="article.cover_image"
                 :class="[
                   isStackedLayout 
-                    ? 'relative w-full h-40 sm:w-56 md:w-64 sm:h-full overflow-hidden rounded-t-lg sm:rounded-lg' 
+                    ? 'relative w-full h-52 sm:w-56 md:w-64 sm:h-full overflow-hidden rounded-t-lg sm:rounded-lg' 
                     : 'absolute inset-0 sm:relative sm:w-56 md:w-64 sm:h-full overflow-hidden rounded-none sm:rounded-lg'
                 ]"
               >
@@ -445,8 +445,7 @@ const handlePageChange = (page: number) => {
                       'article-meta-item article-action-btn relative',
                       isStackedLayout 
                         ? 'text-inherit' 
-                        : 'text-white/70 sm:text-inherit',
-                      { 'text-red-500': article.is_liked }
+                        : 'text-white/70 sm:text-inherit'
                     ]"
                     @click="handleLike($event, article)"
                     @mouseenter="showTooltip(article.id, 'like')"

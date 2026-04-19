@@ -186,54 +186,6 @@
     }
   }
 
-  .article-card__cover {
-    @apply relative overflow-hidden rounded-lg flex-shrink-0;
-  }
-
-  .article-card__cover-img {
-    @apply w-full h-32 object-cover transition-transform duration-500;
-  }
-
-  .article-card__cover-overlay {
-    @apply absolute inset-0 opacity-60;
-    background: linear-gradient(to top, rgba(10, 10, 10, 0.6), transparent);
-  }
-
-  .article-card:hover .article-card__cover-img {
-    transform: scale(1.1);
-  }
-
-  @media (min-width: 640px) {
-    .article-card__cover {
-      @apply w-44 h-28;
-    }
-    .article-card__cover-img {
-      @apply w-44 h-28;
-    }
-    .article-card__cover-overlay {
-      background: linear-gradient(to left, transparent, rgba(0, 0, 0, 0.12));
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .article-card__cover {
-      width: 12rem;
-      height: 7.5rem;
-    }
-    .article-card__cover-img {
-      width: 12rem;
-      height: 7.5rem;
-    }
-  }
-
-  .article-card-title {
-    @apply text-lg font-bold text-gray-900 dark:text-white leading-snug mb-2 group-hover:text-primary transition-colors line-clamp-2;
-  }
-
-  .article-card-excerpt {
-    @apply text-gray-500 dark:text-gray-400 text-sm leading-relaxed mb-3 line-clamp-2;
-  }
-
   .article-meta {
     @apply flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500;
   }
