@@ -110,17 +110,53 @@
       </div>
     </main>
     
-    <footer class="border-t border-gray-200 dark:border-white/5 py-6">
-      <div class="blog-container">
-        <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-          <div class="h-4 w-48 bg-gray-200 dark:bg-dark-300 rounded animate-pulse" />
-          <div class="flex gap-4">
-            <div
-              v-for="i in 4"
-              :key="i"
-              class="w-6 h-6 bg-gray-200 dark:bg-dark-300 rounded animate-pulse"
-            />
+    <footer class="border-t border-gray-200/60 dark:border-white/5 bg-gray-50/50 dark:bg-dark-100/50">
+      <div class="blog-container py-10">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+          <div class="md:col-span-5">
+            <div class="flex items-center gap-2.5 mb-3">
+              <div class="w-7 h-7 rounded-lg bg-gray-200 dark:bg-dark-300 animate-pulse" />
+              <div class="h-4 w-24 bg-gray-200 dark:bg-dark-300 rounded animate-pulse" />
+            </div>
+            <div class="space-y-2 mb-4">
+              <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-full" />
+              <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-4/5" />
+            </div>
+            <div class="flex gap-2">
+              <div
+                v-for="i in 4"
+                :key="i"
+                class="w-8 h-8 rounded-lg bg-gray-200 dark:bg-dark-300 animate-pulse"
+              />
+            </div>
           </div>
+          
+          <div class="md:col-span-3">
+            <div class="h-4 w-12 bg-gray-200 dark:bg-dark-300 rounded mb-3 animate-pulse" />
+            <div class="space-y-2">
+              <div
+                v-for="i in 5"
+                :key="i"
+                class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-16"
+              />
+            </div>
+          </div>
+          
+          <div class="md:col-span-4">
+            <div class="h-4 w-16 bg-gray-200 dark:bg-dark-300 rounded mb-3 animate-pulse" />
+            <div class="flex flex-wrap gap-1.5">
+              <div
+                v-for="i in 6"
+                :key="i"
+                class="h-5 w-14 bg-gray-200 dark:bg-dark-300 rounded-full animate-pulse"
+              />
+            </div>
+          </div>
+        </div>
+        
+        <div class="mt-8 pt-6 border-t border-gray-200/60 dark:border-white/5 flex flex-col sm:flex-row justify-between items-center gap-2">
+          <div class="h-3 w-48 bg-gray-200 dark:bg-dark-300 rounded animate-pulse" />
+          <div class="h-3 w-40 bg-gray-200 dark:bg-dark-300 rounded animate-pulse" />
         </div>
       </div>
     </footer>
