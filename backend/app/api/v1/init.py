@@ -332,7 +332,7 @@ def _get_user_interaction_data(user_id: int) -> tuple:
 async def get_init_data(
     page: int = Query(1, ge=1),
     page_size: int = Query(6, ge=1, le=100),
-    featured_page_size: int = Query(5, ge=1, le=20),
+    featured_page_size: int = Query(5, ge=0, le=20),
     db: Session = Depends(get_db),
     current_user: Optional[User] = Depends(get_current_user_optional)
 ):
