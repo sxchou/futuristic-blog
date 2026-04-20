@@ -63,6 +63,50 @@ const prevSlide = () => {
   }
 }
 
+const touchStartX = ref(0)
+const touchEndX = ref(0)
+const isSwiping = ref(false)
+const hasSwiped = ref(false)
+
+const handleTouchStart = (e: TouchEvent) => {
+  touchStartX.value = e.touches[0].clientX
+  isSwiping.value = true
+  hasSwiped.value = false
+}
+
+const handleTouchMove = (e: TouchEvent) => {
+  if (!isSwiping.value) return
+  touchEndX.value = e.touches[0].clientX
+}
+
+const handleTouchEnd = () => {
+  if (!isSwiping.value) return
+  isSwiping.value = false
+  
+  const swipeThreshold = 50
+  const diff = touchStartX.value - touchEndX.value
+  
+  if (Math.abs(diff) > swipeThreshold) {
+    hasSwiped.value = true
+    if (diff > 0) {
+      nextSlide()
+    } else {
+      prevSlide()
+    }
+  }
+  
+  touchStartX.value = 0
+  touchEndX.value = 0
+}
+
+const handleCarouselClick = (e: MouseEvent) => {
+  if (hasSwiped.value) {
+    e.preventDefault()
+    e.stopPropagation()
+    hasSwiped.value = false
+  }
+}
+
 const formatDate = (date: string) => formatDateShort(date)
 
 const handleLike = async (e: Event, article: any) => {
@@ -232,10 +276,16 @@ const handlePageChange = (page: number) => {
           v-if="featuredArticles.length > 0"
           class="mb-6"
         >
-          <div class="glass-card overflow-hidden">
+          <div 
+            class="glass-card overflow-hidden select-none"
+            @touchstart="handleTouchStart"
+            @touchmove="handleTouchMove"
+            @touchend="handleTouchEnd"
+          >
             <router-link
               :to="`/article/${currentFeatured?.slug}`"
               class="block group"
+              @click="handleCarouselClick"
             >
               <Transition
                 name="carousel-fade"
