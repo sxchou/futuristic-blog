@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { marked } from 'marked'
-import hljs from 'highlight.js'
+import hljs from '@/utils/hljs'
 import DOMPurify from 'dompurify'
 
 const props = withDefaults(defineProps<{

@@ -650,6 +650,21 @@ onMounted(() => {
   document.addEventListener('click', handleClickOutside)
   document.addEventListener('mousemove', handleDragMove)
   document.addEventListener('mouseup', handleDragEnd)
+  
+  if (!document.getElementById('fa-stylesheet')) {
+    const faLink = document.createElement('link')
+    faLink.id = 'fa-stylesheet'
+    faLink.rel = 'stylesheet'
+    faLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
+    document.head.appendChild(faLink)
+  }
+  if (!document.getElementById('material-icons-stylesheet')) {
+    const miLink = document.createElement('link')
+    miLink.id = 'material-icons-stylesheet'
+    miLink.rel = 'stylesheet'
+    miLink.href = 'https://fonts.googleapis.com/icon?family=Material+Icons'
+    document.head.appendChild(miLink)
+  }
 })
 
 onUnmounted(() => {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { marked } from 'marked'
-import hljs from 'highlight.js'
+import hljs from '@/utils/hljs'
 import DOMPurify from 'dompurify'
 import { useRoute, useRouter } from 'vue-router'
 import { articleApi, likeApi, bookmarkApi, fileApi } from '@/api'

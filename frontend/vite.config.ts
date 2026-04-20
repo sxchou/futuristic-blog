@@ -10,6 +10,11 @@ export default defineConfig({
       algorithms: ['gzip'],
       threshold: 1024,
       deleteOriginalAssets: false
+    }),
+    compression({
+      algorithms: ['brotliCompress'],
+      threshold: 1024,
+      deleteOriginalAssets: false
     })
   ],
   resolve: {
@@ -76,6 +81,9 @@ export default defineConfig({
             if (id.includes('pdfjs') || id.includes('mammoth') || id.includes('xlsx') || id.includes('jszip')) {
               return 'document-libs'
             }
+            if (id.includes('cropperjs')) {
+              return 'cropperjs'
+            }
             return 'vendor'
           }
         },
@@ -104,8 +112,8 @@ export default defineConfig({
     cssMinify: true
   },
   optimizeDeps: {
-    include: ['vue', 'vue-router', 'pinia', 'axios', 'marked', 'highlight.js', 'dompurify'],
-    exclude: ['@iconify/json']
+    include: ['vue', 'vue-router', 'pinia', 'axios', 'marked', 'dompurify'],
+    exclude: ['@iconify/json', 'highlight.js']
   },
   css: {
     devSourcemap: false

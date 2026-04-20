@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { marked } from 'marked'
-import hljs from 'highlight.js'
+import hljs from '@/utils/hljs'
 import DOMPurify from 'dompurify'
 
 const props = defineProps<{
