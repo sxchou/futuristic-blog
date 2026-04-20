@@ -43,11 +43,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <AppSkeleton v-if="!isAppReady && !isAdminPage" />
-  <div
-    v-else
-    class="min-h-screen bg-white dark:bg-dark-100 flex flex-col transition-colors duration-300"
-  >
+  <div class="min-h-screen bg-white dark:bg-dark-100 flex flex-col transition-colors duration-300">
     <template v-if="!isAdminPage">
       <ReadingProgress />
       <Navbar />
@@ -84,6 +80,10 @@ onUnmounted(() => {
     <Footer v-if="!isAdminPage" />
     <GlobalSearch v-if="!isAdminPage" />
     <ModalDialog />
+    
+    <Transition name="skeleton-fade">
+      <AppSkeleton v-if="!isAppReady && !isAdminPage" />
+    </Transition>
   </div>
 </template>
 
@@ -95,6 +95,16 @@ onUnmounted(() => {
 
 .fade-enter-from,
 .fade-leave-to {
+  opacity: 0;
+}
+
+.skeleton-fade-enter-active,
+.skeleton-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.skeleton-fade-enter-from,
+.skeleton-fade-leave-to {
   opacity: 0;
 }
 </style>

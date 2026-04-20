@@ -2,7 +2,7 @@
 </script>
 
 <template>
-  <div class="min-h-screen bg-white dark:bg-dark-100 flex flex-col">
+  <div class="fixed inset-0 z-[100] bg-white dark:bg-dark-100 flex flex-col overflow-hidden">
     <header class="fixed top-0 left-0 right-0 z-50 bg-white/90 dark:bg-dark-100/90 backdrop-blur-xl border-b border-gray-200/60 dark:border-white/5">
       <nav class="blog-container py-3">
         <div class="flex items-center justify-between">
