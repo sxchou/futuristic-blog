@@ -41,9 +41,7 @@ const isStackedLayout = computed(() => siteConfigStore.mobileArticleLayout === '
 
 const isInitializing = computed(() => !initStore.isCoreInitialized)
 
-const featuredArticlesList = computed(() => 
-  blogStore.articles.filter(a => a.is_featured).slice(0, 5)
-)
+const featuredArticlesList = computed(() => blogStore.featuredArticles.slice(0, 5))
 
 const currentSlide = ref(0)
 let slideInterval: ReturnType<typeof setInterval> | null = null
@@ -371,24 +369,24 @@ const handlePageChange = (page: number) => {
             
             <div
               v-if="featuredArticles.length > 1"
-              class="flex items-center justify-between px-3 py-2 border-t border-gray-100 dark:border-white/5"
+              class="flex items-center justify-between px-2 py-1 border-t border-gray-100 dark:border-white/5"
             >
-              <div class="flex gap-1.5">
+              <div class="flex gap-1">
                 <button
                   v-for="(_, index) in featuredArticles"
                   :key="index"
-                  class="h-1.5 rounded-full transition-all duration-300"
-                  :class="currentSlide === index ? 'bg-primary w-4' : 'bg-gray-300 dark:bg-gray-600 w-1.5 hover:bg-primary/50'"
+                  class="h-1 rounded-full transition-all duration-300"
+                  :class="currentSlide === index ? 'bg-primary w-3' : 'bg-gray-300 dark:bg-gray-600 w-1 hover:bg-primary/50'"
                   @click="currentSlide = index"
                 />
               </div>
-              <div class="flex gap-1">
+              <div class="flex gap-0.5">
                 <button
-                  class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 text-gray-400 hover:text-primary transition-colors active:scale-95"
+                  class="p-0.5 rounded hover:bg-gray-100 dark:hover:bg-dark-300 text-gray-400 hover:text-primary transition-colors"
                   @click="prevSlide"
                 >
                   <svg
-                    class="w-4 h-4"
+                    class="w-3 h-3"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -400,11 +398,11 @@ const handlePageChange = (page: number) => {
                   /></svg>
                 </button>
                 <button
-                  class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-300 text-gray-400 hover:text-primary transition-colors active:scale-95"
+                  class="p-0.5 rounded hover:bg-gray-100 dark:hover:bg-dark-300 text-gray-400 hover:text-primary transition-colors"
                   @click="nextSlide"
                 >
                   <svg
-                    class="w-4 h-4"
+                    class="w-3 h-3"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"

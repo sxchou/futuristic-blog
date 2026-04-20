@@ -26,7 +26,7 @@ export const useInitStore = defineStore('init', () => {
         const data: InitResponse = await initApi.getInitData({
           page: 1,
           page_size: 100,
-          featured_page_size: 0
+          featured_page_size: 5
         })
         
         const siteConfigStore = useSiteConfigStore()
@@ -59,6 +59,10 @@ export const useInitStore = defineStore('init', () => {
             total: data.articles.total,
             totalPages: data.articles.total_pages
           }
+        }
+        
+        if (data.featured_articles && data.featured_articles.items.length > 0) {
+          blogStore.featuredArticles = data.featured_articles.items
         }
         
         if (data.github_stats) {

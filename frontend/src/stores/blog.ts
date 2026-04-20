@@ -23,8 +23,7 @@ export const useBlogStore = defineStore('blog', () => {
     total: 0,
     totalPages: 0
   })
-
-  const featuredArticles = computed(() => articles.value.filter(a => a.is_featured))
+  const featuredArticles = ref<ArticleListItem[]>([])
 
   const fetchArticles = async (params?: {
     page?: number
