@@ -33,7 +33,8 @@ def get_announcements(
     announcements = query.order_by(Announcement.order, Announcement.created_at.desc()).all()
     result = [AnnouncementResponse.model_validate(a) for a in announcements]
     
-    cache_manager.set(CACHE_NAME, cache_key, [r.model_dump() for r in result])
+    if result:
+        cache_manager.set(CACHE_NAME, cache_key, [r.model_dump() for r in result])
     return result
 
 

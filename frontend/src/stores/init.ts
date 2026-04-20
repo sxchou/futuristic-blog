@@ -44,7 +44,7 @@ export const useInitStore = defineStore('init', () => {
           blogStore.tags = data.tags
         }
         
-        if (data.announcements) {
+        if (data.announcements && data.announcements.length > 0) {
           blogStore.announcements = data.announcements
         }
         

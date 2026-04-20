@@ -90,6 +90,10 @@ onMounted(async () => {
     await blogStore.fetchArticles({ page: 1, page_size: 100 })
   }
   
+  if (blogStore.announcements.length === 0) {
+    await blogStore.fetchAnnouncements()
+  }
+  
   if (authStore.isAuthenticated && !userProfileStore.profile) {
     userProfileStore.fetchProfile()
   }

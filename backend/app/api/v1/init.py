@@ -138,7 +138,8 @@ def _get_announcements_cached(active_only: bool = True) -> List[AnnouncementResp
         announcements = query.order_by(Announcement.order, Announcement.created_at.desc()).all()
         result = [AnnouncementResponse.model_validate(a) for a in announcements]
         
-        cache_manager.set("announcements", cache_key, [r.model_dump() for r in result])
+        if result:
+            cache_manager.set("announcements", cache_key, [r.model_dump() for r in result])
         return result
     finally:
         db.close()
