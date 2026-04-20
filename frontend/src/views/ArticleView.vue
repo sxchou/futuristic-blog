@@ -472,16 +472,13 @@ const updateActiveHeading = () => {
   }
 }
 
-onMounted(async () => {
-  document.addEventListener('click', handleCopyCode)
-  document.addEventListener('click', handleFileLinkClick)
-  window.addEventListener('scroll', updateActiveHeading, { passive: true })
-  window.addEventListener('resize', updateCoverHeight, { passive: true })
+const loadArticle = async (slug: string) => {
+  loading.value = true
+  error.value = null
+  article.value = null
+  tocItems.value = []
+  articleFiles.value = []
   
-  const highlight = route.query.highlight as string
-  if (highlight) highlightKeyword.value = highlight
-  
-  const slug = route.params.slug as string
   try {
     article.value = await articleApi.getArticle(slug)
     likeCount.value = article.value?.like_count || 0
@@ -510,6 +507,19 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
+}
+
+onMounted(async () => {
+  document.addEventListener('click', handleCopyCode)
+  document.addEventListener('click', handleFileLinkClick)
+  window.addEventListener('scroll', updateActiveHeading, { passive: true })
+  window.addEventListener('resize', updateCoverHeight, { passive: true })
+  
+  const highlight = route.query.highlight as string
+  if (highlight) highlightKeyword.value = highlight
+  
+  const slug = route.params.slug as string
+  await loadArticle(slug)
   
   if (route.hash) {
     if (route.hash === '#comments') {
@@ -521,6 +531,15 @@ onMounted(async () => {
       const commentId = parseInt(route.hash.replace('#comment-', ''), 10)
       if (!isNaN(commentId)) scrollToComment(commentId)
     }
+  }
+})
+
+watch(() => route.params.slug, async (newSlug, oldSlug) => {
+  if (newSlug && newSlug !== oldSlug) {
+    const highlight = route.query.highlight as string
+    highlightKeyword.value = highlight || ''
+    await loadArticle(newSlug as string)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 })
 

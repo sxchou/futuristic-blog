@@ -320,7 +320,7 @@ onMounted(() => {
       </h3>
       
       <a
-        :href="siteConfigStore.githubStats?.html_url"
+        :href="siteConfigStore.githubRepoUrl"
         target="_blank"
         rel="noopener noreferrer"
         class="block group"

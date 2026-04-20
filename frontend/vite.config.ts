@@ -112,8 +112,8 @@ export default defineConfig({
     cssMinify: true
   },
   optimizeDeps: {
-    include: ['vue', 'vue-router', 'pinia', 'axios', 'marked', 'dompurify'],
-    exclude: ['@iconify/json', 'highlight.js']
+    include: ['vue', 'vue-router', 'pinia', 'axios', 'marked', 'dompurify', 'highlight.js'],
+    exclude: ['@iconify/json']
   },
   css: {
     devSourcemap: false

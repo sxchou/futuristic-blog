@@ -105,6 +105,7 @@ onMounted(async () => {
 
         <div class="flex flex-wrap justify-center gap-2 mb-8">
           <button
+            v-if="!loading"
             class="px-3 py-1.5 text-sm rounded-full border transition-all duration-300 flex items-center gap-1.5"
             :class="activeCategory === null
               ? 'bg-primary/20 border-primary text-primary'
@@ -126,8 +127,18 @@ onMounted(async () => {
             </svg>
             全部
           </button>
+          <template v-if="loading">
+            <div
+              v-for="i in 4"
+              :key="i"
+              class="px-3 py-1.5 text-sm rounded-full border bg-gray-100 dark:bg-dark-100/50 border-gray-200 dark:border-white/10 animate-pulse"
+            >
+              <span class="inline-block w-12 h-4 bg-gray-200 dark:bg-dark-300 rounded" />
+            </div>
+          </template>
           <button
             v-for="category in activeCategories"
+            v-else
             :key="category.id"
             class="px-3 py-1.5 text-sm rounded-full border transition-all duration-300 flex items-center gap-1.5"
             :class="activeCategory === category.id

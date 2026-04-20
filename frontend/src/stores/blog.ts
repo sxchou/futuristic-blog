@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { articleApi, categoryApi, tagApi, announcementApi } from '@/api'
 import type { ArticleListItem, Category, Tag } from '@/types'
 import type { Announcement } from '@/api/announcements'
