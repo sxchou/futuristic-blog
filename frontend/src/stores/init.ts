@@ -25,7 +25,7 @@ export const useInitStore = defineStore('init', () => {
       try {
         const data: InitResponse = await initApi.getInitData({
           page: 1,
-          page_size: 1,
+          page_size: 100,
           featured_page_size: 0
         })
         
@@ -49,6 +49,16 @@ export const useInitStore = defineStore('init', () => {
         
         if (data.announcements && data.announcements.length > 0) {
           blogStore.announcements = data.announcements
+        }
+        
+        if (data.articles) {
+          blogStore.articles = data.articles.items
+          blogStore.pagination = {
+            page: data.articles.page,
+            pageSize: data.articles.page_size,
+            total: data.articles.total,
+            totalPages: data.articles.total_pages
+          }
         }
         
         if (data.github_stats) {
@@ -166,6 +176,10 @@ export const useInitStore = defineStore('init', () => {
     page_size?: number
     featured_page_size?: number
   }) => {
+    if (isCoreInitialized.value && isArticlesInitialized.value) return
+    if (!isCoreInitialized.value) {
+      await initializeCore()
+    }
     return initializeArticles(params)
   }
 

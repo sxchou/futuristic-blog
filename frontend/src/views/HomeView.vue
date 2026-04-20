@@ -39,7 +39,7 @@ const { pageSize } = usePageSize()
 
 const isStackedLayout = computed(() => siteConfigStore.mobileArticleLayout === 'stacked')
 
-const isInitializing = computed(() => initStore.loading && !initStore.isArticlesInitialized)
+const isInitializing = computed(() => !initStore.isCoreInitialized)
 
 const featuredArticlesList = computed(() => 
   blogStore.articles.filter(a => a.is_featured).slice(0, 5)
@@ -188,11 +188,11 @@ watch(() => route.path, async (newPath) => {
 onMounted(async () => {
   const pageFromUrl = parseInt(route.query.page as string) || 1
   
-  await initStore.initialize({ 
-    page: pageFromUrl, 
-    page_size: pageSize.value,
-    featured_page_size: 5
-  })
+  await initStore.initializeCore()
+  
+  if (blogStore.pagination.page !== pageFromUrl || blogStore.pagination.pageSize !== pageSize.value) {
+    await blogStore.fetchArticles({ page: pageFromUrl, page_size: pageSize.value })
+  }
   
   applyInteractionState(blogStore.articles)
   
