@@ -336,52 +336,81 @@ async def get_init_data(
     db: Session = Depends(get_db),
     current_user: Optional[User] = Depends(get_current_user_optional)
 ):
-    loop = asyncio.get_event_loop()
-    
-    public_tasks = [
-        loop.run_in_executor(executor, _get_site_configs_cached),
-        loop.run_in_executor(executor, _get_categories_cached),
-        loop.run_in_executor(executor, _get_tags_cached),
-        loop.run_in_executor(executor, _get_announcements_cached, True),
-        loop.run_in_executor(executor, _get_articles_list, page, page_size, None),
-        loop.run_in_executor(executor, _get_articles_list, 1, featured_page_size, True),
-        loop.run_in_executor(executor, _get_github_stats_cached),
-    ]
-    
-    public_results = await asyncio.gather(*public_tasks)
-    
-    site_config = public_results[0]
-    categories = public_results[1]
-    tags = public_results[2]
-    announcements = public_results[3]
-    articles = public_results[4]
-    featured_articles = public_results[5]
-    github_stats = public_results[6]
-    
-    user_profile = None
-    liked_article_ids = None
-    bookmarked_article_ids = None
-    
-    if current_user:
-        user_tasks = [
-            loop.run_in_executor(executor, _get_user_profile_data, current_user.id, current_user.username),
-            loop.run_in_executor(executor, _get_user_interaction_data, current_user.id),
+    try:
+        loop = asyncio.get_running_loop()
+        
+        public_tasks = [
+            loop.run_in_executor(executor, _get_site_configs_cached),
+            loop.run_in_executor(executor, _get_categories_cached),
+            loop.run_in_executor(executor, _get_tags_cached),
+            loop.run_in_executor(executor, _get_announcements_cached, True),
+            loop.run_in_executor(executor, _get_articles_list, page, page_size, None),
+            loop.run_in_executor(executor, _get_articles_list, 1, featured_page_size, True),
+            loop.run_in_executor(executor, _get_github_stats_cached),
         ]
         
-        user_results = await asyncio.gather(*user_tasks)
+        public_results = await asyncio.gather(*public_tasks, return_exceptions=True)
         
-        user_profile = user_results[0]
-        liked_article_ids, bookmarked_article_ids = user_results[1]
-    
-    return InitResponse(
-        site_config=site_config,
-        categories=categories,
-        tags=tags,
-        announcements=announcements,
-        articles=articles,
-        featured_articles=featured_articles,
-        github_stats=github_stats,
-        user_profile=user_profile,
-        liked_article_ids=liked_article_ids,
-        bookmarked_article_ids=bookmarked_article_ids
-    )
+        for i, result in enumerate(public_results):
+            if isinstance(result, Exception):
+                logger.error(f"Task {i} failed: {result}")
+                public_results[i] = _get_default_for_task(i)
+        
+        site_config = public_results[0]
+        categories = public_results[1]
+        tags = public_results[2]
+        announcements = public_results[3]
+        articles = public_results[4]
+        featured_articles = public_results[5]
+        github_stats = public_results[6]
+        
+        user_profile = None
+        liked_article_ids = None
+        bookmarked_article_ids = None
+        
+        if current_user:
+            user_tasks = [
+                loop.run_in_executor(executor, _get_user_profile_data, current_user.id, current_user.username),
+                loop.run_in_executor(executor, _get_user_interaction_data, current_user.id),
+            ]
+            
+            user_results = await asyncio.gather(*user_tasks, return_exceptions=True)
+            
+            if not isinstance(user_results[0], Exception):
+                user_profile = user_results[0]
+            else:
+                logger.error(f"User profile task failed: {user_results[0]}")
+            
+            if not isinstance(user_results[1], Exception):
+                liked_article_ids, bookmarked_article_ids = user_results[1]
+            else:
+                logger.error(f"User interaction task failed: {user_results[1]}")
+        
+        return InitResponse(
+            site_config=site_config,
+            categories=categories,
+            tags=tags,
+            announcements=announcements,
+            articles=articles,
+            featured_articles=featured_articles,
+            github_stats=github_stats,
+            user_profile=user_profile,
+            liked_article_ids=liked_article_ids,
+            bookmarked_article_ids=bookmarked_article_ids
+        )
+    except Exception as e:
+        logger.exception(f"Init endpoint error: {e}")
+        raise
+
+
+def _get_default_for_task(task_index: int):
+    defaults = [
+        [],  # site_config
+        [],  # categories
+        [],  # tags
+        [],  # announcements
+        PaginatedResponse(items=[], total=0, page=1, page_size=6, total_pages=0),  # articles
+        PaginatedResponse(items=[], total=0, page=1, page_size=5, total_pages=0),  # featured_articles
+        {"enabled": False, "stars": 0, "forks": 0, "watchers": 0, "open_issues": 0},  # github_stats
+    ]
+    return defaults[task_index] if task_index < len(defaults) else None
