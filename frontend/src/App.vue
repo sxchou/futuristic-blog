@@ -1,19 +1,23 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, computed } from 'vue'
+import { onMounted, onUnmounted, computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useSessionManager, useActivityTracker } from '@/composables/useSessionManager'
+import { useInitStore } from '@/stores'
 import Navbar from '@/components/common/Navbar.vue'
 import Footer from '@/components/common/Footer.vue'
 import GlobalSearch from '@/components/common/GlobalSearch.vue'
 import ReadingProgress from '@/components/common/ReadingProgress.vue'
 import ModalDialog from '@/components/common/ModalDialog.vue'
+import AppSkeleton from '@/components/common/AppSkeleton.vue'
 
 const route = useRoute()
+const initStore = useInitStore()
 
 useSessionManager()
 useActivityTracker()
 
 const isAdminPage = computed(() => route.path.startsWith('/admin'))
+const isAppReady = ref(false)
 
 const handleKeydown = (e: KeyboardEvent) => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -25,8 +29,12 @@ const handleKeydown = (e: KeyboardEvent) => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   document.addEventListener('keydown', handleKeydown)
+  
+  await initStore.initializeCore()
+  
+  isAppReady.value = true
 })
 
 onUnmounted(() => {
@@ -35,7 +43,11 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-white dark:bg-dark-100 flex flex-col transition-colors duration-300">
+  <AppSkeleton v-if="!isAppReady && !isAdminPage" />
+  <div
+    v-else
+    class="min-h-screen bg-white dark:bg-dark-100 flex flex-col transition-colors duration-300"
+  >
     <template v-if="!isAdminPage">
       <ReadingProgress />
       <Navbar />

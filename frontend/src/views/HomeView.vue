@@ -39,7 +39,7 @@ const { pageSize } = usePageSize()
 
 const isStackedLayout = computed(() => siteConfigStore.mobileArticleLayout === 'stacked')
 
-const isInitializing = computed(() => initStore.loading && !initStore.isInitialized)
+const isInitializing = computed(() => initStore.loading && !initStore.isArticlesInitialized)
 
 const featuredArticlesList = computed(() => 
   blogStore.articles.filter(a => a.is_featured).slice(0, 5)
