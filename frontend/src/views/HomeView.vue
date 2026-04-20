@@ -5,6 +5,7 @@ import { useBlogStore, useAuthStore, useUserInteractionStore, useSiteConfigStore
 import BlogSidebar from '@/components/common/BlogSidebar.vue'
 import LeftSidebar from '@/components/common/LeftSidebar.vue'
 import Pagination from '@/components/common/Pagination.vue'
+import HomeSkeleton from '@/components/common/HomeSkeleton.vue'
 import { usePageSize } from '@/composables/usePageSize'
 import { formatDateShort } from '@/utils/date'
 import { getMediaUrl } from '@/utils/media'
@@ -37,6 +38,8 @@ const isTooltipVisible = (articleId: number, action: string) => {
 const { pageSize } = usePageSize()
 
 const isStackedLayout = computed(() => siteConfigStore.mobileArticleLayout === 'stacked')
+
+const isInitializing = computed(() => initStore.loading && !initStore.isInitialized)
 
 const featuredArticlesList = computed(() => 
   blogStore.articles.filter(a => a.is_featured).slice(0, 5)
@@ -209,7 +212,15 @@ const handlePageChange = (page: number) => {
 </script>
 
 <template>
-  <div class="flex flex-col lg:flex-row gap-6">
+  <HomeSkeleton
+    v-if="isInitializing"
+    :show-featured="true"
+    :article-count="6"
+  />
+  <div
+    v-else
+    class="flex flex-col lg:flex-row gap-6"
+  >
       <div class="lg:w-72 flex-shrink-0 hidden lg:block lg:order-1">
         <div class="lg:sticky lg:top-20">
           <LeftSidebar />
