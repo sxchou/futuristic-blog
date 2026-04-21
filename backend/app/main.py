@@ -225,6 +225,15 @@ async def startup_event():
     logger.info(f"Database URL: {str(engine.url)[:50]}...")
     logger.info(f"IS_VERCEL: {IS_VERCEL}, IS_RENDER: {IS_RENDER}, IS_CLOUD_PLATFORM: {IS_CLOUD_PLATFORM}")
     
+    from app.utils.error_email_handler import setup_error_email_handler
+    setup_error_email_handler(
+        min_level=logging.WARNING,
+        cooldown_seconds=300,
+        batch_seconds=60,
+        max_batch_size=10
+    )
+    logger.info("Error email handler initialized")
+    
     if IS_CLOUD_PLATFORM:
         logger.info("Running in cloud platform environment, executing synchronous initialization...")
         try:

@@ -3,7 +3,6 @@
     <div
       v-if="modelValue"
       class="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm"
-      @click.self="handleCancel"
     >
       <div
         class="bg-white dark:bg-dark-100 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col"

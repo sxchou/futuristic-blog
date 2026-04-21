@@ -163,10 +163,31 @@ class EmailService:
         
         logger.info(f"Sending email via SMTP to {to_email}")
         
-        with smtplib.SMTP(smtp_host, smtp_port) as server:
-            server.starttls()
-            server.login(smtp_user, smtp_password)
-            server.sendmail(from_email, to_email, msg.as_string())
+        use_ssl = smtp_port == 465
+        
+        try:
+            if use_ssl:
+                server = smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=30)
+                server.login(smtp_user, smtp_password)
+                server.sendmail(from_email, to_email, msg.as_string())
+                server.quit()
+            else:
+                server = smtplib.SMTP(smtp_host, smtp_port, timeout=30)
+                server.ehlo()
+                server.starttls()
+                server.ehlo()
+                server.login(smtp_user, smtp_password)
+                server.sendmail(from_email, to_email, msg.as_string())
+                server.quit()
+        except smtplib.SMTPAuthenticationError as e:
+            logger.error(f"SMTP authentication failed: {e}")
+            raise Exception(f"SMTP 认证失败，请检查邮箱和授权码是否正确")
+        except smtplib.SMTPConnectError as e:
+            logger.error(f"SMTP connection failed: {e}")
+            raise Exception(f"SMTP 连接失败，请检查网络或 SMTP 服务器地址")
+        except TimeoutError as e:
+            logger.error(f"SMTP connection timeout: {e}")
+            raise Exception(f"SMTP 连接超时，请检查网络连接")
         
         logger.info(f"SMTP email sent successfully to {to_email}")
         return {
@@ -286,6 +307,10 @@ class EmailService:
             log.status = 'failed'
             log.error_message = str(e)
             logger.error(f"Failed to send email to {to_email}: {e}")
+            logger.error(
+                f"邮件发送失败通知 | 类型: {email_type} | 收件人: {to_email} | "
+                f"主题: {subject[:50]}{'...' if len(subject) > 50 else ''} | 错误: {str(e)}"
+            )
             return False
         finally:
             db.add(log)
@@ -1271,3 +1296,168 @@ class EmailService:
             email_type='oauth_verification',
             recipient_name=username
         )
+
+    @staticmethod
+    def send_error_log_notification_db(
+        db: Session,
+        error_logs: list
+    ) -> bool:
+        """
+        发送错误日志通知邮件给管理员
+        
+        Args:
+            db: 数据库会话
+            error_logs: 错误日志列表，每个元素包含:
+                - level: 日志级别 (WARNING/ERROR/CRITICAL)
+                - logger: 日志记录器名称
+                - message: 错误消息
+                - file: 文件路径
+                - line: 行号
+                - function: 函数名
+                - time: 时间戳
+        
+        Returns:
+            bool: 是否发送成功
+        """
+        from app.models import User
+        
+        site_name = EmailService.get_site_name(db)
+        current_year = EmailService.get_current_year()
+        
+        admin_users = db.query(User).filter(User.is_admin == True).all()
+        
+        if not admin_users:
+            logger.warning("No admin users found to notify about errors")
+            return False
+        
+        error_count = len(error_logs)
+        warning_count = sum(1 for log in error_logs if log.get('level') == 'WARNING')
+        critical_count = sum(1 for log in error_logs if log.get('level') == 'CRITICAL')
+        actual_error_count = error_count - warning_count
+        
+        level_emoji = {
+            'WARNING': '⚠️',
+            'ERROR': '❌',
+            'CRITICAL': '🚨'
+        }
+        
+        logs_html = ""
+        for i, log in enumerate(error_logs[:10], 1):
+            emoji = level_emoji.get(log.get('level', 'ERROR'), '❌')
+            level_color = 'orange' if log.get('level') == 'WARNING' else 'red'
+            
+            logs_html += f"""
+            <div class="error-item">
+                <div class="error-header">
+                    <span class="error-level" style="background-color: {level_color};">{emoji} {log.get('level')}</span>
+                    <span class="error-time">{datetime.fromtimestamp(log.get('time', 0)).strftime('%Y-%m-%d %H:%M:%S')}</span>
+                </div>
+                <div class="error-logger">Logger: {log.get('logger', 'unknown')}</div>
+                <div class="error-message">{log.get('message', '')}</div>
+                <div class="error-location">
+                    <span>📁 {log.get('file', 'unknown')}:{log.get('line', 0)}</span>
+                    <span>🔧 {log.get('function', 'unknown')}()</span>
+                </div>
+            </div>
+            """
+        
+        if error_count > 10:
+            logs_html += f"""
+            <div class="more-errors">
+                <p>... 还有 {error_count - 10} 条错误未显示</p>
+            </div>
+            """
+        
+        text_content = f"""
+错误日志通知
+
+网站: {site_name}
+错误总数: {error_count}
+- 警告: {warning_count}
+- 错误: {actual_error_count}
+- 严重错误: {critical_count}
+
+请登录管理后台查看详情。
+
+{site_name}
+"""
+        
+        html_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; color: #333333; padding: 20px; margin: 0; }}
+        .container {{ max-width: 700px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; padding: 40px; border: 1px solid #e0e0e0; }}
+        .logo {{ font-size: 24px; font-weight: bold; color: #dc2626; margin-bottom: 30px; }}
+        .title {{ font-size: 20px; margin-bottom: 20px; color: #dc2626; }}
+        .stats {{ display: flex; gap: 20px; margin: 20px 0; flex-wrap: wrap; }}
+        .stat-box {{ flex: 1; min-width: 120px; background-color: #fef2f2; border-radius: 8px; padding: 15px; text-align: center; border: 1px solid #fecaca; }}
+        .stat-number {{ font-size: 28px; font-weight: bold; color: #dc2626; }}
+        .stat-label {{ font-size: 14px; color: #666666; margin-top: 5px; }}
+        .error-item {{ background-color: #fafafa; border-radius: 8px; padding: 15px; margin: 15px 0; border-left: 4px solid #dc2626; }}
+        .error-header {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px; }}
+        .error-level {{ color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; }}
+        .error-time {{ color: #666666; font-size: 12px; }}
+        .error-logger {{ color: #6b7280; font-size: 13px; margin-bottom: 8px; font-family: monospace; }}
+        .error-message {{ background-color: #1f2937; color: #f9fafb; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 13px; white-space: pre-wrap; word-break: break-all; overflow-x: auto; }}
+        .error-location {{ margin-top: 10px; font-size: 12px; color: #6b7280; display: flex; gap: 15px; flex-wrap: wrap; }}
+        .more-errors {{ text-align: center; padding: 15px; color: #6b7280; font-style: italic; }}
+        .footer {{ margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 14px; color: #666666; }}
+        p {{ line-height: 1.6; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🚨 {site_name} - 错误日志通知</div>
+        <h1 class="title">检测到 {error_count} 条错误日志</h1>
+        
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-number">{error_count}</div>
+                <div class="stat-label">总计</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number" style="color: #f59e0b;">{warning_count}</div>
+                <div class="stat-label">警告</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number" style="color: #dc2626;">{actual_error_count}</div>
+                <div class="stat-label">错误</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number" style="color: #7f1d1d;">{critical_count}</div>
+                <div class="stat-label">严重</div>
+            </div>
+        </div>
+        
+        <h2 style="color: #333; margin-top: 30px;">错误详情</h2>
+        {logs_html}
+        
+        <div class="footer">
+            <p>此邮件为系统自动发送，请勿回复。</p>
+            <p>建议及时检查并修复相关错误。</p>
+            <p>© {current_year} {site_name}. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+        
+        success = True
+        for admin in admin_users:
+            result = EmailService.send_email(
+                db=db,
+                to_email=admin.email,
+                subject=f"🚨 [{site_name}] 错误日志通知 ({error_count}条)",
+                html_content=html_content,
+                text_content=text_content,
+                email_type='error_log',
+                recipient_name=admin.username,
+                user_id=admin.id
+            )
+            if not result:
+                success = False
+        
+        return success

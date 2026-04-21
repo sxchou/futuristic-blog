@@ -686,8 +686,8 @@ async def translate_to_english(text: str) -> str:
     translated = None
     
     async with httpx.AsyncClient() as client:
-        google_task = translate_with_google(text, client)
-        mymemory_task = translate_with_mymemory(text, client)
+        google_task = asyncio.create_task(translate_with_google(text, client))
+        mymemory_task = asyncio.create_task(translate_with_mymemory(text, client))
         
         done, pending = await asyncio.wait(
             [google_task, mymemory_task],
