@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Table, UniqueConstraint, Float, Enum as SQLEnum, JSON, Index
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -6,7 +6,7 @@ import enum
 
 
 def get_db_now():
-    return datetime.utcnow()
+    return datetime.now(timezone.utc)
 
 
 article_tags = Table(

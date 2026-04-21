@@ -3,7 +3,7 @@ Timezone Configuration Test Cases
 Tests for verifying timezone consistency across the application
 """
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from app.utils.timezone import get_db_now, get_now, to_local, to_utc, get_today_start, get_today_end
 from app.core.config import settings
@@ -79,7 +79,7 @@ class TestDatabaseTimeStorage:
         from app.models.models import get_db_now
         
         dt = get_db_now()
-        utc_now = datetime.utcnow()
+        utc_now = datetime.now(timezone.utc)
         
         time_diff = abs((dt - utc_now).total_seconds())
         assert time_diff < 1

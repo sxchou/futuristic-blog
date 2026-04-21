@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore, useSiteConfigStore, useDialogStore } from '@/stores'
 import { authApi } from '@/api'
+import { checkServerHealth } from '@/api/client'
 import { oauthApi } from '@/api/oauth'
 import type { OAuthProviderResponse } from '@/api/oauth'
 import SliderCaptcha from '@/components/common/SliderCaptcha.vue'
@@ -50,6 +51,13 @@ const handleOAuthLogin = async (provider: OAuthProviderResponse) => {
   if (!provider.is_configured || !provider.is_enabled) return
   oauthLoading.value = provider.name
   try {
+    const isHealthy = await checkServerHealth()
+    if (!isHealthy) {
+      await dialog.showError('服务暂时不可用，请稍后重试', '错误')
+      oauthLoading.value = null
+      return
+    }
+
     const response = await oauthApi.getLoginUrl(provider.name)
     window.location.href = response.authorize_url
   } catch (error: any) {
@@ -162,6 +170,13 @@ const handleLogin = async () => {
   isLoading.value = true
 
   try {
+    const isHealthy = await checkServerHealth()
+    if (!isHealthy) {
+      generalError.value = '服务暂时不可用，请稍后重试'
+      isLoading.value = false
+      return
+    }
+
     await authStore.login({
       username: form.value.username,
       password: form.value.password

@@ -329,4 +329,28 @@ export const getCacheStats = () => {
   }
 }
 
+export const checkServerHealth = async (maxRetries = 5): Promise<boolean> => {
+  const healthUrl = getBaseURL().replace('/api/v1', '/health/full')
+  
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const response = await axios.get(healthUrl, { timeout: 60000 })
+      if (response.data?.status === 'healthy' && response.data?.database === 'connected') {
+        return true
+      }
+      if (response.data?.status === 'degraded') {
+        if (i < maxRetries - 1) {
+          await new Promise(resolve => setTimeout(resolve, 2000 * (i + 1)))
+          continue
+        }
+      }
+    } catch (error) {
+      if (i < maxRetries - 1) {
+        await new Promise(resolve => setTimeout(resolve, 2000 * (i + 1)))
+      }
+    }
+  }
+  return false
+}
+
 export default apiClient

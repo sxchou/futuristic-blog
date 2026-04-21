@@ -18,8 +18,8 @@ import time
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import logging
-from contextlib import contextmanager
-from datetime import datetime
+from contextlib import contextmanager, asynccontextmanager
+from datetime import datetime, timezone
 
 IS_VERCEL = os.environ.get("VERCEL") == "1"
 IS_RENDER = os.environ.get("RENDER") == "true"
@@ -33,12 +33,55 @@ logger = logging.getLogger(__name__)
 
 logger.info("Initializing FastAPI application...")
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("=== Application startup event triggered ===")
+    logger.info(f"Database URL: {str(engine.url)[:50]}...")
+    logger.info(f"IS_VERCEL: {IS_VERCEL}, IS_RENDER: {IS_RENDER}, IS_CLOUD_PLATFORM: {IS_CLOUD_PLATFORM}")
+    
+    from app.utils.error_email_handler import setup_error_email_handler
+    setup_error_email_handler(
+        min_level=logging.WARNING,
+        cooldown_seconds=300,
+        batch_seconds=60,
+        max_batch_size=10
+    )
+    logger.info("Error email handler initialized")
+    
+    if IS_CLOUD_PLATFORM:
+        logger.info("Running in cloud platform environment, executing synchronous initialization...")
+        try:
+            logger.info("Creating database tables...")
+            Base.metadata.create_all(bind=engine)
+            logger.info("Database tables created successfully")
+            
+            logger.info("Initializing database data...")
+            init_database()
+            logger.info("Database data initialized successfully")
+            
+            logger.info("Syncing article comment counts...")
+            sync_article_comment_counts()
+            logger.info("Article comment counts synced successfully")
+            
+            logger.info("=== Application initialized successfully for cloud platform ===")
+        except Exception as e:
+            logger.error(f"Database initialization error: {e}", exc_info=True)
+            raise
+    else:
+        logger.info("Running in local environment, executing asynchronous initialization...")
+        asyncio.create_task(background_init())
+    
+    yield
+    
+    logger.info("=== Application shutdown ===")
+
 app = FastAPI(
     title="Futuristic Blog API",
     description="A futuristic personal blog system API",
     version="1.0.0",
     docs_url="/api/docs",
-    redoc_url="/api/redoc"
+    redoc_url="/api/redoc",
+    lifespan=lifespan
 )
 
 logger.info("FastAPI application created")
@@ -219,45 +262,6 @@ if not IS_VERCEL:
         logger.warning(f"Failed to mount uploads directory: {e}")
 
 
-@app.on_event("startup")
-async def startup_event():
-    logger.info("=== Application startup event triggered ===")
-    logger.info(f"Database URL: {str(engine.url)[:50]}...")
-    logger.info(f"IS_VERCEL: {IS_VERCEL}, IS_RENDER: {IS_RENDER}, IS_CLOUD_PLATFORM: {IS_CLOUD_PLATFORM}")
-    
-    from app.utils.error_email_handler import setup_error_email_handler
-    setup_error_email_handler(
-        min_level=logging.WARNING,
-        cooldown_seconds=300,
-        batch_seconds=60,
-        max_batch_size=10
-    )
-    logger.info("Error email handler initialized")
-    
-    if IS_CLOUD_PLATFORM:
-        logger.info("Running in cloud platform environment, executing synchronous initialization...")
-        try:
-            logger.info("Creating database tables...")
-            Base.metadata.create_all(bind=engine)
-            logger.info("Database tables created successfully")
-            
-            logger.info("Initializing database data...")
-            init_database()
-            logger.info("Database data initialized successfully")
-            
-            logger.info("Syncing article comment counts...")
-            sync_article_comment_counts()
-            logger.info("Article comment counts synced successfully")
-            
-            logger.info("=== Application initialized successfully for cloud platform ===")
-        except Exception as e:
-            logger.error(f"Database initialization error: {e}", exc_info=True)
-            raise
-    else:
-        logger.info("Running in local environment, executing asynchronous initialization...")
-        asyncio.create_task(background_init())
-
-
 async def background_init():
     logger.info("Starting background initialization...")
     try:
@@ -321,7 +325,27 @@ async def root():
 @app.api_route("/health", methods=["GET", "HEAD"])
 async def health_check(request: Request):
     logger.info(f"Health check requested from: {request.headers.get('host', 'unknown')}")
-    return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
+    return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat()}
+
+
+@app.api_route("/health/full", methods=["GET", "HEAD"])
+async def health_check_full(request: Request):
+    logger.info(f"Full health check requested from: {request.headers.get('host', 'unknown')}")
+    
+    db_healthy = False
+    try:
+        from sqlalchemy import text
+        with SessionLocal() as db:
+            db.execute(text("SELECT 1"))
+            db_healthy = True
+    except Exception as e:
+        logger.error(f"Database health check failed: {e}")
+    
+    return {
+        "status": "healthy" if db_healthy else "degraded",
+        "database": "connected" if db_healthy else "disconnected",
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
 
 
 @app.get("/api/performance")
@@ -344,7 +368,7 @@ async def get_sitemap():
         
         urls.append({
             'loc': base_url,
-            'lastmod': datetime.utcnow().strftime('%Y-%m-%d'),
+            'lastmod': datetime.now(timezone.utc).strftime('%Y-%m-%d'),
             'changefreq': 'daily',
             'priority': '1.0'
         })
@@ -360,7 +384,7 @@ async def get_sitemap():
         for path, priority in static_pages:
             urls.append({
                 'loc': f'{base_url}{path}',
-                'lastmod': datetime.utcnow().strftime('%Y-%m-%d'),
+                'lastmod': datetime.now(timezone.utc).strftime('%Y-%m-%d'),
                 'changefreq': 'weekly',
                 'priority': priority
             })
@@ -373,7 +397,7 @@ async def get_sitemap():
             lastmod = article.updated_at if article.updated_at else article.created_at
             urls.append({
                 'loc': f'{base_url}/article/{article.slug}',
-                'lastmod': lastmod.strftime('%Y-%m-%d') if lastmod else datetime.utcnow().strftime('%Y-%m-%d'),
+                'lastmod': lastmod.strftime('%Y-%m-%d') if lastmod else datetime.now(timezone.utc).strftime('%Y-%m-%d'),
                 'changefreq': 'weekly',
                 'priority': '0.9' if article.is_featured else '0.7'
             })
@@ -382,7 +406,7 @@ async def get_sitemap():
         for category in categories:
             urls.append({
                 'loc': f'{base_url}/categories/{category.slug}',
-                'lastmod': datetime.utcnow().strftime('%Y-%m-%d'),
+                'lastmod': datetime.now(timezone.utc).strftime('%Y-%m-%d'),
                 'changefreq': 'weekly',
                 'priority': '0.6'
             })
@@ -391,7 +415,7 @@ async def get_sitemap():
         for tag in tags:
             urls.append({
                 'loc': f'{base_url}/tags/{tag.slug}',
-                'lastmod': datetime.utcnow().strftime('%Y-%m-%d'),
+                'lastmod': datetime.now(timezone.utc).strftime('%Y-%m-%d'),
                 'changefreq': 'weekly',
                 'priority': '0.5'
             })

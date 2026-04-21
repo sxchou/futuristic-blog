@@ -643,7 +643,7 @@ watch(article, async (newVal) => {
         >
           <div
             v-if="article.cover_image"
-            class="relative rounded-2xl overflow-hidden mb-8 md:hidden"
+            class="relative rounded-2xl overflow-hidden mb-4 md:hidden"
           >
             <img
               ref="coverImageRef"
@@ -654,6 +654,109 @@ watch(article, async (newVal) => {
               decoding="async"
             >
             <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          </div>
+
+          <div class="md:hidden mb-6">
+            <div class="flex items-center gap-2 mb-3">
+              <span
+                v-if="article.is_featured"
+                class="px-2.5 py-0.5 bg-primary text-white text-xs font-medium rounded-full"
+              >精选</span>
+              <span
+                v-if="article.is_pinned"
+                class="px-2.5 py-0.5 bg-amber-500/90 text-white text-xs font-medium rounded-full"
+              >置顶</span>
+            </div>
+
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-3 leading-tight">
+              {{ article.title }}
+            </h1>
+
+            <div class="flex flex-wrap items-center gap-2 text-xs text-gray-400 mb-3">
+              <span class="flex items-center gap-1">
+                <svg
+                  class="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                ><path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                /></svg>
+                {{ formatDate(article.created_at) }}
+              </span>
+              <span
+                v-if="article.reading_time"
+                class="flex items-center gap-1"
+              >
+                <svg
+                  class="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                ><path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                /></svg>
+                {{ article.reading_time }} 分钟
+              </span>
+              <span class="flex items-center gap-1">
+                <svg
+                  class="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                ><path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                /><path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                /></svg>
+                {{ article.view_count }}
+              </span>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-1.5 mb-3">
+              <router-link
+                v-if="article.category"
+                :to="`/categories/${article.category.slug}`"
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium transition-colors hover:opacity-80"
+                :style="{ backgroundColor: article.category.color + '15', color: article.category.color, borderColor: article.category.color + '30' }"
+              >
+                <span
+                  class="w-1.5 h-1.5 rounded-full"
+                  :style="{ backgroundColor: article.category.color }"
+                />
+                {{ article.category.name }}
+              </router-link>
+              <router-link
+                v-for="tag in article.tags"
+                :key="tag.id"
+                :to="`/tags/${tag.slug}`"
+                class="tag-badge text-xs"
+                :style="{ color: tag.color, backgroundColor: tag.color + '10', borderColor: tag.color + '30' }"
+              >
+                #{{ tag.name }}
+              </router-link>
+            </div>
+
+            <div
+              v-if="article.summary"
+              class="p-3 bg-gray-50 dark:bg-dark-200/50 rounded-xl border border-gray-100 dark:border-white/5"
+            >
+              <p class="text-gray-500 dark:text-gray-400 text-xs leading-relaxed">
+                {{ article.summary }}
+              </p>
+            </div>
           </div>
 
           <div

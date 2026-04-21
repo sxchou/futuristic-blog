@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore, useSiteConfigStore } from '@/stores'
+import { checkServerHealth } from '@/api/client'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -37,6 +38,13 @@ const handleRegister = async () => {
   errorMessage.value = ''
 
   try {
+    const isHealthy = await checkServerHealth()
+    if (!isHealthy) {
+      errorMessage.value = '服务暂时不可用，请稍后重试'
+      isLoading.value = false
+      return
+    }
+
     const response = await authStore.register({
       username: form.value.username,
       email: form.value.email,

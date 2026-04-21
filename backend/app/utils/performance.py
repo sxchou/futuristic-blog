@@ -3,7 +3,7 @@ import logging
 import threading
 from typing import Dict, List, Optional, Any
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 import json
 
@@ -38,7 +38,7 @@ class PerformanceMetrics:
                     'method': method,
                     'response_time': response_time,
                     'status_code': status_code,
-                    'timestamp': datetime.utcnow().isoformat()
+                    'timestamp': datetime.now(timezone.utc).isoformat()
                 })
                 
                 if len(self._slow_requests) > self._max_slow_requests:
@@ -135,7 +135,7 @@ class QueryMetrics:
                     'query': query,
                     'execution_time': execution_time,
                     'params': params,
-                    'timestamp': datetime.utcnow().isoformat()
+                    'timestamp': datetime.now(timezone.utc).isoformat()
                 })
                 
                 if len(self._slow_queries) > self._max_slow_queries:

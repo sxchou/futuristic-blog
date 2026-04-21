@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 
 logger = logging.getLogger(__name__)
@@ -23,11 +23,11 @@ def get_now() -> datetime:
 def get_utc_now() -> datetime:
     if ZoneInfo:
         return datetime.now(ZoneInfo("UTC"))
-    return datetime.utcnow()
+    return datetime.now(timezone.utc)
 
 
 def get_db_now() -> datetime:
-    return datetime.utcnow()
+    return datetime.now(timezone.utc)
 
 
 def to_local(dt: datetime) -> datetime:
