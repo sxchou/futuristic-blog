@@ -103,31 +103,12 @@ onMounted(async () => {
           </p>
         </div>
 
-        <div class="flex flex-wrap justify-center gap-2 mb-8">
-          <button
-            v-if="!loading"
-            class="px-3 py-1.5 text-sm rounded-full border transition-all duration-300 flex items-center gap-1.5"
-            :class="activeCategory === null
-              ? 'bg-primary/20 border-primary text-primary'
-              : 'bg-gray-100 dark:bg-dark-100/50 border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:border-primary/50'"
-            @click="activeCategory = null"
-          >
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 6h16M4 10h16M4 14h16M4 18h16"
-              />
-            </svg>
-            全部
-          </button>
+        <div class="flex flex-wrap justify-center gap-2 mb-8 min-h-[40px]">
           <template v-if="loading">
+            <div class="px-3 py-1.5 text-sm rounded-full border bg-gray-100 dark:bg-dark-100/50 border-gray-200 dark:border-white/10 animate-pulse flex items-center gap-1.5">
+              <span class="inline-block w-4 h-4 bg-gray-200 dark:bg-dark-300 rounded" />
+              <span class="inline-block w-8 h-4 bg-gray-200 dark:bg-dark-300 rounded" />
+            </div>
             <div
               v-for="i in 4"
               :key="i"
@@ -136,33 +117,56 @@ onMounted(async () => {
               <span class="inline-block w-12 h-4 bg-gray-200 dark:bg-dark-300 rounded" />
             </div>
           </template>
-          <button
-            v-for="category in activeCategories"
-            v-else
-            :key="category.id"
-            class="px-3 py-1.5 text-sm rounded-full border transition-all duration-300 flex items-center gap-1.5"
-            :class="activeCategory === category.id
-              ? 'bg-primary/20 border-primary text-primary'
-              : 'bg-gray-100 dark:bg-dark-100/50 border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:border-primary/50'"
-            @click="activeCategory = category.id"
-          >
-            <span v-if="category.icon">{{ category.icon }}</span>
-            <svg
-              v-else
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <template v-else>
+            <button
+              class="px-3 py-1.5 text-sm rounded-full border transition-all duration-300 flex items-center gap-1.5"
+              :class="activeCategory === null
+                ? 'bg-primary/20 border-primary text-primary'
+                : 'bg-gray-100 dark:bg-dark-100/50 border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:border-primary/50'"
+              @click="activeCategory = null"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-              />
-            </svg>
-            {{ category.name }}
-          </button>
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 10h16M4 14h16M4 18h16"
+                />
+              </svg>
+              全部
+            </button>
+            <button
+              v-for="category in activeCategories"
+              :key="category.id"
+              class="px-3 py-1.5 text-sm rounded-full border transition-all duration-300 flex items-center gap-1.5"
+              :class="activeCategory === category.id
+                ? 'bg-primary/20 border-primary text-primary'
+                : 'bg-gray-100 dark:bg-dark-100/50 border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:border-primary/50'"
+              @click="activeCategory = category.id"
+            >
+              <span v-if="category.icon">{{ category.icon }}</span>
+              <svg
+                v-else
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                />
+              </svg>
+              {{ category.name }}
+            </button>
+          </template>
         </div>
 
         <div
