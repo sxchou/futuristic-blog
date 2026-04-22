@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import func, desc, case
+from sqlalchemy import func, desc, case, text
 from datetime import datetime, timedelta
 from typing import List, Optional
 from pydantic import BaseModel
@@ -10,7 +10,7 @@ from app.utils.timezone import get_now, get_today_start, to_local
 from app.utils.cache import cache_manager
 from app.models.models import (
     Article, User, Comment, ArticleLike, Category, Tag,
-    LoginLog, OperationLog, AccessLog, article_tags
+    LoginLog, OperationLog, AccessLog, article_tags, RefreshToken
 )
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
@@ -421,3 +421,26 @@ async def get_comment_trend(
         current_date += timedelta(days=1)
     
     return result
+
+
+@router.post("/fix-sequence")
+async def fix_sequence(
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_admin_user)
+):
+    max_id = db.query(func.max(RefreshToken.id)).scalar() or 0
+    next_val = max_id + 1
+    
+    try:
+        db.execute(text(f"SELECT setval('refresh_tokens_id_seq', {next_val})"))
+        db.commit()
+        return {
+            "success": True,
+            "message": f"序列已修复，当前最大ID: {max_id}，下一个ID: {next_val}"
+        }
+    except Exception as e:
+        db.rollback()
+        return {
+            "success": False,
+            "error": str(e)
+        }
