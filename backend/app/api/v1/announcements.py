@@ -59,12 +59,17 @@ def create_announcement(
     if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="无权限创建公告")
     
+    max_order = db.query(Announcement).order_by(Announcement.order.desc()).first()
+    next_order = (max_order.order + 1) if max_order else 1
+    
+    order_value = announcement_data.order if announcement_data.order and announcement_data.order > 0 else next_order
+    
     announcement = Announcement(
         title=announcement_data.title,
         content=announcement_data.content,
         type=announcement_data.type,
         is_active=announcement_data.is_active,
-        order=announcement_data.order
+        order=order_value
     )
     db.add(announcement)
     db.commit()

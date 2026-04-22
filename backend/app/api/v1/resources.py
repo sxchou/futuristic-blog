@@ -53,7 +53,14 @@ async def create_resource(
     if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="无权限创建资源")
     
-    new_resource = Resource(**resource_data.model_dump())
+    max_order = db.query(Resource).order_by(Resource.order.desc()).first()
+    next_order = (max_order.order + 1) if max_order else 1
+    
+    resource_dict = resource_data.model_dump()
+    if resource_dict.get('order', 0) == 0:
+        resource_dict['order'] = next_order
+    
+    new_resource = Resource(**resource_dict)
     db.add(new_resource)
     db.commit()
     db.refresh(new_resource)

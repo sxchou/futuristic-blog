@@ -45,7 +45,14 @@ async def create_category(
     if existing:
         raise HTTPException(status_code=400, detail="分类标识已存在")
     
-    new_category = ResourceCategory(**category_data.model_dump())
+    max_order = db.query(ResourceCategory).order_by(ResourceCategory.order.desc()).first()
+    next_order = (max_order.order + 1) if max_order else 1
+    
+    category_dict = category_data.model_dump()
+    if category_dict.get('order', 0) == 0:
+        category_dict['order'] = next_order
+    
+    new_category = ResourceCategory(**category_dict)
     db.add(new_category)
     db.commit()
     db.refresh(new_category)
