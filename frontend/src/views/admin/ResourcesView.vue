@@ -118,8 +118,11 @@ const handleToggleResourceStatus = async (resource: Resource) => {
   
   try {
     await resourceApi.updateResource(resource.id, { is_active: !resource.is_active })
+    const index = resources.value.findIndex(r => r.id === resource.id)
+    if (index !== -1) {
+      resources.value[index] = { ...resources.value[index], is_active: !previousStatus }
+    }
     dialog.showSuccess(previousStatus ? '资源已禁用' : '资源已启用', '成功')
-    await fetchResources()
   } catch (error: any) {
     console.error('Failed to toggle resource status:', error)
     await dialog.showError(error.response?.data?.detail || '状态切换失败', '错误')

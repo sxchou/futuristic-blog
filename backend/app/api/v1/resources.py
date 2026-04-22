@@ -24,7 +24,7 @@ async def get_resources(db: Session = Depends(get_db)):
     if cached:
         return cached
     
-    resources = db.query(Resource).filter(Resource.is_active == True).order_by(Resource.order).all()
+    resources = db.query(Resource).filter(Resource.is_active == True).order_by(Resource.order, Resource.id).all()
     result = [ResourceResponse.model_validate(r) for r in resources]
     
     cache_manager.set(CACHE_NAME, cache_key, [r.model_dump() for r in result])
@@ -37,9 +37,9 @@ async def get_admin_resources(
     current_user = Depends(get_current_user)
 ):
     if current_user.is_admin:
-        resources = db.query(Resource).order_by(Resource.order).all()
+        resources = db.query(Resource).order_by(Resource.order, Resource.id).all()
     else:
-        resources = db.query(Resource).filter(Resource.is_active == True).order_by(Resource.order).all()
+        resources = db.query(Resource).filter(Resource.is_active == True).order_by(Resource.order, Resource.id).all()
     return [ResourceResponse.model_validate(r) for r in resources]
 
 
