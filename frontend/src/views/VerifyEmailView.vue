@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { authApi } from '@/api'
 import { useDialogStore, useAuthStore } from '@/stores'
+import { checkServerHealth } from '@/api/client'
 
 const dialog = useDialogStore()
 const authStore = useAuthStore()
@@ -24,6 +25,13 @@ onMounted(async () => {
   }
   
   try {
+    const isHealthy = await checkServerHealth()
+    if (!isHealthy) {
+      isVerifying.value = false
+      errorMessage.value = '服务暂时不可用，请稍后重试'
+      return
+    }
+
     const response = await authApi.verifyEmail(token)
     
     isVerified.value = true
@@ -66,6 +74,12 @@ const handleResend = async () => {
   }
   
   try {
+    const isHealthy = await checkServerHealth()
+    if (!isHealthy) {
+      await dialog.showError('服务暂时不可用，请稍后重试', '错误')
+      return
+    }
+
     await authApi.resendVerification(email.value)
     await dialog.showSuccess('验证邮件已发送，请查收', '成功')
   } catch (error: any) {

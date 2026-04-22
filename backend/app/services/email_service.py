@@ -141,8 +141,8 @@ class EmailService:
     ) -> Dict[str, Any]:
         smtp_host = config.smtp_host if config else settings.SMTP_HOST
         smtp_port = config.smtp_port if config else settings.SMTP_PORT
-        smtp_user = config.smtp_user if config else settings.SMTP_USER
-        smtp_password = config.smtp_password if config else settings.SMTP_PASSWORD
+        smtp_user = (config.smtp_user if config else settings.SMTP_USER or '').strip()
+        smtp_password = (config.smtp_password if config else settings.SMTP_PASSWORD or '').replace(' ', '').strip()
         from_email = config.from_email if config else settings.SMTP_FROM_EMAIL
         from_name = config.from_name if config else settings.SMTP_FROM_NAME
         

@@ -3,6 +3,7 @@ import { onMounted, onUnmounted, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDialogStore, useAuthStore } from '@/stores'
 import { authApi } from '@/api'
+import { checkServerHealth } from '@/api/client'
 
 const route = useRoute()
 const router = useRouter()
@@ -124,6 +125,13 @@ const handleResendVerification = async () => {
   
   isSubmitting.value = true
   try {
+    const isHealthy = await checkServerHealth()
+    if (!isHealthy) {
+      await dialog.showError('服务暂时不可用，请稍后重试', '错误')
+      isSubmitting.value = false
+      return
+    }
+
     const response = await authApi.resendVerification(email.value)
     
     if (response.verification_token_expires) {
@@ -174,6 +182,13 @@ const handleSubmitNewEmail = async () => {
   
   isSubmitting.value = true
   try {
+    const isHealthy = await checkServerHealth()
+    if (!isHealthy) {
+      await dialog.showError('服务暂时不可用，请稍后重试', '错误')
+      isSubmitting.value = false
+      return
+    }
+
     const response = await authApi.resendVerification(email.value, newEmail.value)
     
     if (response.verification_token_expires) {

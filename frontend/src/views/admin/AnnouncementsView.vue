@@ -366,7 +366,6 @@ const getTypeStyles = (type: string) => {
     <div
       v-if="showEditor"
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-      @click.self="closeEditor"
     >
       <transition
         enter-active-class="transition ease-out duration-300"

@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { authApi } from '@/api'
 import { useSiteConfigStore, useDialogStore } from '@/stores'
+import { checkServerHealth } from '@/api/client'
 
 const router = useRouter()
 const siteConfigStore = useSiteConfigStore()
@@ -118,6 +119,13 @@ const handleSendCode = async () => {
   
   isSendingCode.value = true
   try {
+    const isHealthy = await checkServerHealth()
+    if (!isHealthy) {
+      emailError.value = '服务暂时不可用，请稍后重试'
+      isSendingCode.value = false
+      return
+    }
+
     const result = await authApi.requestPasswordReset(email.value)
     step.value = 2
     startCountdown(result.expires_in)
@@ -161,6 +169,13 @@ const handleResetPassword = async () => {
   
   isLoading.value = true
   try {
+    const isHealthy = await checkServerHealth()
+    if (!isHealthy) {
+      await dialog.showError('服务暂时不可用，请稍后重试', '错误')
+      isLoading.value = false
+      return
+    }
+
     await authApi.verifyPasswordReset({
       email: email.value,
       code: code.value,

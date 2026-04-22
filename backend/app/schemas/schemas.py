@@ -605,7 +605,7 @@ class FileOrderUpdate(BaseModel):
 
 
 class EmailConfigBase(BaseModel):
-    provider: str = Field(..., pattern='^(qq|gmail)$')
+    provider: str = Field(..., pattern='^(qq|gmail|163|outlook|resend)$')
     smtp_user: str = Field(..., min_length=1)
     smtp_password: str = Field(..., min_length=1)
     from_email: str = Field(..., min_length=1)
@@ -617,7 +617,7 @@ class EmailConfigCreate(EmailConfigBase):
 
 
 class EmailConfigUpdate(BaseModel):
-    provider: Optional[str] = Field(None, pattern='^(qq|gmail)$')
+    provider: Optional[str] = Field(None, pattern='^(qq|gmail|163|outlook|resend)$')
     smtp_user: Optional[str] = None
     smtp_password: Optional[str] = None
     from_email: Optional[str] = None

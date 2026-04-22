@@ -330,7 +330,10 @@ export const getCacheStats = () => {
 }
 
 export const checkServerHealth = async (maxRetries = 5): Promise<boolean> => {
-  const healthUrl = getBaseURL().replace('/api/v1', '/health/full')
+  const baseURL = getBaseURL()
+  const healthUrl = baseURL.startsWith('http') 
+    ? baseURL.replace('/api/v1', '/health/full')
+    : '/health/full'
   
   for (let i = 0; i < maxRetries; i++) {
     try {

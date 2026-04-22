@@ -3,10 +3,6 @@ from app.api.v1 import auth, articles, categories, tags, resources, resource_cat
 
 router = APIRouter()
 
-@router.api_route("/health", methods=["GET", "HEAD"])
-async def health_check():
-    return {"status": "ok", "service": "futuristic-blog-backend"}
-
 router.include_router(init.router)
 router.include_router(auth.router)
 router.include_router(articles.router)

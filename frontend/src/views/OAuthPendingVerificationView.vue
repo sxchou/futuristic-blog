@@ -5,6 +5,7 @@ import { useDialogStore, useAuthStore } from '@/stores'
 import { oauthApi } from '@/api/oauth'
 import { usePendingOAuth } from '@/composables/usePendingOAuth'
 import { useOAuthAnalytics } from '@/composables/useOAuthAnalytics'
+import { checkServerHealth } from '@/api/client'
 
 const route = useRoute()
 const router = useRouter()
@@ -98,6 +99,11 @@ const checkVerificationStatus = async () => {
   if (!tempToken.value) return
   
   try {
+    const isHealthy = await checkServerHealth()
+    if (!isHealthy) {
+      return
+    }
+
     const info = await oauthApi.getPendingVerification(tempToken.value)
     
     if (info.is_verified && info.email) {
@@ -167,6 +173,13 @@ const loadPendingInfo = async () => {
   tempToken.value = token
   
   try {
+    const isHealthy = await checkServerHealth()
+    if (!isHealthy) {
+      await dialog.showError('服务暂时不可用，请稍后重试', '错误')
+      isLoading.value = false
+      return
+    }
+
     const info = await oauthApi.getPendingVerification(token)
     username.value = info.username
     hasEmail.value = info.has_email
@@ -207,6 +220,13 @@ const handleResendVerification = async () => {
   
   isSubmitting.value = true
   try {
+    const isHealthy = await checkServerHealth()
+    if (!isHealthy) {
+      await dialog.showError('服务暂时不可用，请稍后重试', '错误')
+      isSubmitting.value = false
+      return
+    }
+
     const response = await oauthApi.resendVerification(tempToken.value)
     trackEvent('oauth_resend_verification', { provider: providerName.value })
     
@@ -259,6 +279,13 @@ const handleSubmitNewEmail = async () => {
   
   isSubmitting.value = true
   try {
+    const isHealthy = await checkServerHealth()
+    if (!isHealthy) {
+      await dialog.showError('服务暂时不可用，请稍后重试', '错误')
+      isSubmitting.value = false
+      return
+    }
+
     const response = await oauthApi.changeEmail(tempToken.value, newEmail.value)
     trackEvent('oauth_change_email', { provider: providerName.value })
     

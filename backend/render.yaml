@@ -41,5 +41,5 @@ services:
         sync: false
       - key: FRONTEND_URL
         sync: false
-    healthCheckPath: /api/health
+    healthCheckPath: /health
     autoDeploy: true

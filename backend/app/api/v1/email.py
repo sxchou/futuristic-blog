@@ -120,7 +120,7 @@ def send_email_with_config(
                     server = smtplib.SMTP(host, port, timeout=30)
                     server.starttls()
                 
-                server.login(config.smtp_user, config.smtp_password)
+                server.login(config.smtp_user.strip(), config.smtp_password.replace(' ', '').strip())
                 server.sendmail(config.from_email, to_email, msg.as_string())
                 server.quit()
                 

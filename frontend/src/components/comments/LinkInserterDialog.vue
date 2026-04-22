@@ -158,7 +158,6 @@ watch(activeTab, (newTab) => {
   <div
     v-if="modelValue"
     class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
-    @click.self="close"
   >
     <div class="bg-white dark:bg-dark-100 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
       <div class="flex items-center justify-between p-3 border-b border-gray-200 dark:border-white/10 flex-shrink-0">

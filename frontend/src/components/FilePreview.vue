@@ -660,7 +660,6 @@ onUnmounted(() => {
   <Teleport to="body">
     <div
       class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm"
-      @click.self="emit('close')"
     >
       <div class="relative w-full h-full max-w-7xl max-h-[95vh] m-4 flex flex-col bg-white dark:bg-dark-300 rounded-xl overflow-hidden shadow-2xl border border-gray-200 dark:border-white/10">
         <div class="flex items-center justify-between px-3 py-1 border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-gray-800/50">

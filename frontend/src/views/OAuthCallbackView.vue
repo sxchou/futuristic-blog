@@ -5,6 +5,7 @@ import { useAuthStore, useDialogStore } from '@/stores'
 import { oauthApi } from '@/api/oauth'
 import { usePendingOAuth } from '@/composables/usePendingOAuth'
 import { useOAuthAnalytics } from '@/composables/useOAuthAnalytics'
+import { checkServerHealth } from '@/api/client'
 
 const route = useRoute()
 const router = useRouter()
@@ -91,6 +92,13 @@ const handleCallback = async () => {
   }
 
   try {
+    const isHealthy = await checkServerHealth()
+    if (!isHealthy) {
+      error.value = '服务暂时不可用，请稍后重试'
+      isLoading.value = false
+      return
+    }
+
     const response = await oauthApi.handleCallback(provider, code, state)
     
     if (response.needs_email && response.temp_token) {
@@ -153,6 +161,13 @@ const submitEmail = async () => {
 
   isSubmitting.value = true
   try {
+    const isHealthy = await checkServerHealth()
+    if (!isHealthy) {
+      dialog.showError('服务暂时不可用，请稍后重试')
+      isSubmitting.value = false
+      return
+    }
+
     await oauthApi.submitEmail(email.value, tempToken.value)
     await dialog.showSuccess('验证邮件已发送', '请检查您的邮箱完成验证')
     router.push({
