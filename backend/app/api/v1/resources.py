@@ -1,4 +1,4 @@
-﻿from typing import List
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.core.database import get_db
@@ -36,9 +36,10 @@ async def get_admin_resources(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    if not current_user.is_admin:
-        raise HTTPException(status_code=403, detail="无权限访问")
-    resources = db.query(Resource).order_by(Resource.order).all()
+    if current_user.is_admin:
+        resources = db.query(Resource).order_by(Resource.order).all()
+    else:
+        resources = db.query(Resource).filter(Resource.is_active == True).order_by(Resource.order).all()
     return [ResourceResponse.model_validate(r) for r in resources]
 
 
