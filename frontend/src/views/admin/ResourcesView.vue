@@ -8,8 +8,7 @@ import { useAdminCheck } from '@/composables/useAdminCheck'
 import { 
   updateArrayItem, 
   addArrayItem, 
-  removeArrayItem,
-  toggleItemStatus 
+  removeArrayItem
 } from '@/utils/reactiveUpdate'
 import IconPicker from '@/components/common/IconPicker.vue'
 
@@ -118,12 +117,9 @@ const handleToggleResourceStatus = async (resource: Resource) => {
   const previousStatus = resource.is_active
   
   try {
-    await toggleItemStatus(
-      resources,
-      resource.id,
-      (newStatus) => resourceApi.updateResource(resource.id, { is_active: newStatus })
-    )
+    await resourceApi.updateResource(resource.id, { is_active: !resource.is_active })
     dialog.showSuccess(previousStatus ? '资源已禁用' : '资源已启用', '成功')
+    await fetchResources()
   } catch (error: any) {
     console.error('Failed to toggle resource status:', error)
     await dialog.showError(error.response?.data?.detail || '状态切换失败', '错误')
