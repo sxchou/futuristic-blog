@@ -84,7 +84,12 @@ def verify_refresh_token(
     if not refresh_token:
         return None, "无效的刷新令牌"
     
-    if refresh_token.expires_at < get_db_now():
+    expires_at = refresh_token.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    
+    now = get_db_now()
+    if expires_at < now:
         return None, "刷新令牌已过期"
     
     if request:

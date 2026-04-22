@@ -8,7 +8,7 @@ from app.models import OAuthProvider, OAuthConnection, User
 from app.core.config import settings
 import httpx
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 router = APIRouter(prefix="/oauth", tags=["oauth"])
 
@@ -609,8 +609,8 @@ async def oauth_verify_email(
     if temp_token_record.expires_at:
         now = get_db_now()
         expires_at = temp_token_record.expires_at
-        if expires_at.tzinfo is not None:
-            expires_at = expires_at.replace(tzinfo=None)
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
         if expires_at < now:
             raise HTTPException(status_code=400, detail="验证链接已过期，请重新获取")
     
@@ -774,8 +774,8 @@ async def get_pending_verification_info(
     if temp_token_record.expires_at:
         now = get_db_now()
         expires_at = temp_token_record.expires_at
-        if expires_at.tzinfo is not None:
-            expires_at = expires_at.replace(tzinfo=None)
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
         if expires_at < now:
             is_expired = True
     
