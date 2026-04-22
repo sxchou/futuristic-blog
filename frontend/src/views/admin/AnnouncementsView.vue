@@ -189,12 +189,12 @@ const getTypeStyles = (type: string) => {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-5">
     <div class="flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
           <svg
-            class="w-5 h-5 text-primary"
+            class="w-4 h-4 text-primary"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -207,14 +207,9 @@ const getTypeStyles = (type: string) => {
             />
           </svg>
         </div>
-        <div>
-          <h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
-            公告管理
-          </h1>
-          <p class="text-xs text-gray-500 dark:text-gray-400">
-            管理网站公告和通知
-          </p>
-        </div>
+        <h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
+          公告管理
+        </h1>
       </div>
       <button
         type="button"

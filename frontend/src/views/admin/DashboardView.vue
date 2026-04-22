@@ -204,9 +204,26 @@ onMounted(() => {
 <template>
   <div class="dashboard">
     <div class="dashboard-header">
-      <h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
-        仪表盘
-      </h1>
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
+          <svg
+            class="w-4 h-4 text-primary"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
+            />
+          </svg>
+        </div>
+        <h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
+          仪表盘
+        </h1>
+      </div>
       <div class="header-actions">
         <select 
           v-model="trendDays" 
@@ -566,7 +583,7 @@ onMounted(() => {
   flex-direction: column;
   gap: 12px;
   align-items: flex-start;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 @media (min-width: 640px) {
@@ -574,7 +591,7 @@ onMounted(() => {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
   }
 }
 

@@ -154,7 +154,7 @@ onMounted(fetchStorageInfo)
 </script>
 
 <template>
-  <div class="p-6">
+  <div>
     <div
       v-if="!isAdmin"
       class="glass-card p-8 text-center"
@@ -183,6 +183,47 @@ onMounted(fetchStorageInfo)
     </div>
 
     <template v-else>
+      <div class="flex items-center justify-between mb-5">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
+            <svg
+              class="w-4 h-4 text-primary"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"
+              />
+            </svg>
+          </div>
+          <h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
+            存储管理
+          </h1>
+        </div>
+        <button
+          class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
+          @click="fetchStorageInfo"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M21 12a9 9 0 11-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+            <path d="M21 3v5h-5" />
+          </svg>
+          刷新
+        </button>
+      </div>
+
       <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
         <div class="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
           <svg
@@ -214,30 +255,6 @@ onMounted(fetchStorageInfo)
           </svg>
           <span>头像目录、网站Logo目录和图片目录 显示但受保护，不会被清理孤立文件时删除</span>
         </div>
-      </div>
-    
-      <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-          存储管理
-        </h1>
-        <button
-          class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
-          @click="fetchStorageInfo"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path d="M21 12a9 9 0 11-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
-            <path d="M21 3v5h-5" />
-          </svg>
-          刷新
-        </button>
       </div>
 
       <div

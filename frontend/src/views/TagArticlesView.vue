@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useBlogStore, useAuthStore, useUserInteractionStore, useSiteConfigStore } from '@/stores'
+import { useBlogStore, useAuthStore, useUserInteractionStore } from '@/stores'
 import BlogSidebar from '@/components/common/BlogSidebar.vue'
 import LeftSidebar from '@/components/common/LeftSidebar.vue'
 import Pagination from '@/components/common/Pagination.vue'
@@ -14,13 +14,10 @@ const router = useRouter()
 const blogStore = useBlogStore()
 const authStore = useAuthStore()
 const userInteractionStore = useUserInteractionStore()
-const siteConfigStore = useSiteConfigStore()
 const loading = ref(true)
 const articlesRef = ref<HTMLElement | null>(null)
 
 const { pageSize } = usePageSize()
-
-const isStackedLayout = computed(() => siteConfigStore.mobileArticleLayout === 'stacked')
 
 const activeTooltip = ref<{ articleId: number; action: string } | null>(null)
 
@@ -265,11 +262,7 @@ const handlePageChange = async (page: number) => {
             >
               <div
                 v-if="article.cover_image"
-                :class="[
-                  isStackedLayout 
-                    ? 'relative w-full h-52 sm:w-56 md:w-64 sm:h-full overflow-hidden rounded-t-lg sm:rounded-lg' 
-                    : 'absolute inset-0 sm:relative sm:w-56 md:w-64 sm:h-full overflow-hidden rounded-none sm:rounded-lg'
-                ]"
+                class="relative w-full h-52 sm:w-56 md:w-64 sm:h-full overflow-hidden rounded-t-lg sm:rounded-lg"
               >
                 <img
                   :src="getMediaUrl(article.cover_image)"
@@ -277,29 +270,10 @@ const handlePageChange = async (page: number) => {
                   class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 rounded-t-lg sm:rounded-lg"
                   loading="lazy"
                 >
-                <template v-if="!isStackedLayout">
-                  <div class="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent sm:hidden" />
-                  <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent sm:hidden" />
-                </template>
-              </div>
-              <div
-                v-else
-                :class="[
-                  isStackedLayout 
-                    ? 'hidden' 
-                    : 'absolute inset-0 sm:hidden'
-                ]"
-              >
-                <div class="absolute inset-0 bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800" />
               </div>
 
               <div 
-                class="relative flex-1 min-w-0 flex flex-col"
-                :class="[
-                  isStackedLayout 
-                    ? 'min-h-0' 
-                    : 'min-h-[180px] sm:min-h-0'
-                ]"
+                class="relative flex-1 min-w-0 flex flex-col min-h-0"
               >
                 <div class="flex items-center gap-2 mb-2">
                   <span
@@ -337,22 +311,12 @@ const handlePageChange = async (page: number) => {
                   </span>
                 </div>
 
-                <h3 :class="[
-                  'text-base font-bold leading-snug mb-2 group-hover:text-primary transition-colors line-clamp-2',
-                  isStackedLayout 
-                    ? 'text-gray-900 dark:text-white' 
-                    : 'text-white sm:text-gray-900 dark:sm:text-white'
-                ]">
+                <h3 class="text-base font-bold leading-snug mb-2 group-hover:text-primary transition-colors line-clamp-2 text-gray-900 dark:text-white">
                   {{ article.title }}
                 </h3>
                 <p
                   v-if="article.summary"
-                  :class="[
-                    'text-sm leading-relaxed mb-3 line-clamp-2',
-                    isStackedLayout 
-                      ? 'text-gray-500 dark:text-gray-400' 
-                      : 'text-white/70 sm:text-gray-500 dark:sm:text-gray-400'
-                  ]"
+                  class="text-sm leading-relaxed mb-3 line-clamp-2 text-gray-500 dark:text-gray-400"
                 >
                   {{ article.summary }}
                 </p>
@@ -372,18 +336,8 @@ const handlePageChange = async (page: number) => {
                   </span>
                 </div>
 
-                <div :class="[
-                  'article-meta mt-auto pt-3',
-                  isStackedLayout 
-                    ? 'border-t border-gray-100 dark:border-white/5' 
-                    : 'border-t border-white/10 sm:border-gray-100 dark:sm:border-white/5'
-                ]">
-                  <span :class="[
-                    'article-meta-item',
-                    isStackedLayout 
-                      ? 'text-inherit' 
-                      : 'text-white/70 sm:text-inherit'
-                  ]">
+                <div class="article-meta mt-auto pt-3 border-t border-gray-100 dark:border-white/5">
+                  <span class="article-meta-item text-inherit">
                     <svg
                       class="w-3.5 h-3.5"
                       fill="none"
@@ -400,12 +354,7 @@ const handlePageChange = async (page: number) => {
                     {{ formatDate(article.created_at) }}
                   </span>
                   <span 
-                    :class="[
-                      'article-meta-item relative',
-                      isStackedLayout 
-                        ? 'text-inherit' 
-                        : 'text-white/70 sm:text-inherit'
-                    ]"
+                    class="article-meta-item relative text-inherit"
                     @mouseenter="showTooltip(article.id, 'view')"
                     @mouseleave="hideTooltip"
                   >
@@ -437,12 +386,7 @@ const handlePageChange = async (page: number) => {
                     </span>
                   </span>
                   <button
-                    :class="[
-                      'article-meta-item article-action-btn relative',
-                      isStackedLayout 
-                        ? 'text-inherit' 
-                        : 'text-white/70 sm:text-inherit'
-                    ]"
+                    class="article-meta-item article-action-btn relative text-inherit"
                     @click="handleLike($event, article)"
                     @mouseenter="showTooltip(article.id, 'like')"
                     @mouseleave="hideTooltip"
@@ -469,12 +413,7 @@ const handlePageChange = async (page: number) => {
                     </span>
                   </button>
                   <button
-                    :class="[
-                      'article-meta-item article-action-btn relative',
-                      isStackedLayout 
-                        ? 'text-inherit' 
-                        : 'text-white/70 sm:text-inherit'
-                    ]"
+                    class="article-meta-item article-action-btn relative text-inherit"
                     @click="goToComments($event, article.slug)"
                     @mouseenter="showTooltip(article.id, 'comment')"
                     @mouseleave="hideTooltip"
@@ -502,10 +441,7 @@ const handlePageChange = async (page: number) => {
                   </button>
                   <button
                     :class="[
-                      'article-meta-item article-action-btn relative',
-                      isStackedLayout 
-                        ? 'text-inherit' 
-                        : 'text-white/70 sm:text-inherit',
+                      'article-meta-item article-action-btn relative text-inherit',
                       { 'text-amber-500': article.is_bookmarked }
                     ]"
                     @click="handleBookmark($event, article)"

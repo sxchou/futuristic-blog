@@ -156,10 +156,27 @@ onMounted(() => {
 
 <template>
   <div>
-    <div class="flex items-center justify-between mb-4 gap-2">
-      <h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
-        个人资料管理
-      </h1>
+    <div class="flex items-center justify-between mb-5 gap-2">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
+          <svg
+            class="w-4 h-4 text-primary"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </div>
+        <h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
+          网站资料
+        </h1>
+      </div>
       <button
         class="btn-primary text-xs sm:text-sm px-3 sm:px-4 py-1.5 whitespace-nowrap"
         @click="handleSave"

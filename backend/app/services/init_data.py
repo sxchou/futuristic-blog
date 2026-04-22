@@ -303,6 +303,12 @@ def init_database():
                 db.commit()
                 print(f"Updated admin user verification status: {settings.ADMIN_USERNAME}")
         
+        deprecated_config = db.query(SiteConfig).filter(SiteConfig.key == "mobile_article_layout").first()
+        if deprecated_config:
+            db.delete(deprecated_config)
+            db.commit()
+            print("Removed deprecated 'mobile_article_layout' config from database")
+        
         categories_data = [
             {"name": "前端工程化", "slug": "frontend-engineering", "description": "前端架构、工程化最佳实践", "icon": "code", "color": "#00d4ff", "order": 1},
             {"name": "后端架构", "slug": "backend-architecture", "description": "后端服务设计与架构模式", "icon": "server", "color": "#7c3aed", "order": 2},
@@ -1387,7 +1393,6 @@ OpenAI API 为开发者提供了强大的 AI 能力，合理使用可以构建�
             {"key": "site_name", "value": "Futuristic Blog", "description": "网站名称"},
             {"key": "site_description", "value": "探索前沿技术，分享工程实践", "description": "网站描述"},
             {"key": "site_keywords", "value": "技术博客,全栈开发,AI,前端,后端", "description": "网站关键词"},
-            {"key": "mobile_article_layout", "value": "embedded", "description": "手机端文章卡片布局方式(embedded:嵌入式,stacked:上下布局)"},
         ]
         
         for config_data in site_configs_data:

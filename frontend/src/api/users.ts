@@ -9,6 +9,12 @@ interface PaginatedResponse<T> {
   total_pages: number
 }
 
+export interface ChangePasswordData {
+  current_password: string
+  new_password: string
+  confirm_password: string
+}
+
 export const userApi = {
   getUsers: async (page: number = 1, pageSize: number = 10): Promise<PaginatedResponse<User>> => {
     const response = await apiClient.get(`/users?page=${page}&page_size=${pageSize}`)
@@ -31,5 +37,10 @@ export const userApi = {
 
   resetPassword: async (userId: number, newPassword: string): Promise<void> => {
     await apiClient.post(`/users/${userId}/reset-password?new_password=${encodeURIComponent(newPassword)}`)
+  },
+
+  changePassword: async (data: ChangePasswordData): Promise<{ message: string }> => {
+    const response = await apiClient.post('/users/change-password', data)
+    return response.data
   }
 }

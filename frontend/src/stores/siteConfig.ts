@@ -52,7 +52,6 @@ export const useSiteConfigStore = defineStore('siteConfig', () => {
   const siteDescription = ref('探索前沿技术，分享工程实践')
   const siteKeywords = ref('')
   const siteLogoUrl = ref('')
-  const mobileArticleLayout = ref<'embedded' | 'stacked'>('embedded')
   const githubRepoUrl = ref('')
   const showGithubStats = ref(false)
   const githubStats = ref<GitHubStats | null>(null)
@@ -108,11 +107,6 @@ export const useSiteConfigStore = defineStore('siteConfig', () => {
           updateFavicon(logoConfig.value)
         }
         
-        const layoutConfig = configs.value.find(c => c.key === 'mobile_article_layout')
-        if (layoutConfig?.value && (layoutConfig.value === 'embedded' || layoutConfig.value === 'stacked')) {
-          mobileArticleLayout.value = layoutConfig.value
-        }
-        
         const githubRepoConfig = configs.value.find(c => c.key === 'github_repo_url')
         if (githubRepoConfig?.value) {
           githubRepoUrl.value = githubRepoConfig.value
@@ -156,11 +150,6 @@ export const useSiteConfigStore = defineStore('siteConfig', () => {
     if (logoConfig?.value) {
       siteLogoUrl.value = logoConfig.value
       updateFavicon(logoConfig.value)
-    }
-    
-    const layoutConfig = configList.find(c => c.key === 'mobile_article_layout')
-    if (layoutConfig?.value && (layoutConfig.value === 'embedded' || layoutConfig.value === 'stacked')) {
-      mobileArticleLayout.value = layoutConfig.value
     }
     
     const githubRepoConfig = configList.find(c => c.key === 'github_repo_url')
@@ -258,19 +247,6 @@ export const useSiteConfigStore = defineStore('siteConfig', () => {
     }
   }
 
-  const updateMobileArticleLayout = async (layout: 'embedded' | 'stacked') => {
-    try {
-      await siteConfigApi.update('mobile_article_layout', layout, '手机端文章卡片布局方式')
-      mobileArticleLayout.value = layout
-    } catch (error: any) {
-      console.error('Failed to update mobile article layout:', error)
-      if (error.response?.status === 403) {
-        throw new Error('无权限修改网站设置')
-      }
-      throw error
-    }
-  }
-
   const updateGithubRepoUrl = async (url: string) => {
     try {
       await siteConfigApi.update('github_repo_url', url, 'GitHub仓库地址')
@@ -304,7 +280,6 @@ export const useSiteConfigStore = defineStore('siteConfig', () => {
     siteKeywords,
     siteLogoUrl,
     siteLogo,
-    mobileArticleLayout,
     githubRepoUrl,
     showGithubStats,
     githubStats,
@@ -316,7 +291,6 @@ export const useSiteConfigStore = defineStore('siteConfig', () => {
     updateSiteKeywords,
     updateSiteLogo,
     resetSiteLogo,
-    updateMobileArticleLayout,
     updateGithubRepoUrl,
     updateShowGithubStats,
     setConfigs

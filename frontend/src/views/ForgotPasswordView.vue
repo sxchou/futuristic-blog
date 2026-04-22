@@ -221,17 +221,64 @@ const goBack = () => {
     <div class="w-full max-w-sm">
       <div class="glass-card p-6">
         <div class="text-center mb-6">
-          <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-primary flex items-center justify-center overflow-hidden">
+          <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center overflow-hidden shadow-sm">
             <img
               v-if="siteConfigStore.siteLogoUrl"
               :src="siteConfigStore.siteLogoUrl"
               :alt="siteConfigStore.siteName"
               class="w-full h-full object-cover"
             >
-            <span
+            <div
               v-else
-              class="text-lg font-bold text-white"
-            >{{ siteConfigStore.siteLogo }}</span>
+              class="w-full h-full bg-black flex items-center justify-center"
+            >
+              <svg
+                viewBox="0 0 100 100"
+                class="w-8 h-8"
+              >
+                <defs>
+                  <linearGradient
+                    id="forgot-logo-grad"
+                    x1="0%"
+                    y1="0%"
+                    x2="100%"
+                    y2="100%"
+                  >
+                    <stop
+                      offset="0%"
+                      style="stop-color:#00d4ff;stop-opacity:1"
+                    />
+                    <stop
+                      offset="100%"
+                      style="stop-color:#7c3aed;stop-opacity:1"
+                    />
+                  </linearGradient>
+                </defs>
+                <text
+                  x="50"
+                  y="68"
+                  font-family="monospace"
+                  font-size="55"
+                  font-weight="bold"
+                  fill="url(#forgot-logo-grad)"
+                  text-anchor="middle"
+                >F</text>
+                <circle
+                  cx="75"
+                  cy="25"
+                  r="8"
+                  fill="#00d4ff"
+                  opacity="0.8"
+                />
+                <circle
+                  cx="85"
+                  cy="35"
+                  r="4"
+                  fill="#7c3aed"
+                  opacity="0.6"
+                />
+              </svg>
+            </div>
           </div>
           <h1 class="text-lg font-bold gradient-text">
             忘记密码

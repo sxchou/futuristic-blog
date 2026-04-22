@@ -241,10 +241,27 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
 
 <template>
   <div>
-    <div class="flex items-center justify-between mb-4 gap-2">
-      <h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
-        日志管理
-      </h1>
+    <div class="flex items-center justify-between mb-5 gap-2">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
+          <svg
+            class="w-4 h-4 text-primary"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
+        </div>
+        <h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
+          日志管理
+        </h1>
+      </div>
       <button
         v-if="isAdmin"
         class="px-2 sm:px-3 py-1.5 text-xs sm:text-sm bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors whitespace-nowrap"

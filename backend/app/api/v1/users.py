@@ -247,3 +247,44 @@ async def reset_user_password(
     )
     
     return {"message": "Password reset successfully"}
+
+
+@router.post("/change-password")
+async def change_password(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    from pydantic import ValidationError
+    from app.schemas import ChangePassword
+    from app.utils.auth import verify_password
+    
+    try:
+        body = await request.json()
+        data = ChangePassword(**body)
+    except ValidationError as e:
+        raise HTTPException(status_code=422, detail=e.errors()[0]['msg'])
+    
+    if not verify_password(data.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="当前密码错误")
+    
+    if data.current_password == data.new_password:
+        raise HTTPException(status_code=400, detail="新密码不能与当前密码相同")
+    
+    current_user.hashed_password = get_password_hash(data.new_password)
+    db.commit()
+    
+    LogService.log_operation(
+        db=db,
+        user_id=current_user.id,
+        username=current_user.username,
+        action="修改密码",
+        module="个人设置",
+        description="用户修改了自己的密码",
+        target_type="用户",
+        target_id=current_user.id,
+        request=request,
+        status="success"
+    )
+    
+    return {"message": "密码修改成功"}

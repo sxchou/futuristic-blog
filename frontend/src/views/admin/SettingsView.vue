@@ -11,7 +11,6 @@ const formData = ref({
   siteName: '',
   siteDescription: '',
   siteKeywords: '',
-  mobileArticleLayout: 'embedded' as 'embedded' | 'stacked',
   githubRepoUrl: '',
   showGithubStats: false
 })
@@ -25,7 +24,6 @@ onMounted(async () => {
     siteName: siteConfigStore.siteName,
     siteDescription: siteConfigStore.siteDescription,
     siteKeywords: siteConfigStore.siteKeywords,
-    mobileArticleLayout: siteConfigStore.mobileArticleLayout,
     githubRepoUrl: siteConfigStore.githubRepoUrl,
     showGithubStats: siteConfigStore.showGithubStats
   }
@@ -41,7 +39,6 @@ const handleSave = async () => {
     await siteConfigStore.updateSiteName(formData.value.siteName)
     await siteConfigStore.updateSiteDescription(formData.value.siteDescription)
     await siteConfigStore.updateSiteKeywords(formData.value.siteKeywords)
-    await siteConfigStore.updateMobileArticleLayout(formData.value.mobileArticleLayout)
     await siteConfigStore.updateGithubRepoUrl(formData.value.githubRepoUrl)
     await siteConfigStore.updateShowGithubStats(formData.value.showGithubStats)
     
@@ -49,7 +46,6 @@ const handleSave = async () => {
       siteName: siteConfigStore.siteName,
       siteDescription: siteConfigStore.siteDescription,
       siteKeywords: siteConfigStore.siteKeywords,
-      mobileArticleLayout: siteConfigStore.mobileArticleLayout,
       githubRepoUrl: siteConfigStore.githubRepoUrl,
       showGithubStats: siteConfigStore.showGithubStats
     }
@@ -75,12 +71,12 @@ const handleLogoReset = () => {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-5">
     <div class="flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
           <svg
-            class="w-5 h-5 text-primary"
+            class="w-4 h-4 text-primary"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -215,98 +211,6 @@ const handleLogoReset = () => {
               <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
                 多个关键词请用英文逗号分隔，用于搜索引擎优化
               </p>
-            </div>
-          </div>
-        </div>
-
-        <div class="bg-white dark:bg-dark-100 rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
-          <div class="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02]">
-            <div class="flex items-center gap-2">
-              <svg
-                class="w-4 h-4 text-primary"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
-                />
-              </svg>
-              <h2 class="text-sm font-semibold text-gray-900 dark:text-white">
-                移动端设置
-              </h2>
-            </div>
-          </div>
-          <div class="p-4 sm:p-6">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                文章卡片布局方式
-              </label>
-              <div class="grid grid-cols-2 gap-3">
-                <label class="relative flex cursor-pointer">
-                  <input
-                    v-model="formData.mobileArticleLayout"
-                    type="radio"
-                    value="embedded"
-                    name="mobile-layout"
-                    class="peer sr-only"
-                  >
-                  <div class="flex-1 p-3 bg-gray-50 dark:bg-dark-100 border-2 border-gray-200 dark:border-white/10 rounded-lg peer-checked:border-primary peer-checked:bg-primary/5 dark:peer-checked:bg-primary/10 transition-all">
-                    <div class="flex items-center gap-2 mb-1">
-                      <svg
-                        class="w-4 h-4 text-gray-600 dark:text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6z"
-                        />
-                      </svg>
-                      <span class="text-sm font-medium text-gray-900 dark:text-white">嵌入式</span>
-                    </div>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">
-                      封面作为背景，文字叠加显示
-                    </p>
-                  </div>
-                </label>
-                <label class="relative flex cursor-pointer">
-                  <input
-                    v-model="formData.mobileArticleLayout"
-                    type="radio"
-                    value="stacked"
-                    name="mobile-layout"
-                    class="peer sr-only"
-                  >
-                  <div class="flex-1 p-3 bg-gray-50 dark:bg-dark-100 border-2 border-gray-200 dark:border-white/10 rounded-lg peer-checked:border-primary peer-checked:bg-primary/5 dark:peer-checked:bg-primary/10 transition-all">
-                    <div class="flex items-center gap-2 mb-1">
-                      <svg
-                        class="w-4 h-4 text-gray-600 dark:text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1v-2z"
-                        />
-                      </svg>
-                      <span class="text-sm font-medium text-gray-900 dark:text-white">上下布局</span>
-                    </div>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">
-                      封面上方，文字内容下方
-                    </p>
-                  </div>
-                </label>
-              </div>
             </div>
           </div>
         </div>
@@ -596,65 +500,6 @@ const handleLogoReset = () => {
                   class="text-gray-400 text-xs"
                 >
                   暂无关键词
-                </span>
-              </div>
-            </div>
-
-            <div class="p-3 sm:p-4 bg-gray-50 dark:bg-dark-200 rounded-lg border border-gray-200 dark:border-white/5">
-              <p class="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1">
-                <svg
-                  class="w-3 h-3"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
-                  />
-                </svg>
-                移动端布局
-              </p>
-              <div class="flex items-center gap-2">
-                <span
-                  :class="[
-                    'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full',
-                    formData.mobileArticleLayout === 'embedded' 
-                      ? 'bg-primary/10 text-primary' 
-                      : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                  ]"
-                >
-                  <svg
-                    v-if="formData.mobileArticleLayout === 'embedded'"
-                    class="w-3 h-3"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6z"
-                    />
-                  </svg>
-                  <svg
-                    v-else
-                    class="w-3 h-3"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1v-2z"
-                    />
-                  </svg>
-                  {{ formData.mobileArticleLayout === 'embedded' ? '嵌入式' : '上下布局' }}
                 </span>
               </div>
             </div>

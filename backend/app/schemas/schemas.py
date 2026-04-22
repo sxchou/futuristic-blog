@@ -736,6 +736,49 @@ class PasswordResetVerify(BaseModel):
         return v
 
 
+class ChangePassword(BaseModel):
+    current_password: str = Field(..., min_length=1, max_length=100)
+    new_password: str = Field(..., min_length=1, max_length=100)
+    confirm_password: str = Field(..., min_length=1, max_length=100)
+    
+    @field_validator('current_password')
+    @classmethod
+    def validate_current_password(cls, v):
+        if not v:
+            raise ValueError('请输入当前密码')
+        if len(v) < 6:
+            raise ValueError('当前密码长度至少6位')
+        if len(v) > 50:
+            raise ValueError('当前密码长度不能超过50位')
+        return v
+    
+    @field_validator('new_password')
+    @classmethod
+    def validate_new_password(cls, v, info):
+        if not v:
+            raise ValueError('请输入新密码')
+        if len(v) < 6:
+            raise ValueError('新密码长度至少6位')
+        if len(v) > 50:
+            raise ValueError('新密码长度不能超过50位')
+        if 'current_password' in info.data and v == info.data['current_password']:
+            raise ValueError('新密码不能与当前密码相同')
+        return v
+    
+    @field_validator('confirm_password')
+    @classmethod
+    def passwords_match(cls, v, info):
+        if not v:
+            raise ValueError('请确认新密码')
+        if len(v) < 6:
+            raise ValueError('确认密码长度至少6位')
+        if len(v) > 50:
+            raise ValueError('确认密码长度不能超过50位')
+        if 'new_password' in info.data and v != info.data['new_password']:
+            raise ValueError('两次输入的新密码不一致')
+        return v
+
+
 class UserProfileResponse(BaseModel):
     id: int
     user_id: int

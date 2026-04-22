@@ -301,10 +301,27 @@ onMounted(async () => {
 
 <template>
   <div>
-    <div class="flex items-center justify-between mb-4 gap-2">
-      <h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
-        资源管理
-      </h1>
+    <div class="flex items-center justify-between mb-5 gap-2">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
+          <svg
+            class="w-4 h-4 text-primary"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
+          </svg>
+        </div>
+        <h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
+          资源管理
+        </h1>
+      </div>
       <button
         class="btn-primary text-xs sm:text-sm px-3 sm:px-4 py-1.5 whitespace-nowrap"
         @click="activeTab === 'resources' ? openCreateResourceModal() : openCreateCategoryModal()"

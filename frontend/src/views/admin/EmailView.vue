@@ -373,15 +373,27 @@ function getProviderBgColor(provider: string) {
 </script>
 
 <template>
-  <div class="p-6">
+  <div>
     <div class="flex items-center justify-between mb-5">
-      <div>
-        <h1 class="text-lg font-semibold text-gray-900 dark:text-white">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
+          <svg
+            class="w-4 h-4 text-primary"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+            />
+          </svg>
+        </div>
+        <h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
           邮件管理
         </h1>
-        <p class="text-gray-500 dark:text-gray-400 text-xs mt-0.5">
-          配置邮件服务提供商和邮箱账号
-        </p>
       </div>
       <div class="flex gap-2">
         <button
