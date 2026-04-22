@@ -244,12 +244,12 @@ async def verify_email(
         )
     
     from app.utils.timezone import get_db_now
-    from datetime import datetime
+    from datetime import datetime, timezone as tz
     now = get_db_now()
     token_expires = user.verification_token_expires
     if token_expires:
-        if token_expires.tzinfo is not None:
-            token_expires = token_expires.replace(tzinfo=None)
+        if token_expires.tzinfo is None:
+            token_expires = token_expires.replace(tzinfo=tz.utc)
         if token_expires < now:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
