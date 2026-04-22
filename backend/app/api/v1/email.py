@@ -133,7 +133,8 @@ def send_email_with_config(
                     server.ehlo()
                 
                 logger.info(f"Connected to {host}:{port}, attempting login")
-                server.login(config.smtp_user.strip(), config.smtp_password.replace(' ', '').strip())
+                password = config.smtp_password.replace(' ', '').replace('\xa0', '').replace('\u00a0', '').strip()
+                server.login(config.smtp_user.strip(), password)
                 logger.info(f"Login successful, sending email to {to_email}")
                 server.sendmail(config.from_email, to_email, msg.as_string())
                 server.quit()
