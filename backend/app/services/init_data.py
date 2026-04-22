@@ -298,10 +298,16 @@ def init_database():
             db.commit()
             print(f"Created admin user: {settings.ADMIN_USERNAME}")
         else:
+            updated = False
             if not admin.is_verified:
                 admin.is_verified = True
+                updated = True
+            if not admin.is_admin:
+                admin.is_admin = True
+                updated = True
+            if updated:
                 db.commit()
-                print(f"Updated admin user verification status: {settings.ADMIN_USERNAME}")
+                print(f"Updated admin user: {settings.ADMIN_USERNAME}")
         
         deprecated_config = db.query(SiteConfig).filter(SiteConfig.key == "mobile_article_layout").first()
         if deprecated_config:

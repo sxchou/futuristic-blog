@@ -2,6 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.core.database import get_db
+from app.core.config import settings
 from app.models import User, UserProfile, AvatarType, OAuthConnection, OAuthTempToken, Article, Comment, ArticleFile, ArticleLike, EmailLog, OperationLog, LoginLog, AccessLog, CommentAuditLog, RefreshToken
 from app.schemas import UserListItem, UserAdminUpdate, PaginatedResponse
 from app.utils import get_current_user, get_password_hash
@@ -113,6 +114,8 @@ async def update_user(
     if user_data.bio is not None:
         user.bio = user_data.bio
     if user_data.is_admin is not None:
+        if user.username == settings.ADMIN_USERNAME and not user_data.is_admin:
+            raise HTTPException(status_code=403, detail="不能取消超级管理员的管理员权限")
         user.is_admin = user_data.is_admin
     
     db.commit()
@@ -150,6 +153,9 @@ async def delete_user(
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    if user.username == settings.ADMIN_USERNAME:
+        raise HTTPException(status_code=403, detail="不能删除超级管理员账户")
     
     username = user.username
     
