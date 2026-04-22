@@ -68,7 +68,9 @@ const formatDate = (dateString: string) => {
   return `${year}-${month}-${day}`
 }
 
-const openEditor = (announcement?: Announcement) => {
+const openEditor = async (announcement?: Announcement) => {
+  if (!await requireAdmin(announcement ? '编辑公告' : '创建公告')) return
+  
   if (announcement) {
     editingId.value = announcement.id
     formData.value = {
@@ -97,8 +99,6 @@ const closeEditor = () => {
 }
 
 const handleSave = async () => {
-  if (!await requireAdmin(editingId.value ? '编辑公告' : '创建公告')) return
-  
   if (!formData.value.title.trim()) {
     showMessage('请输入公告标题', 'error')
     return

@@ -267,7 +267,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
 
     <div
       v-if="!isAdmin"
-      class="bg-white dark:bg-dark-100 rounded-xl border border-gray-200 dark:border-white/10 p-8 text-center"
+      class="glass-card p-8 text-center"
     >
       <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
         <svg
