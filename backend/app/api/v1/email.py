@@ -18,10 +18,13 @@ from app.services.log_service import LogService
 from app.utils.timezone import get_now, get_db_now
 import smtplib
 import socket
+import logging
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.utils import formataddr
 from email.header import Header
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/email", tags=["Email Management"])
 
@@ -115,14 +118,20 @@ def send_email_with_config(
             ports_to_try = [587, 465]
         
         for port in ports_to_try:
+            server = None
             try:
+                logger.info(f"Trying to connect to {host}:{port} (SSL: {port == 465})")
                 if port == 465:
                     server = smtplib.SMTP_SSL(host, port, timeout=30)
                 else:
                     server = smtplib.SMTP(host, port, timeout=30)
+                    server.ehlo()
                     server.starttls()
+                    server.ehlo()
                 
+                logger.info(f"Connected to {host}:{port}, attempting login")
                 server.login(config.smtp_user.strip(), config.smtp_password.replace(' ', '').strip())
+                logger.info(f"Login successful, sending email to {to_email}")
                 server.sendmail(config.from_email, to_email, msg.as_string())
                 server.quit()
                 
@@ -133,6 +142,12 @@ def send_email_with_config(
                 
             except (smtplib.SMTPException, socket.error, socket.timeout) as e:
                 last_error = str(e)
+                logger.error(f"Failed to connect/send via {host}:{port}: {e}")
+                if server:
+                    try:
+                        server.quit()
+                    except:
+                        pass
                 continue
         
         raise Exception(f"All connection attempts failed. Last error: {last_error}")
