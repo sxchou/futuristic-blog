@@ -63,6 +63,10 @@ async def lifespan(app: FastAPI):
             sync_article_comment_counts()
             logger.info("Article comment counts synced successfully")
             
+            logger.info("Fixing database sequences...")
+            fix_database_sequences()
+            logger.info("Database sequences fixed successfully")
+            
             logger.info("=== Application initialized successfully for cloud platform ===")
         except Exception as e:
             logger.error(f"Database initialization error: {e}", exc_info=True)
@@ -309,6 +313,25 @@ def sync_article_comment_counts():
         logger.info(f"Synced comment counts for {updated_count} articles")
     except Exception as e:
         logger.error(f"Error syncing comment counts: {e}")
+    finally:
+        db.close()
+
+
+def fix_database_sequences():
+    from sqlalchemy import text, func
+    from app.models.models import RefreshToken
+    
+    db = SessionLocal()
+    try:
+        max_id = db.query(func.max(RefreshToken.id)).scalar() or 0
+        next_val = max_id + 1
+        
+        db.execute(text(f"SELECT setval('refresh_tokens_id_seq', {next_val})"))
+        db.commit()
+        logger.info(f"Fixed refresh_tokens sequence: max_id={max_id}, next_val={next_val}")
+    except Exception as e:
+        logger.error(f"Error fixing sequences: {e}")
+        db.rollback()
     finally:
         db.close()
 
