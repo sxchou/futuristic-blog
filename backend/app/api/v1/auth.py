@@ -104,14 +104,15 @@ async def login(
             fail_reason="邮箱未验证"
         )
         from app.utils.timezone import get_db_now
+        from datetime import timezone as tz
         
         now = get_db_now()
         token_expires = user.verification_token_expires
         is_expired = False
         
         if token_expires:
-            if token_expires.tzinfo is not None:
-                token_expires = token_expires.replace(tzinfo=None)
+            if token_expires.tzinfo is None:
+                token_expires = token_expires.replace(tzinfo=tz.utc)
             if token_expires < now:
                 is_expired = True
         
