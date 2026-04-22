@@ -20,6 +20,8 @@ import smtplib
 import socket
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.utils import formataddr
+from email.header import Header
 
 router = APIRouter(prefix="/email", tags=["Email Management"])
 
@@ -96,8 +98,8 @@ def send_email_with_config(
             raise ValueError(f"Unknown email provider: {config.provider}")
         
         msg = MIMEMultipart('alternative')
-        msg['Subject'] = subject
-        msg['From'] = f"{config.from_name} <{config.from_email}>"
+        msg['Subject'] = Header(subject, 'utf-8')
+        msg['From'] = formataddr((str(Header(config.from_name, 'utf-8')), config.from_email))
         msg['To'] = to_email
         
         html_part = MIMEText(html_content, 'html', 'utf-8')

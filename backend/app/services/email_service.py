@@ -4,6 +4,8 @@ import json
 import logging
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.utils import formataddr
+from email.header import Header
 from datetime import datetime, timedelta
 import secrets
 from typing import Optional, Dict, Any
@@ -150,8 +152,8 @@ class EmailService:
             raise ValueError("SMTP configuration is incomplete")
         
         msg = MIMEMultipart('alternative')
-        msg['Subject'] = subject
-        msg['From'] = f"{from_name} <{from_email}>"
+        msg['Subject'] = Header(subject, 'utf-8')
+        msg['From'] = formataddr((str(Header(from_name, 'utf-8')), from_email))
         msg['To'] = to_email
         
         if text_content:
