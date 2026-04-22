@@ -176,6 +176,20 @@ def run_database_migrations():
                 conn.commit()
                 print("Migration: Updated resources table with unique URL constraint")
             
+            cursor.execute("SELECT COUNT(*) FROM resources")
+            if cursor.fetchone()[0] > 0:
+                cursor.execute('''
+                    WITH numbered AS (
+                        SELECT id, ROW_NUMBER() OVER (ORDER BY "order", id) as new_order
+                        FROM resources
+                    )
+                    UPDATE resources SET "order" = (
+                        SELECT new_order FROM numbered WHERE numbered.id = resources.id
+                    )
+                ''')
+                conn.commit()
+                print("Migration: Fixed duplicate order values in resources table")
+            
             conn.close()
         elif "postgresql" in db_url:
             db = SessionLocal()
@@ -267,6 +281,20 @@ def run_database_migrations():
                     db.execute(text("CREATE INDEX IF NOT EXISTS ix_resources_category_id ON resources(category_id)"))
                     db.commit()
                     print("Migration: Added 'category_id' column to resources table")
+                
+                result = db.execute(text("SELECT COUNT(*) FROM resources WHERE id NOT IN (SELECT id FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY \"order\", id) as rn FROM resources) t WHERE \"order\" = rn)"))
+                if result.fetchone()[0] > 0:
+                    db.execute(text('''
+                        WITH numbered AS (
+                            SELECT id, ROW_NUMBER() OVER (ORDER BY "order", id) as new_order
+                            FROM resources
+                        )
+                        UPDATE resources SET "order" = numbered.new_order
+                        FROM numbered
+                        WHERE resources.id = numbered.id
+                    '''))
+                    db.commit()
+                    print("Migration: Fixed duplicate order values in resources table")
             except Exception as e:
                 print(f"PostgreSQL migration error: {e}")
                 db.rollback()
