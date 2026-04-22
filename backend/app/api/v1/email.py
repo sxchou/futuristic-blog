@@ -19,6 +19,7 @@ from app.utils.timezone import get_now, get_db_now
 import smtplib
 import socket
 import logging
+import ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.utils import formataddr
@@ -117,16 +118,18 @@ def send_email_with_config(
         else:
             ports_to_try = [587, 465]
         
+        ssl_context = ssl.create_default_context()
+        
         for port in ports_to_try:
             server = None
             try:
                 logger.info(f"Trying to connect to {host}:{port} (SSL: {port == 465})")
                 if port == 465:
-                    server = smtplib.SMTP_SSL(host, port, timeout=30)
+                    server = smtplib.SMTP_SSL(host, port, timeout=30, context=ssl_context)
                 else:
                     server = smtplib.SMTP(host, port, timeout=30)
                     server.ehlo()
-                    server.starttls()
+                    server.starttls(context=ssl_context)
                     server.ehlo()
                 
                 logger.info(f"Connected to {host}:{port}, attempting login")
@@ -140,15 +143,28 @@ def send_email_with_config(
                 
                 return {'success': True, 'message': 'Email sent successfully'}
                 
-            except (smtplib.SMTPException, socket.error, socket.timeout) as e:
-                last_error = str(e)
-                logger.error(f"Failed to connect/send via {host}:{port}: {e}")
-                if server:
-                    try:
-                        server.quit()
-                    except:
-                        pass
-                continue
+            except smtplib.SMTPAuthenticationError as e:
+                last_error = f"SMTP认证失败: {e}"
+                logger.error(f"SMTP auth failed via {host}:{port}: {e}")
+            except smtplib.SMTPException as e:
+                last_error = f"SMTP错误: {e}"
+                logger.error(f"SMTP error via {host}:{port}: {e}")
+            except ssl.SSLError as e:
+                last_error = f"SSL错误: {e}"
+                logger.error(f"SSL error via {host}:{port}: {e}")
+            except (socket.error, socket.timeout, OSError) as e:
+                last_error = f"连接错误: {e}"
+                logger.error(f"Connection error via {host}:{port}: {e}")
+            except Exception as e:
+                last_error = f"未知错误: {type(e).__name__}: {e}"
+                logger.error(f"Unexpected error via {host}:{port}: {type(e).__name__}: {e}")
+            
+            if server:
+                try:
+                    server.quit()
+                except:
+                    pass
+            continue
         
         raise Exception(f"All connection attempts failed. Last error: {last_error}")
         
