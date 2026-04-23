@@ -352,21 +352,8 @@ def init_database():
     
     db = SessionLocal()
     try:
-        admin = db.query(User).filter(User.username == settings.ADMIN_USERNAME).first()
-        if not admin:
-            admin = User(
-                username=settings.ADMIN_USERNAME,
-                email=settings.ADMIN_EMAIL,
-                hashed_password=get_password_hash(settings.ADMIN_PASSWORD),
-                is_admin=True,
-                is_verified=True,
-                bio="Full Stack Engineer | AI Explorer | Open Source Contributor",
-                avatar="/avatars/admin.jpg"
-            )
-            db.add(admin)
-            db.commit()
-            print(f"Created admin user: {settings.ADMIN_USERNAME}")
-        else:
+        admin = db.query(User).filter(User.email == settings.ADMIN_EMAIL).first()
+        if admin:
             updated = False
             if not admin.is_verified:
                 admin.is_verified = True
@@ -376,7 +363,33 @@ def init_database():
                 updated = True
             if updated:
                 db.commit()
-                print(f"Updated admin user: {settings.ADMIN_USERNAME}")
+                print(f"Updated admin user: {admin.username}")
+        else:
+            admin = db.query(User).filter(User.username == settings.ADMIN_USERNAME).first()
+            if not admin:
+                admin = User(
+                    username=settings.ADMIN_USERNAME,
+                    email=settings.ADMIN_EMAIL,
+                    hashed_password=get_password_hash(settings.ADMIN_PASSWORD),
+                    is_admin=True,
+                    is_verified=True,
+                    bio="Full Stack Engineer | AI Explorer | Open Source Contributor",
+                    avatar="/avatars/admin.jpg"
+                )
+                db.add(admin)
+                db.commit()
+                print(f"Created admin user: {settings.ADMIN_USERNAME}")
+            else:
+                updated = False
+                if not admin.is_verified:
+                    admin.is_verified = True
+                    updated = True
+                if not admin.is_admin:
+                    admin.is_admin = True
+                    updated = True
+                if updated:
+                    db.commit()
+                    print(f"Updated admin user: {settings.ADMIN_USERNAME}")
         
         deprecated_config = db.query(SiteConfig).filter(SiteConfig.key == "mobile_article_layout").first()
         if deprecated_config:
