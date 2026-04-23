@@ -350,7 +350,15 @@ const handleSendOldEmailCode = async () => {
     dialogStore.showSuccess('验证码已发送至当前邮箱')
     startOldEmailCountdown()
   } catch (error: any) {
-    emailError.value = error.response?.data?.detail || '发送验证码失败'
+    console.error('Send old email code error:', error)
+    const detail = error.response?.data?.detail
+    if (typeof detail === 'string') {
+      emailError.value = detail
+    } else if (error.message) {
+      emailError.value = error.message
+    } else {
+      emailError.value = '发送验证码失败'
+    }
   } finally {
     sendOldCodeLoading.value = false
   }
@@ -398,7 +406,15 @@ const handleSendCode = async () => {
     emailStep.value = 2
     startCountdown()
   } catch (error: any) {
-    emailError.value = error.response?.data?.detail || '发送验证码失败'
+    console.error('Send email code error:', error)
+    const detail = error.response?.data?.detail
+    if (typeof detail === 'string') {
+      emailError.value = detail
+    } else if (error.message) {
+      emailError.value = error.message
+    } else {
+      emailError.value = '发送验证码失败'
+    }
   } finally {
     sendCodeLoading.value = false
   }
@@ -431,7 +447,15 @@ const handleEmailChange = async () => {
     await authStore.fetchUser()
     await userProfileStore.refreshProfile()
   } catch (error: any) {
-    emailError.value = error.response?.data?.detail || '邮箱修改失败'
+    console.error('Email change error:', error)
+    const detail = error.response?.data?.detail
+    if (typeof detail === 'string') {
+      emailError.value = detail
+    } else if (error.message) {
+      emailError.value = error.message
+    } else {
+      emailError.value = '邮箱修改失败'
+    }
   } finally {
     isChangingEmail.value = false
   }
@@ -510,7 +534,15 @@ const handleUsernameChange = async () => {
     await authStore.fetchUser()
     await userProfileStore.refreshProfile()
   } catch (error: any) {
-    usernameError.value = error.response?.data?.detail || '用户名修改失败'
+    console.error('Username change error:', error)
+    const detail = error.response?.data?.detail
+    if (typeof detail === 'string') {
+      usernameError.value = detail
+    } else if (error.message) {
+      usernameError.value = error.message
+    } else {
+      usernameError.value = '用户名修改失败'
+    }
   } finally {
     isChangingUsername.value = false
   }
