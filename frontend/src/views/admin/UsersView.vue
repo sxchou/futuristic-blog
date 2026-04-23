@@ -54,6 +54,15 @@ const handleEdit = async (user: User) => {
   showEditor.value = true
 }
 
+const canResetPassword = (user: User): boolean => {
+  const currentUser = authStore.user
+  if (!currentUser) return false
+  if (!currentUser.is_admin) return false
+  if (user.id === 1) return false
+  if (currentUser.id !== 1 && user.is_admin) return false
+  return true
+}
+
 const handleDelete = async (user: User) => {
   if (!await requireAdmin('删除用户')) return
   
@@ -321,11 +330,16 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                     编辑
                   </button>
                   <button
+                    v-if="canResetPassword(user)"
                     class="text-accent hover:text-accent/80 text-xs"
                     @click="openPasswordModal(user)"
                   >
                     重置密码
                   </button>
+                  <span
+                    v-else
+                    class="text-xs text-gray-400 dark:text-gray-500"
+                  >-</span>
                   <button
                     class="text-red-400 hover:text-red-300 text-xs"
                     @click="handleDelete(user)"
@@ -501,6 +515,36 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
               />
             </svg>
           </button>
+        </div>
+
+        <div
+          v-if="editingUser"
+          class="mb-4 p-3 bg-primary/5 dark:bg-primary/10 rounded-xl"
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm"
+              :style="getUserAvatarStyle(editingUser)"
+            >
+              {{ editingUser.username?.charAt(0).toUpperCase() }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-medium text-gray-900 dark:text-white truncate">
+                  {{ editingUser.username }}
+                </span>
+                <span
+                  v-if="editingUser.is_admin"
+                  class="px-1.5 py-0.5 text-xs font-medium rounded bg-primary/20 text-primary"
+                >
+                  管理员
+                </span>
+              </div>
+              <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                ID: {{ editingUser.id }} · {{ editingUser.email || '未绑定邮箱' }}
+              </div>
+            </div>
+          </div>
         </div>
 
         <form

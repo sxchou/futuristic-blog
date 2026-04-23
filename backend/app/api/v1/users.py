@@ -251,6 +251,12 @@ async def reset_user_password(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
+    if user.id == 1:
+        raise HTTPException(status_code=403, detail="不能重置超级管理员的密码")
+    
+    if current_user.id != 1 and user.is_admin:
+        raise HTTPException(status_code=403, detail="普通管理员不能重置其他管理员的密码")
+    
     user.hashed_password = get_password_hash(new_password)
     db.commit()
     
