@@ -15,6 +15,29 @@ export interface ChangePasswordData {
   confirm_password: string
 }
 
+export interface EmailChangeRequestData {
+  new_email: string
+  password?: string
+  verification_type: 'password' | 'old_email'
+  old_email_code?: string
+}
+
+export interface EmailChangeVerifyData {
+  new_email: string
+  code: string
+  password?: string
+}
+
+export interface SendCodeToOldEmailData {
+  message: string
+  expires_in: number
+}
+
+export interface ChangeUsernameData {
+  new_username: string
+  password: string
+}
+
 export const userApi = {
   getUsers: async (page: number = 1, pageSize: number = 10): Promise<PaginatedResponse<User>> => {
     const response = await apiClient.get(`/users?page=${page}&page_size=${pageSize}`)
@@ -41,6 +64,26 @@ export const userApi = {
 
   changePassword: async (data: ChangePasswordData): Promise<{ message: string }> => {
     const response = await apiClient.post('/users/change-password', data)
+    return response.data
+  },
+
+  sendCodeToOldEmail: async (): Promise<SendCodeToOldEmailData> => {
+    const response = await apiClient.post('/users/email-change/send-to-old')
+    return response.data
+  },
+
+  requestEmailChange: async (data: EmailChangeRequestData): Promise<{ message: string; expires_in: number }> => {
+    const response = await apiClient.post('/users/email-change/request', data)
+    return response.data
+  },
+
+  verifyEmailChange: async (data: EmailChangeVerifyData): Promise<{ message: string }> => {
+    const response = await apiClient.post('/users/email-change/verify', data)
+    return response.data
+  },
+
+  changeUsername: async (data: ChangeUsernameData): Promise<{ message: string; new_username: string }> => {
+    const response = await apiClient.post('/users/change-username', data)
     return response.data
   }
 }

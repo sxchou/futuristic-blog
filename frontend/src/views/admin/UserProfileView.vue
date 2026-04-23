@@ -297,6 +297,233 @@ const togglePasswordSection = () => {
   }
 }
 
+const showEmailSection = ref(false)
+const isChangingEmail = ref(false)
+const sendCodeLoading = ref(false)
+const sendOldCodeLoading = ref(false)
+const countdown = ref(0)
+const oldEmailCountdown = ref(0)
+const emailError = ref('')
+const emailVerificationType = ref<'password' | 'old_email'>('password')
+const emailStep = ref(1)
+
+const emailForm = ref({
+  new_email: '',
+  password: '',
+  code: '',
+  old_email_code: ''
+})
+
+const currentEmail = computed(() => authStore.user?.email || '')
+
+const validateEmail = (email: string): boolean => {
+  const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+  return emailPattern.test(email)
+}
+
+const startCountdown = () => {
+  countdown.value = 60
+  const timer = setInterval(() => {
+    countdown.value--
+    if (countdown.value <= 0) {
+      clearInterval(timer)
+    }
+  }, 1000)
+}
+
+const startOldEmailCountdown = () => {
+  oldEmailCountdown.value = 60
+  const timer = setInterval(() => {
+    oldEmailCountdown.value--
+    if (oldEmailCountdown.value <= 0) {
+      clearInterval(timer)
+    }
+  }, 1000)
+}
+
+const handleSendOldEmailCode = async () => {
+  emailError.value = ''
+  
+  sendOldCodeLoading.value = true
+  try {
+    await userApi.sendCodeToOldEmail()
+    dialogStore.showSuccess('验证码已发送至当前邮箱')
+    startOldEmailCountdown()
+  } catch (error: any) {
+    emailError.value = error.response?.data?.detail || '发送验证码失败'
+  } finally {
+    sendOldCodeLoading.value = false
+  }
+}
+
+const handleSendCode = async () => {
+  emailError.value = ''
+  
+  if (!emailForm.value.new_email) {
+    emailError.value = '请输入新邮箱地址'
+    return
+  }
+  
+  if (!validateEmail(emailForm.value.new_email)) {
+    emailError.value = '请输入有效的邮箱地址'
+    return
+  }
+  
+  if (emailForm.value.new_email === currentEmail.value) {
+    emailError.value = '新邮箱不能与当前邮箱相同'
+    return
+  }
+  
+  if (emailVerificationType.value === 'password') {
+    if (!emailForm.value.password) {
+      emailError.value = '请输入当前密码'
+      return
+    }
+  } else {
+    if (!emailForm.value.old_email_code) {
+      emailError.value = '请输入原邮箱验证码'
+      return
+    }
+  }
+  
+  sendCodeLoading.value = true
+  try {
+    await userApi.requestEmailChange({
+      new_email: emailForm.value.new_email,
+      password: emailVerificationType.value === 'password' ? emailForm.value.password : undefined,
+      verification_type: emailVerificationType.value,
+      old_email_code: emailVerificationType.value === 'old_email' ? emailForm.value.old_email_code : undefined
+    })
+    dialogStore.showSuccess('验证码已发送至新邮箱')
+    emailStep.value = 2
+    startCountdown()
+  } catch (error: any) {
+    emailError.value = error.response?.data?.detail || '发送验证码失败'
+  } finally {
+    sendCodeLoading.value = false
+  }
+}
+
+const handleEmailChange = async () => {
+  emailError.value = ''
+  
+  if (!emailForm.value.new_email) {
+    emailError.value = '请输入新邮箱地址'
+    return
+  }
+  
+  if (!emailForm.value.code) {
+    emailError.value = '请输入验证码'
+    return
+  }
+  
+  isChangingEmail.value = true
+  try {
+    await userApi.verifyEmailChange({
+      new_email: emailForm.value.new_email,
+      code: emailForm.value.code,
+      password: emailVerificationType.value === 'password' ? emailForm.value.password : undefined
+    })
+    dialogStore.showSuccess('邮箱修改成功')
+    showEmailSection.value = false
+    emailStep.value = 1
+    emailForm.value = { new_email: '', password: '', code: '', old_email_code: '' }
+    await authStore.fetchUser()
+    await userProfileStore.refreshProfile()
+  } catch (error: any) {
+    emailError.value = error.response?.data?.detail || '邮箱修改失败'
+  } finally {
+    isChangingEmail.value = false
+  }
+}
+
+const toggleEmailSection = () => {
+  showEmailSection.value = !showEmailSection.value
+  if (!showEmailSection.value) {
+    emailStep.value = 1
+    emailForm.value = { new_email: '', password: '', code: '', old_email_code: '' }
+    emailError.value = ''
+    emailVerificationType.value = 'password'
+  }
+}
+
+const showUsernameSection = ref(false)
+const isChangingUsername = ref(false)
+const usernameError = ref('')
+
+const usernameForm = ref({
+  new_username: '',
+  password: ''
+})
+
+const currentUsername = computed(() => authStore.user?.username || '')
+
+const validateUsername = (username: string): { valid: boolean; message: string } => {
+  if (!username) {
+    return { valid: false, message: '请输入新用户名' }
+  }
+  
+  if (username.length < 4) {
+    return { valid: false, message: '用户名长度至少4个字符' }
+  }
+  
+  if (username.length > 20) {
+    return { valid: false, message: '用户名长度不能超过20个字符' }
+  }
+  
+  const usernamePattern = /^[a-zA-Z0-9_\u4e00-\u9fa5]+$/
+  if (!usernamePattern.test(username)) {
+    return { valid: false, message: '用户名只能包含字母、数字、下划线和中文' }
+  }
+  
+  return { valid: true, message: '' }
+}
+
+const handleUsernameChange = async () => {
+  usernameError.value = ''
+  
+  const validation = validateUsername(usernameForm.value.new_username)
+  if (!validation.valid) {
+    usernameError.value = validation.message
+    return
+  }
+  
+  if (usernameForm.value.new_username === currentUsername.value) {
+    usernameError.value = '新用户名不能与当前用户名相同'
+    return
+  }
+  
+  if (!usernameForm.value.password) {
+    usernameError.value = '请输入当前密码'
+    return
+  }
+  
+  isChangingUsername.value = true
+  try {
+    await userApi.changeUsername({
+      new_username: usernameForm.value.new_username,
+      password: usernameForm.value.password
+    })
+    dialogStore.showSuccess('用户名修改成功')
+    showUsernameSection.value = false
+    usernameForm.value = { new_username: '', password: '' }
+    await authStore.fetchUser()
+    await userProfileStore.refreshProfile()
+  } catch (error: any) {
+    usernameError.value = error.response?.data?.detail || '用户名修改失败'
+  } finally {
+    isChangingUsername.value = false
+  }
+}
+
+const toggleUsernameSection = () => {
+  showUsernameSection.value = !showUsernameSection.value
+  if (!showUsernameSection.value) {
+    usernameForm.value = { new_username: '', password: '' }
+    usernameError.value = ''
+  }
+}
+
 onMounted(fetchProfile)
 </script>
 
@@ -481,6 +708,202 @@ onMounted(fetchProfile)
           :image-src="selectedImageSrc"
           @confirm="handleCropConfirm"
         />
+      </div>
+
+      <div class="glass-card">
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
+                <svg
+                  class="w-5 h-5 text-primary"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+                  用户名设置
+                </h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  管理您的账户用户名
+                </p>
+              </div>
+            </div>
+            <button
+              v-if="!showUsernameSection"
+              class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors"
+              @click="showUsernameSection = true"
+            >
+              <svg
+                class="w-3.5 h-3.5 mr-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                />
+              </svg>
+              更改用户名
+            </button>
+          </div>
+        </div>
+        
+        <div
+          v-if="!showUsernameSection"
+          class="px-6 py-4"
+        >
+          <div class="flex items-center justify-between py-3 px-4 bg-primary/5 dark:bg-primary/10 rounded-xl">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
+                <svg
+                  class="w-4 h-4 text-primary"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-900 dark:text-white">当前用户名</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">{{ currentUsername }}</p>
+              </div>
+            </div>
+            <span class="text-sm text-gray-400 dark:text-gray-500">
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
+            </span>
+          </div>
+        </div>
+        
+        <div
+          v-else
+          class="px-6 py-4"
+        >
+          <div class="space-y-4 mb-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                当前用户名
+              </label>
+              <input
+                :value="currentUsername"
+                type="text"
+                disabled
+                class="w-full px-4 py-2.5 text-sm bg-gray-100 dark:bg-gray-800 border-2 border-transparent rounded-xl text-gray-500 dark:text-gray-400 cursor-not-allowed"
+              >
+            </div>
+            
+            <div>
+              <label
+                for="new-username"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+              >
+                新用户名
+              </label>
+              <input
+                id="new-username"
+                v-model="usernameForm.new_username"
+                type="text"
+                maxlength="20"
+                placeholder="请输入新用户名（4-20个字符）"
+                class="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-gray-400 dark:focus:border-gray-500 rounded-xl text-gray-900 dark:text-white transition-colors focus:outline-none"
+              >
+              <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                用户名只能包含字母、数字、下划线和中文
+              </p>
+            </div>
+            
+            <div>
+              <label
+                for="username-password"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+              >
+                当前密码
+              </label>
+              <input
+                id="username-password"
+                v-model="usernameForm.password"
+                type="password"
+                placeholder="请输入当前密码"
+                class="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-gray-400 dark:focus:border-gray-500 rounded-xl text-gray-900 dark:text-white transition-colors focus:outline-none"
+              >
+            </div>
+            
+            <div
+              v-if="usernameError"
+              class="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl"
+            >
+              <p class="text-sm text-red-600 dark:text-red-400">
+                {{ usernameError }}
+              </p>
+            </div>
+          </div>
+          
+          <div class="flex gap-3 pt-2">
+            <button
+              class="inline-flex items-center px-5 py-2.5 text-sm font-medium rounded-xl bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="isChangingUsername"
+              @click="handleUsernameChange"
+            >
+              <svg
+                v-if="isChangingUsername"
+                class="w-4 h-4 mr-1.5 animate-spin"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                />
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+              {{ isChangingUsername ? '修改中...' : '确认更改' }}
+            </button>
+            <button
+              class="px-5 py-2.5 text-sm font-medium rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              @click="toggleUsernameSection"
+            >
+              取消
+            </button>
+          </div>
+        </div>
       </div>
 
       <div class="glass-card">
@@ -809,6 +1232,377 @@ onMounted(fetchProfile)
             <button
               class="px-5 py-2.5 text-sm font-medium rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
               @click="togglePasswordSection"
+            >
+              取消
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
+                <svg
+                  class="w-5 h-5 text-primary"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+                  邮箱设置
+                </h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  管理您的账户邮箱
+                </p>
+              </div>
+            </div>
+            <button
+              v-if="!showEmailSection"
+              class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors"
+              @click="showEmailSection = true"
+            >
+              <svg
+                class="w-3.5 h-3.5 mr-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                />
+              </svg>
+              更改邮箱
+            </button>
+          </div>
+        </div>
+        
+        <div
+          v-if="!showEmailSection"
+          class="px-6 py-4"
+        >
+          <div class="flex items-center justify-between py-3 px-4 bg-primary/5 dark:bg-primary/10 rounded-xl">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
+                <svg
+                  class="w-4 h-4 text-primary"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-900 dark:text-white">当前邮箱</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">{{ currentEmail }}</p>
+              </div>
+            </div>
+            <span class="text-sm text-gray-400 dark:text-gray-500">
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
+              </svg>
+            </span>
+          </div>
+        </div>
+        
+        <div
+          v-else
+          class="px-6 py-4"
+        >
+          <div class="space-y-4 mb-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                当前邮箱
+              </label>
+              <input
+                :value="currentEmail"
+                type="email"
+                disabled
+                class="w-full px-4 py-2.5 text-sm bg-gray-100 dark:bg-gray-800 border-2 border-transparent rounded-xl text-gray-500 dark:text-gray-400 cursor-not-allowed"
+              >
+            </div>
+            
+            <div v-if="emailStep === 1">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                验证方式
+              </label>
+              <div class="grid grid-cols-2 gap-3">
+                <button
+                  :class="[
+                    'p-3 rounded-xl border-2 transition-all text-left',
+                    emailVerificationType === 'password' 
+                      ? 'border-primary bg-primary/5 dark:bg-primary/10' 
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                  ]"
+                  @click="emailVerificationType = 'password'"
+                >
+                  <div class="flex items-center gap-2 mb-1">
+                    <svg
+                      class="w-4 h-4"
+                      :class="emailVerificationType === 'password' ? 'text-primary' : 'text-gray-400'"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                      />
+                    </svg>
+                    <span
+                      class="text-sm font-medium"
+                      :class="emailVerificationType === 'password' ? 'text-primary' : 'text-gray-700 dark:text-gray-300'"
+                    >
+                      密码验证
+                    </span>
+                  </div>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    通过当前密码验证身份
+                  </p>
+                </button>
+                
+                <button
+                  :class="[
+                    'p-3 rounded-xl border-2 transition-all text-left',
+                    emailVerificationType === 'old_email' 
+                      ? 'border-primary bg-primary/5 dark:bg-primary/10' 
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                  ]"
+                  @click="emailVerificationType = 'old_email'"
+                >
+                  <div class="flex items-center gap-2 mb-1">
+                    <svg
+                      class="w-4 h-4"
+                      :class="emailVerificationType === 'old_email' ? 'text-primary' : 'text-gray-400'"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                      />
+                    </svg>
+                    <span
+                      class="text-sm font-medium"
+                      :class="emailVerificationType === 'old_email' ? 'text-primary' : 'text-gray-700 dark:text-gray-300'"
+                    >
+                      邮箱验证
+                    </span>
+                  </div>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    通过原邮箱验证码验证
+                  </p>
+                </button>
+              </div>
+            </div>
+            
+            <div v-if="emailVerificationType === 'password' && emailStep === 1">
+              <label
+                for="email-password"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+              >
+                当前密码
+              </label>
+              <input
+                id="email-password"
+                v-model="emailForm.password"
+                type="password"
+                placeholder="请输入当前密码"
+                class="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-gray-400 dark:focus:border-gray-500 rounded-xl text-gray-900 dark:text-white transition-colors focus:outline-none"
+              >
+            </div>
+            
+            <div v-if="emailVerificationType === 'old_email' && emailStep === 1">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                原邮箱验证码
+              </label>
+              <div class="flex gap-2">
+                <input
+                  v-model="emailForm.old_email_code"
+                  type="text"
+                  maxlength="6"
+                  placeholder="请输入6位验证码"
+                  class="flex-1 px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-gray-400 dark:focus:border-gray-500 rounded-xl text-gray-900 dark:text-white transition-colors focus:outline-none"
+                >
+                <button
+                  :disabled="oldEmailCountdown > 0 || sendOldCodeLoading"
+                  class="px-4 py-2.5 text-sm font-medium rounded-xl bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                  @click="handleSendOldEmailCode"
+                >
+                  <span v-if="sendOldCodeLoading">发送中...</span>
+                  <span v-else-if="oldEmailCountdown > 0">{{ oldEmailCountdown }}s</span>
+                  <span v-else>获取验证码</span>
+                </button>
+              </div>
+              <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                验证码将发送至 {{ currentEmail }}
+              </p>
+            </div>
+            
+            <div v-if="emailStep === 1">
+              <label
+                for="new-email"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+              >
+                新邮箱
+              </label>
+              <input
+                id="new-email"
+                v-model="emailForm.new_email"
+                type="email"
+                placeholder="请输入新邮箱地址"
+                class="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-gray-400 dark:focus:border-gray-500 rounded-xl text-gray-900 dark:text-white transition-colors focus:outline-none"
+              >
+            </div>
+            
+            <div v-if="emailStep === 2">
+              <div class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl mb-4">
+                <p class="text-sm text-blue-600 dark:text-blue-400">
+                  验证码已发送至 {{ emailForm.new_email }}，请查收邮件
+                </p>
+              </div>
+              
+              <label
+                for="email-code"
+                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+              >
+                新邮箱验证码
+              </label>
+              <div class="flex gap-2">
+                <input
+                  id="email-code"
+                  v-model="emailForm.code"
+                  type="text"
+                  maxlength="6"
+                  placeholder="请输入6位验证码"
+                  class="flex-1 px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-800/50 border-2 border-transparent focus:border-gray-400 dark:focus:border-gray-500 rounded-xl text-gray-900 dark:text-white transition-colors focus:outline-none"
+                >
+                <button
+                  :disabled="countdown > 0 || sendCodeLoading"
+                  class="px-4 py-2.5 text-sm font-medium rounded-xl bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                  @click="handleSendCode"
+                >
+                  <span v-if="sendCodeLoading">发送中...</span>
+                  <span v-else-if="countdown > 0">{{ countdown }}s</span>
+                  <span v-else>重新发送</span>
+                </button>
+              </div>
+              <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                验证码有效期10分钟
+              </p>
+            </div>
+            
+            <div
+              v-if="emailError"
+              class="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl"
+            >
+              <p class="text-sm text-red-600 dark:text-red-400">
+                {{ emailError }}
+              </p>
+            </div>
+          </div>
+          
+          <div class="flex gap-3 pt-2">
+            <button
+              v-if="emailStep === 1"
+              class="inline-flex items-center px-5 py-2.5 text-sm font-medium rounded-xl bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="sendCodeLoading"
+              @click="handleSendCode"
+            >
+              <svg
+                v-if="sendCodeLoading"
+                class="w-4 h-4 mr-1.5 animate-spin"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                />
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+              {{ sendCodeLoading ? '发送中...' : '发送验证码' }}
+            </button>
+            <button
+              v-if="emailStep === 2"
+              class="inline-flex items-center px-5 py-2.5 text-sm font-medium rounded-xl bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="isChangingEmail"
+              @click="handleEmailChange"
+            >
+              <svg
+                v-if="isChangingEmail"
+                class="w-4 h-4 mr-1.5 animate-spin"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                />
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+              {{ isChangingEmail ? '修改中...' : '确认更改' }}
+            </button>
+            <button
+              v-if="emailStep === 2"
+              class="px-5 py-2.5 text-sm font-medium rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              @click="emailStep = 1"
+            >
+              返回上一步
+            </button>
+            <button
+              class="px-5 py-2.5 text-sm font-medium rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              @click="toggleEmailSection"
             >
               取消
             </button>

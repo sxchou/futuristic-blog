@@ -373,6 +373,23 @@ class PasswordReset(Base):
     created_at = Column(DateTime, default=get_db_now)
 
 
+class EmailChangeVerification(Base):
+    __tablename__ = "email_change_verifications"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    new_email = Column(String(100), nullable=False, index=True)
+    code = Column(String(6), nullable=False)
+    ip_address = Column(String(50), nullable=True)
+    is_used = Column(Boolean, default=False)
+    used_at = Column(DateTime, nullable=True)
+    expires_at = Column(DateTime, nullable=False)
+    verification_type = Column(String(20), default="password")
+    created_at = Column(DateTime, default=get_db_now)
+    
+    user = relationship("User")
+
+
 class AvatarType(str, enum.Enum):
     default = "default"
     custom = "custom"

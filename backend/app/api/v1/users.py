@@ -1,13 +1,18 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
+from datetime import timedelta
+import random
+import string
 from app.core.database import get_db
 from app.core.config import settings
-from app.models import User, UserProfile, AvatarType, OAuthConnection, OAuthTempToken, Article, Comment, ArticleFile, ArticleLike, EmailLog, OperationLog, LoginLog, AccessLog, CommentAuditLog, RefreshToken
+from app.models import User, UserProfile, AvatarType, OAuthConnection, OAuthTempToken, Article, Comment, ArticleFile, ArticleLike, EmailLog, OperationLog, LoginLog, AccessLog, CommentAuditLog, RefreshToken, EmailChangeVerification
 from app.schemas import UserListItem, UserAdminUpdate, PaginatedResponse
-from app.utils import get_current_user, get_password_hash
+from app.utils import get_current_user, get_password_hash, verify_password
 from app.services.log_service import LogService
 from app.services.avatar_service import AvatarFileService
+from app.services.email_service import EmailService
+from app.utils.timezone import get_db_now
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -294,3 +299,305 @@ async def change_password(
     )
     
     return {"message": "密码修改成功"}
+
+
+EMAIL_CHANGE_CODE_EXPIRE_MINUTES = 10
+MAX_EMAIL_CHANGE_REQUESTS_PER_HOUR = 5
+
+
+def generate_email_change_code() -> str:
+    return ''.join(random.choices(string.digits, k=6))
+
+
+def get_client_ip(request: Request) -> str:
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+@router.post("/email-change/send-to-old")
+async def send_code_to_old_email(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    import re
+    
+    if not current_user.email:
+        raise HTTPException(status_code=400, detail="当前账户没有绑定邮箱")
+    
+    client_ip = get_client_ip(request)
+    one_hour_ago = get_db_now() - timedelta(hours=1)
+    
+    recent_requests = db.query(EmailChangeVerification).filter(
+        EmailChangeVerification.user_id == current_user.id,
+        EmailChangeVerification.created_at > one_hour_ago
+    ).count()
+    
+    if recent_requests >= MAX_EMAIL_CHANGE_REQUESTS_PER_HOUR:
+        raise HTTPException(
+            status_code=429,
+            detail=f"请求过于频繁，请稍后再试"
+        )
+    
+    code = generate_email_change_code()
+    expires_at = get_db_now() + timedelta(minutes=EMAIL_CHANGE_CODE_EXPIRE_MINUTES)
+    
+    email_change = EmailChangeVerification(
+        user_id=current_user.id,
+        new_email=current_user.email,
+        code=code,
+        ip_address=client_ip,
+        expires_at=expires_at,
+        verification_type="old_email"
+    )
+    db.add(email_change)
+    db.commit()
+    
+    try:
+        EmailService.send_email_change_verification_email_db(
+            db=db,
+            email=current_user.email,
+            username=current_user.username,
+            code=code,
+            user_id=current_user.id
+        )
+    except Exception as e:
+        print(f"Failed to send verification email to old email: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="发送验证码失败，请稍后重试"
+        )
+    
+    return {
+        "message": "验证码已发送至当前邮箱",
+        "expires_in": EMAIL_CHANGE_CODE_EXPIRE_MINUTES * 60
+    }
+
+
+@router.post("/email-change/request")
+async def request_email_change(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    from pydantic import ValidationError, EmailStr
+    from pydantic import field_validator, BaseModel
+    import re
+    
+    body = await request.json()
+    new_email = body.get("new_email")
+    password = body.get("password")
+    verification_type = body.get("verification_type", "password")
+    old_email_code = body.get("old_email_code")
+    
+    if not new_email:
+        raise HTTPException(status_code=400, detail="请输入新邮箱地址")
+    
+    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if not re.match(email_pattern, new_email):
+        raise HTTPException(status_code=400, detail="请输入有效的邮箱地址")
+    
+    if new_email == current_user.email:
+        raise HTTPException(status_code=400, detail="新邮箱不能与当前邮箱相同")
+    
+    existing_user = db.query(User).filter(User.email == new_email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="该邮箱已被其他用户注册")
+    
+    if verification_type == "password":
+        if not password:
+            raise HTTPException(status_code=400, detail="请输入当前密码")
+        
+        if not verify_password(password, current_user.hashed_password):
+            raise HTTPException(status_code=400, detail="当前密码错误")
+    elif verification_type == "old_email":
+        if not old_email_code:
+            raise HTTPException(status_code=400, detail="请输入原邮箱验证码")
+        
+        now = get_db_now()
+        verification = db.query(EmailChangeVerification).filter(
+            EmailChangeVerification.user_id == current_user.id,
+            EmailChangeVerification.new_email == current_user.email,
+            EmailChangeVerification.code == old_email_code,
+            EmailChangeVerification.verification_type == "old_email",
+            EmailChangeVerification.is_used == False,
+            EmailChangeVerification.expires_at > now
+        ).first()
+        
+        if not verification:
+            raise HTTPException(status_code=400, detail="原邮箱验证码无效或已过期")
+        
+        verification.is_used = True
+        verification.used_at = now
+        db.commit()
+    else:
+        raise HTTPException(status_code=400, detail="无效的验证方式")
+    
+    client_ip = get_client_ip(request)
+    one_hour_ago = get_db_now() - timedelta(hours=1)
+    
+    recent_requests = db.query(EmailChangeVerification).filter(
+        EmailChangeVerification.user_id == current_user.id,
+        EmailChangeVerification.created_at > one_hour_ago
+    ).count()
+    
+    if recent_requests >= MAX_EMAIL_CHANGE_REQUESTS_PER_HOUR:
+        raise HTTPException(
+            status_code=429,
+            detail=f"请求过于频繁，请稍后再试"
+        )
+    
+    code = generate_email_change_code()
+    expires_at = get_db_now() + timedelta(minutes=EMAIL_CHANGE_CODE_EXPIRE_MINUTES)
+    
+    email_change = EmailChangeVerification(
+        user_id=current_user.id,
+        new_email=new_email,
+        code=code,
+        ip_address=client_ip,
+        expires_at=expires_at,
+        verification_type=verification_type
+    )
+    db.add(email_change)
+    db.commit()
+    
+    try:
+        EmailService.send_email_change_verification_email_db(
+            db=db,
+            email=new_email,
+            username=current_user.username,
+            code=code,
+            user_id=current_user.id
+        )
+    except Exception as e:
+        print(f"Failed to send email change verification email: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="发送验证码失败，请稍后重试"
+        )
+    
+    return {
+        "message": "验证码已发送至新邮箱",
+        "expires_in": EMAIL_CHANGE_CODE_EXPIRE_MINUTES * 60
+    }
+
+
+@router.post("/email-change/verify")
+async def verify_email_change(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    body = await request.json()
+    new_email = body.get("new_email")
+    code = body.get("code")
+    password = body.get("password")
+    
+    if not new_email:
+        raise HTTPException(status_code=400, detail="请输入新邮箱地址")
+    if not code:
+        raise HTTPException(status_code=400, detail="请输入验证码")
+    if not password:
+        raise HTTPException(status_code=400, detail="请输入当前密码")
+    
+    if not verify_password(password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="当前密码错误")
+    
+    existing_user = db.query(User).filter(User.email == new_email).first()
+    if existing_user and existing_user.id != current_user.id:
+        raise HTTPException(status_code=400, detail="该邮箱已被其他用户注册")
+    
+    now = get_db_now()
+    verification = db.query(EmailChangeVerification).filter(
+        EmailChangeVerification.user_id == current_user.id,
+        EmailChangeVerification.new_email == new_email,
+        EmailChangeVerification.code == code,
+        EmailChangeVerification.is_used == False,
+        EmailChangeVerification.expires_at > now
+    ).first()
+    
+    if not verification:
+        raise HTTPException(status_code=400, detail="验证码无效或已过期")
+    
+    verification.is_used = True
+    verification.used_at = now
+    
+    old_email = current_user.email
+    current_user.email = new_email
+    current_user.is_verified = True
+    
+    db.commit()
+    
+    LogService.log_operation(
+        db=db,
+        user_id=current_user.id,
+        username=current_user.username,
+        action="更改邮箱",
+        module="个人设置",
+        description=f"邮箱从 {old_email} 更改为 {new_email}",
+        target_type="用户",
+        target_id=current_user.id,
+        request=request,
+        status="success"
+    )
+    
+    return {"message": "邮箱修改成功"}
+
+
+@router.post("/change-username")
+async def change_username(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    body = await request.json()
+    new_username = body.get("new_username")
+    password = body.get("password")
+    
+    if not new_username:
+        raise HTTPException(status_code=400, detail="请输入新用户名")
+    
+    if not password:
+        raise HTTPException(status_code=400, detail="请输入当前密码")
+    
+    if len(new_username) < 4:
+        raise HTTPException(status_code=400, detail="用户名长度至少4个字符")
+    
+    if len(new_username) > 20:
+        raise HTTPException(status_code=400, detail="用户名长度不能超过20个字符")
+    
+    import re
+    if not re.match(r'^[a-zA-Z0-9_\u4e00-\u9fa5]+$', new_username):
+        raise HTTPException(status_code=400, detail="用户名只能包含字母、数字、下划线和中文")
+    
+    if not verify_password(password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="当前密码错误")
+    
+    if new_username == current_user.username:
+        raise HTTPException(status_code=400, detail="新用户名不能与当前用户名相同")
+    
+    existing_user = db.query(User).filter(User.username == new_username).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="该用户名已被使用")
+    
+    old_username = current_user.username
+    current_user.username = new_username
+    
+    db.commit()
+    
+    LogService.log_operation(
+        db=db,
+        user_id=current_user.id,
+        username=current_user.username,
+        action="更改用户名",
+        module="个人设置",
+        description=f"用户名从 {old_username} 更改为 {new_username}",
+        target_type="用户",
+        target_id=current_user.id,
+        request=request,
+        status="success"
+    )
+    
+    return {"message": "用户名修改成功", "new_username": new_username}

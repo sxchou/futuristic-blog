@@ -1165,6 +1165,82 @@ class EmailService:
         )
     
     @staticmethod
+    def send_email_change_verification_email_db(
+        db: Session,
+        email: str,
+        username: str,
+        code: str,
+        user_id: int = None
+    ) -> bool:
+        site_name = EmailService.get_site_name(db)
+        current_year = EmailService.get_current_year()
+        
+        text_content = f"""
+您好 {username}，
+
+您正在更改 {site_name} 账户的邮箱地址。
+
+您的验证码是：{code}
+
+验证码将在10分钟后过期。
+
+如果您没有请求更改邮箱，请忽略此邮件。
+
+祝好，
+{site_name} 团队
+"""
+        
+        html_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; color: #333333; padding: 20px; margin: 0; }}
+        .container {{ max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; padding: 40px; border: 1px solid #e0e0e0; }}
+        .logo {{ font-size: 24px; font-weight: bold; color: #0066cc; margin-bottom: 30px; }}
+        .title {{ font-size: 20px; margin-bottom: 20px; color: #333333; }}
+        .code-box {{ background-color: #f0f7ff; border-radius: 8px; padding: 30px; margin: 20px 0; text-align: center; }}
+        .code {{ font-size: 32px; font-weight: bold; color: #0066cc; letter-spacing: 8px; }}
+        .warning {{ background-color: #fff3cd; border-radius: 8px; padding: 15px; margin: 20px 0; color: #856404; }}
+        .footer {{ margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 14px; color: #666666; }}
+        p {{ line-height: 1.6; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🚀 {site_name}</div>
+        <h1 class="title">邮箱更改验证码</h1>
+        <p>您好 <strong>{username}</strong>，</p>
+        <p>您正在更改 {site_name} 账户的邮箱地址。请使用以下验证码完成邮箱更改：</p>
+        <div class="code-box">
+            <span class="code">{code}</span>
+        </div>
+        <div class="warning">
+            <p>⚠️ 验证码将在 <strong>10分钟</strong> 后过期，请尽快使用。</p>
+        </div>
+        <p>如果您没有请求更改邮箱，请忽略此邮件，您的账户仍然是安全的。</p>
+        <div class="footer">
+            <p>此邮件为系统自动发送，请勿回复。</p>
+            <p>© {current_year} {site_name}. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+        
+        return EmailService.send_email(
+            db=db,
+            to_email=email,
+            subject=f"邮箱更改验证码 - {site_name}",
+            html_content=html_content,
+            text_content=text_content,
+            email_type='email_change',
+            recipient_name=username,
+            user_id=user_id
+        )
+    
+    @staticmethod
     def store_oauth_temp_token(
         db: Session,
         temp_token: str,

@@ -190,6 +190,27 @@ def run_database_migrations():
                 conn.commit()
                 print("Migration: Fixed duplicate order values in resources table")
             
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='email_change_verifications'")
+            if not cursor.fetchone():
+                cursor.execute('''
+                    CREATE TABLE email_change_verifications (
+                        id INTEGER PRIMARY KEY,
+                        user_id INTEGER NOT NULL,
+                        new_email VARCHAR(100) NOT NULL,
+                        code VARCHAR(6) NOT NULL,
+                        ip_address VARCHAR(50),
+                        is_used BOOLEAN DEFAULT 0,
+                        used_at TEXT,
+                        expires_at TEXT NOT NULL,
+                        created_at TEXT,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    )
+                ''')
+                cursor.execute("CREATE INDEX IF NOT EXISTS ix_email_change_verifications_user_id ON email_change_verifications(user_id)")
+                cursor.execute("CREATE INDEX IF NOT EXISTS ix_email_change_verifications_new_email ON email_change_verifications(new_email)")
+                conn.commit()
+                print("Migration: Created 'email_change_verifications' table")
+            
             conn.close()
         elif "postgresql" in db_url:
             db = SessionLocal()
@@ -295,6 +316,26 @@ def run_database_migrations():
                     '''))
                     db.commit()
                     print("Migration: Fixed duplicate order values in resources table")
+                
+                result = db.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'email_change_verifications'"))
+                if not result.fetchone():
+                    db.execute(text('''
+                        CREATE TABLE email_change_verifications (
+                            id SERIAL PRIMARY KEY,
+                            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                            new_email VARCHAR(100) NOT NULL,
+                            code VARCHAR(6) NOT NULL,
+                            ip_address VARCHAR(50),
+                            is_used BOOLEAN DEFAULT FALSE,
+                            used_at TIMESTAMP,
+                            expires_at TIMESTAMP NOT NULL,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )
+                    '''))
+                    db.execute(text("CREATE INDEX IF NOT EXISTS ix_email_change_verifications_user_id ON email_change_verifications(user_id)"))
+                    db.execute(text("CREATE INDEX IF NOT EXISTS ix_email_change_verifications_new_email ON email_change_verifications(new_email)"))
+                    db.commit()
+                    print("Migration: Created 'email_change_verifications' table")
             except Exception as e:
                 print(f"PostgreSQL migration error: {e}")
                 db.rollback()
