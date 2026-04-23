@@ -119,7 +119,9 @@ async def update_user(
     if user_data.bio is not None:
         user.bio = user_data.bio
     if user_data.is_admin is not None:
-        if user.username == settings.ADMIN_USERNAME and not user_data.is_admin:
+        if user_id == current_user.id:
+            raise HTTPException(status_code=403, detail="不能修改自己的管理员权限")
+        if user.id == 1 and not user_data.is_admin:
             raise HTTPException(status_code=403, detail="不能取消超级管理员的管理员权限")
         user.is_admin = user_data.is_admin
     
@@ -159,7 +161,7 @@ async def delete_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    if user.username == settings.ADMIN_USERNAME:
+    if user.id == 1:
         raise HTTPException(status_code=403, detail="不能删除超级管理员账户")
     
     username = user.username
