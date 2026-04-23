@@ -102,6 +102,9 @@ async def update_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
+    if current_user.id != 1 and user_id != current_user.id and user.is_admin:
+        raise HTTPException(status_code=403, detail="普通管理员不能修改其他管理员的信息")
+    
     if user_data.username:
         existing = db.query(User).filter(User.username == user_data.username, User.id != user_id).first()
         if existing:
@@ -120,10 +123,12 @@ async def update_user(
         user.bio = user_data.bio
     if user_data.is_admin is not None:
         if user_id == current_user.id:
-            raise HTTPException(status_code=403, detail="不能修改自己的管理员权限")
-        if user.id == 1 and not user_data.is_admin:
-            raise HTTPException(status_code=403, detail="不能取消超级管理员的管理员权限")
-        user.is_admin = user_data.is_admin
+            if user_data.is_admin != user.is_admin:
+                raise HTTPException(status_code=403, detail="不能修改自己的管理员权限")
+        else:
+            if user.id == 1 and not user_data.is_admin:
+                raise HTTPException(status_code=403, detail="不能取消超级管理员的管理员权限")
+            user.is_admin = user_data.is_admin
     
     db.commit()
     db.refresh(user)
@@ -163,6 +168,9 @@ async def delete_user(
     
     if user.id == 1:
         raise HTTPException(status_code=403, detail="不能删除超级管理员账户")
+    
+    if current_user.id != 1 and user.is_admin:
+        raise HTTPException(status_code=403, detail="普通管理员不能删除其他管理员")
     
     username = user.username
     
