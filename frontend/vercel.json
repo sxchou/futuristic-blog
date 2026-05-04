@@ -6,11 +6,11 @@
   "rewrites": [
     {
       "source": "/sitemap.xml",
-      "destination": "https://api.zhouzhouya.top/sitemap.xml"
+      "destination": "/api/sitemap-xml"
     },
     {
       "source": "/robots.txt",
-      "destination": "https://api.zhouzhouya.top/robots.txt"
+      "destination": "/api/robots-txt"
     }
   ],
   "headers": [
