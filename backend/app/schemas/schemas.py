@@ -1,0 +1,1005 @@
+from datetime import datetime
+from typing import Optional, List
+from pydantic import BaseModel, Field, field_validator
+import re
+
+
+def serialize_datetime(dt: datetime) -> Optional[str]:
+    from app.utils.timezone import to_local
+    if dt is None:
+        return None
+    local_dt = to_local(dt)
+    iso_str = local_dt.isoformat()
+    return iso_str
+
+
+def validate_email(email: str) -> str:
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if not re.match(pattern, email):
+        raise ValueError('Invalid email format')
+    return email
+
+
+class UserBase(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50)
+    email: str = Field(...)
+
+
+class UserCreate(UserBase):
+    password: str = Field(..., min_length=6)
+    
+    def validate_email_field(self):
+        validate_email(self.email)
+        return self
+
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = Field(None, min_length=3, max_length=50)
+    email: Optional[str] = None
+    avatar: Optional[str] = None
+    bio: Optional[str] = None
+
+
+class UserAdminUpdate(BaseModel):
+    username: Optional[str] = Field(None, min_length=3, max_length=50)
+    email: Optional[str] = None
+    avatar: Optional[str] = None
+    bio: Optional[str] = None
+
+
+class UserAdminCreate(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50)
+    email: str = Field(...)
+    password: str = Field(..., min_length=6)
+    role_ids: List[int] = Field(default_factory=list)
+    
+    @field_validator('email')
+    @classmethod
+    def validate_email_field(cls, v):
+        return validate_email(v)
+
+
+class UserResponse(UserBase):
+    id: int
+    avatar: Optional[str] = None
+    bio: Optional[str] = None
+    is_admin: bool = False
+    is_verified: bool = False
+    has_password: bool = True
+    created_at: Optional[str] = None
+    verification_token_expires: Optional[str] = None
+    roles: Optional[List[dict]] = None
+    
+    @field_validator('created_at', 'verification_token_expires', mode='before')
+    @classmethod
+    def serialize_datetime_field(cls, v):
+        return serialize_datetime(v)
+    
+    class Config:
+        from_attributes = True
+
+
+class UserListItem(BaseModel):
+    id: int
+    username: str
+    email: str
+    avatar: Optional[str] = None
+    avatar_type: Optional[str] = None
+    avatar_url: Optional[str] = None
+    oauth_avatar_url: Optional[str] = None
+    avatar_gradient: Optional[List[str]] = None
+    bio: Optional[str] = None
+    is_admin: bool = False
+    is_verified: bool = False
+    created_at: Optional[str] = None
+    roles: Optional[List[dict]] = None
+    
+    @field_validator('created_at', mode='before')
+    @classmethod
+    def serialize_created_at(cls, v):
+        return serialize_datetime(v)
+    
+    class Config:
+        from_attributes = True
+
+
+class CategoryBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=50)
+    slug: str = Field(..., min_length=1, max_length=50)
+    description: Optional[str] = None
+    icon: Optional[str] = None
+    color: Optional[str] = "#00d4ff"
+
+
+class CategoryCreate(CategoryBase):
+    order: Optional[int] = 0
+
+
+class CategoryUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=50)
+    slug: Optional[str] = Field(None, min_length=1, max_length=50)
+    description: Optional[str] = None
+    icon: Optional[str] = None
+    color: Optional[str] = None
+    order: Optional[int] = None
+
+
+class CategoryResponse(CategoryBase):
+    id: int
+    order: int
+    created_at: Optional[str] = None
+    article_count: Optional[int] = 0
+    
+    @field_validator('created_at', mode='before')
+    @classmethod
+    def serialize_created_at(cls, v):
+        return serialize_datetime(v)
+    
+    class Config:
+        from_attributes = True
+
+
+class TagBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=30)
+    slug: str = Field(..., min_length=1, max_length=30)
+    color: Optional[str] = "#7c3aed"
+
+
+class TagCreate(TagBase):
+    pass
+
+
+class TagUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=30)
+    slug: Optional[str] = Field(None, min_length=1, max_length=30)
+    color: Optional[str] = None
+
+
+class TagResponse(TagBase):
+    id: int
+    created_at: Optional[str] = None
+    article_count: Optional[int] = 0
+    
+    @field_validator('created_at', mode='before')
+    @classmethod
+    def serialize_created_at(cls, v):
+        return serialize_datetime(v)
+    
+    class Config:
+        from_attributes = True
+
+
+class ArticleBase(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)
+    slug: str = Field(..., min_length=1, max_length=200)
+    summary: Optional[str] = None
+    content: str
+    cover_image: str = Field(..., description="封面图为必填项")
+    is_published: bool = False
+    is_featured: bool = False
+    is_pinned: bool = False
+    pinned_order: int = 0
+    category_id: int = Field(..., description="分类ID为必填项")
+
+
+class ArticleCreate(ArticleBase):
+    tag_ids: List[int] = Field(..., min_length=1, description="至少需要选择一个标签")
+
+
+class ArticleUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    slug: Optional[str] = Field(None, min_length=1, max_length=200)
+    summary: Optional[str] = None
+    content: Optional[str] = None
+    cover_image: Optional[str] = None
+    is_published: Optional[bool] = None
+    is_featured: Optional[bool] = None
+    is_pinned: Optional[bool] = None
+    pinned_order: Optional[int] = None
+    category_id: Optional[int] = None
+    tag_ids: Optional[List[int]] = Field(None, min_length=1, description="如果提供标签，至少需要选择一个")
+    
+    @field_validator('tag_ids')
+    @classmethod
+    def validate_tag_ids(cls, v):
+        if v is not None and len(v) == 0:
+            raise ValueError('至少需要选择一个标签')
+        return v
+
+
+class ArticleResponse(ArticleBase):
+    id: int
+    category_id: Optional[int] = None
+    view_count: int
+    like_count: int
+    reading_time: int
+    author_id: Optional[int] = None
+    cover_image: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+    published_at: Optional[str] = None
+    category: Optional[CategoryResponse] = None
+    tags: List[TagResponse] = []
+    author: Optional[UserResponse] = None
+    is_liked: bool = False
+    files: List["ArticleFileResponse"] = []
+    
+    @field_validator('created_at', 'updated_at', 'published_at', mode='before')
+    @classmethod
+    def serialize_datetime_field(cls, v):
+        return serialize_datetime(v)
+    
+    class Config:
+        from_attributes = True
+
+
+class ArticleListItem(BaseModel):
+    id: int
+    title: str
+    slug: str
+    summary: Optional[str] = None
+    cover_image: Optional[str] = None
+    is_published: bool
+    is_featured: bool
+    is_pinned: bool = False
+    pinned_order: int = 0
+    view_count: int
+    like_count: int
+    comment_count: int = 0
+    reading_time: int
+    created_at: Optional[str] = None
+    published_at: Optional[str] = None
+    category: Optional[CategoryResponse] = None
+    tags: List[TagResponse] = []
+    author: Optional["UserResponse"] = None
+    is_liked: bool = False
+    liked_at: Optional[str] = None
+    is_bookmarked: bool = False
+    bookmarked_at: Optional[str] = None
+    commented_at: Optional[str] = None
+    highlighted_title: Optional[str] = None
+    highlighted_summary: Optional[str] = None
+    match_type: Optional[str] = None
+    
+    @field_validator('created_at', 'published_at', 'liked_at', 'bookmarked_at', 'commented_at', mode='before')
+    @classmethod
+    def serialize_datetime_field(cls, v):
+        return serialize_datetime(v)
+    
+    class Config:
+        from_attributes = True
+
+
+class LikeResponse(BaseModel):
+    article_id: int
+    like_count: int
+    is_liked: bool
+
+
+class BookmarkResponse(BaseModel):
+    article_id: int
+    is_bookmarked: bool
+    bookmark_count: Optional[int] = None
+
+
+class ResourceCategoryBase(BaseModel):
+    name: str = Field(..., max_length=50)
+    slug: str = Field(..., max_length=50)
+    description: Optional[str] = None
+    icon: Optional[str] = None
+    order: Optional[int] = 0
+    is_active: bool = True
+
+
+class ResourceCategoryCreate(ResourceCategoryBase):
+    pass
+
+
+class ResourceCategoryUpdate(BaseModel):
+    name: Optional[str] = Field(None, max_length=50)
+    slug: Optional[str] = Field(None, max_length=50)
+    description: Optional[str] = None
+    icon: Optional[str] = None
+    order: Optional[int] = None
+    is_active: Optional[bool] = None
+
+
+class ResourceCategoryResponse(ResourceCategoryBase):
+    id: int
+    created_at: Optional[str] = None
+    
+    @field_validator('created_at', mode='before')
+    @classmethod
+    def serialize_created_at(cls, v):
+        return serialize_datetime(v)
+    
+    class Config:
+        from_attributes = True
+
+
+class ResourceBase(BaseModel):
+    title: str = Field(..., max_length=100)
+    description: Optional[str] = None
+    url: str = Field(..., max_length=500)
+    icon: Optional[str] = None
+    category_id: Optional[int] = None
+    category: Optional[str] = None
+    is_active: bool = True
+    order: Optional[int] = 0
+
+
+class ResourceCreate(ResourceBase):
+    pass
+
+
+class ResourceUpdate(BaseModel):
+    title: Optional[str] = Field(None, max_length=100)
+    description: Optional[str] = None
+    url: Optional[str] = Field(None, max_length=500)
+    icon: Optional[str] = None
+    category_id: Optional[int] = None
+    category: Optional[str] = None
+    is_active: Optional[bool] = None
+    order: Optional[int] = None
+
+
+class ResourceResponse(ResourceBase):
+    id: int
+    created_at: Optional[str] = None
+    
+    @field_validator('created_at', mode='before')
+    @classmethod
+    def serialize_created_at(cls, v):
+        return serialize_datetime(v)
+    
+    class Config:
+        from_attributes = True
+
+
+class CommentBase(BaseModel):
+    content: str
+
+
+class CommentCreate(CommentBase):
+    article_id: int
+    parent_id: Optional[int] = None
+
+
+class CommentResponse(CommentBase):
+    id: int
+    article_id: int
+    parent_id: Optional[int] = None
+    user_id: Optional[int] = None
+    author_name: Optional[str] = None
+    author_email: Optional[str] = None
+    author_url: Optional[str] = None
+    author_avatar_type: Optional[str] = None
+    author_avatar_url: Optional[str] = None
+    author_avatar_gradient: Optional[List[str]] = None
+    status: str = 'approved'
+    is_deleted: bool = False
+    deleted_by: Optional[str] = None
+    reply_to_user_id: Optional[int] = None
+    reply_to_user_name: Optional[str] = None
+    reply_to_user_avatar_type: Optional[str] = None
+    reply_to_user_avatar_url: Optional[str] = None
+    reply_to_user_avatar_gradient: Optional[List[str]] = None
+    created_at: Optional[str] = None
+    replies: List["CommentResponse"] = []
+    
+    @field_validator('created_at', mode='before')
+    @classmethod
+    def serialize_created_at(cls, v):
+        return serialize_datetime(v)
+    
+    class Config:
+        from_attributes = True
+
+
+class CommentAuditRequest(BaseModel):
+    status: str = Field(..., pattern='^(pending|approved|rejected)$')
+    reason: Optional[str] = None
+
+
+class BatchAuditRequest(BaseModel):
+    comment_ids: List[int]
+    status: str = Field(..., pattern='^(pending|approved|rejected)$')
+    reason: Optional[str] = None
+
+
+class CommentAuditLogResponse(BaseModel):
+    id: int
+    comment_id: int
+    operator_id: Optional[int] = None
+    operator_name: Optional[str] = None
+    old_status: Optional[str] = None
+    new_status: str
+    reason: Optional[str] = None
+    created_at: Optional[str] = None
+    
+    @field_validator('created_at', mode='before')
+    @classmethod
+    def serialize_created_at(cls, v):
+        return serialize_datetime(v)
+    
+    class Config:
+        from_attributes = True
+
+
+class AdminCommentResponse(CommentBase):
+    id: int
+    article_id: int
+    article_title: Optional[str] = None
+    article_slug: Optional[str] = None
+    parent_id: Optional[int] = None
+    user_id: Optional[int] = None
+    author_name: Optional[str] = None
+    author_email: Optional[str] = None
+    author_url: Optional[str] = None
+    author_avatar_type: Optional[str] = None
+    author_avatar_url: Optional[str] = None
+    author_avatar_gradient: Optional[List[str]] = None
+    status: str = 'approved'
+    is_deleted: bool = False
+    deleted_by: Optional[str] = None
+    reply_to_user_id: Optional[int] = None
+    reply_to_user_name: Optional[str] = None
+    reply_to_user_avatar_type: Optional[str] = None
+    reply_to_user_avatar_url: Optional[str] = None
+    reply_to_user_avatar_gradient: Optional[List[str]] = None
+    created_at: Optional[str] = None
+    
+    @field_validator('created_at', mode='before')
+    @classmethod
+    def serialize_created_at(cls, v):
+        return serialize_datetime(v)
+    
+    class Config:
+        from_attributes = True
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    refresh_token: Optional[str] = None
+    expires_in: Optional[int] = None
+
+
+class TokenData(BaseModel):
+    username: Optional[str] = None
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+
+class SessionInfo(BaseModel):
+    id: int
+    ip_address: Optional[str] = None
+    user_agent: Optional[str] = None
+    last_used_at: Optional[str] = None
+    created_at: Optional[str] = None
+    is_current: bool = False
+    
+    @field_validator('last_used_at', 'created_at', mode='before')
+    @classmethod
+    def serialize_datetime_field(cls, v):
+        return serialize_datetime(v)
+    
+    class Config:
+        from_attributes = True
+
+
+class PaginatedResponse(BaseModel):
+    items: List
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+
+
+class SearchQuery(BaseModel):
+    query: str
+    category_id: Optional[int] = None
+    tag_ids: Optional[List[int]] = None
+    page: int = 1
+    page_size: int = 10
+
+
+class SiteConfigBase(BaseModel):
+    key: str
+    value: Optional[str] = None
+    description: Optional[str] = None
+
+
+class SiteConfigResponse(SiteConfigBase):
+    id: int
+    updated_at: Optional[str] = None
+    
+    @field_validator('updated_at', mode='before')
+    @classmethod
+    def serialize_updated_at(cls, v):
+        return serialize_datetime(v)
+    
+    class Config:
+        from_attributes = True
+
+
+class ProfileBase(BaseModel):
+    name: str = "Tech Explorer"
+    alias: Optional[str] = None
+    slogan: Optional[str] = None
+    tags: Optional[List[str]] = []
+    avatar: Optional[str] = None
+    bio: Optional[str] = None
+    tech_stack: Optional[List[dict]] = []
+    journey: Optional[List[dict]] = []
+    education: Optional[dict] = None
+    exploration_areas: Optional[List[str]] = []
+    social_github: Optional[str] = None
+    social_blog: Optional[str] = None
+    social_email: Optional[str] = None
+
+
+class ProfileUpdate(BaseModel):
+    name: Optional[str] = None
+    alias: Optional[str] = None
+    slogan: Optional[str] = None
+    tags: Optional[List[str]] = None
+    avatar: Optional[str] = None
+    bio: Optional[str] = None
+    tech_stack: Optional[List[dict]] = None
+    journey: Optional[List[dict]] = None
+    education: Optional[dict] = None
+    exploration_areas: Optional[List[str]] = None
+    social_github: Optional[str] = None
+    social_blog: Optional[str] = None
+    social_email: Optional[str] = None
+
+
+class ProfileResponse(ProfileBase):
+    id: int
+    updated_at: Optional[str] = None
+    
+    @field_validator('updated_at', mode='before')
+    @classmethod
+    def serialize_updated_at(cls, v):
+        return serialize_datetime(v)
+    
+    class Config:
+        from_attributes = True
+
+
+class ArticleFileBase(BaseModel):
+    filename: str
+    original_filename: str
+    file_path: str
+    file_size: int
+    file_type: str
+    mime_type: str
+    is_image: bool
+
+
+class ArticleFileResponse(ArticleFileBase):
+    id: int
+    article_id: Optional[int] = None
+    download_count: int
+    preview_count: int = 0
+    order: int = 0
+    created_at: Optional[str] = None
+    
+    @field_validator('created_at', mode='before')
+    @classmethod
+    def serialize_created_at(cls, v):
+        return serialize_datetime(v)
+    
+    @field_validator('file_path', mode='before')
+    @classmethod
+    def normalize_file_path(cls, v):
+        if not v:
+            return v
+        if v.startswith('http'):
+            return v
+        if v.startswith('/uploads/'):
+            return v
+        import os
+        if os.path.isabs(v):
+            filename = os.path.basename(v)
+            parent_dir = os.path.basename(os.path.dirname(v))
+            return f'/uploads/{parent_dir}/{filename}'
+        return v
+    
+    class Config:
+        from_attributes = True
+
+
+class FileOrderItem(BaseModel):
+    id: int
+    order: int
+
+
+class FileOrderUpdate(BaseModel):
+    orders: List[FileOrderItem]
+
+
+class EmailConfigBase(BaseModel):
+    provider: str = Field(..., pattern='^(qq|gmail|163|outlook|resend)$')
+    smtp_user: str = Field(..., min_length=1)
+    smtp_password: str = Field(..., min_length=1)
+    from_email: str = Field(..., min_length=1)
+    from_name: str = "Futuristic Blog"
+
+
+class EmailConfigCreate(EmailConfigBase):
+    pass
+
+
+class EmailConfigUpdate(BaseModel):
+    provider: Optional[str] = Field(None, pattern='^(qq|gmail|163|outlook|resend)$')
+    smtp_user: Optional[str] = None
+    smtp_password: Optional[str] = None
+    from_email: Optional[str] = None
+    from_name: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class EmailConfigResponse(BaseModel):
+    id: int
+    provider: str
+    smtp_host: Optional[str] = None
+    smtp_port: int
+    smtp_user: Optional[str] = None
+    from_email: Optional[str] = None
+    from_name: str
+    is_active: bool
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+    
+    @field_validator('created_at', 'updated_at', mode='before')
+    @classmethod
+    def serialize_datetime_field(cls, v):
+        return serialize_datetime(v)
+    
+    class Config:
+        from_attributes = True
+
+
+class EmailLogResponse(BaseModel):
+    id: int
+    email_type: str
+    recipient_email: str
+    recipient_name: Optional[str] = None
+    subject: Optional[str] = None
+    status: str
+    error_message: Optional[str] = None
+    verification_token: Optional[str] = None
+    is_verified: bool
+    verified_at: Optional[str] = None
+    user_id: Optional[int] = None
+    sent_at: Optional[str] = None
+    created_at: Optional[str] = None
+    
+    @field_validator('verified_at', 'sent_at', 'created_at', mode='before')
+    @classmethod
+    def serialize_datetime_field(cls, v):
+        return serialize_datetime(v)
+    
+    class Config:
+        from_attributes = True
+
+
+class EmailTestRequest(BaseModel):
+    recipient_email: str
+
+
+class NotificationSettingsBase(BaseModel):
+    notify_on_register: bool = True
+    notify_on_comment: bool = True
+    notify_on_like: bool = True
+    notify_on_reply: bool = True
+    require_comment_audit: bool = False
+
+
+class NotificationSettingsUpdate(BaseModel):
+    notify_on_register: Optional[bool] = None
+    notify_on_comment: Optional[bool] = None
+    notify_on_like: Optional[bool] = None
+    notify_on_reply: Optional[bool] = None
+    require_comment_audit: Optional[bool] = None
+
+
+class NotificationSettingsResponse(NotificationSettingsBase):
+    id: int
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+    
+    @field_validator('created_at', 'updated_at', mode='before')
+    @classmethod
+    def serialize_datetime_field(cls, v):
+        return serialize_datetime(v)
+    
+    class Config:
+        from_attributes = True
+
+
+CommentResponse.model_rebuild()
+ArticleResponse.model_rebuild()
+
+
+class PasswordResetRequest(BaseModel):
+    email: str = Field(..., min_length=1)
+    
+    @field_validator('email')
+    @classmethod
+    def validate_email_field(cls, v):
+        return validate_email(v)
+
+
+class PasswordResetVerify(BaseModel):
+    email: str = Field(..., min_length=1)
+    code: str = Field(..., min_length=6, max_length=6)
+    new_password: str = Field(..., min_length=6)
+    confirm_password: str = Field(..., min_length=6)
+    
+    @field_validator('email')
+    @classmethod
+    def validate_email_field(cls, v):
+        return validate_email(v)
+    
+    @field_validator('confirm_password')
+    @classmethod
+    def passwords_match(cls, v, info):
+        if 'new_password' in info.data and v != info.data['new_password']:
+            raise ValueError('两次输入的密码不一致')
+        return v
+
+
+class ChangePassword(BaseModel):
+    current_password: str = Field(..., min_length=1, max_length=100)
+    new_password: str = Field(..., min_length=1, max_length=100)
+    confirm_password: str = Field(..., min_length=1, max_length=100)
+    
+    @field_validator('current_password')
+    @classmethod
+    def validate_current_password(cls, v):
+        if not v:
+            raise ValueError('请输入当前密码')
+        if len(v) < 6:
+            raise ValueError('当前密码长度至少6位')
+        if len(v) > 50:
+            raise ValueError('当前密码长度不能超过50位')
+        return v
+    
+    @field_validator('new_password')
+    @classmethod
+    def validate_new_password(cls, v, info):
+        if not v:
+            raise ValueError('请输入新密码')
+        if len(v) < 6:
+            raise ValueError('新密码长度至少6位')
+        if len(v) > 50:
+            raise ValueError('新密码长度不能超过50位')
+        if 'current_password' in info.data and v == info.data['current_password']:
+            raise ValueError('新密码不能与当前密码相同')
+        return v
+    
+    @field_validator('confirm_password')
+    @classmethod
+    def passwords_match(cls, v, info):
+        if not v:
+            raise ValueError('请确认新密码')
+        if len(v) < 6:
+            raise ValueError('确认密码长度至少6位')
+        if len(v) > 50:
+            raise ValueError('确认密码长度不能超过50位')
+        if 'new_password' in info.data and v != info.data['new_password']:
+            raise ValueError('两次输入的新密码不一致')
+        return v
+
+
+class UserProfileResponse(BaseModel):
+    id: int
+    user_id: int
+    username: str
+    avatar_type: str = "default"
+    avatar_url: Optional[str] = None
+    oauth_avatar_url: Optional[str] = None
+    default_avatar_gradient: Optional[List[str]] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+    
+    @field_validator('created_at', 'updated_at', mode='before')
+    @classmethod
+    def serialize_datetime_field(cls, v):
+        return serialize_datetime(v)
+    
+    class Config:
+        from_attributes = True
+
+
+class UserProfileUpdate(BaseModel):
+    avatar_type: Optional[str] = Field(None, pattern='^(default|custom)$')
+
+
+class AnnouncementBase(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)
+    content: str = Field(..., min_length=1)
+    type: str = Field(default='info', pattern='^(info|warning|success|error)$')
+    is_active: bool = Field(default=True)
+    order: int = Field(default=0)
+
+
+class AnnouncementCreate(AnnouncementBase):
+    pass
+
+
+class AnnouncementUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    content: Optional[str] = Field(None, min_length=1)
+    type: Optional[str] = Field(None, pattern='^(info|warning|success|error)$')
+    is_active: Optional[bool] = None
+    order: Optional[int] = None
+
+
+class AnnouncementResponse(AnnouncementBase):
+    id: int
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+    
+    @field_validator('created_at', 'updated_at', mode='before')
+    @classmethod
+    def serialize_datetime_field(cls, v):
+        return serialize_datetime(v)
+    
+    class Config:
+        from_attributes = True
+
+
+class PermissionBase(BaseModel):
+    code: str = Field(..., min_length=1, max_length=100)
+    name: str = Field(..., min_length=1, max_length=100)
+    description: Optional[str] = None
+    module: str = Field(..., min_length=1, max_length=50)
+    action: str = Field(..., min_length=1, max_length=50)
+
+
+class PermissionCreate(PermissionBase):
+    pass
+
+
+class PermissionUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    description: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class PermissionResponse(PermissionBase):
+    id: int
+    is_active: bool
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+    
+    @field_validator('created_at', 'updated_at', mode='before')
+    @classmethod
+    def serialize_datetime_field(cls, v):
+        return serialize_datetime(v)
+    
+    class Config:
+        from_attributes = True
+
+
+class RoleBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=50)
+    code: str = Field(..., min_length=1, max_length=50)
+    description: Optional[str] = None
+    priority: int = Field(default=0)
+
+
+class RoleCreate(RoleBase):
+    permission_ids: Optional[List[int]] = []
+
+
+class RoleUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=50)
+    description: Optional[str] = None
+    is_active: Optional[bool] = None
+    priority: Optional[int] = None
+    permission_ids: Optional[List[int]] = None
+
+
+class RoleResponse(RoleBase):
+    id: int
+    is_system: bool
+    is_active: bool
+    permissions: List[PermissionResponse] = []
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+    
+    @field_validator('created_at', 'updated_at', mode='before')
+    @classmethod
+    def serialize_datetime_field(cls, v):
+        return serialize_datetime(v)
+    
+    class Config:
+        from_attributes = True
+
+
+class UserRoleAssign(BaseModel):
+    user_ids: List[int] = Field(..., min_items=1)
+    role_ids: List[int] = Field(..., min_items=1)
+
+
+class UserRoleRemove(BaseModel):
+    user_ids: List[int] = Field(..., min_items=1)
+    role_ids: List[int] = Field(..., min_items=1)
+
+
+class UserWithRolesResponse(BaseModel):
+    id: int
+    username: str
+    email: Optional[str] = None
+    is_admin: bool
+    roles: List[RoleResponse] = []
+    created_at: Optional[str] = None
+    
+    @field_validator('created_at', mode='before')
+    @classmethod
+    def serialize_datetime_field(cls, v):
+        return serialize_datetime(v)
+    
+    class Config:
+        from_attributes = True
+
+
+class PermissionModuleResponse(BaseModel):
+    module: str
+    module_name: str
+    permissions: List[PermissionResponse]
+
+
+class PermissionTreeResponse(BaseModel):
+    modules: List[PermissionModuleResponse]
+
+
+class RolePermissionUpdate(BaseModel):
+    permission_ids: List[int] = Field(..., min_items=0)
+
+
+class PermissionChangeLogResponse(BaseModel):
+    id: int
+    operator_id: Optional[int] = None
+    operator_name: Optional[str] = None
+    target_type: str
+    target_id: Optional[int] = None
+    target_name: Optional[str] = None
+    action: str
+    old_value: Optional[str] = None
+    new_value: Optional[str] = None
+    description: Optional[str] = None
+    ip_address: Optional[str] = None
+    created_at: Optional[str] = None
+    
+    @field_validator('created_at', mode='before')
+    @classmethod
+    def serialize_datetime_field(cls, v):
+        return serialize_datetime(v)
+    
+    class Config:
+        from_attributes = True
+
+
+class RoleTemplateCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=50)
+    code: str = Field(..., min_length=1, max_length=50)
+    description: Optional[str] = None
+    copy_from_role_id: int
+
+
+class PermissionExport(BaseModel):
+    permissions: List[PermissionResponse]
+    roles: List[RoleResponse]
+
+
+class PermissionImport(BaseModel):
+    permissions: Optional[List[PermissionCreate]] = []
+    roles: Optional[List[RoleCreate]] = []

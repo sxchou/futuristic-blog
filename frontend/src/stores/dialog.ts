@@ -1,0 +1,109 @@
+import { ref } from 'vue'
+
+export interface DialogOptions {
+  title?: string
+  message: string
+  type?: 'confirm' | 'alert' | 'success' | 'error' | 'warning'
+  confirmText?: string
+  cancelText?: string
+  autoClose?: boolean
+  duration?: number
+}
+
+const isVisible = ref(false)
+const dialogOptions = ref<DialogOptions>({
+  message: '',
+  type: 'alert'
+})
+
+let resolvePromise: ((value: boolean) => void) | null = null
+let autoCloseTimer: ReturnType<typeof setTimeout> | null = null
+
+const clearAutoCloseTimer = () => {
+  if (autoCloseTimer) {
+    clearTimeout(autoCloseTimer)
+    autoCloseTimer = null
+  }
+}
+
+const closeDialog = (result: boolean) => {
+  clearAutoCloseTimer()
+  isVisible.value = false
+  if (resolvePromise) {
+    const resolve = resolvePromise
+    resolvePromise = null
+    resolve(result)
+  }
+}
+
+const showConfirm = (options: DialogOptions): Promise<boolean> => {
+  clearAutoCloseTimer()
+  dialogOptions.value = { ...options, type: 'confirm' }
+  isVisible.value = true
+  
+  return new Promise((resolve) => {
+    resolvePromise = resolve
+  })
+}
+
+const showAlert = (options: DialogOptions): Promise<boolean> => {
+  clearAutoCloseTimer()
+  dialogOptions.value = { ...options, type: options.type || 'alert' }
+  isVisible.value = true
+  
+  const duration = options.duration ?? 3000
+  const autoClose = options.autoClose ?? true
+  
+  return new Promise((resolve) => {
+    resolvePromise = resolve
+    
+    if (autoClose && (options.type === 'success' || options.type === 'error' || options.type === 'alert' || options.type === 'warning')) {
+      autoCloseTimer = setTimeout(() => {
+        closeDialog(true)
+      }, duration)
+    }
+  })
+}
+
+const showSuccess = (message: string | DialogOptions, title?: string, autoClose: boolean = true, duration: number = 2000): Promise<boolean> => {
+  if (typeof message === 'object') {
+    return showAlert({ ...message, type: 'success', autoClose: message.autoClose ?? true, duration: message.duration ?? 2000 })
+  }
+  return showAlert({ message, title, type: 'success', autoClose, duration })
+}
+
+const showError = (message: string | DialogOptions, title?: string, autoClose: boolean = true, duration: number = 3000): Promise<boolean> => {
+  if (typeof message === 'object') {
+    return showAlert({ ...message, type: message.type || 'error', autoClose: message.autoClose ?? true, duration: message.duration ?? 3000 })
+  }
+  return showAlert({ message, title, type: 'error', autoClose, duration })
+}
+
+const showWarning = (message: string | DialogOptions, title?: string, autoClose: boolean = true, duration: number = 3000): Promise<boolean> => {
+  if (typeof message === 'object') {
+    return showAlert({ ...message, type: 'alert', autoClose: message.autoClose ?? true, duration: message.duration ?? 3000 })
+  }
+  return showAlert({ message, title, type: 'alert', autoClose, duration })
+}
+
+const confirm = () => {
+  closeDialog(true)
+}
+
+const cancel = () => {
+  closeDialog(false)
+}
+
+export function useDialogStore() {
+  return {
+    isVisible,
+    dialogOptions,
+    showConfirm,
+    showAlert,
+    showSuccess,
+    showError,
+    showWarning,
+    confirm,
+    cancel
+  }
+}

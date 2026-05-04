@@ -1,0 +1,323 @@
+<script setup lang="ts">
+import { onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore, useDialogStore } from '@/stores'
+import { oauthApi } from '@/api/oauth'
+import { usePendingOAuth } from '@/composables/usePendingOAuth'
+import { useOAuthAnalytics } from '@/composables/useOAuthAnalytics'
+import { checkServerHealth } from '@/api/client'
+
+const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
+const dialog = useDialogStore()
+const { setPendingState, clearPendingState } = usePendingOAuth()
+const { trackEvent } = useOAuthAnalytics()
+
+const isLoading = ref(true)
+const error = ref('')
+const needsEmail = ref(false)
+const tempToken = ref('')
+const username = ref('')
+const email = ref('')
+const isSubmitting = ref(false)
+
+const handleCallback = async () => {
+  const provider = route.params.provider as string
+  
+  trackEvent('oauth_login_attempt', { provider })
+  
+  const accessToken = route.query.access_token as string
+  const needsEmailParam = route.query.needs_email as string
+  const tempTokenParam = route.query.temp_token as string
+  const usernameParam = route.query.username as string
+  const emailParam = route.query.email as string
+  const errorParam = route.query.error as string
+  
+  if (errorParam) {
+    error.value = errorParam
+    clearPendingState()
+    trackEvent('oauth_login_error', { provider, error: errorParam })
+    isLoading.value = false
+    return
+  }
+  
+  if (needsEmailParam === 'true' && tempTokenParam) {
+    if (emailParam && !emailParam.endsWith('@oauth.local')) {
+      setPendingState(tempTokenParam, usernameParam || '', provider, emailParam)
+      trackEvent('oauth_needs_verification', { provider, hasEmail: true })
+      router.push({
+        path: '/oauth/pending-verification',
+        query: { temp_token: tempTokenParam }
+      })
+      return
+    }
+    
+    needsEmail.value = true
+    tempToken.value = tempTokenParam
+    username.value = usernameParam || ''
+    setPendingState(tempTokenParam, usernameParam || '', provider, '')
+    trackEvent('oauth_needs_email', { provider })
+    isLoading.value = false
+    return
+  }
+  
+  if (accessToken) {
+    const refreshTokenParam = route.query.refresh_token as string
+    const expiresInParam = route.query.expires_in as string
+    
+    authStore.setTokens(
+      accessToken, 
+      refreshTokenParam || undefined, 
+      expiresInParam ? parseInt(expiresInParam) : undefined
+    )
+    await authStore.fetchUser()
+    
+    trackEvent('oauth_login_success', { provider })
+    await dialog.showSuccess('登录成功！', '欢迎回来')
+    
+    const redirect = route.query.redirect as string
+    await router.push(redirect || '/')
+    window.location.reload()
+    return
+  }
+  
+  const code = route.query.code as string
+  const state = route.query.state as string
+
+  if (!code || !state) {
+    error.value = '无效的回调参数'
+    isLoading.value = false
+    return
+  }
+
+  try {
+    const isHealthy = await checkServerHealth()
+    if (!isHealthy) {
+      error.value = '服务暂时不可用，请稍后重试'
+      isLoading.value = false
+      return
+    }
+
+    const response = await oauthApi.handleCallback(provider, code, state)
+    
+    if (response.needs_email && response.temp_token) {
+      if (response.user.email && !response.user.email.endsWith('@oauth.local')) {
+        router.push({
+          path: '/oauth/pending-verification',
+          query: { temp_token: response.temp_token }
+        })
+        return
+      }
+      
+      needsEmail.value = true
+      tempToken.value = response.temp_token
+      username.value = response.user.username
+      isLoading.value = false
+      return
+    }
+    
+    authStore.setTokens(
+      response.access_token,
+      response.refresh_token,
+      response.expires_in
+    )
+    await authStore.fetchUser()
+    
+    await dialog.showSuccess('登录成功！', '欢迎回来')
+    
+    const redirect = route.query.redirect as string
+    await router.push(redirect || '/')
+    window.location.reload()
+  } catch (err: any) {
+    if (!err.response) {
+      if (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
+        error.value = '网络连接失败，请检查网络后重试'
+      } else if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+        error.value = '请求超时，请稍后重试'
+      } else {
+        error.value = '服务暂时不可用，请稍后重试'
+      }
+    } else if (err.response.status >= 500) {
+      error.value = '服务器繁忙，请稍后重试'
+    } else {
+      error.value = err.response?.data?.detail || '登录失败，请重试'
+    }
+    isLoading.value = false
+  }
+}
+
+const submitEmail = async () => {
+  if (!email.value) {
+    dialog.showError('请输入邮箱地址')
+    return
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(email.value)) {
+    dialog.showError('请输入有效的邮箱地址')
+    return
+  }
+
+  isSubmitting.value = true
+  try {
+    const isHealthy = await checkServerHealth()
+    if (!isHealthy) {
+      dialog.showError('服务暂时不可用，请稍后重试')
+      isSubmitting.value = false
+      return
+    }
+
+    await oauthApi.submitEmail(email.value, tempToken.value)
+    await dialog.showSuccess('验证邮件已发送', '请检查您的邮箱完成验证')
+    router.push({
+      path: '/oauth/pending-verification',
+      query: { temp_token: tempToken.value }
+    })
+  } catch (err: any) {
+    let errorMsg: string
+    if (!err.response) {
+      if (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
+        errorMsg = '网络连接失败，请检查网络后重试'
+      } else if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+        errorMsg = '请求超时，请稍后重试'
+      } else {
+        errorMsg = '服务暂时不可用，请稍后重试'
+      }
+    } else if (err.response.status >= 500) {
+      errorMsg = '服务器繁忙，请稍后重试'
+    } else {
+      errorMsg = err.response?.data?.detail || '发送验证邮件失败'
+    }
+    dialog.showError(errorMsg)
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+onMounted(() => {
+  handleCallback()
+})
+</script>
+
+<template>
+  <div class="flex items-center justify-center px-4 pt-8 pb-32">
+    <div class="text-center">
+      <div
+        v-if="isLoading"
+        class="space-y-4"
+      >
+        <div class="w-12 h-12 mx-auto border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+        <p class="text-gray-500 dark:text-gray-400">
+          正在登录...
+        </p>
+      </div>
+      
+      <div
+        v-else-if="needsEmail"
+        class="w-full max-w-md mx-auto space-y-6"
+      >
+        <div class="space-y-2">
+          <div class="w-16 h-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
+            <svg
+              class="w-8 h-8 text-primary"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+              />
+            </svg>
+          </div>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+            完善账户信息
+          </h2>
+          <p class="text-gray-500 dark:text-gray-400">
+            您好，<span class="font-medium text-gray-700 dark:text-gray-300">{{ username }}</span>！
+          </p>
+          <p class="text-gray-500 dark:text-gray-400">
+            请提供您的邮箱地址以完成注册
+          </p>
+        </div>
+        
+        <form
+          class="space-y-4"
+          @submit.prevent="submitEmail"
+        >
+          <div>
+            <label
+              for="oauth-email"
+              class="sr-only"
+            >邮箱地址</label>
+            <input
+              id="oauth-email"
+              v-model="email"
+              type="email"
+              name="email"
+              autocomplete="email"
+              placeholder="请输入您的邮箱地址"
+              class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
+              :disabled="isSubmitting"
+            >
+          </div>
+          
+          <button
+            type="submit"
+            :disabled="isSubmitting"
+            class="w-full py-3 px-4 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span
+              v-if="isSubmitting"
+              class="flex items-center justify-center gap-2"
+            >
+              <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              发送中...
+            </span>
+            <span v-else>发送验证邮件</span>
+          </button>
+        </form>
+        
+        <router-link
+          to="/login"
+          class="block text-sm text-gray-500 hover:text-primary"
+        >
+          返回登录
+        </router-link>
+      </div>
+      
+      <div
+        v-else
+        class="space-y-4"
+      >
+        <div class="w-12 h-12 mx-auto rounded-full bg-red-500/10 flex items-center justify-center">
+          <svg
+            class="w-6 h-6 text-red-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </div>
+        <p class="text-red-500">
+          {{ error }}
+        </p>
+        <router-link
+          to="/login"
+          class="text-primary hover:underline"
+        >
+          返回登录
+        </router-link>
+      </div>
+    </div>
+  </div>
+</template>

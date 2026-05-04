@@ -1,0 +1,1831 @@
+from app.core.database import SessionLocal, engine
+from app.core.config import settings
+from app.models import User, Category, Tag, Article, Resource, ResourceCategory, SiteConfig, OAuthProvider
+from app.utils import get_password_hash
+from app.utils.timezone import get_db_now
+from datetime import datetime
+from sqlalchemy import text
+import sqlite3
+
+
+def run_database_migrations():
+    try:
+        db_url = str(engine.url)
+        print(f"Running migrations for database: {db_url[:50]}...")
+        
+        if "sqlite" in db_url:
+            db_path = db_url.replace("sqlite:///", "")
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            
+            cursor.execute("PRAGMA table_info(comments)")
+            columns = [column[1] for column in cursor.fetchall()]
+            
+            if 'deleted_by' not in columns:
+                cursor.execute("ALTER TABLE comments ADD COLUMN deleted_by VARCHAR(20)")
+                conn.commit()
+                print("Migration: Added 'deleted_by' column to comments table")
+            
+            cursor.execute("PRAGMA table_info(articles)")
+            article_columns = [column[1] for column in cursor.fetchall()]
+            
+            cursor.execute("PRAGMA index_list(articles)")
+            indexes = cursor.fetchall()
+            has_unique_slug = any('slug' in str(idx) and idx[2] == 1 for idx in indexes)
+            
+            if not has_unique_slug:
+                cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS ix_articles_slug ON articles(slug)")
+                conn.commit()
+                print("Migration: Added unique index on articles.slug")
+            
+            if 'is_pinned' not in article_columns:
+                cursor.execute("ALTER TABLE articles ADD COLUMN is_pinned BOOLEAN DEFAULT 0")
+                cursor.execute("CREATE INDEX IF NOT EXISTS ix_articles_published_pinned ON articles(is_published, is_pinned)")
+                conn.commit()
+                print("Migration: Added 'is_pinned' column to articles table")
+            
+            if 'pinned_order' not in article_columns:
+                cursor.execute("ALTER TABLE articles ADD COLUMN pinned_order INTEGER DEFAULT 0")
+                cursor.execute("CREATE INDEX IF NOT EXISTS ix_articles_pinned_order ON articles(pinned_order)")
+                conn.commit()
+                print("Migration: Added 'pinned_order' column to articles table")
+            
+            cursor.execute("PRAGMA table_info(article_likes)")
+            like_columns = [column[1] for column in cursor.fetchall()]
+            
+            if like_columns:
+                cursor.execute("SELECT * FROM pragma_table_info('article_likes') WHERE name='user_id'")
+                result = cursor.fetchone()
+                if result and result[3] == 1:
+                    cursor.execute('''
+                        CREATE TABLE IF NOT EXISTS article_likes_new (
+                            id INTEGER PRIMARY KEY,
+                            article_id INTEGER NOT NULL,
+                            user_id INTEGER,
+                            ip_address TEXT,
+                            created_at TEXT,
+                            FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE,
+                            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                        )
+                    ''')
+                    cursor.execute('INSERT INTO article_likes_new SELECT * FROM article_likes')
+                    cursor.execute('DROP TABLE article_likes')
+                    cursor.execute('ALTER TABLE article_likes_new RENAME TO article_likes')
+                    cursor.execute('CREATE INDEX IF NOT EXISTS ix_article_likes_id ON article_likes(id)')
+                    conn.commit()
+                    print("Migration: Updated article_likes table to allow NULL user_id for anonymous likes")
+            
+            cursor.execute("PRAGMA table_info(user_profiles)")
+            profile_columns = [column[1] for column in cursor.fetchall()]
+            
+            if 'oauth_avatar_url' not in profile_columns:
+                cursor.execute("ALTER TABLE user_profiles ADD COLUMN oauth_avatar_url VARCHAR(500)")
+                conn.commit()
+                print("Migration: Added 'oauth_avatar_url' column to user_profiles table")
+            
+            cursor.execute("PRAGMA table_info(article_files)")
+            file_columns = [column[1] for column in cursor.fetchall()]
+            
+            if 'order' not in file_columns:
+                cursor.execute("ALTER TABLE article_files ADD COLUMN 'order' INTEGER DEFAULT 0")
+                conn.commit()
+                print("Migration: Added 'order' column to article_files table")
+            
+            if 'preview_count' not in file_columns:
+                cursor.execute("ALTER TABLE article_files ADD COLUMN preview_count INTEGER DEFAULT 0")
+                conn.commit()
+                print("Migration: Added 'preview_count' column to article_files table")
+            
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='announcements'")
+            if not cursor.fetchone():
+                cursor.execute('''
+                    CREATE TABLE announcements (
+                        id INTEGER PRIMARY KEY,
+                        title VARCHAR(200) NOT NULL,
+                        content TEXT NOT NULL,
+                        type VARCHAR(20) DEFAULT 'info',
+                        is_active BOOLEAN DEFAULT 1,
+                        'order' INTEGER DEFAULT 0,
+                        created_at TEXT,
+                        updated_at TEXT
+                    )
+                ''')
+                cursor.execute("CREATE INDEX IF NOT EXISTS ix_announcements_id ON announcements(id)")
+                cursor.execute("CREATE INDEX IF NOT EXISTS ix_announcements_is_active ON announcements(is_active)")
+                cursor.execute("CREATE INDEX IF NOT EXISTS ix_announcements_active_order ON announcements(is_active, 'order')")
+                conn.commit()
+                print("Migration: Created 'announcements' table")
+            
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='resource_categories'")
+            if not cursor.fetchone():
+                cursor.execute('''
+                    CREATE TABLE resource_categories (
+                        id INTEGER PRIMARY KEY,
+                        name VARCHAR(50) NOT NULL,
+                        slug VARCHAR(50) NOT NULL UNIQUE,
+                        description TEXT,
+                        icon VARCHAR(50),
+                        'order' INTEGER DEFAULT 0,
+                        is_active BOOLEAN DEFAULT 1,
+                        created_at TEXT
+                    )
+                ''')
+                cursor.execute("CREATE INDEX IF NOT EXISTS ix_resource_categories_id ON resource_categories(id)")
+                cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS ix_resource_categories_slug ON resource_categories(slug)")
+                conn.commit()
+                print("Migration: Created 'resource_categories' table")
+            
+            cursor.execute("PRAGMA table_info(resources)")
+            resource_columns = [column[1] for column in cursor.fetchall()]
+            
+            if 'category_id' not in resource_columns:
+                cursor.execute("ALTER TABLE resources ADD COLUMN category_id INTEGER")
+                cursor.execute("CREATE INDEX IF NOT EXISTS ix_resources_category_id ON resources(category_id)")
+                conn.commit()
+                print("Migration: Added 'category_id' column to resources table")
+            
+            cursor.execute("PRAGMA table_info(resources)")
+            resource_columns = [column[1] for column in cursor.fetchall()]
+            
+            cursor.execute("PRAGMA index_list(resources)")
+            indexes = cursor.fetchall()
+            has_unique_url = any('url' in str(idx) for idx in indexes)
+            
+            needs_migration = not has_unique_url
+            
+            if needs_migration:
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS resources_new (
+                        id INTEGER PRIMARY KEY,
+                        title VARCHAR(100) NOT NULL,
+                        description TEXT,
+                        url VARCHAR(500) NOT NULL UNIQUE,
+                        icon VARCHAR(50),
+                        category_id INTEGER,
+                        category VARCHAR(50),
+                        is_active BOOLEAN DEFAULT 1,
+                        "order" INTEGER DEFAULT 0,
+                        resource_type VARCHAR(20) DEFAULT 'link',
+                        created_at TEXT
+                    )
+                ''')
+                cursor.execute('''
+                    INSERT OR IGNORE INTO resources_new 
+                    SELECT id, title, description, url, icon, category_id, category, is_active, "order", resource_type, created_at
+                    FROM resources
+                ''')
+                cursor.execute('DROP TABLE resources')
+                cursor.execute('ALTER TABLE resources_new RENAME TO resources')
+                cursor.execute("CREATE INDEX IF NOT EXISTS ix_resources_id ON resources(id)")
+                cursor.execute("CREATE INDEX IF NOT EXISTS ix_resources_category_id ON resources(category_id)")
+                cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS ix_resources_url ON resources(url)")
+                conn.commit()
+                print("Migration: Updated resources table with unique URL constraint")
+            
+            cursor.execute("SELECT COUNT(*) FROM resources")
+            if cursor.fetchone()[0] > 0:
+                cursor.execute('''
+                    WITH numbered AS (
+                        SELECT id, ROW_NUMBER() OVER (ORDER BY "order", id) as new_order
+                        FROM resources
+                    )
+                    UPDATE resources SET "order" = (
+                        SELECT new_order FROM numbered WHERE numbered.id = resources.id
+                    )
+                ''')
+                conn.commit()
+                print("Migration: Fixed duplicate order values in resources table")
+            
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='email_change_verifications'")
+            if not cursor.fetchone():
+                cursor.execute('''
+                    CREATE TABLE email_change_verifications (
+                        id INTEGER PRIMARY KEY,
+                        user_id INTEGER NOT NULL,
+                        new_email VARCHAR(100) NOT NULL,
+                        code VARCHAR(6) NOT NULL,
+                        ip_address VARCHAR(50),
+                        is_used BOOLEAN DEFAULT 0,
+                        used_at TEXT,
+                        expires_at TEXT NOT NULL,
+                        created_at TEXT,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    )
+                ''')
+                cursor.execute("CREATE INDEX IF NOT EXISTS ix_email_change_verifications_user_id ON email_change_verifications(user_id)")
+                cursor.execute("CREATE INDEX IF NOT EXISTS ix_email_change_verifications_new_email ON email_change_verifications(new_email)")
+                conn.commit()
+                print("Migration: Created 'email_change_verifications' table")
+            
+            conn.close()
+        elif "postgresql" in db_url:
+            db = SessionLocal()
+            try:
+                result = db.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'comments' AND column_name = 'deleted_by'"))
+                if not result.fetchone():
+                    db.execute(text("ALTER TABLE comments ADD COLUMN deleted_by VARCHAR(20)"))
+                    db.commit()
+                    print("Migration: Added 'deleted_by' column to comments table")
+                else:
+                    print("Migration: 'deleted_by' column already exists")
+                
+                result = db.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'articles' AND column_name = 'is_pinned'"))
+                if not result.fetchone():
+                    db.execute(text("ALTER TABLE articles ADD COLUMN is_pinned BOOLEAN DEFAULT FALSE"))
+                    db.execute(text("CREATE INDEX IF NOT EXISTS ix_articles_published_pinned ON articles(is_published, is_pinned)"))
+                    db.commit()
+                    print("Migration: Added 'is_pinned' column to articles table")
+                else:
+                    print("Migration: 'is_pinned' column already exists")
+                
+                result = db.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'articles' AND column_name = 'pinned_order'"))
+                if not result.fetchone():
+                    db.execute(text("ALTER TABLE articles ADD COLUMN pinned_order INTEGER DEFAULT 0"))
+                    db.execute(text("CREATE INDEX IF NOT EXISTS ix_articles_pinned_order ON articles(pinned_order)"))
+                    db.commit()
+                    print("Migration: Added 'pinned_order' column to articles table")
+                else:
+                    print("Migration: 'pinned_order' column already exists")
+                
+                result = db.execute(text("SELECT is_nullable FROM information_schema.columns WHERE table_name = 'article_likes' AND column_name = 'user_id'"))
+                row = result.fetchone()
+                if row and row[0] == 'NO':
+                    db.execute(text("ALTER TABLE article_likes ALTER COLUMN user_id DROP NOT NULL"))
+                    db.commit()
+                    print("Migration: Updated article_likes table to allow NULL user_id for anonymous likes")
+                
+                result = db.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'user_profiles' AND column_name = 'oauth_avatar_url'"))
+                if not result.fetchone():
+                    db.execute(text("ALTER TABLE user_profiles ADD COLUMN oauth_avatar_url VARCHAR(500)"))
+                    db.commit()
+                    print("Migration: Added 'oauth_avatar_url' column to user_profiles table")
+                
+                result = db.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'article_files' AND column_name = 'order'"))
+                if not result.fetchone():
+                    db.execute(text("ALTER TABLE article_files ADD COLUMN \"order\" INTEGER DEFAULT 0"))
+                    db.commit()
+                    print("Migration: Added 'order' column to article_files table")
+                
+                result = db.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'article_files' AND column_name = 'preview_count'"))
+                if not result.fetchone():
+                    db.execute(text("ALTER TABLE article_files ADD COLUMN preview_count INTEGER DEFAULT 0"))
+                    db.commit()
+                    print("Migration: Added 'preview_count' column to article_files table")
+                
+                result = db.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'announcements'"))
+                if not result.fetchone():
+                    db.execute(text('''
+                        CREATE TABLE announcements (
+                            id SERIAL PRIMARY KEY,
+                            title VARCHAR(200) NOT NULL,
+                            content TEXT NOT NULL,
+                            type VARCHAR(20) DEFAULT 'info',
+                            is_active BOOLEAN DEFAULT TRUE,
+                            "order" INTEGER DEFAULT 0,
+                            created_at TIMESTAMP,
+                            updated_at TIMESTAMP
+                        )
+                    '''))
+                    db.execute(text("CREATE INDEX IF NOT EXISTS ix_announcements_id ON announcements(id)"))
+                    db.execute(text("CREATE INDEX IF NOT EXISTS ix_announcements_is_active ON announcements(is_active)"))
+                    db.execute(text("CREATE INDEX IF NOT EXISTS ix_announcements_active_order ON announcements(is_active, \"order\")"))
+                    db.commit()
+                    print("Migration: Created 'announcements' table")
+                
+                result = db.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'resource_categories'"))
+                if not result.fetchone():
+                    db.execute(text('''
+                        CREATE TABLE resource_categories (
+                            id SERIAL PRIMARY KEY,
+                            name VARCHAR(50) NOT NULL,
+                            slug VARCHAR(50) NOT NULL UNIQUE,
+                            description TEXT,
+                            icon VARCHAR(50),
+                            "order" INTEGER DEFAULT 0,
+                            is_active BOOLEAN DEFAULT TRUE,
+                            created_at TIMESTAMP
+                        )
+                    '''))
+                    db.execute(text("CREATE INDEX IF NOT EXISTS ix_resource_categories_id ON resource_categories(id)"))
+                    db.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_resource_categories_slug ON resource_categories(slug)"))
+                    db.commit()
+                    print("Migration: Created 'resource_categories' table")
+                
+                result = db.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'resources' AND column_name = 'category_id'"))
+                if not result.fetchone():
+                    db.execute(text("ALTER TABLE resources ADD COLUMN category_id INTEGER"))
+                    db.execute(text("CREATE INDEX IF NOT EXISTS ix_resources_category_id ON resources(category_id)"))
+                    db.commit()
+                    print("Migration: Added 'category_id' column to resources table")
+                
+                result = db.execute(text("SELECT COUNT(*) FROM resources WHERE id NOT IN (SELECT id FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY \"order\", id) as rn FROM resources) t WHERE \"order\" = rn)"))
+                if result.fetchone()[0] > 0:
+                    db.execute(text('''
+                        WITH numbered AS (
+                            SELECT id, ROW_NUMBER() OVER (ORDER BY "order", id) as new_order
+                            FROM resources
+                        )
+                        UPDATE resources SET "order" = numbered.new_order
+                        FROM numbered
+                        WHERE resources.id = numbered.id
+                    '''))
+                    db.commit()
+                    print("Migration: Fixed duplicate order values in resources table")
+                
+                result = db.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'email_change_verifications'"))
+                if not result.fetchone():
+                    db.execute(text('''
+                        CREATE TABLE email_change_verifications (
+                            id SERIAL PRIMARY KEY,
+                            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                            new_email VARCHAR(100) NOT NULL,
+                            code VARCHAR(6) NOT NULL,
+                            ip_address VARCHAR(50),
+                            is_used BOOLEAN DEFAULT FALSE,
+                            used_at TIMESTAMP,
+                            expires_at TIMESTAMP NOT NULL,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )
+                    '''))
+                    db.execute(text("CREATE INDEX IF NOT EXISTS ix_email_change_verifications_user_id ON email_change_verifications(user_id)"))
+                    db.execute(text("CREATE INDEX IF NOT EXISTS ix_email_change_verifications_new_email ON email_change_verifications(new_email)"))
+                    db.commit()
+                    print("Migration: Created 'email_change_verifications' table")
+            except Exception as e:
+                print(f"PostgreSQL migration error: {e}")
+                db.rollback()
+            finally:
+                db.close()
+        else:
+            print(f"Migration: Unknown database type, skipping migrations")
+    except Exception as e:
+        print(f"Migration warning: {e}")
+
+
+def init_database():
+    run_database_migrations()
+    
+    db = SessionLocal()
+    try:
+        admin = db.query(User).filter(User.email == settings.ADMIN_EMAIL).first()
+        if admin:
+            updated = False
+            if not admin.is_verified:
+                admin.is_verified = True
+                updated = True
+            if updated:
+                db.commit()
+                print(f"Updated admin user: {admin.username}")
+        else:
+            admin = db.query(User).filter(User.username == settings.ADMIN_USERNAME).first()
+            if not admin:
+                admin = User(
+                    username=settings.ADMIN_USERNAME,
+                    email=settings.ADMIN_EMAIL,
+                    hashed_password=get_password_hash(settings.ADMIN_PASSWORD),
+                    is_verified=True,
+                    bio="Full Stack Engineer | AI Explorer | Open Source Contributor",
+                    avatar="/avatars/admin.jpg"
+                )
+                db.add(admin)
+                db.commit()
+                print(f"Created admin user: {settings.ADMIN_USERNAME}")
+            else:
+                updated = False
+                if not admin.is_verified:
+                    admin.is_verified = True
+                    updated = True
+                if updated:
+                    db.commit()
+                    print(f"Updated admin user: {settings.ADMIN_USERNAME}")
+        
+        deprecated_config = db.query(SiteConfig).filter(SiteConfig.key == "mobile_article_layout").first()
+        if deprecated_config:
+            db.delete(deprecated_config)
+            db.commit()
+            print("Removed deprecated 'mobile_article_layout' config from database")
+        
+        categories_data = [
+            {"name": "前端工程化", "slug": "frontend-engineering", "description": "前端架构、工程化最佳实践", "icon": "code", "color": "#00d4ff", "order": 1},
+            {"name": "后端架构", "slug": "backend-architecture", "description": "后端服务设计与架构模式", "icon": "server", "color": "#7c3aed", "order": 2},
+            {"name": "AI 实战", "slug": "ai-practice", "description": "人工智能应用开发实战", "icon": "brain", "color": "#f59e0b", "order": 3},
+            {"name": "DevOps 笔记", "slug": "devops-notes", "description": "运维自动化与CI/CD实践", "icon": "cogs", "color": "#10b981", "order": 4},
+        ]
+        
+        for cat_data in categories_data:
+            existing = db.query(Category).filter(Category.slug == cat_data["slug"]).first()
+            if not existing:
+                category = Category(**cat_data)
+                db.add(category)
+        
+        db.commit()
+        
+        tags_data = [
+            {"name": "FastAPI", "slug": "fastapi", "color": "#009688"},
+            {"name": "Python", "slug": "python", "color": "#3776ab"},
+            {"name": "API", "slug": "api", "color": "#00d4ff"},
+            {"name": "高性能", "slug": "high-performance", "color": "#ff5722"},
+            {"name": "Vue3", "slug": "vue3", "color": "#42b883"},
+            {"name": "TypeScript", "slug": "typescript", "color": "#3178c6"},
+            {"name": "Vite", "slug": "vite", "color": "#646cff"},
+            {"name": "最佳实践", "slug": "best-practices", "color": "#10b981"},
+            {"name": "LangChain", "slug": "langchain", "color": "#1c3c3c"},
+            {"name": "LLM", "slug": "llm", "color": "#8b5cf6"},
+            {"name": "OpenAI", "slug": "openai", "color": "#00a67e"},
+            {"name": "RAG", "slug": "rag", "color": "#f59e0b"},
+        ]
+        
+        for tag_data in tags_data:
+            existing = db.query(Tag).filter(Tag.slug == tag_data["slug"]).first()
+            if not existing:
+                tag = Tag(**tag_data)
+                db.add(tag)
+        
+        db.commit()
+        
+        resource_categories_data = [
+            {"name": "部署平台", "slug": "deployment-platforms", "description": "应用部署与托管平台", "icon": "🚀", "order": 1, "is_active": True},
+            {"name": "常用工具", "slug": "common-tools", "description": "日常开发常用工具集合", "icon": "🔧", "order": 2, "is_active": True},
+            {"name": "学习网站", "slug": "learning-sites", "description": "优质学习资源网站", "icon": "📚", "order": 3, "is_active": True},
+            {"name": "开发工具", "slug": "dev-tools", "description": "常用开发工具", "icon": "🛠️", "order": 4, "is_active": True},
+            {"name": "设计灵感", "slug": "design-inspiration", "description": "设计参考与灵感", "icon": "🎨", "order": 5, "is_active": True},
+            {"name": "API服务", "slug": "api-services", "description": "API接口服务", "icon": "🔌", "order": 6, "is_active": True},
+        ]
+        
+        print("\n=== Initializing resource categories ===")
+        resource_categories_map = {}
+        for cat_data in resource_categories_data:
+            existing = db.query(ResourceCategory).filter(ResourceCategory.slug == cat_data["slug"]).first()
+            if not existing:
+                category = ResourceCategory(**cat_data)
+                db.add(category)
+                db.commit()
+                db.refresh(category)
+                resource_categories_map[cat_data["name"]] = category.id
+                print(f"✓ Created resource category: {cat_data['name']} (ID: {category.id})")
+            else:
+                resource_categories_map[cat_data["name"]] = existing.id
+                print(f"✓ Found existing resource category: {cat_data['name']} (ID: {existing.id})")
+        
+        db.commit()
+        print(f"Resource categories map: {resource_categories_map}")
+        
+        resources_data = [
+            {"title": "MDN Web Docs", "description": "Mozilla开发者网络文档", "url": "https://developer.mozilla.org", "icon": "📖", "category_id": resource_categories_map.get("学习网站"), "category": "学习网站", "order": 1},
+            {"title": "Vue.js 官方文档", "description": "Vue 3 官方中文文档", "url": "https://cn.vuejs.org", "icon": "💚", "category_id": resource_categories_map.get("学习网站"), "category": "学习网站", "order": 2},
+            {"title": "FastAPI 官方文档", "description": "FastAPI 官方文档", "url": "https://fastapi.tiangolo.com", "icon": "⚡", "category_id": resource_categories_map.get("学习网站"), "category": "学习网站", "order": 3},
+            {"title": "VS Code", "description": "强大的代码编辑器", "url": "https://code.visualstudio.com", "icon": "💻", "category_id": resource_categories_map.get("开发工具"), "category": "开发工具", "order": 1},
+            {"title": "GitHub", "description": "代码托管平台", "url": "https://github.com", "icon": "🐙", "category_id": resource_categories_map.get("开发工具"), "category": "开发工具", "order": 2},
+            {"title": "Dribbble", "description": "设计师作品展示平台", "url": "https://dribbble.com", "icon": "🏀", "category_id": resource_categories_map.get("设计灵感"), "category": "设计灵感", "order": 1},
+            {"title": "OpenAI API", "description": "OpenAI API文档", "url": "https://platform.openai.com", "icon": "🤖", "category_id": resource_categories_map.get("API服务"), "category": "API服务", "order": 1},
+            {"title": "Vercel", "description": "前端应用部署平台，支持 Next.js、Vue、React 等框架", "url": "https://vercel.com", "icon": "▲", "category_id": resource_categories_map.get("部署平台"), "category": "部署平台", "order": 1},
+            {"title": "Render", "description": "后端服务部署平台，支持 Python、Node.js、Go 等语言", "url": "https://render.com", "icon": "🔵", "category_id": resource_categories_map.get("部署平台"), "category": "部署平台", "order": 2},
+            {"title": "Neon", "description": "无服务器 PostgreSQL 数据库，支持自动扩缩容", "url": "https://neon.tech", "icon": "💚", "category_id": resource_categories_map.get("部署平台"), "category": "部署平台", "order": 3},
+            {"title": "Supabase", "description": "开源 Firebase 替代方案，提供数据库、认证、存储等服务", "url": "https://supabase.com", "icon": "⚡", "category_id": resource_categories_map.get("部署平台"), "category": "部署平台", "order": 4},
+            {"title": "Resend", "description": "开发者友好的邮件发送服务，简单易用的 API", "url": "https://resend.com", "icon": "📧", "category_id": resource_categories_map.get("部署平台"), "category": "部署平台", "order": 5},
+            {"title": "UptimeRobot", "description": "免费的网站监控服务，支持定时检测和告警", "url": "https://uptimerobot.com", "icon": "🤖", "category_id": resource_categories_map.get("部署平台"), "category": "部署平台", "order": 6},
+            {"title": "Cloudflare", "description": "全球 CDN 服务，提供 DDoS 防护和 DNS 解析", "url": "https://cloudflare.com", "icon": "☁️", "category_id": resource_categories_map.get("部署平台"), "category": "部署平台", "order": 7},
+            {"title": "Hero SMS", "description": "在线短信接收平台，用于验证码接收和测试", "url": "https://hero-sms.com/cn", "icon": "📱", "category_id": resource_categories_map.get("常用工具"), "category": "常用工具", "order": 1},
+            {"title": "DokiDoki Web", "description": "实用工具导航网站，汇集各类在线工具和资源", "url": "https://dokidokiweb.com/", "icon": "🔮", "category_id": resource_categories_map.get("常用工具"), "category": "常用工具", "order": 2},
+            {"title": "Remove.bg", "description": "智能图片背景去除工具，一键移除图片背景", "url": "https://www.remove.bg/zh", "icon": "✂️", "category_id": resource_categories_map.get("常用工具"), "category": "常用工具", "order": 3},
+            {"title": "SQLPub", "description": "免费的 MySQL 无服务器数据库平台，支持自动扩缩容", "url": "https://www.sqlpub.com/", "icon": "🗄️", "category_id": resource_categories_map.get("常用工具"), "category": "常用工具", "order": 4},
+            {"title": "Regex 快速参考", "description": "正则表达式快速参考手册，包含常用语法和示例", "url": "https://quickref.cn/docs/regex.html", "icon": "📋", "category_id": resource_categories_map.get("常用工具"), "category": "常用工具", "order": 5},
+            {"title": "PCRE 文档", "description": "PCRE 正则表达式完整文档，详细的语法说明", "url": "https://www.pcre.org/current/doc/html/index.html", "icon": "📖", "category_id": resource_categories_map.get("常用工具"), "category": "常用工具", "order": 6},
+            {"title": "Regex101", "description": "在线正则表达式测试工具，支持多种语言和实时调试", "url": "https://regex101.com/", "icon": "🧪", "category_id": resource_categories_map.get("常用工具"), "category": "常用工具", "order": 7},
+        ]
+        
+        print("\n=== Initializing resources ===")
+        created_count = 0
+        updated_count = 0
+        error_count = 0
+        
+        for res_data in resources_data:
+            try:
+                existing = db.query(Resource).filter(Resource.url == res_data["url"]).first()
+                if not existing:
+                    resource = Resource(**res_data)
+                    db.add(resource)
+                    db.flush()
+                    created_count += 1
+                    print(f"✓ Created resource: {res_data['title']} (Category: {res_data.get('category_id')})")
+                else:
+                    if existing.category_id is None and res_data.get("category_id"):
+                        existing.category_id = res_data["category_id"]
+                        if res_data.get("icon"):
+                            existing.icon = res_data["icon"]
+                        updated_count += 1
+                        print(f"✓ Updated resource: {res_data['title']}")
+            except Exception as e:
+                error_count += 1
+                print(f"✗ Error creating resource {res_data['title']}: {e}")
+                db.rollback()
+                existing = db.query(Resource).filter(Resource.url == res_data["url"]).first()
+                if existing and existing.category_id is None and res_data.get("category_id"):
+                    existing.category_id = res_data["category_id"]
+                    if res_data.get("icon"):
+                        existing.icon = res_data["icon"]
+        
+        db.commit()
+        print(f"\n=== Resource initialization completed ===")
+        print(f"Created: {created_count}, Updated: {updated_count}, Errors: {error_count}")
+        print(f"Total resources in database: {db.query(Resource).count()}")
+        
+        articles_data = [
+            {
+                "title": "深入浅出 FastAPI：构建高性能 Python Web 服务",
+                "slug": "fastapi-high-performance-python-web-service",
+                "summary": "从基础路由到依赖注入和异步任务，全面解析 FastAPI 的核心特性与最佳实践。",
+                "content": """# 深入浅出 FastAPI：构建高性能 Python Web 服务
+
+## 为什么选择 FastAPI？
+
+FastAPI 是一个现代、高性能的 Python Web 框架，基于 Starlette 和 Pydantic 构建。它具有以下优势：
+
+- **高性能**：与 NodeJS 和 Go 相当的性能表现
+- **快速开发**：开发效率提升约 200%-300%
+- **更少的 Bug**：减少约 40% 的人为错误
+- **直观易用**：强大的编辑器支持，自动补全
+- **简单易学**：设计简洁，易于上手
+
+## FastAPI vs Flask vs Django
+
+| 特性 | FastAPI | Flask | Django |
+|------|---------|-------|--------|
+| 性能 | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐ |
+| 异步支持 | ✅ | ❌ | ✅ (3.0+) |
+| 类型提示 | ✅ | ❌ | ❌ |
+| 自动文档 | ✅ | ❌ | ❌ |
+| 学习曲线 | 低 | 低 | 高 |
+
+## 核心特性
+
+### 1. 自动 API 文档
+
+```python
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+app = FastAPI()
+
+class Item(BaseModel):
+    name: str
+    price: float
+    is_offer: bool = False
+
+@app.post("/items/")
+async def create_item(item: Item):
+    return {"item": item, "message": "Item created successfully"}
+```
+
+访问 `/docs` 即可看到自动生成的 Swagger UI 文档。
+
+### 2. 依赖注入
+
+```python
+from fastapi import Depends, HTTPException
+
+def get_current_user(token: str):
+    # 验证 token 并返回用户
+    user = verify_token(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    return user
+
+@app.get("/users/me")
+async def read_users_me(current_user = Depends(get_current_user)):
+    return current_user
+```
+
+### 3. 异步支持
+
+```python
+import httpx
+
+@app.get("/external-data")
+async def get_external_data():
+    async with httpx.AsyncClient() as client:
+        response = await client.get("https://api.example.com/data")
+        return response.json()
+```
+
+## 生产部署
+
+推荐使用 Gunicorn + Uvicorn：
+
+```bash
+gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker
+```
+
+## 总结
+
+FastAPI 是构建现代 Python Web 服务的最佳选择之一。它结合了高性能、开发效率和优秀的开发体验，非常适合构建 RESTful API 和微服务架构。
+""",
+                "category_slug": "backend-architecture",
+                "tag_slugs": ["fastapi", "python", "api", "高性能"],
+                "is_published": True,
+                "is_featured": True
+            },
+            {
+                "title": "Vue 3 + TypeScript + Vite：下一代前端开发体验",
+                "slug": "vue3-typescript-vite-next-gen-frontend",
+                "summary": "探讨如何利用 Vue 3 的组合式 API (Composition API) 和 TypeScript 提升大型应用的可维护性与开发效率。",
+                "content": """# Vue 3 + TypeScript + Vite：下一代前端开发体验
+
+## 技术栈概览
+
+- **Vue 3**: 渐进式 JavaScript 框架
+- **TypeScript**: JavaScript 的超集，提供静态类型检查
+- **Vite**: 下一代前端构建工具
+
+## Composition API 详解
+
+### `<script setup>` 语法糖
+
+```vue
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+
+interface Props {
+  title: string
+  count?: number
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  count: 0
+})
+
+const emit = defineEmits<{
+  (e: 'update', value: number): void
+}>()
+
+const localCount = ref(props.count)
+
+const doubledCount = computed(() => localCount.value * 2)
+
+const increment = () => {
+  localCount.value++
+  emit('update', localCount.value)
+}
+
+onMounted(() => {
+  console.log('Component mounted!')
+})
+</script>
+
+<template>
+  <div class="counter">
+    <h2>{{ title }}</h2>
+    <p>Count: {{ localCount }}</p>
+    <p>Doubled: {{ doubledCount }}</p>
+    <button @click="increment">Increment</button>
+  </div>
+</template>
+```
+
+## Pinia 状态管理
+
+```typescript
+// stores/user.ts
+import { defineStore } from 'pinia'
+
+interface User {
+  id: number
+  name: string
+  email: string
+}
+
+export const useUserStore = defineStore('user', {
+  state: () => ({
+    user: null as User | null,
+    isAuthenticated: false
+  }),
+  
+  getters: {
+    userName: (state) => state.user?.name ?? 'Guest'
+  },
+  
+  actions: {
+    async login(credentials: { email: string; password: string }) {
+      const response = await api.login(credentials)
+      this.user = response.user
+      this.isAuthenticated = true
+    },
+    
+    logout() {
+      this.user = null
+      this.isAuthenticated = false
+    }
+  }
+})
+```
+
+## Vite 配置优化
+
+```typescript
+// vite.config.ts
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import { resolve } from 'path'
+
+export default defineConfig({
+  plugins: [vue()],
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src')
+    }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor': ['vue', 'vue-router', 'pinia'],
+          'ui': ['element-plus']
+        }
+      }
+    }
+  }
+})
+```
+
+## 总结
+
+Vue 3 + TypeScript + Vite 组合提供了卓越的开发体验，是构建现代前端应用的最佳选择。
+""",
+                "category_slug": "frontend-engineering",
+                "tag_slugs": ["vue3", "typescript", "vite", "最佳实践"],
+                "is_published": True,
+                "is_featured": True
+            },
+            {
+                "title": "LangChain 入门：构建你的第一个 AI 应用",
+                "slug": "langchain-build-your-first-ai-app",
+                "summary": "一篇为开发者准备的 LangChain 快速上手指南，通过实例讲解如何连接大语言模型，并构建一个简单的问答机器人。",
+                "content": """# LangChain 入门：构建你的第一个 AI 应用
+
+## 什么是 LangChain？
+
+LangChain 是一个强大的框架，用于开发由语言模型驱动的应用程序。它提供了：
+
+- **模型 I/O**: 与各种 LLM 的统一接口
+- **Chains**: 将多个组件串联成复杂工作流
+- **Agents**: 让 LLM 自主决策和执行操作
+- **Memory**: 为对话提供上下文记忆
+- **Retrieval**: 集成向量数据库实现 RAG
+
+## 快速开始
+
+### 安装依赖
+
+```bash
+pip install langchain langchain-openai chromadb
+```
+
+### 基础示例
+
+```python
+from langchain_openai import ChatOpenAI
+from langchain.schema import HumanMessage, SystemMessage
+
+# 初始化模型
+llm = ChatOpenAI(
+    model="gpt-4",
+    temperature=0.7
+)
+
+# 发送消息
+response = llm.invoke([
+    SystemMessage(content="你是一个专业的 Python 开发者"),
+    HumanMessage(content="请解释什么是装饰器？")
+])
+
+print(response.content)
+```
+
+## RAG (检索增强生成)
+
+RAG 是将外部知识库与 LLM 结合的技术，让模型能够回答它训练数据中没有的信息。
+
+```python
+from langchain_community.document_loaders import TextLoader
+from langchain_text_splitters import CharacterTextSplitter
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores import Chroma
+from langchain.chains import RetrievalQA
+
+# 1. 加载文档
+loader = TextLoader("docs/knowledge.txt")
+documents = loader.load()
+
+# 2. 分割文档
+text_splitter = CharacterTextSplitter(
+    chunk_size=1000,
+    chunk_overlap=200
+)
+texts = text_splitter.split_documents(documents)
+
+# 3. 创建向量存储
+embeddings = OpenAIEmbeddings()
+vectorstore = Chroma.from_documents(
+    texts,
+    embeddings,
+    persist_directory="./chroma_db"
+)
+
+# 4. 创建问答链
+qa = RetrievalQA.from_chain_type(
+    llm=llm,
+    chain_type="stuff",
+    retriever=vectorstore.as_retriever()
+)
+
+# 5. 提问
+answer = qa.run("什么是 FastAPI 的核心特性？")
+print(answer)
+```
+
+## Agent 示例
+
+```python
+from langchain.agents import initialize_agent, Tool
+from langchain.tools import DuckDuckGoSearchRun
+
+# 定义工具
+search = DuckDuckGoSearchRun()
+
+tools = [
+    Tool(
+        name="Search",
+        func=search.run,
+        description="用于搜索最新信息"
+    )
+]
+
+# 初始化 Agent
+agent = initialize_agent(
+    tools,
+    llm,
+    agent="zero-shot-react-description",
+    verbose=True
+)
+
+# 运行
+result = agent.run("2024年最新的 AI 技术趋势是什么？")
+print(result)
+```
+
+## 总结
+
+LangChain 大大简化了 AI 应用的开发流程，让开发者能够快速构建复杂的 LLM 应用。结合 RAG 技术，可以构建出具有专业领域知识的智能助手。
+""",
+                "category_slug": "ai-practice",
+                "tag_slugs": ["langchain", "llm", "openai", "rag"],
+                "is_published": True,
+                "is_featured": False
+            },
+            {
+                "title": "Docker 容器化部署：从开发到生产的完整指南",
+                "slug": "docker-containerization-complete-guide",
+                "summary": "全面介绍 Docker 容器化技术，包括镜像构建、容器编排、网络配置以及生产环境最佳实践。",
+                "content": """# Docker 容器化部署：从开发到生产的完整指南
+
+## 为什么选择 Docker？
+
+Docker 彻底改变了软件交付的方式：
+
+- **一致性**：开发、测试、生产环境完全一致
+- **隔离性**：应用之间互不干扰
+- **可移植性**：一次构建，到处运行
+- **效率**：快速部署和扩展
+
+## Dockerfile 最佳实践
+
+### 多阶段构建
+
+```dockerfile
+# 构建阶段
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY . .
+RUN npm run build
+
+# 生产阶段
+FROM nginx:alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/nginx.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+### Python 应用示例
+
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# 安装依赖
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 复制代码
+COPY . .
+
+# 创建非 root 用户
+RUN useradd -m appuser && chown -R appuser:appuser /app
+USER appuser
+
+EXPOSE 8000
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+## Docker Compose 编排
+
+```yaml
+version: '3.8'
+
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://user:pass@db:5432/app
+    depends_on:
+      - db
+      - redis
+    networks:
+      - app-network
+
+  db:
+    image: postgres:15-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=app
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7-alpine
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge
+```
+
+## 生产环境优化
+
+### 健康检查
+
+```yaml
+healthcheck:
+  test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 40s
+```
+
+### 资源限制
+
+```yaml
+deploy:
+  resources:
+    limits:
+      cpus: '0.5'
+      memory: 512M
+    reservations:
+      cpus: '0.25'
+      memory: 256M
+```
+
+## 常用命令
+
+```bash
+# 构建镜像
+docker build -t myapp:v1.0 .
+
+# 运行容器
+docker run -d -p 8000:8000 --name myapp myapp:v1.0
+
+# 查看日志
+docker logs -f myapp
+
+# 进入容器
+docker exec -it myapp /bin/sh
+
+# 清理资源
+docker system prune -a
+```
+
+## 总结
+
+Docker 是现代 DevOps 的基石，掌握容器化技术对于构建可扩展、可维护的应用至关重要。
+""",
+                "category_slug": "devops-notes",
+                "tag_slugs": ["python", "最佳实践"],
+                "is_published": True,
+                "is_featured": False
+            },
+            {
+                "title": "Tailwind CSS 实战：打造未来感 UI 设计",
+                "slug": "tailwind-css-futuristic-ui-design",
+                "summary": "探索 Tailwind CSS 的高级用法，学习如何创建具有科技感的现代界面，包括玻璃态、渐变、动画等效果。",
+                "content": """# Tailwind CSS 实战：打造未来感 UI 设计
+
+## Tailwind CSS 简介
+
+Tailwind CSS 是一个功能类优先的 CSS 框架，让你可以快速构建现代网站。
+
+## 核心配置
+
+### tailwind.config.js
+
+```javascript
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{vue,js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: '#00d4ff',
+        secondary: '#7c3aed',
+        accent: '#f59e0b',
+        dark: {
+          50: '#f8fafc',
+          100: '#1e293b',
+          200: '#0f172a',
+          300: '#020617',
+        }
+      },
+      animation: {
+        'glow': 'glow 2s ease-in-out infinite alternate',
+        'float': 'float 3s ease-in-out infinite',
+      },
+      keyframes: {
+        glow: {
+          '0%': { boxShadow: '0 0 5px #00d4ff, 0 0 10px #00d4ff' },
+          '100%': { boxShadow: '0 0 20px #00d4ff, 0 0 30px #00d4ff' },
+        },
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-10px)' },
+        }
+      }
+    },
+  },
+  plugins: [],
+}
+```
+
+## 玻璃态效果 (Glassmorphism)
+
+```html
+<div class="backdrop-blur-md bg-white/10 border border-white/20 rounded-2xl shadow-xl">
+  <h2 class="text-white text-2xl font-bold">玻璃态卡片</h2>
+  <p class="text-white/70">半透明背景 + 模糊效果</p>
+</div>
+```
+
+## 渐变边框
+
+```html
+<div class="relative p-[2px] rounded-lg bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500">
+  <div class="bg-dark-200 rounded-lg p-6">
+    <h3 class="text-white">渐变边框卡片</h3>
+  </div>
+</div>
+```
+
+## 发光按钮
+
+```html
+<button class="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold rounded-lg 
+               hover:shadow-[0_0_20px_rgba(0,212,255,0.5)] transition-all duration-300 
+               hover:scale-105 active:scale-95">
+  发光按钮
+</button>
+```
+
+## 粒子背景效果
+
+```html
+<div class="fixed inset-0 overflow-hidden pointer-events-none">
+  <div class="absolute w-2 h-2 bg-primary/30 rounded-full animate-float" 
+       style="top: 20%; left: 10%; animation-delay: 0s;"></div>
+  <div class="absolute w-3 h-3 bg-secondary/30 rounded-full animate-float" 
+       style="top: 40%; left: 30%; animation-delay: 1s;"></div>
+  <div class="absolute w-1 h-1 bg-accent/30 rounded-full animate-float" 
+       style="top: 60%; left: 50%; animation-delay: 2s;"></div>
+</div>
+```
+
+## 响应式设计
+
+```html
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  <div class="p-4 bg-dark-100 rounded-xl">卡片 1</div>
+  <div class="p-4 bg-dark-100 rounded-xl">卡片 2</div>
+  <div class="p-4 bg-dark-100 rounded-xl">卡片 3</div>
+</div>
+```
+
+## 暗色模式
+
+```html
+<div class="bg-white dark:bg-dark-200 text-gray-900 dark:text-white">
+  自动适配暗色模式
+</div>
+```
+
+## 总结
+
+Tailwind CSS 让我们能够快速构建具有未来感的 UI，通过组合各种功能类，实现复杂的设计效果。
+""",
+                "category_slug": "frontend-engineering",
+                "tag_slugs": ["vue3", "typescript", "最佳实践"],
+                "is_published": True,
+                "is_featured": False
+            },
+            {
+                "title": "PostgreSQL 性能优化：从索引到查询调优",
+                "slug": "postgresql-performance-optimization",
+                "summary": "深入探讨 PostgreSQL 数据库性能优化策略，包括索引设计、查询计划分析、连接池配置等核心主题。",
+                "content": """# PostgreSQL 性能优化：从索引到查询调优
+
+## 索引优化
+
+### B-Tree 索引
+
+```sql
+-- 创建索引
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_articles_created_at ON articles(created_at DESC);
+
+-- 复合索引
+CREATE INDEX idx_articles_category_status ON articles(category_id, status);
+```
+
+### 部分索引
+
+```sql
+-- 只索引已发布的文章
+CREATE INDEX idx_published_articles ON articles(created_at) 
+WHERE status = 'published';
+```
+
+### 全文搜索索引
+
+```sql
+-- 创建 GIN 索引用于全文搜索
+CREATE INDEX idx_articles_content_search ON articles 
+USING gin(to_tsvector('english', title || ' ' || content));
+
+-- 搜索示例
+SELECT * FROM articles 
+WHERE to_tsvector('english', title || ' ' || content) @@ 
+      to_tsquery('english', 'fastapi & python');
+```
+
+## 查询计划分析
+
+### EXPLAIN ANALYZE
+
+```sql
+EXPLAIN ANALYZE
+SELECT a.*, c.name as category_name
+FROM articles a
+JOIN categories c ON a.category_id = c.id
+WHERE a.status = 'published'
+ORDER BY a.created_at DESC
+LIMIT 10;
+```
+
+### 常见问题
+
+1. **Seq Scan** - 全表扫描，考虑添加索引
+2. **Nested Loop** - 大表连接效率低，考虑使用 Hash Join
+3. **Filter** - 过滤条件未使用索引
+
+## 连接池配置
+
+### PgBouncer
+
+```ini
+[databases]
+mydb = host=127.0.0.1 port=5432 dbname=mydb
+
+[pgbouncer]
+listen_addr = 0.0.0.0
+listen_port = 6432
+auth_type = md5
+auth_file = /etc/pgbouncer/userlist.txt
+pool_mode = transaction
+max_client_conn = 1000
+default_pool_size = 25
+```
+
+## PostgreSQL 配置优化
+
+```ini
+# postgresql.conf
+
+# 内存配置
+shared_buffers = 256MB
+effective_cache_size = 768MB
+work_mem = 4MB
+maintenance_work_mem = 64MB
+
+# 连接配置
+max_connections = 200
+
+# WAL 配置
+wal_buffers = 8MB
+checkpoint_completion_target = 0.9
+
+# 查询优化
+random_page_cost = 1.1
+effective_io_concurrency = 200
+```
+
+## 监控查询
+
+```sql
+-- 查看活跃连接
+SELECT pid, usename, application_name, state, query_start
+FROM pg_stat_activity
+WHERE state = 'active';
+
+-- 查看表统计信息
+SELECT relname, n_live_tup, n_dead_tup, 
+       last_vacuum, last_autovacuum
+FROM pg_stat_user_tables
+ORDER BY n_dead_tup DESC;
+
+-- 查看索引使用情况
+SELECT indexrelname, idx_scan, idx_tup_read, idx_tup_fetch
+FROM pg_stat_user_indexes
+ORDER BY idx_scan ASC;
+```
+
+## 总结
+
+PostgreSQL 性能优化需要从索引设计、查询优化、配置调优等多个维度综合考虑，持续监控和优化是保持数据库高性能的关键。
+""",
+                "category_slug": "backend-architecture",
+                "tag_slugs": ["python", "api", "高性能"],
+                "is_published": True,
+                "is_featured": False
+            },
+            {
+                "title": "OpenAI API 深度解析：GPT-4 与 Embeddings 实战",
+                "slug": "openai-api-gpt4-embeddings-guide",
+                "summary": "详细介绍 OpenAI API 的使用方法，包括 Chat Completions、Embeddings、Function Calling 等核心功能。",
+                "content": """# OpenAI API 深度解析：GPT-4 与 Embeddings 实战
+
+## API 基础
+
+### 安装 SDK
+
+```bash
+pip install openai
+```
+
+### 初始化客户端
+
+```python
+from openai import OpenAI
+
+client = OpenAI(api_key="your-api-key")
+```
+
+## Chat Completions
+
+### 基础对话
+
+```python
+response = client.chat.completions.create(
+    model="gpt-4-turbo-preview",
+    messages=[
+        {"role": "system", "content": "你是一个专业的技术顾问"},
+        {"role": "user", "content": "解释什么是微服务架构？"}
+    ],
+    temperature=0.7,
+    max_tokens=1000
+)
+
+print(response.choices[0].message.content)
+```
+
+### 流式输出
+
+```python
+stream = client.chat.completions.create(
+    model="gpt-4-turbo-preview",
+    messages=[{"role": "user", "content": "写一首关于代码的诗"}],
+    stream=True
+)
+
+for chunk in stream:
+    if chunk.choices[0].delta.content:
+        print(chunk.choices[0].delta.content, end="")
+```
+
+## Function Calling
+
+```python
+tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "description": "获取指定城市的天气信息",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "city": {
+                        "type": "string",
+                        "description": "城市名称"
+                    }
+                },
+                "required": ["city"]
+            }
+        }
+    }
+]
+
+response = client.chat.completions.create(
+    model="gpt-4-turbo-preview",
+    messages=[{"role": "user", "content": "北京今天天气怎么样？"}],
+    tools=tools
+)
+
+# 处理函数调用
+if response.choices[0].message.tool_calls:
+    tool_call = response.choices[0].message.tool_calls[0]
+    function_name = tool_call.function.name
+    arguments = json.loads(tool_call.function.arguments)
+    # 执行函数并返回结果
+```
+
+## Embeddings
+
+### 生成向量
+
+```python
+def get_embedding(text, model="text-embedding-3-small"):
+    text = text.replace("\n", " ")
+    return client.embeddings.create(
+        input=[text],
+        model=model
+    ).data[0].embedding
+
+# 批量生成
+texts = ["FastAPI 是一个现代 Web 框架", "Vue 3 是一个前端框架"]
+embeddings = client.embeddings.create(
+    input=texts,
+    model="text-embedding-3-small"
+)
+```
+
+### 相似度计算
+
+```python
+import numpy as np
+
+def cosine_similarity(a, b):
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+# 比较文本相似度
+emb1 = get_embedding("Python 是一门编程语言")
+emb2 = get_embedding("JavaScript 是一门编程语言")
+similarity = cosine_similarity(emb1, emb2)
+print(f"相似度: {similarity:.4f}")
+```
+
+## 成本优化
+
+### Token 计数
+
+```python
+import tiktoken
+
+def count_tokens(text, model="gpt-4"):
+    encoding = tiktoken.encoding_for_model(model)
+    return len(encoding.encode(text))
+
+text = "这是一段需要计算 token 数量的文本"
+print(f"Token 数量: {count_tokens(text)}")
+```
+
+## 最佳实践
+
+1. **使用 system prompt** 设定角色和行为约束
+2. **控制 temperature** 平衡创造性和一致性
+3. **设置 max_tokens** 控制成本
+4. **使用流式输出** 提升用户体验
+5. **缓存常见查询** 减少 API 调用
+
+## 总结
+
+OpenAI API 为开发者提供了强大的 AI 能力，合理使用可以构建出智能化的应用程序。
+""",
+                "category_slug": "ai-practice",
+                "tag_slugs": ["openai", "llm", "api"],
+                "is_published": True,
+                "is_featured": False
+            }
+        ]
+        
+        for article_data in articles_data:
+            existing = db.query(Article).filter(Article.slug == article_data["slug"]).first()
+            if not existing:
+                category = db.query(Category).filter(Category.slug == article_data["category_slug"]).first()
+                tags = db.query(Tag).filter(Tag.slug.in_(article_data["tag_slugs"])).all()
+                
+                content = article_data["content"]
+                words = len(content.split())
+                reading_time = max(1, words // 200)
+                
+                article = Article(
+                    title=article_data["title"],
+                    slug=article_data["slug"],
+                    summary=article_data["summary"],
+                    content=content,
+                    is_published=article_data["is_published"],
+                    is_featured=article_data["is_featured"],
+                    category_id=category.id if category else None,
+                    author_id=admin.id,
+                    reading_time=reading_time,
+                    published_at=get_db_now() if article_data["is_published"] else None
+                )
+                article.tags = tags
+                db.add(article)
+        
+        db.commit()
+        
+        site_configs_data = [
+            {"key": "site_name", "value": "Futuristic Blog", "description": "网站名称"},
+            {"key": "site_description", "value": "探索前沿技术，分享工程实践", "description": "网站描述"},
+            {"key": "site_keywords", "value": "技术博客,全栈开发,AI,前端,后端", "description": "网站关键词"},
+        ]
+        
+        for config_data in site_configs_data:
+            existing = db.query(SiteConfig).filter(SiteConfig.key == config_data["key"]).first()
+            if not existing:
+                config = SiteConfig(**config_data)
+                db.add(config)
+        
+        db.commit()
+        
+        oauth_providers_data = [
+            {
+                "name": "google",
+                "display_name": "Google",
+                "icon": "google",
+                "authorize_url": "https://accounts.google.com/o/oauth2/v2/auth",
+                "token_url": "https://oauth2.googleapis.com/token",
+                "userinfo_url": "https://www.googleapis.com/oauth2/v2/userinfo",
+                "scope": "openid profile",
+                "order": 1
+            },
+            {
+                "name": "github",
+                "display_name": "GitHub",
+                "icon": "github",
+                "authorize_url": "https://github.com/login/oauth/authorize",
+                "token_url": "https://github.com/login/oauth/access_token",
+                "userinfo_url": "https://api.github.com/user",
+                "scope": "read:user user:email",
+                "order": 2
+            },
+            {
+                "name": "x",
+                "display_name": "X (Twitter)",
+                "icon": "twitter",
+                "authorize_url": "https://twitter.com/i/oauth2/authorize",
+                "token_url": "https://api.twitter.com/2/oauth2/token",
+                "userinfo_url": "https://api.twitter.com/2/users/me",
+                "scope": "users.read tweet.read offline.access",
+                "order": 3
+            },
+            {
+                "name": "wechat",
+                "display_name": "微信",
+                "icon": "wechat",
+                "authorize_url": "https://open.weixin.qq.com/connect/qrconnect",
+                "token_url": "https://api.weixin.qq.com/sns/oauth2/access_token",
+                "userinfo_url": "https://api.weixin.qq.com/sns/userinfo",
+                "scope": "snsapi_userinfo",
+                "order": 4
+            },
+            {
+                "name": "qq",
+                "display_name": "QQ",
+                "icon": "qq",
+                "authorize_url": "https://graph.qq.com/oauth2.0/authorize",
+                "token_url": "https://graph.qq.com/oauth2.0/token",
+                "userinfo_url": "https://graph.qq.com/user/get_user_info",
+                "scope": "get_user_info",
+                "order": 5
+            }
+        ]
+        
+        for provider_data in oauth_providers_data:
+            existing = db.query(OAuthProvider).filter(OAuthProvider.name == provider_data["name"]).first()
+            if not existing:
+                provider = OAuthProvider(**provider_data)
+                db.add(provider)
+        
+        db.commit()
+        
+        init_permissions_and_roles(db, admin)
+        
+        print("Database initialized with sample data!")
+        
+    except Exception as e:
+        print(f"Error initializing database: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+
+def init_permissions_and_roles(db, admin):
+    from app.models import Permission, Role, user_roles, role_permissions
+    
+    print("\n=== Initializing permissions and roles ===")
+    
+    permissions_data = [
+        {"code": "article.view", "name": "查看文章", "module": "article", "action": "view", "description": "查看文章列表和详情"},
+        {"code": "article.create", "name": "创建文章", "module": "article", "action": "create", "description": "创建新文章"},
+        {"code": "article.edit", "name": "编辑文章", "module": "article", "action": "edit", "description": "编辑文章内容"},
+        {"code": "article.delete", "name": "删除文章", "module": "article", "action": "delete", "description": "删除文章"},
+        {"code": "article.publish", "name": "发布文章", "module": "article", "action": "publish", "description": "发布/下架文章"},
+        {"code": "article.upload_image", "name": "上传图片", "module": "article", "action": "upload_image", "description": "上传文章图片"},
+        {"code": "article.upload_file", "name": "上传附件", "module": "article", "action": "upload_file", "description": "上传文章附件"},
+        
+        {"code": "category.view", "name": "查看分类", "module": "category", "action": "view", "description": "查看分类列表"},
+        {"code": "category.create", "name": "创建分类", "module": "category", "action": "create", "description": "创建新分类"},
+        {"code": "category.edit", "name": "编辑分类", "module": "category", "action": "edit", "description": "编辑分类信息"},
+        {"code": "category.delete", "name": "删除分类", "module": "category", "action": "delete", "description": "删除分类"},
+        
+        {"code": "tag.view", "name": "查看标签", "module": "tag", "action": "view", "description": "查看标签列表"},
+        {"code": "tag.create", "name": "创建标签", "module": "tag", "action": "create", "description": "创建新标签"},
+        {"code": "tag.edit", "name": "编辑标签", "module": "tag", "action": "edit", "description": "编辑标签信息"},
+        {"code": "tag.delete", "name": "删除标签", "module": "tag", "action": "delete", "description": "删除标签"},
+        
+        {"code": "comment.view", "name": "查看评论", "module": "comment", "action": "view", "description": "查看评论列表"},
+        {"code": "comment.audit", "name": "审核评论", "module": "comment", "action": "audit", "description": "审核评论内容"},
+        {"code": "comment.delete", "name": "删除评论", "module": "comment", "action": "delete", "description": "删除评论"},
+        
+        {"code": "user.view", "name": "查看用户", "module": "user", "action": "view", "description": "查看用户列表"},
+        {"code": "user.create", "name": "创建用户", "module": "user", "action": "create", "description": "创建新用户"},
+        {"code": "user.edit", "name": "编辑用户", "module": "user", "action": "edit", "description": "编辑用户信息"},
+        {"code": "user.delete", "name": "删除用户", "module": "user", "action": "delete", "description": "删除用户"},
+        {"code": "user.reset_password", "name": "重置密码", "module": "user", "action": "reset_password", "description": "重置用户密码"},
+        
+        {"code": "role.view", "name": "查看角色", "module": "role", "action": "view", "description": "查看角色列表"},
+        {"code": "role.create", "name": "创建角色", "module": "role", "action": "create", "description": "创建新角色"},
+        {"code": "role.edit", "name": "编辑角色", "module": "role", "action": "edit", "description": "编辑角色信息和权限"},
+        {"code": "role.delete", "name": "删除角色", "module": "role", "action": "delete", "description": "删除角色"},
+        {"code": "role.assign", "name": "分配角色", "module": "role", "action": "assign", "description": "为用户分配角色"},
+        
+        {"code": "permission.view", "name": "查看权限", "module": "permission", "action": "view", "description": "查看权限列表"},
+        {"code": "permission.manage", "name": "管理权限", "module": "permission", "action": "manage", "description": "管理权限配置"},
+        
+        {"code": "resource.view", "name": "查看资源", "module": "resource", "action": "view", "description": "查看资源列表"},
+        {"code": "resource.create", "name": "创建资源", "module": "resource", "action": "create", "description": "创建新资源"},
+        {"code": "resource.edit", "name": "编辑资源", "module": "resource", "action": "edit", "description": "编辑资源信息"},
+        {"code": "resource.delete", "name": "删除资源", "module": "resource", "action": "delete", "description": "删除资源"},
+        
+        {"code": "announcement.view", "name": "查看公告", "module": "announcement", "action": "view", "description": "查看公告列表"},
+        {"code": "announcement.create", "name": "创建公告", "module": "announcement", "action": "create", "description": "创建新公告"},
+        {"code": "announcement.edit", "name": "编辑公告", "module": "announcement", "action": "edit", "description": "编辑公告内容"},
+        {"code": "announcement.delete", "name": "删除公告", "module": "announcement", "action": "delete", "description": "删除公告"},
+        
+        {"code": "storage.view", "name": "查看存储", "module": "storage", "action": "view", "description": "查看存储文件"},
+        {"code": "storage.delete", "name": "删除文件", "module": "storage", "action": "delete", "description": "删除文件"},
+        
+        {"code": "settings.view", "name": "查看设置", "module": "settings", "action": "view", "description": "查看系统设置"},
+        {"code": "settings.edit", "name": "编辑设置", "module": "settings", "action": "edit", "description": "编辑系统设置"},
+        
+        {"code": "log.view", "name": "查看系统日志", "module": "log", "action": "view", "description": "查看系统日志"},
+        {"code": "log.clear", "name": "清理系统日志", "module": "log", "action": "clear", "description": "清理历史日志"},
+        
+        {"code": "dashboard.view", "name": "查看仪表盘", "module": "dashboard", "action": "view", "description": "查看仪表盘数据"},
+        {"code": "dashboard.export", "name": "导出仪表盘图表", "module": "dashboard", "action": "export", "description": "导出仪表盘图表为图片或数据文件"},
+        
+        {"code": "email.view", "name": "查看邮件配置", "module": "email", "action": "view", "description": "查看邮件服务配置"},
+        {"code": "email.create", "name": "创建邮箱配置", "module": "email", "action": "create", "description": "创建新的邮箱配置"},
+        {"code": "email.edit", "name": "编辑邮箱配置", "module": "email", "action": "edit", "description": "编辑邮箱配置内容"},
+        {"code": "email.delete", "name": "删除邮箱配置", "module": "email", "action": "delete", "description": "删除邮箱配置"},
+        {"code": "email.activate", "name": "激活邮箱配置", "module": "email", "action": "activate", "description": "激活邮箱配置"},
+        {"code": "email.switch_provider", "name": "切换邮件服务商", "module": "email", "action": "switch_provider", "description": "切换邮件服务提供商"},
+        {"code": "email.test", "name": "测试邮件发送", "module": "email", "action": "test", "description": "测试邮件发送功能"},
+        {"code": "email.view_logs", "name": "查看邮件日志", "module": "email", "action": "view_logs", "description": "查看邮件发送日志"},
+        
+        {"code": "notification.view", "name": "查看通知配置", "module": "notification", "action": "view", "description": "查看通知设置"},
+        {"code": "notification.edit", "name": "编辑通知配置", "module": "notification", "action": "edit", "description": "编辑通知设置"},
+        
+        {"code": "oauth.view", "name": "查看OAuth配置", "module": "oauth", "action": "view", "description": "查看OAuth授权配置"},
+        {"code": "oauth.edit", "name": "编辑OAuth配置", "module": "oauth", "action": "edit", "description": "编辑OAuth授权配置"},
+        
+        {"code": "profile.view", "name": "查看网站资料", "module": "profile", "action": "view", "description": "查看网站资料配置"},
+        {"code": "profile.edit", "name": "编辑网站资料", "module": "profile", "action": "edit", "description": "编辑网站资料配置"},
+    ]
+    
+    created_permissions = {}
+    for perm_data in permissions_data:
+        existing = db.query(Permission).filter(Permission.code == perm_data["code"]).first()
+        if not existing:
+            permission = Permission(**perm_data)
+            db.add(permission)
+            db.flush()
+            created_permissions[perm_data["code"]] = permission
+            print(f"✓ Created permission: {perm_data['code']}")
+        else:
+            created_permissions[perm_data["code"]] = existing
+            print(f"✓ Found existing permission: {perm_data['code']}")
+    
+    db.commit()
+    
+    roles_data = [
+        {
+            "name": "超级管理员",
+            "code": "super_admin",
+            "description": "拥有系统所有权限，不可被修改",
+            "is_system": True,
+            "priority": 100,
+            "permissions": [p["code"] for p in permissions_data]
+        },
+        {
+            "name": "管理员",
+            "code": "admin",
+            "description": "拥有大部分管理权限，但不能管理角色和权限",
+            "is_system": True,
+            "priority": 50,
+            "permissions": [
+                "article.view", "article.create", "article.edit", "article.delete", "article.publish",
+                "article.upload_image", "article.upload_file",
+                "category.view", "category.create", "category.edit", "category.delete",
+                "tag.view", "tag.create", "tag.edit", "tag.delete",
+                "comment.view", "comment.audit", "comment.delete",
+                "user.view", "user.edit", "user.reset_password",
+                "resource.view", "resource.create", "resource.edit", "resource.delete",
+                "announcement.view", "announcement.create", "announcement.edit", "announcement.delete",
+                "storage.view", "storage.delete",
+                "settings.view", "settings.edit",
+                "profile.view", "profile.edit",
+                "log.view", "log.clear",
+                "dashboard.view", "dashboard.export",
+                "email.view", "email.create", "email.edit", "email.delete", "email.activate", "email.switch_provider", "email.test", "email.view_logs",
+                "notification.view", "notification.edit",
+                "oauth.view",
+                "role.view",
+            ]
+        },
+        {
+            "name": "编辑",
+            "code": "editor",
+            "description": "内容编辑，可以管理文章、分类、标签和评论",
+            "is_system": True,
+            "priority": 30,
+            "permissions": [
+                "article.view", "article.create", "article.edit", "article.publish",
+                "article.upload_image", "article.upload_file",
+                "category.view", "category.create", "category.edit",
+                "tag.view", "tag.create", "tag.edit",
+                "comment.view", "comment.audit",
+                "resource.view", "resource.create", "resource.edit",
+                "storage.view",
+                "settings.view",
+                "profile.view",
+                "oauth.view",
+                "role.view",
+            ]
+        },
+        {
+            "name": "作者",
+            "code": "author",
+            "description": "内容创作者，可以创建和管理自己的文章",
+            "is_system": True,
+            "priority": 20,
+            "permissions": [
+                "article.view", "article.create", "article.edit", "article.publish",
+                "article.upload_image", "article.upload_file",
+                "category.view",
+                "tag.view",
+                "comment.view",
+                "resource.view",
+                "storage.view",
+                "settings.view",
+                "profile.view",
+                "oauth.view",
+                "role.view",
+            ]
+        },
+        {
+            "name": "访客",
+            "code": "guest",
+            "description": "只读访问权限",
+            "is_system": True,
+            "priority": 10,
+            "permissions": [
+                "category.view",
+                "tag.view",
+                "role.view",
+                "settings.view",
+                "oauth.view",
+                "profile.view",
+            ]
+        },
+    ]
+    
+    for role_data in roles_data:
+        existing = db.query(Role).filter(Role.code == role_data["code"]).first()
+        if not existing:
+            role = Role(
+                name=role_data["name"],
+                code=role_data["code"],
+                description=role_data["description"],
+                is_system=role_data["is_system"],
+                priority=role_data["priority"]
+            )
+            db.add(role)
+            db.flush()
+            
+            for perm_code in role_data["permissions"]:
+                if perm_code in created_permissions:
+                    db.execute(
+                        role_permissions.insert().values(
+                            role_id=role.id,
+                            permission_id=created_permissions[perm_code].id
+                        )
+                    )
+            
+            print(f"✓ Created role: {role_data['code']} with {len(role_data['permissions'])} permissions")
+        else:
+            if role_data["code"] == "super_admin":
+                db.execute(
+                    role_permissions.delete().where(
+                        role_permissions.c.role_id == existing.id
+                    )
+                )
+                
+                all_perm_count = 0
+                for perm_code in role_data["permissions"]:
+                    if perm_code in created_permissions:
+                        db.execute(
+                            role_permissions.insert().values(
+                                role_id=existing.id,
+                                permission_id=created_permissions[perm_code].id
+                            )
+                        )
+                        all_perm_count += 1
+                print(f"✓ Synced super_admin role with {all_perm_count} permissions")
+            else:
+                print(f"✓ Found existing role: {role_data['code']}")
+    
+    db.commit()
+    
+    super_admin_role = db.query(Role).filter(Role.code == "super_admin").first()
+    if super_admin_role and admin:
+        existing_assignment = db.execute(
+            user_roles.select().where(
+                user_roles.c.user_id == admin.id,
+                user_roles.c.role_id == super_admin_role.id
+            )
+        ).first()
+        if not existing_assignment:
+            db.execute(
+                user_roles.insert().values(
+                    user_id=admin.id,
+                    role_id=super_admin_role.id,
+                    assigned_by=admin.id
+                )
+            )
+            print(f"✓ Assigned super_admin role to admin user")
+    
+    db.commit()
+    print("=== Permissions and roles initialization completed ===\n")

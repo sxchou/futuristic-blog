@@ -1,0 +1,1081 @@
+<script setup lang="ts">
+import { ref, onMounted, watch } from 'vue'
+import { userApi, roleApi } from '@/api'
+import type { User, Role } from '@/types'
+import { useDialogStore, useUserProfileStore, useAuthStore } from '@/stores'
+import { useAdminCheck } from '@/composables/useAdminCheck'
+import { useRoleColor } from '@/composables/useRoleColor'
+import { formatDateTime } from '@/utils/date'
+
+const { getRoleColorClasses } = useRoleColor()
+
+const dialog = useDialogStore()
+const userProfileStore = useUserProfileStore()
+const authStore = useAuthStore()
+const { requirePermission, hasPermission } = useAdminCheck()
+
+const users = ref<User[]>([])
+const isLoading = ref(false)
+const currentPage = ref(1)
+const totalPages = ref(1)
+const pageSize = 10
+
+const showEditor = ref(false)
+const editingUser = ref<User | null>(null)
+const showPasswordModal = ref(false)
+const newPassword = ref('')
+
+const showRoleModal = ref(false)
+const roleAssignUser = ref<User | null>(null)
+const allRoles = ref<Role[]>([])
+const selectedRoleIds = ref<number[]>([])
+
+const form = ref({
+  username: '',
+  email: '',
+  bio: ''
+})
+
+const showCreateModal = ref(false)
+const isCreating = ref(false)
+const createForm = ref({
+  username: '',
+  email: '',
+  password: '',
+  roleIds: [] as number[]
+})
+
+const fetchUsers = async () => {
+  isLoading.value = true
+  try {
+    const response = await userApi.getUsers(currentPage.value, pageSize)
+    users.value = response.items
+    totalPages.value = response.total_pages
+  } catch (error) {
+    console.error('Failed to fetch users:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const handleEdit = async (user: User) => {
+  if (!await requirePermission('user.edit', '编辑用户信息')) return
+  editingUser.value = user
+  form.value = {
+    username: user.username,
+    email: user.email,
+    bio: user.bio || ''
+  }
+  showEditor.value = true
+}
+
+const handleCreate = async () => {
+  if (!await requirePermission('user.create', '创建用户')) return
+  createForm.value = {
+    username: '',
+    email: '',
+    password: '',
+    roleIds: []
+  }
+  showCreateModal.value = true
+}
+
+const handleCreateSubmit = async () => {
+  if (isCreating.value) return
+  
+  if (!requirePermission('user.create')) return
+  
+  if (!createForm.value.username) {
+    await dialog.showError({
+      title: '用户名不能为空',
+      message: '请输入用户名，用户名长度为3-50个字符',
+      type: 'warning'
+    })
+    return
+  }
+  
+  if (createForm.value.username.length < 3) {
+    await dialog.showError({
+      title: '用户名太短',
+      message: '用户名长度至少需要3个字符，请重新输入',
+      type: 'warning'
+    })
+    return
+  }
+  
+  if (!createForm.value.email) {
+    await dialog.showError({
+      title: '邮箱不能为空',
+      message: '请输入有效的邮箱地址，用于账户验证和通知',
+      type: 'warning'
+    })
+    return
+  }
+  
+  const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+  if (!emailPattern.test(createForm.value.email)) {
+    await dialog.showError({
+      title: '邮箱格式不正确',
+      message: '请输入正确的邮箱格式，例如：user@example.com',
+      type: 'warning'
+    })
+    return
+  }
+  
+  if (!createForm.value.password) {
+    await dialog.showError({
+      title: '密码不能为空',
+      message: '请设置用户密码，密码长度至少6位',
+      type: 'warning'
+    })
+    return
+  }
+  
+  if (createForm.value.password.length < 6) {
+    await dialog.showError({
+      title: '密码太短',
+      message: '密码长度至少需要6个字符，建议使用字母、数字和符号的组合',
+      type: 'warning'
+    })
+    return
+  }
+  
+  if (createForm.value.roleIds.length === 0) {
+    await dialog.showError({
+      title: '请选择角色',
+      message: '用户必须至少分配一个角色才能正常使用系统功能',
+      type: 'warning'
+    })
+    return
+  }
+  
+  isCreating.value = true
+  try {
+    await userApi.createUser({
+      username: createForm.value.username,
+      email: createForm.value.email,
+      password: createForm.value.password,
+      role_ids: createForm.value.roleIds
+    })
+    showCreateModal.value = false
+    await fetchUsers()
+    await dialog.showSuccess('用户创建成功', '成功')
+  } catch (error: any) {
+    console.error('Failed to create user:', error)
+    const detail = error.response?.data?.detail || '创建失败'
+    
+    if (detail.includes('用户名已存在')) {
+      await dialog.showError({
+        title: '用户名已被使用',
+        message: '该用户名已被注册，请更换一个用户名',
+        type: 'error'
+      })
+    } else if (detail.includes('邮箱已存在')) {
+      await dialog.showError({
+        title: '邮箱已被使用',
+        message: '该邮箱已被注册，请使用其他邮箱地址',
+        type: 'error'
+      })
+    } else if (detail.includes('角色不存在')) {
+      await dialog.showError({
+        title: '角色选择无效',
+        message: '所选角色不存在或已被删除，请刷新页面后重试',
+        type: 'error'
+      })
+    } else {
+      await dialog.showError({
+        title: '创建用户失败',
+        message: detail,
+        type: 'error'
+      })
+    }
+  } finally {
+    isCreating.value = false
+  }
+}
+
+const toggleCreateRole = (roleId: number) => {
+  const index = createForm.value.roleIds.indexOf(roleId)
+  if (index === -1) {
+    createForm.value.roleIds.push(roleId)
+  } else {
+    createForm.value.roleIds.splice(index, 1)
+  }
+}
+
+const canResetPassword = (user: User): boolean => {
+  const currentUser = authStore.user
+  if (!currentUser) return false
+  if (!hasPermission('user.reset_password')) return false
+  if (user.id === 1) return false
+  if (currentUser.id !== 1 && user.is_admin) return false
+  return true
+}
+
+const handleDelete = async (user: User) => {
+  if (!await requirePermission('user.delete', '删除用户')) return
+  
+  const confirmed = await dialog.showConfirm({
+    title: '确认删除',
+    message: `确定要删除用户"${user.username}"吗？此操作不可恢复。`
+  })
+  if (!confirmed) return
+  
+  try {
+    await userApi.deleteUser(user.id)
+    await fetchUsers()
+    await dialog.showSuccess('用户已删除', '成功')
+  } catch (error: any) {
+    console.error('Failed to delete user:', error)
+    await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
+  }
+}
+
+const handleSubmit = async () => {
+  if (!await requirePermission('user.edit', '保存用户信息')) return
+  
+  try {
+    if (editingUser.value) {
+      await userApi.updateUser(editingUser.value.id, form.value)
+    }
+    showEditor.value = false
+    editingUser.value = null
+    await fetchUsers()
+    await dialog.showSuccess('用户信息已更新', '成功')
+  } catch (error: any) {
+    console.error('Failed to save user:', error)
+    await dialog.showError(error.response?.data?.detail || '保存失败', '错误')
+  }
+}
+
+const fetchRoles = async () => {
+  try {
+    allRoles.value = await roleApi.getRoles(true)
+  } catch (error) {
+    console.error('Failed to fetch roles:', error)
+  }
+}
+
+const openRoleModal = async (user: User) => {
+  if (!await requirePermission('role.assign', '分配角色')) return
+  roleAssignUser.value = user
+  selectedRoleIds.value = user.roles?.map(r => r.id) || []
+  showRoleModal.value = true
+}
+
+const handleRoleAssign = async () => {
+  if (!roleAssignUser.value) return
+  
+  if (selectedRoleIds.value.length === 0) {
+    await dialog.showError('请至少选择一个角色', '提示')
+    return
+  }
+  
+  try {
+    const currentRoleIds = roleAssignUser.value.roles?.map(r => r.id) || []
+    const toAdd = selectedRoleIds.value.filter(id => !currentRoleIds.includes(id))
+    const toRemove = currentRoleIds.filter(id => !selectedRoleIds.value.includes(id))
+    
+    if (toAdd.length > 0) {
+      await roleApi.assignRoles({
+        user_ids: [roleAssignUser.value.id],
+        role_ids: toAdd
+      })
+    }
+    
+    if (toRemove.length > 0) {
+      await roleApi.removeRoles({
+        user_ids: [roleAssignUser.value.id],
+        role_ids: toRemove
+      })
+    }
+    
+    showRoleModal.value = false
+    roleAssignUser.value = null
+    await fetchUsers()
+    await dialog.showSuccess('角色分配成功', '成功')
+  } catch (error: any) {
+    console.error('Failed to assign roles:', error)
+    await dialog.showError(error.response?.data?.detail || '角色分配失败', '错误')
+  }
+}
+
+const toggleRole = (roleId: number) => {
+  const index = selectedRoleIds.value.indexOf(roleId)
+  if (index === -1) {
+    selectedRoleIds.value.push(roleId)
+  } else {
+    selectedRoleIds.value.splice(index, 1)
+  }
+}
+
+const handleResetPassword = async () => {
+  if (!await requirePermission('user.reset_password', '重置用户密码')) return
+  if (!editingUser.value || !newPassword.value) return
+  
+  try {
+    await userApi.resetPassword(editingUser.value.id, newPassword.value)
+    showPasswordModal.value = false
+    newPassword.value = ''
+    await dialog.showSuccess('密码重置成功', '成功')
+  } catch (error: any) {
+    console.error('Failed to reset password:', error)
+    await dialog.showError(error.response?.data?.detail || '密码重置失败', '错误')
+  }
+}
+
+const openPasswordModal = async (user: User) => {
+  if (!await requirePermission('user.reset_password', '重置用户密码')) return
+  editingUser.value = user
+  newPassword.value = ''
+  showPasswordModal.value = true
+}
+
+const formatDate = (date: string) => formatDateTime(date)
+
+const getUserAvatarStyle = (user: User) => {
+  if (user.avatar_type === 'custom' && user.avatar_url) {
+    return {
+      backgroundImage: `url(${user.avatar_url})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }
+  }
+  
+  if (user.avatar_type === 'oauth' && user.oauth_avatar_url) {
+    return {
+      backgroundImage: `url(${user.oauth_avatar_url})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }
+  }
+  
+  if (user.avatar_gradient && user.avatar_gradient.length >= 1) {
+    return {
+      backgroundColor: user.avatar_gradient[0]
+    }
+  }
+  
+  return {
+    backgroundColor: '#667eea'
+  }
+}
+
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--
+    fetchUsers()
+  }
+}
+
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
+    fetchUsers()
+  }
+}
+
+onMounted(() => {
+  fetchUsers()
+  fetchRoles()
+})
+
+watch(() => userProfileStore.avatarUpdatedAt, () => {
+  if (!isLoading.value) {
+    fetchUsers()
+  }
+})
+</script>
+
+<template>
+  <div>
+    <div class="flex items-center justify-between mb-5">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
+          <svg
+            class="w-4 h-4 text-primary"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+            />
+          </svg>
+        </div>
+        <h1 class="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
+          用户管理
+        </h1>
+      </div>
+      <button
+        class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm"
+        @click="handleCreate"
+      >
+        <svg
+          class="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 4v16m8-8H4"
+          />
+        </svg>
+        创建用户
+      </button>
+    </div>
+
+    <div
+      v-if="isLoading"
+      class="flex justify-center py-16"
+    >
+      <div class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+    </div>
+
+    <div
+      v-else
+      class="glass-card overflow-hidden"
+    >
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-100 dark:bg-dark-100">
+            <tr>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                用户
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                邮箱
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                角色
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                状态
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                注册时间
+              </th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
+                操作
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 dark:divide-white/5">
+            <tr
+              v-for="user in users"
+              :key="user.id"
+              class="hover:bg-gray-50 dark:hover:bg-white/5"
+            >
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-3">
+                  <div
+                    class="w-8 h-8 rounded-full flex items-center justify-center text-white font-medium overflow-hidden flex-shrink-0"
+                    :style="getUserAvatarStyle(user)"
+                  >
+                    <span v-if="user.avatar_type === 'default' || (user.avatar_type === 'custom' && !user.avatar_url) || (user.avatar_type === 'oauth' && !user.oauth_avatar_url)">
+                      {{ user.username.charAt(0).toUpperCase() }}
+                    </span>
+                  </div>
+                  <div>
+                    <p class="text-gray-900 dark:text-white font-medium">
+                      {{ user.username }}
+                    </p>
+                    <p class="text-gray-500 text-xs">
+                      {{ user.bio || '暂无简介' }}
+                    </p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                {{ user.email }}
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex flex-wrap gap-1">
+                  <span
+                    v-if="user.roles && user.roles.length > 0"
+                    v-for="role in user.roles"
+                    :key="role.id"
+                    :class="getRoleColorClasses(role.code, 'tag')"
+                  >
+                    {{ role.name }}
+                  </span>
+                  <span
+                    v-else
+                    class="px-2 py-1 text-xs rounded bg-gray-100 dark:bg-dark-100 text-gray-600 dark:text-gray-400"
+                  >
+                    未分配角色
+                  </span>
+                </div>
+              </td>
+              <td class="px-4 py-3">
+                <span
+                  :class="[
+                    'px-2 py-1 text-xs rounded',
+                    user.is_verified
+                      ? 'bg-green-500/20 text-green-400'
+                      : 'bg-yellow-500/20 text-yellow-400'
+                  ]"
+                >
+                  {{ user.is_verified ? '已验证' : '未验证' }}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                {{ formatDate(user.created_at) }}
+              </td>
+              <td class="px-4 py-3 text-right">
+                <div class="flex items-center justify-end gap-2">
+                  <button
+                    class="text-primary hover:text-primary/80 text-xs"
+                    @click="handleEdit(user)"
+                  >
+                    编辑
+                  </button>
+                  <button
+                    class="text-blue-400 hover:text-blue-300 text-xs"
+                    @click="openRoleModal(user)"
+                  >
+                    角色
+                  </button>
+                  <button
+                    v-if="canResetPassword(user)"
+                    class="text-accent hover:text-accent/80 text-xs"
+                    @click="openPasswordModal(user)"
+                  >
+                    重置密码
+                  </button>
+                  <span
+                    v-else
+                    class="text-xs text-gray-400 dark:text-gray-500"
+                  >-</span>
+                  <button
+                    class="text-red-400 hover:text-red-300 text-xs"
+                    @click="handleDelete(user)"
+                  >
+                    删除
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div
+        v-if="totalPages > 1"
+        class="flex items-center justify-center gap-4 mt-4"
+      >
+        <button
+          :disabled="currentPage === 1"
+          class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 dark:hover:bg-dark-200 transition-colors"
+          @click="prevPage"
+        >
+          上一页
+        </button>
+        <span class="text-sm text-gray-500">
+          {{ currentPage }} / {{ totalPages }}
+        </span>
+        <button
+          :disabled="currentPage === totalPages"
+          class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 dark:hover:bg-dark-200 transition-colors"
+          @click="nextPage"
+        >
+          下一页
+        </button>
+      </div>
+    </div>
+
+    <div
+      v-if="showEditor"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+    >
+      <div class="glass-card w-full max-w-md m-4 p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-base font-bold text-gray-900 dark:text-white">
+            编辑用户
+          </h2>
+          <button
+            class="text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            @click="showEditor = false"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <form
+          class="space-y-3"
+          @submit.prevent="handleSubmit"
+        >
+          <div>
+            <label
+              for="user-username"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            >用户名</label>
+            <input
+              id="user-username"
+              v-model="form.username"
+              type="text"
+              name="username"
+              autocomplete="username"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              placeholder="用户名"
+            >
+          </div>
+
+          <div>
+            <label
+              for="user-email"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            >邮箱</label>
+            <input
+              id="user-email"
+              v-model="form.email"
+              type="email"
+              name="email"
+              autocomplete="email"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              placeholder="邮箱地址"
+            >
+          </div>
+
+          <div>
+            <label
+              for="user-bio"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            >简介</label>
+            <textarea
+              id="user-bio"
+              v-model="form.bio"
+              name="bio"
+              rows="3"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none resize-none"
+              placeholder="个人简介"
+            />
+          </div>
+
+          <div class="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              class="px-4 py-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              @click="showEditor = false"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              class="btn-primary text-sm px-4 py-1.5"
+            >
+              保存
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div
+      v-if="showPasswordModal"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+    >
+      <div class="glass-card w-full max-w-sm m-4 p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-base font-bold text-gray-900 dark:text-white">
+            重置密码
+          </h2>
+          <button
+            class="text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            @click="showPasswordModal = false"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <div
+          v-if="editingUser"
+          class="mb-4 p-3 bg-primary/5 dark:bg-primary/10 rounded-xl"
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm"
+              :style="getUserAvatarStyle(editingUser)"
+            >
+              {{ editingUser.username?.charAt(0).toUpperCase() }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-medium text-gray-900 dark:text-white truncate">
+                  {{ editingUser.username }}
+                </span>
+                <span
+                  v-if="editingUser.is_admin"
+                  class="px-1.5 py-0.5 text-xs font-medium rounded bg-primary/20 text-primary"
+                >
+                  管理员
+                </span>
+              </div>
+              <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                ID: {{ editingUser.id }} · {{ editingUser.email || '未绑定邮箱' }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <form
+          class="space-y-3"
+          @submit.prevent="handleResetPassword"
+        >
+          <div>
+            <label for="reset-password-username" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              用户名
+            </label>
+            <input
+              id="reset-password-username"
+              type="text"
+              name="username"
+              :value="editingUser?.username"
+              autocomplete="username"
+              readonly
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-500 dark:text-gray-400 cursor-not-allowed"
+            >
+          </div>
+          <div>
+            <label
+              for="user-new-password"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            >新密码</label>
+            <input
+              id="user-new-password"
+              v-model="newPassword"
+              type="password"
+              name="new-password"
+              autocomplete="new-password"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              placeholder="请输入新密码"
+            >
+          </div>
+
+          <div class="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              class="px-4 py-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              @click="showPasswordModal = false"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              class="btn-primary text-sm px-4 py-1.5"
+            >
+              确认重置
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div
+      v-if="showRoleModal"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+    >
+      <div class="glass-card w-full max-w-md m-4 p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-base font-bold text-gray-900 dark:text-white">
+            分配角色
+          </h2>
+          <button
+            class="text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            @click="showRoleModal = false"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <div
+          v-if="roleAssignUser"
+          class="mb-4 p-3 bg-primary/5 dark:bg-primary/10 rounded-xl"
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm"
+              :style="getUserAvatarStyle(roleAssignUser)"
+            >
+              {{ roleAssignUser.username?.charAt(0).toUpperCase() }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-medium text-gray-900 dark:text-white truncate">
+                  {{ roleAssignUser.username }}
+                </span>
+              </div>
+              <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                {{ roleAssignUser.email || '未绑定邮箱' }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-2 max-h-60 overflow-y-auto">
+          <label
+            v-for="role in allRoles"
+            :key="role.id"
+            class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 cursor-pointer transition-colors"
+            :class="{ 'bg-primary/5 dark:bg-primary/10': selectedRoleIds.includes(role.id) }"
+          >
+            <input :id="`user-role-${role.id}`"
+              type="checkbox"
+              autocomplete="off"
+              :checked="selectedRoleIds.includes(role.id)"
+              class="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-100 text-primary focus:ring-primary"
+              @change="toggleRole(role.id)"
+            >
+            <div class="flex-1">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-medium text-gray-900 dark:text-white">
+                  {{ role.name }}
+                </span>
+                <span
+                  v-if="role.is_system"
+                  class="px-1.5 py-0.5 text-xs rounded bg-blue-500/20 text-blue-400"
+                >
+                  系统角色
+                </span>
+              </div>
+              <div
+                v-if="role.description"
+                class="text-xs text-gray-500 dark:text-gray-400 mt-0.5"
+              >
+                {{ role.description }}
+              </div>
+            </div>
+          </label>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4">
+          <button
+            type="button"
+            class="px-4 py-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+            @click="showRoleModal = false"
+          >
+            取消
+          </button>
+          <button
+            type="button"
+            class="btn-primary text-sm px-4 py-1.5"
+            @click="handleRoleAssign"
+          >
+            保存
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="showCreateModal"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+    >
+      <div class="glass-card w-full max-w-md m-4 p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-base font-bold text-gray-900 dark:text-white">
+            创建用户
+          </h2>
+          <button
+            class="text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            @click="showCreateModal = false"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <form
+          class="space-y-3"
+          @submit.prevent="handleCreateSubmit"
+        >
+          <div>
+            <label
+              for="create-username"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            >用户名 <span class="text-red-400">*</span></label>
+            <input
+              id="create-username"
+              v-model="createForm.username"
+              type="text"
+              name="create-username"
+              autocomplete="username"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              placeholder="请输入用户名"
+            >
+          </div>
+
+          <div>
+            <label
+              for="create-email"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            >邮箱 <span class="text-red-400">*</span></label>
+            <input
+              id="create-email"
+              v-model="createForm.email"
+              type="email"
+              name="create-email"
+              autocomplete="email"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              placeholder="请输入邮箱地址"
+            >
+          </div>
+
+          <div>
+            <label
+              for="create-password"
+              class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+            >密码 <span class="text-red-400">*</span></label>
+            <input
+              id="create-password"
+              v-model="createForm.password"
+              type="password"
+              name="create-password"
+              autocomplete="new-password"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              placeholder="请输入密码（至少6位）"
+            >
+          </div>
+
+          <div>
+            <label for="create-user-roles-helper" class="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              角色 <span class="text-red-400">*</span>
+              <span
+                v-if="createForm.roleIds.length === 0"
+                class="flex items-center gap-1 text-amber-500"
+              >
+                <svg
+                  class="w-3 h-3"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+                <span>请至少选择一个角色</span>
+              </span>
+            </label>
+            <input id="create-user-roles-helper" type="text" class="sr-only" :value="createForm.roleIds.length" tabindex="-1" readonly autocomplete="off">
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="role in allRoles"
+                :key="role.id"
+                type="button"
+                :class="[
+                  'px-3 py-1.5 text-xs rounded-full transition-all',
+                  createForm.roleIds.includes(role.id)
+                    ? 'bg-primary text-white'
+                    : 'bg-gray-100 dark:bg-dark-200 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-300'
+                ]"
+                @click="toggleCreateRole(role.id)"
+              >
+                {{ role.name }}
+              </button>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              class="px-4 py-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              @click="showCreateModal = false"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              :disabled="isCreating"
+              class="text-sm px-4 py-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              :class="isCreating ? 'bg-gray-400 text-white' : 'btn-primary'"
+            >
+              <span
+                v-if="isCreating"
+                class="flex items-center gap-1.5"
+              >
+                <svg
+                  class="w-4 h-4 animate-spin"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                  />
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                创建中...
+              </span>
+              <span v-else>创建</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</template>
