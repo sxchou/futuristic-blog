@@ -393,6 +393,7 @@ async def background_init():
         Base.metadata.create_all(bind=engine)
         
         migrate_foreign_key_ondelete()
+        migrate_add_bookmark_count()
         logger.info("Database tables created")
         
         logger.info("Initializing database data...")
@@ -653,6 +654,28 @@ def sync_article_comment_counts():
         logger.info(f"Synced comment counts for {updated_count} articles")
     except Exception as e:
         logger.error(f"Error syncing comment counts: {e}")
+    finally:
+        db.close()
+
+
+def migrate_add_bookmark_count():
+    from sqlalchemy import text, inspect
+    
+    db = SessionLocal()
+    try:
+        inspector = inspect(db.get_bind())
+        columns = [col['name'] for col in inspector.get_columns('articles')]
+        
+        if 'bookmark_count' not in columns:
+            logger.info("Migrating: adding bookmark_count column to articles table...")
+            db.execute(text('ALTER TABLE articles ADD COLUMN bookmark_count INTEGER DEFAULT 0'))
+            db.commit()
+            logger.info("Migration complete: bookmark_count column added")
+        else:
+            logger.info("bookmark_count column already exists, skipping migration")
+    except Exception as e:
+        logger.error(f"Error migrating bookmark_count column: {e}")
+        db.rollback()
     finally:
         db.close()
 
