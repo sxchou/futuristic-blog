@@ -712,6 +712,35 @@ def fix_database_sequences():
         
         DatabaseUtils.set_sequence_safe(db, "refresh_tokens_id_seq", next_val)
         logger.info(f"Fixed refresh_tokens sequence: max_id={max_id}, next_val={next_val}")
+        
+        sequences_to_fix = [
+            ("article_likes_id_seq", "article_likes"),
+            ("article_bookmarks_id_seq", "article_bookmarks"),
+            ("comments_id_seq", "comments"),
+            ("articles_id_seq", "articles"),
+            ("users_id_seq", "users"),
+            ("categories_id_seq", "categories"),
+            ("tags_id_seq", "tags"),
+            ("resources_id_seq", "resources"),
+            ("permissions_id_seq", "permissions"),
+            ("roles_id_seq", "roles"),
+            ("oauth_providers_id_seq", "oauth_providers"),
+            ("oauth_connections_id_seq", "oauth_connections"),
+            ("article_files_id_seq", "article_files"),
+        ]
+        
+        for seq_name, table_name in sequences_to_fix:
+            try:
+                result = db.execute(text(f"SELECT MAX(id) FROM {table_name}")).scalar()
+                max_id = result or 0
+                next_val = max_id + 1
+                DatabaseUtils.set_sequence_safe(db, seq_name, next_val)
+                logger.info(f"Fixed {seq_name}: max_id={max_id}, next_val={next_val}")
+            except Exception as e:
+                logger.warning(f"Skipping {seq_name}: {e}")
+                db.rollback()
+        
+        logger.info("All database sequences fixed")
     except Exception as e:
         logger.error(f"Error fixing sequences: {e}")
         db.rollback()
