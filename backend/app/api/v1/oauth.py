@@ -356,6 +356,7 @@ def delete_oauth_provider(
         raise HTTPException(status_code=404, detail="Provider not found")
     
     provider_name = provider.display_name
+    db.query(OAuthConnection).filter(OAuthConnection.provider_id == provider_id).delete()
     db.delete(provider)
     db.commit()
     

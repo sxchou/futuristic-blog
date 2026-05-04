@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError
 from app.core.database import get_db
-from app.models import Article, Category, Tag, Comment, ArticleLike, ArticleFile, User
+from app.models import Article, Category, Tag, Comment, ArticleLike, ArticleBookmark, ArticleFile, User, article_tags
 from app.schemas import (
     ArticleCreate, ArticleUpdate, ArticleResponse, ArticleListItem,
     CategoryResponse, TagResponse, PaginatedResponse, UserResponse
@@ -745,7 +745,9 @@ async def delete_article(
         
         db.query(Comment).filter(Comment.article_id == article_id).delete()
         db.query(ArticleLike).filter(ArticleLike.article_id == article_id).delete()
+        db.query(ArticleBookmark).filter(ArticleBookmark.article_id == article_id).delete()
         db.query(ArticleFile).filter(ArticleFile.article_id == article_id).delete()
+        db.execute(article_tags.delete().where(article_tags.c.article_id == article_id))
         
         db.delete(article)
         db.commit()
