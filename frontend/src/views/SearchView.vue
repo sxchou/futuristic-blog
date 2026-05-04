@@ -79,18 +79,23 @@ const handleBookmark = async (e: Event, article: any) => {
   article._bookmarking = true
 
   const prevBookmarked = article.is_bookmarked
+  const prevBookmarkCount = article.bookmark_count || 0
   article.is_bookmarked = !prevBookmarked
+  article.bookmark_count = prevBookmarked ? prevBookmarkCount - 1 : prevBookmarkCount + 1
 
   try {
     const result = await userInteractionStore.toggleBookmark(article.id)
     if (result) {
       article.is_bookmarked = result.is_bookmarked
+      article.bookmark_count = result.bookmark_count
     } else {
       article.is_bookmarked = prevBookmarked
+      article.bookmark_count = prevBookmarkCount
     }
   } catch (error) {
     console.error('Failed to toggle bookmark:', error)
     article.is_bookmarked = prevBookmarked
+    article.bookmark_count = prevBookmarkCount
   } finally {
     article._bookmarking = false
   }
@@ -537,6 +542,7 @@ const formatDate = (date: string) => {
                           d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
                         />
                       </svg>
+                      {{ article.bookmark_count || 0 }}
                       <span
                         v-if="isTooltipVisible(article.id, 'bookmark')"
                         class="action-tooltip"

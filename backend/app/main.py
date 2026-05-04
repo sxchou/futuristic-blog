@@ -67,6 +67,10 @@ async def lifespan(app: FastAPI):
             sync_article_comment_counts()
             logger.info("Article comment counts synced successfully")
             
+            logger.info("Syncing article bookmark counts...")
+            sync_article_bookmark_counts()
+            logger.info("Article bookmark counts synced successfully")
+            
             logger.info("Fixing database sequences...")
             fix_database_sequences()
             logger.info("Database sequences fixed successfully")
@@ -399,6 +403,10 @@ async def background_init():
         sync_article_comment_counts()
         logger.info("Article comment counts synced")
         
+        logger.info("Syncing article bookmark counts...")
+        sync_article_bookmark_counts()
+        logger.info("Article bookmark counts synced")
+        
         asyncio.create_task(cleanup_expired_tokens_task())
         asyncio.create_task(cache_cleanup_task())
         asyncio.create_task(performance_report_task())
@@ -645,6 +653,32 @@ def sync_article_comment_counts():
         logger.info(f"Synced comment counts for {updated_count} articles")
     except Exception as e:
         logger.error(f"Error syncing comment counts: {e}")
+    finally:
+        db.close()
+
+
+def sync_article_bookmark_counts():
+    from sqlalchemy import func
+    from app.models.models import ArticleBookmark
+    
+    db = SessionLocal()
+    try:
+        articles = db.query(Article).all()
+        updated_count = 0
+        
+        for article in articles:
+            actual_count = db.query(func.count(ArticleBookmark.id)).filter(
+                ArticleBookmark.article_id == article.id
+            ).scalar()
+            
+            if article.bookmark_count != actual_count:
+                article.bookmark_count = actual_count
+                updated_count += 1
+        
+        db.commit()
+        logger.info(f"Synced bookmark counts for {updated_count} articles")
+    except Exception as e:
+        logger.error(f"Error syncing bookmark counts: {e}")
     finally:
         db.close()
 

@@ -76,6 +76,7 @@ class Article(Base):
     view_count = Column(Integer, default=0)
     like_count = Column(Integer, default=0)
     comment_count = Column(Integer, default=0)
+    bookmark_count = Column(Integer, default=0)
     reading_time = Column(Integer, default=5)
     published_at = Column(DateTime, nullable=True, index=True)
     created_at = Column(DateTime, default=get_db_now, index=True)

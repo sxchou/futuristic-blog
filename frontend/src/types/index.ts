@@ -89,6 +89,7 @@ export interface Article {
   pinned_order: number
   view_count: number
   like_count: number
+  bookmark_count: number
   reading_time: number
   category_id?: number
   author_id?: number
@@ -114,6 +115,7 @@ export interface ArticleListItem {
   view_count: number
   like_count: number
   comment_count: number
+  bookmark_count: number
   reading_time: number
   created_at: string
   published_at?: string
@@ -139,7 +141,7 @@ export interface LikeResponse {
 export interface BookmarkResponse {
   article_id: number
   is_bookmarked: boolean
-  bookmark_count?: number
+  bookmark_count: number
 }
 
 export interface Resource {

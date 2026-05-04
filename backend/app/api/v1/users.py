@@ -257,6 +257,13 @@ async def delete_user(
                 article.like_count = max(0, (article.like_count or 0) - 1)
     db.query(ArticleLike).filter(ArticleLike.user_id == user_id).delete()
     
+    user_bookmarked_article_ids = db.query(ArticleBookmark.article_id).filter(ArticleBookmark.user_id == user_id).all()
+    bookmarked_article_ids = [aid[0] for aid in user_bookmarked_article_ids]
+    if bookmarked_article_ids:
+        for aid in bookmarked_article_ids:
+            article = db.query(Article).filter(Article.id == aid).first()
+            if article:
+                article.bookmark_count = max(0, (article.bookmark_count or 0) - 1)
     db.query(ArticleBookmark).filter(ArticleBookmark.user_id == user_id).delete()
     
     db.query(EmailChangeVerification).filter(EmailChangeVerification.user_id == user_id).delete()

@@ -424,6 +424,7 @@ async def get_user_commented_articles(
                 cover_image=article.cover_image,
                 view_count=article.view_count,
                 like_count=article.like_count,
+                bookmark_count=article.bookmark_count or 0,
                 comment_count=article.comment_count,
                 is_published=article.is_published,
                 is_featured=article.is_featured,

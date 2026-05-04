@@ -212,6 +212,7 @@ class ArticleResponse(ArticleBase):
     category_id: Optional[int] = None
     view_count: int
     like_count: int
+    bookmark_count: int = 0
     reading_time: int
     author_id: Optional[int] = None
     cover_image: Optional[str] = None
@@ -246,12 +247,13 @@ class ArticleListItem(BaseModel):
     view_count: int
     like_count: int
     comment_count: int = 0
+    bookmark_count: int = 0
     reading_time: int
     created_at: Optional[str] = None
     published_at: Optional[str] = None
     category: Optional[CategoryResponse] = None
     tags: List[TagResponse] = []
-    author: Optional["UserResponse"] = None
+    author: Optional[UserResponse] = None
     is_liked: bool = False
     liked_at: Optional[str] = None
     is_bookmarked: bool = False
@@ -279,7 +281,7 @@ class LikeResponse(BaseModel):
 class BookmarkResponse(BaseModel):
     article_id: int
     is_bookmarked: bool
-    bookmark_count: Optional[int] = None
+    bookmark_count: int = 0
 
 
 class ResourceCategoryBase(BaseModel):

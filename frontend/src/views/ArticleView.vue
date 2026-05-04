@@ -26,6 +26,7 @@ const isLiked = ref(false)
 const likeCount = ref(0)
 const isLiking = ref(false)
 const isBookmarked = ref(false)
+const bookmarkCount = ref(0)
 const isBookmarking = ref(false)
 const articleFiles = ref<ArticleFile[]>([])
 const previewFile = ref<ArticleFile | null>(null)
@@ -203,16 +204,20 @@ const handleBookmark = async () => {
   isBookmarking.value = true
 
   const prevBookmarked = isBookmarked.value
+  const prevBookmarkCount = bookmarkCount.value
   isBookmarked.value = !prevBookmarked
+  bookmarkCount.value = prevBookmarked ? prevBookmarkCount - 1 : prevBookmarkCount + 1
   userInteractionStore.setBookmarked(article.value.id, !prevBookmarked)
 
   try {
     const result = await bookmarkApi.toggle(article.value.id)
     isBookmarked.value = result.is_bookmarked
+    bookmarkCount.value = result.bookmark_count ?? 0
     userInteractionStore.setBookmarked(article.value.id, result.is_bookmarked)
   } catch (error) {
     console.error('Failed to toggle bookmark:', error)
     isBookmarked.value = prevBookmarked
+    bookmarkCount.value = prevBookmarkCount
     userInteractionStore.setBookmarked(article.value.id, prevBookmarked)
   } finally {
     isBookmarking.value = false
@@ -546,6 +551,7 @@ const loadArticle = async (slug: string) => {
         try {
           const bookmarkStatus = await bookmarkApi.getStatus(article.value.id)
           isBookmarked.value = bookmarkStatus.is_bookmarked
+          bookmarkCount.value = bookmarkStatus.bookmark_count || 0
         } catch (error) {
           console.error('Failed to fetch bookmark status:', error)
         }
@@ -1289,6 +1295,7 @@ watch(article, async (newVal) => {
                 d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
               /></svg>
               <span class="text-sm">{{ isBookmarked ? '已收藏' : '收藏' }}</span>
+              <span class="text-sm ml-0.5">{{ bookmarkCount }}</span>
               <span
                 v-if="isTooltipVisible('bookmark')"
                 class="action-tooltip"

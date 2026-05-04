@@ -337,6 +337,7 @@ const handleSubmit = async () => {
       view_count: savedArticle.view_count,
       like_count: savedArticle.like_count,
       comment_count: 0,
+      bookmark_count: savedArticle.bookmark_count || 0,
       reading_time: savedArticle.reading_time,
       created_at: savedArticle.created_at,
       published_at: savedArticle.published_at,

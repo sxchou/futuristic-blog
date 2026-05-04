@@ -52,6 +52,7 @@ async def get_user_bookmarks(
                 cover_image=article.cover_image,
                 view_count=article.view_count,
                 like_count=article.like_count,
+                bookmark_count=article.bookmark_count or 0,
                 comment_count=article.comment_count,
                 is_published=article.is_published,
                 is_featured=article.is_featured,
@@ -94,6 +95,7 @@ async def toggle_bookmark(
     
     if existing_bookmark:
         db.delete(existing_bookmark)
+        article.bookmark_count = max(0, (article.bookmark_count or 0) - 1)
         is_bookmarked = False
     else:
         new_bookmark = ArticleBookmark(
@@ -101,18 +103,16 @@ async def toggle_bookmark(
             user_id=current_user.id
         )
         db.add(new_bookmark)
+        article.bookmark_count = (article.bookmark_count or 0) + 1
         is_bookmarked = True
     
     db.commit()
-    
-    bookmark_count = db.query(ArticleBookmark).filter(
-        ArticleBookmark.article_id == article_id
-    ).count()
+    db.refresh(article)
     
     return BookmarkResponse(
         article_id=article_id,
         is_bookmarked=is_bookmarked,
-        bookmark_count=bookmark_count
+        bookmark_count=article.bookmark_count or 0
     )
 
 
@@ -133,12 +133,8 @@ async def get_bookmark_status(
         )
     ).first()
     
-    bookmark_count = db.query(ArticleBookmark).filter(
-        ArticleBookmark.article_id == article_id
-    ).count()
-    
     return BookmarkResponse(
         article_id=article_id,
         is_bookmarked=existing_bookmark is not None,
-        bookmark_count=bookmark_count
+        bookmark_count=article.bookmark_count or 0
     )

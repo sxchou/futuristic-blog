@@ -225,6 +225,7 @@ def _get_articles_list(page: int, page_size: int, is_featured: Optional[bool] = 
                 pinned_order=article.pinned_order or 0,
                 view_count=article.view_count,
                 like_count=article.like_count or 0,
+                bookmark_count=article.bookmark_count or 0,
                 comment_count=comment_counts.get(article.id, 0),
                 reading_time=article.reading_time,
                 created_at=article.created_at,
