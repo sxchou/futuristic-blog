@@ -6,7 +6,7 @@ import random
 import string
 from app.core.database import get_db
 from app.core.config import settings
-from app.models import User, UserProfile, AvatarType, OAuthConnection, OAuthTempToken, Article, Comment, ArticleFile, ArticleLike, EmailLog, OperationLog, LoginLog, AccessLog, CommentAuditLog, RefreshToken, EmailChangeVerification, Role, PasswordReset
+from app.models import User, UserProfile, AvatarType, OAuthConnection, OAuthTempToken, Article, Comment, ArticleFile, ArticleLike, ArticleBookmark, EmailLog, OperationLog, LoginLog, AccessLog, CommentAuditLog, RefreshToken, EmailChangeVerification, Role, PasswordReset, user_roles
 from app.schemas import UserListItem, UserAdminUpdate, UserAdminCreate, PaginatedResponse
 from app.utils import get_current_user, get_password_hash, verify_password
 from app.utils.permissions import require_permission
@@ -248,7 +248,20 @@ async def delete_user(
     
     db.query(RefreshToken).filter(RefreshToken.user_id == user_id).delete()
     
+    user_liked_article_ids = db.query(ArticleLike.article_id).filter(ArticleLike.user_id == user_id).all()
+    liked_article_ids = [aid[0] for aid in user_liked_article_ids]
+    if liked_article_ids:
+        for aid in liked_article_ids:
+            article = db.query(Article).filter(Article.id == aid).first()
+            if article:
+                article.like_count = max(0, (article.like_count or 0) - 1)
     db.query(ArticleLike).filter(ArticleLike.user_id == user_id).delete()
+    
+    db.query(ArticleBookmark).filter(ArticleBookmark.user_id == user_id).delete()
+    
+    db.query(EmailChangeVerification).filter(EmailChangeVerification.user_id == user_id).delete()
+    
+    db.execute(user_roles.delete().where(user_roles.c.user_id == user_id))
     
     db.query(Comment).filter(Comment.user_id == user_id).update({Comment.user_id: None, Comment.author_name: username})
     
