@@ -28,3 +28,5 @@ uploads/*
 !uploads/.gitkeep
 scan_*.py
 check_*.py
+runtime_*.py
+logs.txt
