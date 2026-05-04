@@ -409,6 +409,10 @@ async def background_init():
         sync_article_bookmark_counts()
         logger.info("Article bookmark counts synced")
         
+        logger.info("Fixing database sequences...")
+        fix_database_sequences()
+        logger.info("Database sequences fixed")
+        
         asyncio.create_task(cleanup_expired_tokens_task())
         asyncio.create_task(cache_cleanup_task())
         asyncio.create_task(performance_report_task())
@@ -701,46 +705,32 @@ def sync_article_bookmark_counts():
 
 
 def fix_database_sequences():
-    from sqlalchemy import text, func
-    from app.models.models import RefreshToken
+    from sqlalchemy import text, inspect
     from app.utils.db_utils import DatabaseUtils
     
     db = SessionLocal()
     try:
-        max_id = db.query(func.max(RefreshToken.id)).scalar() or 0
-        next_val = max_id + 1
+        inspector = inspect(db.get_bind())
+        table_names = inspector.get_table_names()
         
-        DatabaseUtils.set_sequence_safe(db, "refresh_tokens_id_seq", next_val)
-        logger.info(f"Fixed refresh_tokens sequence: max_id={max_id}, next_val={next_val}")
-        
-        sequences_to_fix = [
-            ("article_likes_id_seq", "article_likes"),
-            ("article_bookmarks_id_seq", "article_bookmarks"),
-            ("comments_id_seq", "comments"),
-            ("articles_id_seq", "articles"),
-            ("users_id_seq", "users"),
-            ("categories_id_seq", "categories"),
-            ("tags_id_seq", "tags"),
-            ("resources_id_seq", "resources"),
-            ("permissions_id_seq", "permissions"),
-            ("roles_id_seq", "roles"),
-            ("oauth_providers_id_seq", "oauth_providers"),
-            ("oauth_connections_id_seq", "oauth_connections"),
-            ("article_files_id_seq", "article_files"),
-        ]
-        
-        for seq_name, table_name in sequences_to_fix:
+        fixed_count = 0
+        for table_name in sorted(table_names):
+            seq_name = f"{table_name}_id_seq"
             try:
+                has_id = any(col['name'] == 'id' for col in inspector.get_columns(table_name))
+                if not has_id:
+                    continue
+                
                 result = db.execute(text(f"SELECT MAX(id) FROM {table_name}")).scalar()
                 max_id = result or 0
                 next_val = max_id + 1
                 DatabaseUtils.set_sequence_safe(db, seq_name, next_val)
-                logger.info(f"Fixed {seq_name}: max_id={max_id}, next_val={next_val}")
+                fixed_count += 1
             except Exception as e:
-                logger.warning(f"Skipping {seq_name}: {e}")
+                logger.warning(f"Skipping {table_name}: {e}")
                 db.rollback()
         
-        logger.info("All database sequences fixed")
+        logger.info(f"Fixed {fixed_count} database sequences")
     except Exception as e:
         logger.error(f"Error fixing sequences: {e}")
         db.rollback()
