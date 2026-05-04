@@ -726,7 +726,7 @@ async def get_cache_stats():
 
 @app.get("/sitemap.xml")
 async def get_sitemap():
-    base_url = getattr(settings, 'SITE_URL', 'https://zhouzhouya.top')
+    base_url = settings.SITE_URL
     
     db = SessionLocal()
     try:
@@ -810,7 +810,7 @@ async def get_sitemap():
 
 @app.get("/robots.txt")
 async def get_robots():
-    base_url = getattr(settings, 'SITE_URL', 'https://zhouzhouya.top')
+    base_url = settings.SITE_URL
     
     robots_content = f"""User-agent: *
 Allow: /

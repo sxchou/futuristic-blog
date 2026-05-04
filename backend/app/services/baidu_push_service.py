@@ -10,8 +10,8 @@ class BaiduPushService:
     BAIDU_PUSH_URL = "http://data.zz.baidu.com/urls"
     
     def __init__(self):
-        self.site = getattr(settings, 'SITE_URL', 'https://zhouzhouya.top')
-        self.token = getattr(settings, 'BAIDU_PUSH_TOKEN', '')
+        self.site = settings.SITE_URL
+        self.token = settings.BAIDU_PUSH_TOKEN
         self.enabled = bool(self.token)
     
     async def push_urls(self, urls: List[str]) -> dict:

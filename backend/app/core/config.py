@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "uploads"
     AVATAR_STORAGE_PATH: str = ""
     
-    SITE_URL: str = "https://zhouzhouya.top"
+    SITE_URL: str = "http://localhost:3000"
     BAIDU_PUSH_TOKEN: str = ""
     
     SUPABASE_URL: str = ""
