@@ -3,6 +3,16 @@
   "outputDirectory": "dist",
   "framework": "vue",
   "installCommand": "npm install",
+  "rewrites": [
+    {
+      "source": "/sitemap.xml",
+      "destination": "https://api.zhouzhouya.top/sitemap.xml"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "https://api.zhouzhouya.top/robots.txt"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
