@@ -4,6 +4,8 @@ import { useBlogStore, useDialogStore, usePermissionStore } from '@/stores'
 import { articleApi, fileApi, categoryApi, tagApi, utilsApi, parseUploadError } from '@/api'
 import type { ArticleListItem, Article, ArticleFile } from '@/types'
 import { useAdminCheck } from '@/composables/useAdminCheck'
+import { useDeletionConfirm } from '@/composables/useDeletionConfirm'
+import DeletionConfirmDialog from '@/components/common/DeletionConfirmDialog.vue'
 import { formatDateTime } from '@/utils/date'
 import { getMediaUrl } from '@/utils/media'
 import MarkdownEditor from '@/components/admin/MarkdownEditor.vue'
@@ -14,6 +16,8 @@ const blogStore = useBlogStore()
 const dialog = useDialogStore()
 const permissionStore = usePermissionStore()
 const { requirePermission } = useAdminCheck()
+const articleDeletion = useDeletionConfirm()
+const fileDeletion = useDeletionConfirm()
 
 const articles = ref<ArticleListItem[]>([])
 const isLoading = ref(false)
@@ -225,19 +229,22 @@ const handleEdit = async (article: ArticleListItem) => {
 const handleDelete = async (article: ArticleListItem) => {
   if (!await requirePermission('article.delete', '删除文章')) return
   
-  const confirmed = await dialog.showConfirm({
-    title: '确认删除',
-    message: `确定要删除文章"${article.title}"吗？`
-  })
-  if (!confirmed) return
-  
+  const previewed = await articleDeletion.requestDeletion('article', article.id, article.title)
+  if (!previewed) return
+}
+
+const articleDeletionLoading = ref(false)
+const executeArticleDeletion = async () => {
   try {
-    await articleApi.deleteArticle(article.id)
-    blogStore.removeArticle(article.id)
-    articles.value = articles.value.filter(a => a.id !== article.id)
+    articleDeletionLoading.value = true
+    await articleApi.deleteArticle(articleDeletion.currentItemId.value)
+    blogStore.removeArticle(articleDeletion.currentItemId.value)
+    articles.value = articles.value.filter(a => a.id !== articleDeletion.currentItemId.value)
+    articleDeletion.confirmDeletion()
     await dialog.showSuccess('文章已删除', '成功')
   } catch (error: any) {
     console.error('Failed to delete article:', error)
+    articleDeletion.cancelDeletion()
     await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
   }
 }
@@ -869,20 +876,23 @@ const downloadFile = async (file: ArticleFile) => {
 }
 
 const handleDeleteFile = async (fileId: number) => {
-  const confirmed = await dialog.showConfirm({
-    title: '确认删除',
-    message: '确定要删除此文件吗？'
-  })
-  if (!confirmed) return
-  
+  const previewed = await fileDeletion.requestDeletion('file', fileId)
+  if (!previewed) return
+}
+
+const fileDeletionLoading = ref(false)
+const executeFileDeletion = async () => {
   try {
-    await fileApi.deleteFile(fileId)
+    fileDeletionLoading.value = true
+    await fileApi.deleteFile(fileDeletion.currentItemId.value)
     if (editingArticle.value) {
       await fetchArticleFiles(editingArticle.value.id)
     }
+    fileDeletion.confirmDeletion()
     await dialog.showSuccess('文件已删除', '成功')
   } catch (error: any) {
     console.error('Failed to delete file:', error)
+    fileDeletion.cancelDeletion()
     await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
   }
 }
@@ -1372,7 +1382,7 @@ watch(form, () => {
                 >未分类</span>
               </td>
               <td class="px-4 py-3 text-gray-400">
-                <span v-if="article.author">{{ article.author.username }}</span>
+                <span v-if="article.author || article.author_name">{{ article.author?.username || article.author_name || '已注销用户' }}</span>
                 <span
                   v-else
                   class="text-gray-500"
@@ -1458,7 +1468,7 @@ watch(form, () => {
                 :style="{ color: article.category.color }"
               >{{ article.category.name }}</span>
               <span v-else>未分类</span>
-              <span v-if="article.author">{{ article.author.username }}</span>
+              <span v-if="article.author || article.author_name">{{ article.author?.username || article.author_name || '已注销用户' }}</span>
               <span>{{ article.view_count }} 浏览</span>
               <span>{{ formatDate(article.created_at) }}</span>
             </div>
@@ -2776,5 +2786,21 @@ watch(form, () => {
     title="裁剪图片"
     @confirm="handleImageCropConfirm"
     @cancel="handleImageCropCancel"
+  />
+
+  <DeletionConfirmDialog
+    :visible="articleDeletion.showDeletionDialog.value"
+    :preview="articleDeletion.deletionPreview.value"
+    :loading="articleDeletionLoading"
+    @confirm="executeArticleDeletion"
+    @cancel="articleDeletion.cancelDeletion()"
+  />
+
+  <DeletionConfirmDialog
+    :visible="fileDeletion.showDeletionDialog.value"
+    :preview="fileDeletion.deletionPreview.value"
+    :loading="fileDeletionLoading"
+    @confirm="executeFileDeletion"
+    @cancel="fileDeletion.cancelDeletion()"
   />
 </template>

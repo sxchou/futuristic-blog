@@ -4,10 +4,13 @@ import { tagApi, utilsApi } from '@/api'
 import type { Tag } from '@/types'
 import { useDialogStore, useBlogStore } from '@/stores'
 import { useAdminCheck } from '@/composables/useAdminCheck'
+import { useDeletionConfirm } from '@/composables/useDeletionConfirm'
+import DeletionConfirmDialog from '@/components/common/DeletionConfirmDialog.vue'
 
 const dialog = useDialogStore()
 const blogStore = useBlogStore()
 const { requirePermission } = useAdminCheck()
+const deletion = useDeletionConfirm()
 
 const isLoading = ref(false)
 const showEditor = ref(false)
@@ -47,18 +50,21 @@ const handleEdit = async (tag: Tag) => {
 const handleDelete = async (tag: Tag) => {
   if (!await requirePermission('tag.delete', '删除标签')) return
   
-  const confirmed = await dialog.showConfirm({
-    title: '确认删除',
-    message: `确定要删除标签"${tag.name}"吗？`
-  })
-  if (!confirmed) return
-  
+  const previewed = await deletion.requestDeletion('tag', tag.id, tag.name)
+  if (!previewed) return
+}
+
+const deletionLoading = ref(false)
+const executeDeletion = async () => {
   try {
-    await tagApi.deleteTag(tag.id)
-    blogStore.removeTag(tag.id)
+    deletionLoading.value = true
+    await tagApi.deleteTag(deletion.currentItemId.value)
+    blogStore.removeTag(deletion.currentItemId.value)
+    deletion.confirmDeletion()
     await dialog.showSuccess('标签已删除', '成功')
   } catch (error: any) {
     console.error('Failed to delete tag:', error)
+    deletion.cancelDeletion()
     await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
   }
 }
@@ -359,5 +365,13 @@ onMounted(fetchTags)
         </form>
       </div>
     </div>
+
+    <DeletionConfirmDialog
+      :visible="deletion.showDeletionDialog.value"
+      :preview="deletion.deletionPreview.value"
+      :loading="deletionLoading"
+      @confirm="executeDeletion"
+      @cancel="deletion.cancelDeletion()"
+    />
   </div>
 </template>

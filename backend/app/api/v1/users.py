@@ -270,11 +270,11 @@ async def delete_user(
     
     db.execute(user_roles.delete().where(user_roles.c.user_id == user_id))
     
-    db.query(Comment).filter(Comment.user_id == user_id).update({Comment.user_id: None, Comment.author_name: username})
+    db.query(Comment).filter(Comment.user_id == user_id).update({Comment.user_id: None, Comment.author_name: username, Comment.author_email: None})
     
-    db.query(Comment).filter(Comment.reply_to_user_id == user_id).update({Comment.reply_to_user_id: None})
+    db.query(Comment).filter(Comment.reply_to_user_id == user_id).update({Comment.reply_to_user_id: None, Comment.reply_to_user_name: username})
     
-    db.query(Article).filter(Article.author_id == user_id).update({Article.author_id: None})
+    db.query(Article).filter(Article.author_id == user_id).update({Article.author_id: None, Article.author_name: f"已注销用户"})
     
     db.query(ArticleFile).filter(ArticleFile.uploaded_by == user_id).update({ArticleFile.uploaded_by: None})
     

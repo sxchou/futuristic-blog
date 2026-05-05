@@ -93,6 +93,7 @@ export interface Article {
   reading_time: number
   category_id?: number
   author_id?: number
+  author_name?: string
   created_at: string
   updated_at: string
   published_at?: string
@@ -122,6 +123,7 @@ export interface ArticleListItem {
   category?: Category
   tags: Tag[]
   author?: User
+  author_name?: string
   is_liked?: boolean
   liked_at?: string
   is_bookmarked?: boolean

@@ -4,10 +4,13 @@ import { roleApi, permissionApi } from '@/api'
 import type { Role, Permission, PermissionTree } from '@/api'
 import { useDialogStore, usePermissionStore } from '@/stores'
 import { useAdminCheck } from '@/composables/useAdminCheck'
+import { useDeletionConfirm } from '@/composables/useDeletionConfirm'
+import DeletionConfirmDialog from '@/components/common/DeletionConfirmDialog.vue'
 
 const dialog = useDialogStore()
 const permissionStore = usePermissionStore()
 const { requirePermission } = useAdminCheck()
+const deletion = useDeletionConfirm()
 
 const roles = ref<Role[]>([])
 const permissionTree = ref<PermissionTree | null>(null)
@@ -184,18 +187,21 @@ const handleDelete = async (role: Role) => {
     return
   }
 
-  const confirmed = await dialog.showConfirm({
-    title: '确认删除',
-    message: `确定要删除角色"${role.name}"吗？此操作不可恢复。`
-  })
-  if (!confirmed) return
+  const previewed = await deletion.requestDeletion('role', role.id, role.name)
+  if (!previewed) return
+}
 
+const deletionLoading = ref(false)
+const executeDeletion = async () => {
   try {
-    await roleApi.deleteRole(role.id)
+    deletionLoading.value = true
+    await roleApi.deleteRole(deletion.currentItemId.value)
+    deletion.confirmDeletion()
     dialog.showSuccess('角色已删除')
     await fetchRoles()
   } catch (error: any) {
     console.error('Failed to delete role:', error)
+    deletion.cancelDeletion()
     dialog.showError(error.response?.data?.detail || '删除失败')
   }
 }
@@ -697,6 +703,14 @@ onMounted(() => {
         </div>
       </div>
     </div>
+
+    <DeletionConfirmDialog
+      :visible="deletion.showDeletionDialog.value"
+      :preview="deletion.deletionPreview.value"
+      :loading="deletionLoading"
+      @confirm="executeDeletion"
+      @cancel="deletion.cancelDeletion()"
+    />
   </div>
 </template>
 

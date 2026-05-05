@@ -78,6 +78,8 @@ def build_comment_tree(comments: List[Comment], db: Session) -> List[dict]:
         if comment.reply_to_user_id:
             if comment.reply_to_user:
                 reply_to_user_name = comment.reply_to_user.username
+            elif comment.reply_to_user_name:
+                reply_to_user_name = comment.reply_to_user_name
             else:
                 reply_to_user = db.query(User).filter(User.id == comment.reply_to_user_id).first()
                 reply_to_user_name = reply_to_user.username if reply_to_user else None
@@ -85,6 +87,8 @@ def build_comment_tree(comments: List[Comment], db: Session) -> List[dict]:
             if comment.reply_to_user_id not in user_avatar_cache:
                 user_avatar_cache[comment.reply_to_user_id] = get_user_avatar_info(db, comment.reply_to_user_id)
             reply_to_user_avatar = user_avatar_cache[comment.reply_to_user_id]
+        elif comment.reply_to_user_name:
+            reply_to_user_name = comment.reply_to_user_name
         
         author_avatar = {
             'avatar_type': None,
@@ -274,6 +278,7 @@ async def create_comment(
     
     parent_comment = None
     reply_to_user_id = None
+    reply_to_user_name = None
     
     if comment_data.parent_id:
         parent_comment = db.query(Comment).options(
@@ -284,6 +289,7 @@ async def create_comment(
         
         if parent_comment.user_id:
             reply_to_user_id = parent_comment.user_id
+            reply_to_user_name = parent_comment.user.username if parent_comment.user else parent_comment.author_name
     
     initial_status = 'pending' if require_audit else 'approved'
     
@@ -295,7 +301,8 @@ async def create_comment(
         author_name=current_user.username,
         author_email=current_user.email,
         status=initial_status,
-        reply_to_user_id=reply_to_user_id
+        reply_to_user_id=reply_to_user_id,
+        reply_to_user_name=reply_to_user_name
     )
     
     db.add(new_comment)
@@ -308,7 +315,12 @@ async def create_comment(
     
     article_author = db.query(User).filter(User.id == article.author_id).first() if article.author_id else None
     author_email = article_author.email if article_author else None
-    author_name = article_author.username if article_author else None
+    author_name = article_author.username if article_author else (article.author_name or '已注销用户')
+    
+    if not author_email:
+        author_email = EmailService.get_admin_real_email(db)
+        if article_author and not article_author.email:
+            author_name = f"已注销用户"
     
     if initial_status == 'approved':
         background_tasks.add_task(
@@ -352,8 +364,10 @@ async def create_comment(
     reply_to_user_avatar = {'avatar_type': None, 'avatar_url': None, 'avatar_gradient': None}
     if new_comment.reply_to_user_id:
         reply_to_user = db.query(User).filter(User.id == new_comment.reply_to_user_id).first()
-        reply_to_user_name = reply_to_user.username if reply_to_user else None
+        reply_to_user_name = reply_to_user.username if reply_to_user else new_comment.reply_to_user_name
         reply_to_user_avatar = get_user_avatar_info(db, new_comment.reply_to_user_id)
+    elif new_comment.reply_to_user_name:
+        reply_to_user_name = new_comment.reply_to_user_name
     
     author_avatar = get_user_avatar_info(db, current_user.id)
     
@@ -435,6 +449,7 @@ async def get_user_commented_articles(
                 category=CategoryResponse.model_validate(article.category) if article.category else None,
                 tags=[TagResponse.model_validate(tag) for tag in article.tags],
                 author=UserResponse.model_validate(article.author) if article.author else None,
+                author_name=article.author_name,
                 commented_at=result.last_comment_at
             ))
     
@@ -772,6 +787,12 @@ async def admin_delete_comment(
         
         return {"message": "Comment soft deleted successfully", "type": "soft"}
     else:
+        child_comments = db.query(Comment).filter(Comment.parent_id == comment_id).all()
+        for child in child_comments:
+            if not child.reply_to_user_name and comment.author_name:
+                child.reply_to_user_name = comment.author_name
+            child.parent_id = None
+
         db.query(CommentAuditLog).filter(CommentAuditLog.comment_id == comment_id).delete()
         db.delete(comment)
         db.commit()
@@ -819,6 +840,12 @@ async def batch_delete_comments(
     deleted_count = 0
     if delete_data.permanent:
         for comment in comments:
+            child_comments = db.query(Comment).filter(Comment.parent_id == comment.id).all()
+            for child in child_comments:
+                if not child.reply_to_user_name and comment.author_name:
+                    child.reply_to_user_name = comment.author_name
+                child.parent_id = None
+            
             db.query(CommentAuditLog).filter(CommentAuditLog.comment_id == comment.id).delete()
             db.delete(comment)
             deleted_count += 1

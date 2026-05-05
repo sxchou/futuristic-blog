@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Table, UniqueConstraint, Float, Enum as SQLEnum, JSON, Index
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from app.core.database import Base
 import enum
 
@@ -69,6 +69,7 @@ class Article(Base):
     cover_image = Column(String(255), nullable=True)
     category_id = Column(Integer, ForeignKey('categories.id'), nullable=True, index=True)
     author_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True, index=True)
+    author_name = Column(String(50), nullable=True)
     is_published = Column(Boolean, default=False, index=True)
     is_featured = Column(Boolean, default=False, index=True)
     is_pinned = Column(Boolean, default=False, index=True)
@@ -89,9 +90,9 @@ class Article(Base):
         Index('ix_articles_category_published', 'category_id', 'is_published'),
     )
     
-    category = relationship("Category", backref="articles")
-    author = relationship("User", backref="articles")
-    tags = relationship("Tag", secondary=article_tags, backref="articles")
+    category = relationship("Category", backref=backref("articles", passive_deletes=True))
+    author = relationship("User", backref=backref("articles", passive_deletes=True))
+    tags = relationship("Tag", secondary=article_tags, backref=backref("articles", passive_deletes=True))
 
 
 class ArticleLike(Base):
@@ -112,8 +113,8 @@ class ArticleBookmark(Base):
     user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
     created_at = Column(DateTime, default=get_db_now, index=True)
     
-    article = relationship("Article", backref="bookmarks")
-    user = relationship("User", backref="bookmarks")
+    article = relationship("Article", backref=backref("bookmarks", passive_deletes=True))
+    user = relationship("User", backref=backref("bookmarks", passive_deletes=True))
     
     __table_args__ = (
         Index('ix_article_bookmarks_user_article', 'user_id', 'article_id'),
@@ -138,8 +139,8 @@ class ArticleFile(Base):
     uploaded_by = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
     created_at = Column(DateTime, default=get_db_now)
     
-    article = relationship("Article", backref="files")
-    uploader = relationship("User", backref="uploaded_files")
+    article = relationship("Article", backref=backref("files", passive_deletes=True))
+    uploader = relationship("User", backref=backref("uploaded_files", passive_deletes=True))
 
 
 class ResourceCategory(Base):
@@ -178,16 +179,17 @@ class Comment(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     content = Column(Text, nullable=False)
-    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True, index=True)
     author_name = Column(String(50), nullable=True)
     author_email = Column(String(100), nullable=True)
     author_url = Column(String(255), nullable=True)
     article_id = Column(Integer, ForeignKey('articles.id', ondelete='CASCADE'), nullable=False, index=True)
-    parent_id = Column(Integer, ForeignKey('comments.id', ondelete='CASCADE'), nullable=True, index=True)
+    parent_id = Column(Integer, ForeignKey('comments.id', ondelete='SET NULL'), nullable=True, index=True)
     is_approved = Column(Boolean, default=True)
     is_deleted = Column(Boolean, default=False, index=True)
     deleted_by = Column(String(20), nullable=True)
     reply_to_user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    reply_to_user_name = Column(String(50), nullable=True)
     status = Column(String(20), default='approved', index=True)
     created_at = Column(DateTime, default=get_db_now, index=True)
     
@@ -196,11 +198,11 @@ class Comment(Base):
         Index('ix_comments_status_deleted', 'status', 'is_deleted'),
     )
     
-    article = relationship("Article", backref="comments")
-    user = relationship("User", foreign_keys=[user_id], backref="comments")
-    parent = relationship("Comment", remote_side=[id], backref="replies")
+    article = relationship("Article", backref=backref("comments", passive_deletes=True))
+    user = relationship("User", foreign_keys=[user_id], backref=backref("comments", passive_deletes=True))
+    parent = relationship("Comment", remote_side=[id], backref=backref("replies", passive_deletes=True))
     reply_to_user = relationship("User", foreign_keys=[reply_to_user_id])
-    audit_logs = relationship("CommentAuditLog", back_populates="comment", order_by="desc(CommentAuditLog.created_at)")
+    audit_logs = relationship("CommentAuditLog", back_populates="comment", passive_deletes=True, order_by="desc(CommentAuditLog.created_at)")
 
 
 class CommentAuditLog(Base):

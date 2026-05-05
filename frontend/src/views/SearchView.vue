@@ -398,7 +398,7 @@ const formatDate = (date: string) => {
 
                   <div class="article-meta mt-auto pt-2 border-t border-gray-100 dark:border-white/5">
                     <span
-                      v-if="article.author"
+                      v-if="article.author || article.author_name"
                       class="article-meta-item text-inherit w-full"
                     >
                       <svg
@@ -414,7 +414,7 @@ const formatDate = (date: string) => {
                           d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                         />
                       </svg>
-                      <span class="truncate">{{ article.author.username }}</span>
+                      <span class="truncate">{{ article.author?.username || article.author_name || '已注销用户' }}</span>
                     </span>
                   </div>
                   <div class="article-meta pt-2">

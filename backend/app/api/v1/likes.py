@@ -24,8 +24,8 @@ def send_like_notification_bg(article_title: str, article_slug: str, liker_name:
     from app.core.database import SessionLocal
     db = SessionLocal()
     try:
-        settings = db.query(NotificationSettings).first()
-        if settings and settings.notify_on_like:
+        notification_settings = db.query(NotificationSettings).first()
+        if notification_settings and notification_settings.notify_on_like:
             EmailService.send_new_like_notification_db(
                 db=db,
                 liker_name=liker_name,
@@ -81,6 +81,7 @@ async def get_user_liked_articles(
                 category=CategoryResponse.model_validate(article.category) if article.category else None,
                 tags=[TagResponse.model_validate(tag) for tag in article.tags],
                 author=UserResponse.model_validate(article.author) if article.author else None,
+                author_name=article.author_name,
                 is_liked=True,
                 liked_at=like.created_at
             ))
@@ -127,7 +128,12 @@ async def toggle_like(
         
         article_author = db.query(User).filter(User.id == article.author_id).first() if article.author_id else None
         author_email = article_author.email if article_author else None
-        author_name = article_author.username if article_author else None
+        author_name = article_author.username if article_author else (article.author_name or '已注销用户')
+        
+        if not author_email:
+            author_email = EmailService.get_admin_real_email(db)
+            if article_author and not article_author.email:
+                author_name = f"已注销用户"
         
         liker_name = current_user.username
         article_title = article.title

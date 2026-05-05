@@ -737,7 +737,7 @@ watch(article, async (newVal) => {
 
             <div class="flex flex-wrap items-center gap-2 text-xs text-gray-400 mb-3">
               <span
-                v-if="article.author"
+                v-if="article.author || article.author_name"
                 class="flex items-center gap-1"
               >
                 <svg
@@ -751,7 +751,7 @@ watch(article, async (newVal) => {
                   stroke-width="2"
                   d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                 /></svg>
-                {{ article.author.username }}
+                {{ article.author?.username || article.author_name || '已注销用户' }}
               </span>
               <span class="flex items-center gap-1">
                 <svg
@@ -862,7 +862,7 @@ watch(article, async (newVal) => {
 
                 <div class="flex flex-wrap items-center gap-3 text-sm text-gray-400 mb-4">
                   <span
-                    v-if="article.author"
+                    v-if="article.author || article.author_name"
                     class="flex items-center gap-1.5"
                   >
                     <svg
@@ -876,7 +876,7 @@ watch(article, async (newVal) => {
                       stroke-width="2"
                       d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                     /></svg>
-                    {{ article.author.username }}
+                    {{ article.author?.username || article.author_name || '已注销用户' }}
                   </span>
                   <span class="flex items-center gap-1.5">
                     <svg
@@ -1000,7 +1000,7 @@ watch(article, async (newVal) => {
 
             <div class="flex flex-wrap items-center gap-3 text-sm text-gray-400 mb-4">
               <span
-                v-if="article.author"
+                v-if="article.author || article.author_name"
                 class="flex items-center gap-1.5"
               >
                 <svg
@@ -1014,7 +1014,7 @@ watch(article, async (newVal) => {
                   stroke-width="2"
                   d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                 /></svg>
-                {{ article.author.username }}
+                {{ article.author?.username || article.author_name || '已注销用户' }}
               </span>
               <span class="flex items-center gap-1.5">
                 <svg

@@ -3,9 +3,12 @@ import { ref, onMounted, computed } from 'vue'
 import { announcementApi, type Announcement, type AnnouncementCreate, type AnnouncementUpdate } from '@/api'
 import { useAdminCheck } from '@/composables/useAdminCheck'
 import { useDialogStore } from '@/stores'
+import { useDeletionConfirm } from '@/composables/useDeletionConfirm'
+import DeletionConfirmDialog from '@/components/common/DeletionConfirmDialog.vue'
 
 const { requirePermission, hasPermission } = useAdminCheck()
 const dialog = useDialogStore()
+const deletion = useDeletionConfirm()
 const canEdit = computed(() => hasPermission('announcement.edit') || hasPermission('announcement.create'))
 
 const announcements = ref<Announcement[]>([])
@@ -125,17 +128,20 @@ const handleSave = async () => {
 const handleDelete = async (id: number) => {
   if (!await requirePermission('announcement.delete', '删除公告')) return
   
-  const confirmed = await dialog.showConfirm({
-    message: '确定要删除这条公告吗？',
-    title: '删除后将无法恢复'
-  })
-  if (!confirmed) return
-  
+  const previewed = await deletion.requestDeletion('announcement', id)
+  if (!previewed) return
+}
+
+const deletionLoading = ref(false)
+const executeDeletion = async () => {
   try {
-    await announcementApi.deleteAnnouncement(id)
+    deletionLoading.value = true
+    await announcementApi.deleteAnnouncement(deletion.currentItemId.value)
+    deletion.confirmDeletion()
     await dialog.showSuccess('公告删除成功', '成功')
     fetchAnnouncements()
   } catch (error: any) {
+    deletion.cancelDeletion()
     await dialog.showError(error.response?.data?.detail || '删除失败', '删除失败')
   }
 }
@@ -760,6 +766,14 @@ const getTypeStyles = (type: string) => {
         </div>
       </transition-group>
     </div>
+
+    <DeletionConfirmDialog
+      :visible="deletion.showDeletionDialog.value"
+      :preview="deletion.deletionPreview.value"
+      :loading="deletionLoading"
+      @confirm="executeDeletion"
+      @cancel="deletion.cancelDeletion()"
+    />
   </div>
 </template>
 

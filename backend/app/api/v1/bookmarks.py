@@ -63,6 +63,7 @@ async def get_user_bookmarks(
                 category=CategoryResponse.model_validate(article.category) if article.category else None,
                 tags=[TagResponse.model_validate(tag) for tag in article.tags],
                 author=UserResponse.model_validate(article.author) if article.author else None,
+                author_name=article.author_name,
                 is_bookmarked=True,
                 bookmarked_at=bookmark.created_at
             ))

@@ -4,10 +4,13 @@ import { useDialogStore, useBlogStore } from '@/stores'
 import { categoryApi, utilsApi } from '@/api'
 import type { Category } from '@/types'
 import { useAdminCheck } from '@/composables/useAdminCheck'
+import { useDeletionConfirm } from '@/composables/useDeletionConfirm'
+import DeletionConfirmDialog from '@/components/common/DeletionConfirmDialog.vue'
 
 const dialog = useDialogStore()
 const blogStore = useBlogStore()
 const { requirePermission } = useAdminCheck()
+const deletion = useDeletionConfirm()
 
 const isLoading = ref(false)
 const showEditor = ref(false)
@@ -53,18 +56,21 @@ const handleEdit = async (category: Category) => {
 const handleDelete = async (category: Category) => {
   if (!await requirePermission('category.delete', '删除分类')) return
   
-  const confirmed = await dialog.showConfirm({
-    title: '确认删除',
-    message: `确定要删除分类"${category.name}"吗？`
-  })
-  if (!confirmed) return
-  
+  const previewed = await deletion.requestDeletion('category', category.id, category.name)
+  if (!previewed) return
+}
+
+const deletionLoading = ref(false)
+const executeDeletion = async () => {
   try {
-    await categoryApi.deleteCategory(category.id)
-    blogStore.removeCategory(category.id)
+    deletionLoading.value = true
+    await categoryApi.deleteCategory(deletion.currentItemId.value)
+    blogStore.removeCategory(deletion.currentItemId.value)
+    deletion.confirmDeletion()
     await dialog.showSuccess('分类已删除', '成功')
   } catch (error: any) {
     console.error('Failed to delete category:', error)
+    deletion.cancelDeletion()
     await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
   }
 }
@@ -400,5 +406,13 @@ onMounted(fetchCategories)
         </form>
       </div>
     </div>
+
+    <DeletionConfirmDialog
+      :visible="deletion.showDeletionDialog.value"
+      :preview="deletion.deletionPreview.value"
+      :loading="deletionLoading"
+      @confirm="executeDeletion"
+      @cancel="deletion.cancelDeletion()"
+    />
   </div>
 </template>

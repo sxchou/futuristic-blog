@@ -247,6 +247,7 @@ async def get_articles(
                 category=CategoryResponse.model_validate(article.category) if article.category else None,
                 tags=[TagResponse.model_validate(tag) for tag in article.tags],
                 author=UserResponse.model_validate(article.author) if article.author else None,
+                author_name=article.author_name,
                 highlighted_title=item.get('highlighted_title'),
                 highlighted_summary=item.get('highlighted_summary'),
                 match_type=item.get('match_type')
@@ -316,7 +317,8 @@ async def get_articles(
             published_at=article.published_at,
             category=CategoryResponse.model_validate(article.category) if article.category else None,
             tags=[TagResponse.model_validate(tag) for tag in article.tags],
-            author=UserResponse.model_validate(article.author) if article.author else None
+            author=UserResponse.model_validate(article.author) if article.author else None,
+            author_name=article.author_name
         ))
     
     return PaginatedResponse(
@@ -380,7 +382,8 @@ async def get_user_articles(
             published_at=article.published_at,
             category=CategoryResponse.model_validate(article.category) if article.category else None,
             tags=[TagResponse.model_validate(tag) for tag in article.tags],
-            author=UserResponse.model_validate(article.author) if article.author else None
+            author=UserResponse.model_validate(article.author) if article.author else None,
+            author_name=article.author_name
         ))
     
     return PaginatedResponse(
@@ -444,7 +447,8 @@ async def get_admin_articles(
             published_at=article.published_at,
             category=CategoryResponse.model_validate(article.category) if article.category else None,
             tags=[TagResponse.model_validate(tag) for tag in article.tags],
-            author=UserResponse.model_validate(article.author) if article.author else None
+            author=UserResponse.model_validate(article.author) if article.author else None,
+            author_name=article.author_name
         ))
     
     return PaginatedResponse(
@@ -593,6 +597,7 @@ async def create_article(
         pinned_order=article_data.pinned_order or 0,
         category_id=article_data.category_id,
         author_id=current_user.id,
+        author_name=current_user.username,
         reading_time=reading_time
     )
     

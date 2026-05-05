@@ -5,9 +5,12 @@ import { notificationApi, type NotificationSettings } from '@/api/notifications'
 import type { AdminComment, CommentAuditLog, PaginatedResponse } from '@/types'
 import { useDialogStore, useUserProfileStore, useAuthStore } from '@/stores'
 import { useAdminCheck } from '@/composables/useAdminCheck'
+import { useDeletionConfirm } from '@/composables/useDeletionConfirm'
+import DeletionConfirmDialog from '@/components/common/DeletionConfirmDialog.vue'
 import { formatDateTime } from '@/utils/date'
 
 const dialog = useDialogStore()
+const commentDeletion = useDeletionConfirm()
 const userProfileStore = useUserProfileStore()
 const authStore = useAuthStore()
 const { requirePermission, hasPermission } = useAdminCheck()
@@ -183,6 +186,14 @@ const openDeleteModal = async (comment: AdminComment) => {
 
 const confirmDelete = async () => {
   if (!deleteTargetComment.value) return
+  
+  if (deleteType.value === 'permanent') {
+    showDeleteModal.value = false
+    const previewed = await commentDeletion.requestDeletion('comment', deleteTargetComment.value.id)
+    if (!previewed) return
+    return
+  }
+  
   showDeleteModal.value = false
   try {
     const keepRecord = deleteType.value === 'soft'
@@ -195,6 +206,21 @@ const confirmDelete = async () => {
     fetchComments()
   } catch (error: any) {
     console.error('Failed to delete comment:', error)
+    await dialog.showError(error.response?.data?.detail || '删除评论失败', '错误')
+  }
+}
+
+const commentDeletionLoading = ref(false)
+const executeCommentDeletion = async () => {
+  try {
+    commentDeletionLoading.value = true
+    await commentApi.adminDelete(commentDeletion.currentItemId.value, false)
+    commentDeletion.confirmDeletion()
+    await dialog.showSuccess('评论已彻底删除', '成功')
+    fetchComments()
+  } catch (error: any) {
+    console.error('Failed to delete comment:', error)
+    commentDeletion.cancelDeletion()
     await dialog.showError(error.response?.data?.detail || '删除评论失败', '错误')
   }
 }
@@ -473,7 +499,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 文章
               </th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                作者
+                评论人
               </th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                 状态
@@ -947,5 +973,13 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
         </div>
       </div>
     </div>
+
+    <DeletionConfirmDialog
+      :visible="commentDeletion.showDeletionDialog.value"
+      :preview="commentDeletion.deletionPreview.value"
+      :loading="commentDeletionLoading"
+      @confirm="executeCommentDeletion"
+      @cancel="commentDeletion.cancelDeletion()"
+    />
   </div>
 </template>

@@ -3,10 +3,13 @@ import { ref, onMounted, computed } from 'vue'
 import { emailApi, type EmailConfig, type EmailLog, type EmailStats, type EmailProvider, type ProviderStatus } from '@/api/email'
 import { useDialogStore } from '@/stores'
 import { useAdminCheck } from '@/composables/useAdminCheck'
+import { useDeletionConfirm } from '@/composables/useDeletionConfirm'
+import DeletionConfirmDialog from '@/components/common/DeletionConfirmDialog.vue'
 import { formatDateTime } from '@/utils/date'
 
 const dialog = useDialogStore()
 const { requirePermission, hasPermission } = useAdminCheck()
+const deletion = useDeletionConfirm()
 const activeTab = ref<'config' | 'logs'>('config')
 
 const canTest = computed(() => hasPermission('email.test'))
@@ -276,14 +279,16 @@ async function activateConfig(config: EmailConfig) {
 async function deleteConfig(config: EmailConfig) {
   if (!await requirePermission('email.delete', '删除邮箱配置')) return
   
-  const confirmed = await dialog.showConfirm({
-    message: `确定要删除配置 "${config.smtp_user}" 吗？`,
-    title: '确认删除'
-  })
-  if (!confirmed) return
+  const previewed = await deletion.requestDeletion('email_config', config.id, `${config.provider} - ${config.smtp_user}`)
+  if (!previewed) return
+}
 
+const deletionLoading = ref(false)
+async function executeDeletion() {
   try {
-    const result = await emailApi.deleteConfig(config.id)
+    deletionLoading.value = true
+    const result = await emailApi.deleteConfig(deletion.currentItemId.value)
+    deletion.confirmDeletion()
     await dialog.showSuccess('删除成功', '成功')
     if (result.was_active) {
       activeConfig.value = null
@@ -291,6 +296,7 @@ async function deleteConfig(config: EmailConfig) {
     await loadConfigs()
     await loadProviderStatus()
   } catch (error: any) {
+    deletion.cancelDeletion()
     await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
   }
 }
@@ -1139,5 +1145,13 @@ function getProviderBgColor(provider: string) {
         </div>
       </div>
     </Teleport>
+
+    <DeletionConfirmDialog
+      :visible="deletion.showDeletionDialog.value"
+      :preview="deletion.deletionPreview.value"
+      :loading="deletionLoading"
+      @confirm="executeDeletion"
+      @cancel="deletion.cancelDeletion()"
+    />
   </div>
 </template>

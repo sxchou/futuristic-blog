@@ -232,7 +232,8 @@ def _get_articles_list(page: int, page_size: int, is_featured: Optional[bool] = 
                 published_at=article.published_at,
                 category=CategoryResponse.model_validate(article.category) if article.category else None,
                 tags=[TagResponse.model_validate(tag) for tag in article.tags],
-                author=UserResponse.model_validate(article.author) if article.author else None
+                author=UserResponse.model_validate(article.author) if article.author else None,
+                author_name=article.author_name
             ))
         
         return PaginatedResponse(

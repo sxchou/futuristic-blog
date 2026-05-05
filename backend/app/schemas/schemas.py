@@ -215,6 +215,7 @@ class ArticleResponse(ArticleBase):
     bookmark_count: int = 0
     reading_time: int
     author_id: Optional[int] = None
+    author_name: Optional[str] = None
     cover_image: Optional[str] = None
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -254,6 +255,7 @@ class ArticleListItem(BaseModel):
     category: Optional[CategoryResponse] = None
     tags: List[TagResponse] = []
     author: Optional[UserResponse] = None
+    author_name: Optional[str] = None
     is_liked: bool = False
     liked_at: Optional[str] = None
     is_bookmarked: bool = False

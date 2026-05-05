@@ -5,6 +5,8 @@ import type { User, Role } from '@/types'
 import { useDialogStore, useUserProfileStore, useAuthStore } from '@/stores'
 import { useAdminCheck } from '@/composables/useAdminCheck'
 import { useRoleColor } from '@/composables/useRoleColor'
+import { useDeletionConfirm } from '@/composables/useDeletionConfirm'
+import DeletionConfirmDialog from '@/components/common/DeletionConfirmDialog.vue'
 import { formatDateTime } from '@/utils/date'
 
 const { getRoleColorClasses } = useRoleColor()
@@ -13,6 +15,7 @@ const dialog = useDialogStore()
 const userProfileStore = useUserProfileStore()
 const authStore = useAuthStore()
 const { requirePermission, hasPermission } = useAdminCheck()
+const deletion = useDeletionConfirm()
 
 const users = ref<User[]>([])
 const isLoading = ref(false)
@@ -215,21 +218,25 @@ const canResetPassword = (user: User): boolean => {
 const handleDelete = async (user: User) => {
   if (!await requirePermission('user.delete', '删除用户')) return
   
-  const confirmed = await dialog.showConfirm({
-    title: '确认删除',
-    message: `确定要删除用户"${user.username}"吗？此操作不可恢复。`
-  })
-  if (!confirmed) return
-  
+  const previewed = await deletion.requestDeletion('user', user.id, user.username)
+  if (!previewed) return
+}
+
+const executeDeletion = async () => {
   try {
-    await userApi.deleteUser(user.id)
+    deletionLoading.value = true
+    await userApi.deleteUser(deletion.currentItemId.value)
+    deletion.confirmDeletion()
     await fetchUsers()
     await dialog.showSuccess('用户已删除', '成功')
   } catch (error: any) {
     console.error('Failed to delete user:', error)
+    deletion.cancelDeletion()
     await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
   }
 }
+
+const deletionLoading = ref(false)
 
 const handleSubmit = async () => {
   if (!await requirePermission('user.edit', '保存用户信息')) return
@@ -1077,5 +1084,13 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
         </form>
       </div>
     </div>
+
+    <DeletionConfirmDialog
+      :visible="deletion.showDeletionDialog.value"
+      :preview="deletion.deletionPreview.value"
+      :loading="deletionLoading"
+      @confirm="executeDeletion"
+      @cancel="deletion.cancelDeletion()"
+    />
   </div>
 </template>

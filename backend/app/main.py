@@ -58,6 +58,7 @@ async def lifespan(app: FastAPI):
             
             migrate_foreign_key_ondelete()
             migrate_add_bookmark_count()
+            migrate_add_author_name_and_reply_to_user_name()
             logger.info("Database tables created successfully")
             
             logger.info("Initializing database data...")
@@ -71,6 +72,10 @@ async def lifespan(app: FastAPI):
             logger.info("Syncing article bookmark counts...")
             sync_article_bookmark_counts()
             logger.info("Article bookmark counts synced successfully")
+            
+            logger.info("Syncing author_name and reply_to_user_name...")
+            sync_author_name_and_reply_to_user_name()
+            logger.info("author_name and reply_to_user_name synced successfully")
             
             logger.info("Fixing database sequences...")
             fix_database_sequences()
@@ -395,6 +400,7 @@ async def background_init():
         
         migrate_foreign_key_ondelete()
         migrate_add_bookmark_count()
+        migrate_add_author_name_and_reply_to_user_name()
         logger.info("Database tables created")
         
         logger.info("Initializing database data...")
@@ -408,6 +414,10 @@ async def background_init():
         logger.info("Syncing article bookmark counts...")
         sync_article_bookmark_counts()
         logger.info("Article bookmark counts synced")
+        
+        logger.info("Syncing author_name and reply_to_user_name...")
+        sync_author_name_and_reply_to_user_name()
+        logger.info("author_name and reply_to_user_name synced")
         
         logger.info("Fixing database sequences...")
         fix_database_sequences()
@@ -440,8 +450,20 @@ def migrate_foreign_key_ondelete():
         },
         {
             'table': 'comments',
+            'fk_column': 'user_id',
+            'referenced_table': 'users',
+            'ondelete': 'SET NULL',
+        },
+        {
+            'table': 'comments',
             'fk_column': 'reply_to_user_id',
             'referenced_table': 'users',
+            'ondelete': 'SET NULL',
+        },
+        {
+            'table': 'comments',
+            'fk_column': 'parent_id',
+            'referenced_table': 'comments',
             'ondelete': 'SET NULL',
         },
         {
@@ -541,8 +563,24 @@ def _migrate_postgresql(db, inspector, migrations):
         ))
 
 
+def _get_sqlite_fk_ondelete(db, table, fk_column):
+    from sqlalchemy import text
+    try:
+        result = db.execute(text(f'PRAGMA foreign_key_list([{table}])'))
+        for row in result:
+            if row[3] == fk_column:
+                ondelete = row[6]
+                return ondelete if ondelete and ondelete != 'NONE' else 'NO ACTION'
+    except Exception:
+        pass
+    return None
+
+
 def _migrate_sqlite(db, inspector, migrations):
     from sqlalchemy import text
+    
+    db.execute(text('PRAGMA foreign_keys = OFF'))
+    db.execute(text('PRAGMA legacy_alter_table = ON'))
     
     _cleanup_sqlite_temp_tables(db, inspector)
     
@@ -557,20 +595,70 @@ def _migrate_sqlite(db, inspector, migrations):
         col_info = next((c for c in columns if c['name'] == fk_column), None)
         
         needs_nullable = migration.get('nullable') and col_info and not col_info.get('nullable', True)
-        if needs_nullable:
+        
+        current_ondelete = _get_sqlite_fk_ondelete(db, table, fk_column)
+        needs_ondelete = False
+        if current_ondelete is not None:
+            if current_ondelete != migration['ondelete']:
+                needs_ondelete = True
+        else:
+            needs_ondelete = True
+        
+        if needs_nullable or needs_ondelete:
             tables_needing_rebuild.add(table)
     
     if not tables_needing_rebuild:
-        logger.info("SQLite: no nullable migration needed, all columns already nullable")
+        logger.info("SQLite: no migration needed, all constraints already up to date")
+        db.execute(text('PRAGMA foreign_keys = ON'))
+        db.execute(text('PRAGMA legacy_alter_table = OFF'))
         return
     
-    logger.info(f"SQLite: rebuilding tables {tables_needing_rebuild} to update nullable constraints")
+    logger.info(f"SQLite: rebuilding tables {tables_needing_rebuild} to update constraints")
     
     for table in tables_needing_rebuild:
         try:
             _rebuild_sqlite_table(db, inspector, table)
         except Exception as e:
             logger.error(f"SQLite: failed to rebuild table {table}: {e}")
+            db.execute(text('PRAGMA foreign_keys = ON'))
+            db.execute(text('PRAGMA legacy_alter_table = OFF'))
+            raise
+    
+    _fix_sqlite_bad_fk_references(db, inspector)
+    
+    db.execute(text('PRAGMA foreign_keys = ON'))
+    db.execute(text('PRAGMA legacy_alter_table = OFF'))
+
+
+def _fix_sqlite_bad_fk_references(db, inspector):
+    from sqlalchemy import text
+    
+    all_tables = inspector.get_table_names()
+    tables_with_bad_fk = set()
+    
+    for table in all_tables:
+        if table.startswith('_temp_'):
+            continue
+        try:
+            result = db.execute(text(f'PRAGMA foreign_key_list([{table}])'))
+            for row in result:
+                ref_table = row[2]
+                if ref_table.startswith('_temp_'):
+                    tables_with_bad_fk.add(table)
+                    break
+        except Exception:
+            continue
+    
+    if not tables_with_bad_fk:
+        return
+    
+    logger.info(f"SQLite: fixing bad FK references in tables {tables_with_bad_fk}")
+    
+    for table in tables_with_bad_fk:
+        try:
+            _rebuild_sqlite_table(db, inspector, table)
+        except Exception as e:
+            logger.error(f"SQLite: failed to fix FK references in table {table}: {e}")
             raise
 
 
@@ -580,57 +668,114 @@ def _cleanup_sqlite_temp_tables(db, inspector):
     all_tables = inspector.get_table_names()
     temp_tables = [t for t in all_tables if t.startswith('_temp_')]
     
+    if not temp_tables:
+        return
+    
+    logger.info(f"SQLite cleanup: found temp tables {temp_tables}")
+    
     for temp_table in temp_tables:
         original_table = temp_table[6:]
         original_exists = original_table in all_tables
         
         if original_exists:
-            db.execute(text(f'DROP TABLE IF EXISTS {temp_table}'))
-            logger.info(f"SQLite cleanup: dropped leftover temp table {temp_table}")
+            try:
+                orig_count = db.execute(text(f'SELECT COUNT(*) FROM [{original_table}]')).scalar()
+                temp_count = db.execute(text(f'SELECT COUNT(*) FROM [{temp_table}]')).scalar()
+            except Exception:
+                orig_count = 0
+                temp_count = 0
+            
+            if orig_count == 0 and temp_count > 0:
+                db.execute(text(f'DROP TABLE IF EXISTS [{original_table}]'))
+                db.execute(text(f'ALTER TABLE [{temp_table}] RENAME TO [{original_table}]'))
+                logger.info(f"SQLite cleanup: restored {original_table} from {temp_table} ({temp_count} rows)")
+            else:
+                db.execute(text(f'DROP TABLE IF EXISTS [{temp_table}]'))
+                logger.info(f"SQLite cleanup: dropped {temp_table} (original has {orig_count} rows, temp has {temp_count} rows)")
         else:
-            db.execute(text(f'ALTER TABLE {temp_table} RENAME TO {original_table}'))
-            logger.info(f"SQLite cleanup: restored table {original_table} from temp")
+            db.execute(text(f'ALTER TABLE [{temp_table}] RENAME TO [{original_table}]'))
+            logger.info(f"SQLite cleanup: restored missing table {original_table} from {temp_table}")
 
 
 def _rebuild_sqlite_table(db, inspector, table):
-    from sqlalchemy import text
+    from sqlalchemy import text, inspect
+    
+    all_tables = inspector.get_table_names()
+    temp_table = f'_temp_{table}'
+    
+    if temp_table in all_tables and table in all_tables:
+        db.execute(text(f'DROP TABLE IF EXISTS [{temp_table}]'))
+        db.commit()
+    elif temp_table in all_tables and table not in all_tables:
+        db.execute(text(f'ALTER TABLE [{temp_table}] RENAME TO [{table}]'))
+        db.commit()
+        all_tables = inspector.get_table_names()
+    
+    if table not in all_tables:
+        logger.warning(f"SQLite migration: table {table} does not exist, skipping")
+        return
     
     columns = inspector.get_columns(table)
     col_names = [c['name'] for c in columns]
-    col_list = ', '.join(col_names)
-    
-    temp_table = f'_temp_{table}'
     
     indexes = inspector.get_indexes(table)
     for idx in indexes:
         idx_name = idx.get('name')
         if idx_name:
             try:
-                db.execute(text(f'DROP INDEX IF EXISTS {idx_name}'))
+                db.execute(text(f'DROP INDEX IF EXISTS [{idx_name}]'))
             except Exception:
                 pass
     
-    db.execute(text(f'DROP TABLE IF EXISTS {temp_table}'))
+    db.execute(text(f'DROP TABLE IF EXISTS [{temp_table}]'))
     
-    db.execute(text(f'ALTER TABLE {table} RENAME TO {temp_table}'))
+    db.execute(text(f'ALTER TABLE [{table}] RENAME TO [{temp_table}]'))
+    db.commit()
     
     from app.models.models import Base
     table_obj = Base.metadata.tables.get(table)
     if table_obj is None:
         logger.warning(f"SQLite migration: table {table} not found in metadata, restoring")
-        db.execute(text(f'ALTER TABLE {temp_table} RENAME TO {table}'))
+        db.execute(text(f'ALTER TABLE [{temp_table}] RENAME TO [{table}]'))
+        db.commit()
         return
     
-    table_obj.create(db.get_bind(), checkfirst=True)
+    conn = db.connection()
     
-    new_columns = inspector.get_columns(table)
+    try:
+        table_obj.create(conn, checkfirst=True)
+        db.commit()
+    except Exception as create_err:
+        logger.error(f"SQLite migration: failed to create table {table}: {create_err}, restoring from temp")
+        db.execute(text(f'DROP TABLE IF EXISTS [{table}]'))
+        db.execute(text(f'ALTER TABLE [{temp_table}] RENAME TO [{table}]'))
+        db.commit()
+        raise
+    
+    new_inspector = inspect(conn)
+    if table not in new_inspector.get_table_names():
+        logger.error(f"SQLite migration: table {table} was not created, restoring from temp")
+        db.execute(text(f'ALTER TABLE [{temp_table}] RENAME TO [{table}]'))
+        db.commit()
+        raise RuntimeError(f"Failed to create table {table}")
+    
+    new_columns = new_inspector.get_columns(table)
     new_col_names = [c['name'] for c in new_columns]
     common_cols = [c for c in col_names if c in new_col_names]
-    common_col_list = ', '.join(common_cols)
+    common_col_list = ', '.join(f'[{c}]' for c in common_cols)
     
-    db.execute(text(f'INSERT INTO {table} ({common_col_list}) SELECT {common_col_list} FROM {temp_table}'))
+    try:
+        db.execute(text(f'INSERT INTO [{table}] ({common_col_list}) SELECT {common_col_list} FROM [{temp_table}]'))
+        db.commit()
+    except Exception as insert_err:
+        logger.error(f"SQLite migration: failed to copy data for table {table}: {insert_err}, restoring from temp")
+        db.execute(text(f'DROP TABLE IF EXISTS [{table}]'))
+        db.execute(text(f'ALTER TABLE [{temp_table}] RENAME TO [{table}]'))
+        db.commit()
+        raise
     
-    db.execute(text(f'DROP TABLE {temp_table}'))
+    db.execute(text(f'DROP TABLE [{temp_table}]'))
+    db.commit()
     
     logger.info(f"SQLite: table {table} rebuilt successfully")
 
@@ -664,13 +809,18 @@ def sync_article_comment_counts():
 
 
 def migrate_add_bookmark_count():
-    from sqlalchemy import text
+    from sqlalchemy import text, inspect
     
     db = SessionLocal()
     try:
-        db.execute(text('ALTER TABLE articles ADD COLUMN IF NOT EXISTS bookmark_count INTEGER DEFAULT 0'))
-        db.commit()
-        logger.info("Migration: bookmark_count column ensured")
+        inspector = inspect(db.get_bind())
+        columns = [col['name'] for col in inspector.get_columns('articles')]
+        if 'bookmark_count' not in columns:
+            db.execute(text('ALTER TABLE articles ADD COLUMN bookmark_count INTEGER DEFAULT 0'))
+            db.commit()
+            logger.info("Migration: bookmark_count column added")
+        else:
+            logger.info("Migration: bookmark_count column already exists")
     except Exception as e:
         logger.error(f"Error migrating bookmark_count column: {e}")
         db.rollback()
@@ -704,12 +854,125 @@ def sync_article_bookmark_counts():
         db.close()
 
 
+def migrate_add_author_name_and_reply_to_user_name():
+    from sqlalchemy import text, inspect
+    
+    db = SessionLocal()
+    try:
+        inspector = inspect(db.get_bind())
+        
+        article_columns = [col['name'] for col in inspector.get_columns('articles')]
+        if 'author_name' not in article_columns:
+            db.execute(text('ALTER TABLE articles ADD COLUMN author_name VARCHAR(50)'))
+            db.commit()
+            logger.info("Migration: author_name column added to articles")
+        else:
+            logger.info("Migration: author_name column already exists in articles")
+        
+        comment_columns = [col['name'] for col in inspector.get_columns('comments')]
+        
+        if 'author_name' not in comment_columns:
+            db.execute(text('ALTER TABLE comments ADD COLUMN author_name VARCHAR(50)'))
+            db.commit()
+            logger.info("Migration: author_name column added to comments")
+        else:
+            logger.info("Migration: author_name column already exists in comments")
+        
+        if 'author_email' not in comment_columns:
+            db.execute(text('ALTER TABLE comments ADD COLUMN author_email VARCHAR(100)'))
+            db.commit()
+            logger.info("Migration: author_email column added to comments")
+        else:
+            logger.info("Migration: author_email column already exists in comments")
+        
+        if 'author_url' not in comment_columns:
+            db.execute(text('ALTER TABLE comments ADD COLUMN author_url VARCHAR(255)'))
+            db.commit()
+            logger.info("Migration: author_url column added to comments")
+        else:
+            logger.info("Migration: author_url column already exists in comments")
+        
+        if 'reply_to_user_name' not in comment_columns:
+            db.execute(text('ALTER TABLE comments ADD COLUMN reply_to_user_name VARCHAR(50)'))
+            db.commit()
+            logger.info("Migration: reply_to_user_name column added to comments")
+        else:
+            logger.info("Migration: reply_to_user_name column already exists in comments")
+        
+        if 'deleted_by' not in comment_columns:
+            db.execute(text('ALTER TABLE comments ADD COLUMN deleted_by VARCHAR(20)'))
+            db.commit()
+            logger.info("Migration: deleted_by column added to comments")
+        else:
+            logger.info("Migration: deleted_by column already exists in comments")
+        
+        if 'is_deleted' not in comment_columns:
+            db.execute(text('ALTER TABLE comments ADD COLUMN is_deleted BOOLEAN DEFAULT 0'))
+            db.commit()
+            logger.info("Migration: is_deleted column added to comments")
+        else:
+            logger.info("Migration: is_deleted column already exists in comments")
+        
+        if 'is_approved' not in comment_columns:
+            db.execute(text('ALTER TABLE comments ADD COLUMN is_approved BOOLEAN DEFAULT 1'))
+            db.commit()
+            logger.info("Migration: is_approved column added to comments")
+        else:
+            logger.info("Migration: is_approved column already exists in comments")
+        
+        if 'status' not in comment_columns:
+            db.execute(text("ALTER TABLE comments ADD COLUMN status VARCHAR(20) DEFAULT 'approved'"))
+            db.commit()
+            logger.info("Migration: status column added to comments")
+        else:
+            logger.info("Migration: status column already exists in comments")
+    except Exception as e:
+        logger.error(f"Error migrating author_name/reply_to_user_name columns: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+
+def sync_author_name_and_reply_to_user_name():
+    from sqlalchemy import text
+    
+    db = SessionLocal()
+    try:
+        db.execute(text(
+            "UPDATE articles SET author_name = (SELECT username FROM users WHERE users.id = articles.author_id) "
+            "WHERE author_id IS NOT NULL AND author_name IS NULL"
+        ))
+        
+        db.execute(text(
+            "UPDATE comments SET author_name = (SELECT username FROM users WHERE users.id = comments.user_id) "
+            "WHERE user_id IS NOT NULL AND author_name IS NULL"
+        ))
+        
+        db.execute(text(
+            "UPDATE comments SET reply_to_user_name = (SELECT username FROM users WHERE users.id = comments.reply_to_user_id) "
+            "WHERE reply_to_user_id IS NOT NULL AND reply_to_user_name IS NULL"
+        ))
+        
+        db.commit()
+        logger.info("Synced author_name and reply_to_user_name from existing user records")
+    except Exception as e:
+        logger.error(f"Error syncing author_name/reply_to_user_name: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+
 def fix_database_sequences():
     from sqlalchemy import text, inspect
     from app.utils.db_utils import DatabaseUtils
     
     db = SessionLocal()
     try:
+        db_url = str(db.get_bind().url)
+        if 'sqlite' in db_url.lower():
+            logger.info("SQLite detected, skipping sequence fix (not needed)")
+            return
+        
         inspector = inspect(db.get_bind())
         table_names = inspector.get_table_names()
         

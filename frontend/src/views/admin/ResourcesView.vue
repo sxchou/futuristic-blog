@@ -5,6 +5,8 @@ import type { Resource } from '@/types'
 import type { ResourceCategory } from '@/api/resourceCategories'
 import { useDialogStore } from '@/stores'
 import { useAdminCheck } from '@/composables/useAdminCheck'
+import { useDeletionConfirm } from '@/composables/useDeletionConfirm'
+import DeletionConfirmDialog from '@/components/common/DeletionConfirmDialog.vue'
 import { 
   updateArrayItem, 
   addArrayItem, 
@@ -13,6 +15,8 @@ import {
 import IconPicker from '@/components/common/IconPicker.vue'
 
 const dialog = useDialogStore()
+const resourceDeletion = useDeletionConfirm()
+const categoryDeletion = useDeletionConfirm()
 const { requirePermission } = useAdminCheck()
 
 const resources = ref<Resource[]>([])
@@ -95,18 +99,21 @@ const handleEditResource = async (resource: Resource) => {
 const handleDeleteResource = async (resource: Resource) => {
   if (!await requirePermission('resource.delete', '删除资源')) return
   
-  const confirmed = await dialog.showConfirm({
-    title: '确认删除',
-    message: `确定要删除资源"${resource.title}"吗？`
-  })
-  if (!confirmed) return
-  
+  const previewed = await resourceDeletion.requestDeletion('resource', resource.id, resource.title)
+  if (!previewed) return
+}
+
+const resourceDeletionLoading = ref(false)
+const executeResourceDeletion = async () => {
   try {
-    await resourceApi.deleteResource(resource.id)
-    await removeArrayItem(resources, resource.id)
+    resourceDeletionLoading.value = true
+    await resourceApi.deleteResource(resourceDeletion.currentItemId.value)
+    await removeArrayItem(resources, resourceDeletion.currentItemId.value)
+    resourceDeletion.confirmDeletion()
     await dialog.showSuccess('资源已删除', '成功')
   } catch (error: any) {
     console.error('Failed to delete resource:', error)
+    resourceDeletion.cancelDeletion()
     await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
   }
 }
@@ -196,18 +203,21 @@ const handleEditCategory = async (category: ResourceCategory) => {
 const handleDeleteCategory = async (category: ResourceCategory) => {
   if (!await requirePermission('resource.delete', '删除资源分类')) return
   
-  const confirmed = await dialog.showConfirm({
-    title: '确认删除',
-    message: `确定要删除分类"${category.name}"吗？`
-  })
-  if (!confirmed) return
-  
+  const previewed = await categoryDeletion.requestDeletion('resource_category', category.id, category.name)
+  if (!previewed) return
+}
+
+const categoryDeletionLoading = ref(false)
+const executeCategoryDeletion = async () => {
   try {
-    await resourceCategoryApi.deleteCategory(category.id)
+    categoryDeletionLoading.value = true
+    await resourceCategoryApi.deleteCategory(categoryDeletion.currentItemId.value)
     await fetchCategories()
+    categoryDeletion.confirmDeletion()
     await dialog.showSuccess('分类已删除', '成功')
   } catch (error: any) {
     console.error('Failed to delete category:', error)
+    categoryDeletion.cancelDeletion()
     await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
   }
 }
@@ -826,5 +836,21 @@ onMounted(async () => {
         </form>
       </div>
     </div>
+
+    <DeletionConfirmDialog
+      :visible="resourceDeletion.showDeletionDialog.value"
+      :preview="resourceDeletion.deletionPreview.value"
+      :loading="resourceDeletionLoading"
+      @confirm="executeResourceDeletion"
+      @cancel="resourceDeletion.cancelDeletion()"
+    />
+
+    <DeletionConfirmDialog
+      :visible="categoryDeletion.showDeletionDialog.value"
+      :preview="categoryDeletion.deletionPreview.value"
+      :loading="categoryDeletionLoading"
+      @confirm="executeCategoryDeletion"
+      @cancel="categoryDeletion.cancelDeletion()"
+    />
   </div>
 </template>

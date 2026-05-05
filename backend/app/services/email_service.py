@@ -64,6 +64,18 @@ class EmailService:
         return db.query(EmailConfig).filter(EmailConfig.is_active == True).first()
     
     @staticmethod
+    def get_admin_real_email(db: Session) -> Optional[str]:
+        from app.services.permission_service import PermissionService
+        admin_users = PermissionService.get_admin_users(db)
+        for admin in admin_users:
+            if admin.email and admin.email != 'admin@futuristic-blog.com':
+                return admin.email
+        admin_email = getattr(settings, 'ADMIN_EMAIL', None)
+        if admin_email and admin_email != 'admin@futuristic-blog.com':
+            return admin_email
+        return None
+    
+    @staticmethod
     def is_email_configured(db: Session) -> bool:
         config = EmailService.get_active_config(db)
         if config:
@@ -495,6 +507,8 @@ class EmailService:
         
         success = True
         for admin in admin_users:
+            if not admin.email or admin.email == 'admin@futuristic-blog.com':
+                continue
             result = EmailService.send_email(
                 db=db,
                 to_email=admin.email,
@@ -604,8 +618,17 @@ class EmailService:
         
         truncated_content = comment_content[:200] + "..." if len(comment_content) > 200 else comment_content
         
+        is_deactivated = author_name and '已注销' in author_name
+        
+        if is_deactivated:
+            greeting = f"{author_name}的文章收到了一条新评论"
+        else:
+            greeting = "您的文章收到了一条新评论"
+        
         text_content = f"""
 新评论通知
+
+{greeting}
 
 文章: {article_title}
 评论者: {commenter_name}
@@ -643,7 +666,7 @@ class EmailService:
     <div class="container">
         <div class="logo">🚀 {site_name}</div>
         <h1 class="title">新评论通知</h1>
-        <p>您的文章收到了一条新评论：</p>
+        <p>{greeting}：</p>
         <div class="info-box">
             <div class="info-item">
                 <span class="label">文章：</span>
@@ -677,7 +700,7 @@ class EmailService:
             recipients.add(author_email)
         
         for admin in admin_users:
-            if admin.email:
+            if admin.email and admin.email != 'admin@futuristic-blog.com':
                 recipients.add(admin.email)
         
         success = True
@@ -705,6 +728,9 @@ class EmailService:
         author_name: str = None
     ) -> bool:
         if not author_email:
+            author_email = EmailService.get_admin_real_email(db)
+        
+        if not author_email:
             return False
         
         site_name = EmailService.get_site_name(db)
@@ -712,8 +738,17 @@ class EmailService:
         
         article_url = f"{settings.FRONTEND_URL}/article/{article_slug}"
         
+        is_deactivated = author_name and '已注销' in author_name
+        
+        if is_deactivated:
+            greeting = f"{author_name}的文章收到了一个新的点赞"
+        else:
+            greeting = "您的文章收到了一个新的点赞"
+        
         text_content = f"""
 新点赞通知
+
+{greeting}
 
 文章: {article_title}
 点赞者: {liker_name}
@@ -748,7 +783,7 @@ class EmailService:
     <div class="container">
         <div class="logo">🚀 {site_name}</div>
         <h1 class="title">新点赞通知 <span class="heart">❤️</span></h1>
-        <p>您的文章收到了一个新的点赞：</p>
+        <p>{greeting}：</p>
         <div class="info-box">
             <div class="info-item">
                 <span class="label">文章：</span>
@@ -786,7 +821,7 @@ class EmailService:
         test_email: str = None
     ) -> Dict[str, Any]:
         provider = provider or EmailService.get_email_provider(db)
-        test_email = test_email or settings.ADMIN_EMAIL
+        test_email = test_email or EmailService.get_admin_real_email(db)
         
         if not test_email:
             return {
