@@ -59,6 +59,7 @@ async def lifespan(app: FastAPI):
             migrate_foreign_key_ondelete()
             migrate_add_bookmark_count()
             migrate_add_author_name_and_reply_to_user_name()
+            migrate_resources_category_nullable()
             logger.info("Database tables created successfully")
             
             logger.info("Initializing database data...")
@@ -401,6 +402,7 @@ async def background_init():
         migrate_foreign_key_ondelete()
         migrate_add_bookmark_count()
         migrate_add_author_name_and_reply_to_user_name()
+        migrate_resources_category_nullable()
         logger.info("Database tables created")
         
         logger.info("Initializing database data...")
@@ -928,6 +930,37 @@ def migrate_add_author_name_and_reply_to_user_name():
             logger.info("Migration: status column already exists in comments")
     except Exception as e:
         logger.error(f"Error migrating author_name/reply_to_user_name columns: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+
+def migrate_resources_category_nullable():
+    from sqlalchemy import text, inspect
+    
+    db = SessionLocal()
+    try:
+        inspector = inspect(db.get_bind())
+        
+        if 'resources' not in inspector.get_table_names():
+            logger.info("Migration: resources table does not exist, skipping")
+            return
+        
+        resource_columns = inspector.get_columns('resources')
+        category_col = next((col for col in resource_columns if col['name'] == 'category'), None)
+        
+        if category_col and not category_col.get('nullable', True):
+            db_url = str(db.get_bind().url)
+            if 'postgresql' in db_url:
+                db.execute(text('ALTER TABLE resources ALTER COLUMN category DROP NOT NULL'))
+            else:
+                db.execute(text('ALTER TABLE resources MODIFY COLUMN category VARCHAR(50) NULL'))
+            db.commit()
+            logger.info("Migration: resources.category column changed to nullable")
+        else:
+            logger.info("Migration: resources.category column already nullable or does not exist")
+    except Exception as e:
+        logger.error(f"Error migrating resources.category nullable: {e}")
         db.rollback()
     finally:
         db.close()

@@ -2,7 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.models import Resource
+from app.models import Resource, ResourceCategory
 from app.schemas import ResourceCreate, ResourceUpdate, ResourceResponse
 from app.utils import get_current_user
 from app.utils.permissions import require_permission
@@ -55,6 +55,13 @@ async def create_resource(
     if resource_dict.get('order', 0) == 0:
         resource_dict['order'] = next_order
     
+    if resource_dict.get('category_id'):
+        cat = db.query(ResourceCategory).filter(ResourceCategory.id == resource_dict['category_id']).first()
+        if cat:
+            resource_dict['category'] = cat.name
+    elif resource_dict.get('category') is None:
+        resource_dict['category'] = ''
+    
     new_resource = Resource(**resource_dict)
     db.add(new_resource)
     db.commit()
@@ -92,6 +99,14 @@ async def update_resource(
     
     old_is_active = resource.is_active
     update_data = resource_data.model_dump(exclude_unset=True)
+    
+    if 'category_id' in update_data:
+        if update_data['category_id']:
+            cat = db.query(ResourceCategory).filter(ResourceCategory.id == update_data['category_id']).first()
+            if cat:
+                update_data['category'] = cat.name
+        else:
+            update_data['category'] = ''
     
     for field, value in update_data.items():
         setattr(resource, field, value)
