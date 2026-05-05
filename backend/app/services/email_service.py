@@ -1058,6 +1058,94 @@ class EmailService:
             return False
 
     @staticmethod
+    def send_comment_rejected_notification_db(
+        db: Session,
+        recipient_email: str,
+        recipient_name: str,
+        article_title: str,
+        comment_content: str,
+        reason: str = None
+    ) -> bool:
+        site_name = EmailService.get_site_name(db)
+        current_year = EmailService.get_current_year()
+        
+        reason_section = ""
+        if reason:
+            reason_section = f"""
+        <div style="background-color: #fef2f2; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #ef4444;">
+            <p style="margin: 0; color: #666666; font-size: 14px;">拒绝原因：</p>
+            <p style="margin: 8px 0 0 0; color: #333333; font-size: 16px; font-weight: 500; white-space: pre-wrap;">{reason}</p>
+        </div>
+"""
+        
+        reason_text = f"\n拒绝原因：{reason}" if reason else ""
+        
+        text_content = f"""
+评论审核拒绝通知
+
+您好，{recipient_name}！
+
+您在文章「{article_title}」中的评论未通过审核。
+
+评论内容：{comment_content}{reason_text}
+
+如有疑问，请联系管理员。
+
+{site_name}
+"""
+        
+        html_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; color: #333333; padding: 20px; margin: 0; }}
+        .container {{ max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; padding: 40px; border: 1px solid #e0e0e0; }}
+        .logo {{ font-size: 24px; font-weight: bold; color: #0066cc; margin-bottom: 30px; }}
+        .title {{ font-size: 20px; margin-bottom: 20px; color: #ef4444; }}
+        .reject-icon {{ color: #ef4444; font-size: 48px; text-align: center; }}
+        .comment-box {{ background-color: #f5f5f5; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #ef4444; }}
+        .footer {{ margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 14px; color: #666666; }}
+        p {{ line-height: 1.6; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🚀 {site_name}</div>
+        <h1 class="title">❌ 评论审核未通过</h1>
+        <p class="reject-icon">❌</p>
+        <p>您好，{recipient_name}！</p>
+        <p>您在文章「<strong>{article_title}</strong>」中的评论未通过审核：</p>
+        <div class="comment-box">
+            <p style="margin: 0; white-space: pre-wrap;">{comment_content}</p>
+        </div>
+        {reason_section}
+        <div class="footer">
+            <p>如有疑问，请联系管理员。</p>
+            <p>此邮件为系统自动发送，请勿回复。</p>
+            <p>© {current_year} {site_name}. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+        
+        try:
+            return EmailService.send_email(
+                db=db,
+                to_email=recipient_email,
+                subject=f"您的评论未通过审核 - {article_title}",
+                html_content=html_content,
+                text_content=text_content,
+                email_type='comment_rejected',
+                recipient_name=recipient_name
+            )
+        except Exception as e:
+            logger.error(f"Failed to send comment rejected notification: {e}")
+            return False
+
+    @staticmethod
     def send_pending_comment_notification_db(
         db: Session,
         commenter_name: str,

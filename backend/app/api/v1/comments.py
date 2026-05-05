@@ -197,6 +197,24 @@ def send_comment_approved_notification_bg(recipient_email: str, recipient_name: 
         db.close()
 
 
+def send_comment_rejected_notification_bg(recipient_email: str, recipient_name: str, article_title: str, comment_content: str, reason: str = None):
+    from app.core.database import SessionLocal
+    db = SessionLocal()
+    try:
+        EmailService.send_comment_rejected_notification_db(
+            db=db,
+            recipient_email=recipient_email,
+            recipient_name=recipient_name,
+            article_title=article_title,
+            comment_content=comment_content,
+            reason=reason
+        )
+    except Exception as e:
+        print(f"Failed to send comment rejected notification: {e}")
+    finally:
+        db.close()
+
+
 def send_reply_notification_bg(
     recipient_email: str,
     recipient_name: str,
@@ -621,8 +639,8 @@ async def audit_comment(
         request=request
     )
     
-    if old_status == 'pending' and audit_data.status == 'approved':
-        if comment.author_email:
+    if old_status != audit_data.status and comment.author_email:
+        if audit_data.status == 'approved':
             background_tasks.add_task(
                 send_comment_approved_notification_bg,
                 comment.author_email,
@@ -631,6 +649,15 @@ async def audit_comment(
                 comment.article.slug if comment.article else '',
                 comment.content,
                 comment.id
+            )
+        elif audit_data.status == 'rejected':
+            background_tasks.add_task(
+                send_comment_rejected_notification_bg,
+                comment.author_email,
+                comment.author_name,
+                comment.article.title if comment.article else '',
+                comment.content,
+                audit_data.reason
             )
     
     reply_to_user_name = None
@@ -697,8 +724,8 @@ async def batch_audit_comments(
         db.add(audit_log)
         updated_count += 1
         
-        if old_status == 'pending' and audit_data.status == 'approved':
-            if comment.author_email:
+        if old_status != audit_data.status and comment.author_email:
+            if audit_data.status == 'approved':
                 background_tasks.add_task(
                     send_comment_approved_notification_bg,
                     comment.author_email,
@@ -707,6 +734,15 @@ async def batch_audit_comments(
                     comment.article.slug if comment.article else '',
                     comment.content,
                     comment.id
+                )
+            elif audit_data.status == 'rejected':
+                background_tasks.add_task(
+                    send_comment_rejected_notification_bg,
+                    comment.author_email,
+                    comment.author_name,
+                    comment.article.title if comment.article else '',
+                    comment.content,
+                    audit_data.reason
                 )
     
     db.commit()
