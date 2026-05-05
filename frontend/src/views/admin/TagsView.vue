@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { tagApi, utilsApi } from '@/api'
 import type { Tag } from '@/types'
 import { useDialogStore, useBlogStore } from '@/stores'
@@ -73,6 +73,14 @@ const handleSubmit = async () => {
   const permission = editingTag.value ? 'tag.edit' : 'tag.create'
   if (!await requirePermission(permission, '保存标签')) return
   
+  validationErrors.value = []
+  
+  if (!form.value.name.trim()) {
+    validationErrors.value.push({ field: 'name', message: '请输入标签名称' })
+    await scrollToField('tag-name')
+    return
+  }
+  
   try {
     const isEditing = !!editingTag.value
     let savedTag: Tag
@@ -99,6 +107,7 @@ const resetForm = () => {
     color: '#00d4ff'
   }
   slugManuallyEdited.value = false
+  validationErrors.value = []
 }
 
 const generateSlug = async () => {
@@ -147,6 +156,35 @@ const openCreateModal = async () => {
 }
 
 onMounted(fetchTags)
+
+interface ValidationError {
+  field: string
+  message: string
+}
+
+const validationErrors = ref<ValidationError[]>([])
+
+const scrollToField = async (fieldId: string) => {
+  await nextTick()
+  const element = document.getElementById(fieldId)
+  if (element) {
+    element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    element.focus({ preventScroll: true })
+  }
+}
+
+const hasError = (field: string): boolean => {
+  return validationErrors.value.some(e => e.field === field)
+}
+
+const getErrorMessage = (field: string): string => {
+  const error = validationErrors.value.find(e => e.field === field)
+  return error?.message || ''
+}
+
+const clearValidationError = (field: string) => {
+  validationErrors.value = validationErrors.value.filter(e => e.field !== field)
+}
 </script>
 
 <template>
@@ -264,18 +302,25 @@ onMounted(fetchTags)
             <label
               for="tag-name"
               class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-            >名称</label>
+            >名称 <span class="text-red-500">*</span></label>
             <input
               id="tag-name"
               v-model="form.name"
               type="text"
               name="name"
               autocomplete="off"
-              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              :class="hasError('name') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
               placeholder="标签名称"
-              @input="handleNameInput"
+              @input="handleNameInput; clearValidationError('name')"
               @blur="handleNameBlur"
             >
+            <p
+              v-if="hasError('name')"
+              class="mt-1 text-xs text-red-500"
+            >
+              {{ getErrorMessage('name') }}
+            </p>
           </div>
 
           <div>

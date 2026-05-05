@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { resourceApi, resourceCategoryApi } from '@/api'
+import { ref, onMounted, computed, nextTick } from 'vue'
+import { resourceApi, resourceCategoryApi, utilsApi } from '@/api'
 import type { Resource } from '@/types'
 import type { ResourceCategory } from '@/api/resourceCategories'
 import { useDialogStore } from '@/stores'
@@ -22,6 +22,8 @@ const { requirePermission } = useAdminCheck()
 const resources = ref<Resource[]>([])
 const categories = ref<ResourceCategory[]>([])
 const isLoading = ref(false)
+const isGeneratingSlug = ref(false)
+const slugManuallyEdited = ref(false)
 const isSubmitting = ref(false)
 const activeTab = ref<'resources' | 'categories'>('resources')
 
@@ -139,6 +141,9 @@ const handleToggleResourceStatus = async (resource: Resource) => {
 const handleSubmitResource = async () => {
   if (!await requirePermission('resource.edit', '保存资源')) return
   
+  const isValid = await validateResourceForm()
+  if (!isValid) return
+  
   isSubmitting.value = true
   try {
     const isEditing = !!editingResource.value
@@ -177,6 +182,7 @@ const resetResourceForm = () => {
     is_active: true,
     order: 0
   }
+  resourceErrors.value = []
 }
 
 const openCreateResourceModal = async () => {
@@ -197,6 +203,7 @@ const handleEditCategory = async (category: ResourceCategory) => {
     order: category.order,
     is_active: category.is_active
   }
+  slugManuallyEdited.value = true
   showCategoryEditor.value = true
 }
 
@@ -225,6 +232,9 @@ const executeCategoryDeletion = async () => {
 const handleSubmitCategory = async () => {
   if (!await requirePermission('resource.edit', '保存资源分类')) return
   
+  const isValid = await validateCategoryForm()
+  if (!isValid) return
+  
   try {
     const isEditing = !!editingCategory.value
     if (editingCategory.value) {
@@ -251,6 +261,46 @@ const resetCategoryForm = () => {
     icon: '',
     order: 0,
     is_active: true
+  }
+  categoryErrors.value = []
+  slugManuallyEdited.value = false
+}
+
+const generateCategorySlug = async () => {
+  if (!categoryForm.value.name.trim() || slugManuallyEdited.value) return
+  
+  isGeneratingSlug.value = true
+  try {
+    const result = await utilsApi.generateSlug(categoryForm.value.name, 'resource_category', editingCategory.value?.id)
+    categoryForm.value.slug = result.slug
+  } catch (error) {
+    console.error('Failed to generate slug:', error)
+    categoryForm.value.slug = categoryForm.value.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+  } finally {
+    isGeneratingSlug.value = false
+  }
+}
+
+const handleCategorySlugInput = () => {
+  if (!categoryForm.value.slug || categoryForm.value.slug.trim() === '') {
+    slugManuallyEdited.value = false
+  } else {
+    slugManuallyEdited.value = true
+  }
+}
+
+const handleCategoryNameBlur = () => {
+  if (!slugManuallyEdited.value && categoryForm.value.name) {
+    generateCategorySlug()
+  }
+}
+
+const handleCategoryNameInput = () => {
+  if (!categoryForm.value.slug || categoryForm.value.slug.trim() === '') {
+    slugManuallyEdited.value = false
   }
 }
 
@@ -305,6 +355,93 @@ const activeCategories = computed(() => categories.value.filter(c => c.is_active
 
 const getResourceCount = (categoryId: number) => {
   return resources.value.filter(r => r.category_id === categoryId).length
+}
+
+interface ValidationError {
+  field: string
+  message: string
+}
+
+const resourceErrors = ref<ValidationError[]>([])
+const categoryErrors = ref<ValidationError[]>([])
+
+const scrollToField = async (fieldId: string) => {
+  await nextTick()
+  const element = document.getElementById(fieldId)
+  if (element) {
+    element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    element.focus({ preventScroll: true })
+  }
+}
+
+const hasResourceError = (field: string): boolean => {
+  return resourceErrors.value.some(e => e.field === field)
+}
+
+const getResourceErrorMessage = (field: string): string => {
+  const error = resourceErrors.value.find(e => e.field === field)
+  return error?.message || ''
+}
+
+const clearResourceError = (field: string) => {
+  resourceErrors.value = resourceErrors.value.filter(e => e.field !== field)
+}
+
+const hasCategoryError = (field: string): boolean => {
+  return categoryErrors.value.some(e => e.field === field)
+}
+
+const getCategoryErrorMessage = (field: string): string => {
+  const error = categoryErrors.value.find(e => e.field === field)
+  return error?.message || ''
+}
+
+const clearCategoryError = (field: string) => {
+  categoryErrors.value = categoryErrors.value.filter(e => e.field !== field)
+}
+
+const validateResourceForm = async (): Promise<boolean> => {
+  resourceErrors.value = []
+
+  if (!resourceForm.value.title.trim()) {
+    resourceErrors.value.push({ field: 'title', message: '请输入资源标题' })
+    await scrollToField('resource-title')
+    return false
+  }
+
+  if (!resourceForm.value.url.trim()) {
+    resourceErrors.value.push({ field: 'url', message: '请输入资源链接' })
+    await scrollToField('resource-url')
+    return false
+  }
+
+  try {
+    new URL(resourceForm.value.url)
+  } catch {
+    resourceErrors.value.push({ field: 'url', message: '请输入有效的URL地址' })
+    await scrollToField('resource-url')
+    return false
+  }
+
+  return true
+}
+
+const validateCategoryForm = async (): Promise<boolean> => {
+  categoryErrors.value = []
+
+  if (!categoryForm.value.name.trim()) {
+    categoryErrors.value.push({ field: 'name', message: '请输入分类名称' })
+    await scrollToField('category-name')
+    return false
+  }
+
+  if (!categoryForm.value.slug.trim()) {
+    categoryErrors.value.push({ field: 'slug', message: '请输入分类 Slug' })
+    await scrollToField('category-slug')
+    return false
+  }
+
+  return true
 }
 
 onMounted(async () => {
@@ -611,25 +748,39 @@ onMounted(async () => {
           @submit.prevent="handleSubmitResource"
         >
           <div>
-            <label for="input-resourceForm-title" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">标题</label>
-            <input id="input-resourceForm-title"
+            <label for="resource-title" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">标题 <span class="text-red-500">*</span></label>
+            <input id="resource-title"
               v-model="resourceForm.title"
               type="text"
-              required
-              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              :class="hasResourceError('title') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
               placeholder="资源标题"
+              @input="clearResourceError('title')"
             >
+            <p
+              v-if="hasResourceError('title')"
+              class="mt-1 text-xs text-red-500"
+            >
+              {{ getResourceErrorMessage('title') }}
+            </p>
           </div>
 
           <div>
-            <label for="input-resourceForm-url" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">链接</label>
-            <input id="input-resourceForm-url"
+            <label for="resource-url" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">链接 <span class="text-red-500">*</span></label>
+            <input id="resource-url"
               v-model="resourceForm.url"
               type="url"
-              required
-              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              :class="hasResourceError('url') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
               placeholder="https://example.com"
+              @input="clearResourceError('url')"
             >
+            <p
+              v-if="hasResourceError('url')"
+              class="mt-1 text-xs text-red-500"
+            >
+              {{ getResourceErrorMessage('url') }}
+            </p>
           </div>
 
           <div>
@@ -758,25 +909,46 @@ onMounted(async () => {
           @submit.prevent="handleSubmitCategory"
         >
           <div>
-            <label for="input-categoryForm-name" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">名称</label>
-            <input id="input-categoryForm-name"
+            <label for="category-name" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">名称 <span class="text-red-500">*</span></label>
+            <input id="category-name"
               v-model="categoryForm.name"
               type="text"
-              required
-              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              :class="hasCategoryError('name') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
               placeholder="分类名称"
+              @input="clearCategoryError('name'); handleCategoryNameInput()"
+              @blur="handleCategoryNameBlur"
             >
+            <p
+              v-if="hasCategoryError('name')"
+              class="mt-1 text-xs text-red-500"
+            >
+              {{ getCategoryErrorMessage('name') }}
+            </p>
           </div>
 
           <div>
-            <label for="input-categoryForm-slug" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Slug</label>
-            <input id="input-categoryForm-slug"
+            <label for="category-slug" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Slug <span class="text-red-500">*</span></label>
+            <input id="category-slug"
               v-model="categoryForm.slug"
               type="text"
-              required
-              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              :class="hasCategoryError('slug') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
               placeholder="category-slug"
+              @input="clearCategoryError('slug'); handleCategorySlugInput()"
             >
+            <p
+              v-if="isGeneratingSlug"
+              class="mt-1 text-xs text-gray-400"
+            >
+              正在生成 Slug...
+            </p>
+            <p
+              v-else-if="hasCategoryError('slug')"
+              class="mt-1 text-xs text-red-500"
+            >
+              {{ getCategoryErrorMessage('slug') }}
+            </p>
           </div>
 
           <div>

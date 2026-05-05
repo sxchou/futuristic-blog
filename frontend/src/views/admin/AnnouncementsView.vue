@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import { announcementApi, type Announcement, type AnnouncementCreate, type AnnouncementUpdate } from '@/api'
 import { useAdminCheck } from '@/composables/useAdminCheck'
 import { useDialogStore } from '@/stores'
@@ -92,16 +92,50 @@ const openEditor = async (announcement?: Announcement) => {
 const closeEditor = () => {
   showEditor.value = false
   editingId.value = null
+  validationErrors.value = []
+}
+
+interface ValidationError {
+  field: string
+  message: string
+}
+
+const validationErrors = ref<ValidationError[]>([])
+
+const scrollToField = async (fieldId: string) => {
+  await nextTick()
+  const element = document.getElementById(fieldId)
+  if (element) {
+    element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    element.focus({ preventScroll: true })
+  }
+}
+
+const hasError = (field: string): boolean => {
+  return validationErrors.value.some(e => e.field === field)
+}
+
+const getErrorMessage = (field: string): string => {
+  const error = validationErrors.value.find(e => e.field === field)
+  return error?.message || ''
+}
+
+const clearValidationError = (field: string) => {
+  validationErrors.value = validationErrors.value.filter(e => e.field !== field)
 }
 
 const handleSave = async () => {
+  validationErrors.value = []
+  
   if (!formData.value.title.trim()) {
-    await dialog.showError('请输入公告标题', '保存失败')
+    validationErrors.value.push({ field: 'title', message: '请输入公告标题' })
+    await scrollToField('announcement-title')
     return
   }
   
   if (!formData.value.content.trim()) {
-    await dialog.showError('请输入公告内容', '保存失败')
+    validationErrors.value.push({ field: 'content', message: '请输入公告内容' })
+    await scrollToField('announcement-content')
     return
   }
   
@@ -375,29 +409,45 @@ const getTypeStyles = (type: string) => {
 
           <form class="p-4 space-y-3 overflow-y-auto max-h-[calc(90vh-120px)]" @submit.prevent="handleSave">
             <div>
-              <label for="input-formData-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              <label for="announcement-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                 公告标题 <span class="text-red-500">*</span>
               </label>
-              <input id="input-formData-title"
+              <input id="announcement-title"
                 v-model="formData.title"
                 type="text"
                 :disabled="!canEdit"
-                class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border rounded-xl text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                :class="hasError('title') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
                 placeholder="请输入公告标题"
+                @input="clearValidationError('title')"
               >
+              <p
+                v-if="hasError('title')"
+                class="mt-1 text-xs text-red-500"
+              >
+                {{ getErrorMessage('title') }}
+              </p>
             </div>
 
             <div>
-              <label for="textarea-formData-content" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              <label for="announcement-content" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                 公告内容 <span class="text-red-500">*</span>
               </label>
-              <textarea id="textarea-formData-content"
+              <textarea id="announcement-content"
                 v-model="formData.content"
                 rows="4"
                 :disabled="!canEdit"
-                class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all resize-none disabled:opacity-50 disabled:cursor-not-allowed"
+                class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border rounded-xl text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all resize-none disabled:opacity-50 disabled:cursor-not-allowed"
+                :class="hasError('content') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
                 placeholder="请输入公告内容"
+                @input="clearValidationError('content')"
               />
+              <p
+                v-if="hasError('content')"
+                class="mt-1 text-xs text-red-500"
+              >
+                {{ getErrorMessage('content') }}
+              </p>
             </div>
 
             <div class="grid grid-cols-2 gap-3">

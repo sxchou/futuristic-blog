@@ -2,7 +2,7 @@ from typing import Optional, List
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.models import Article, Category, Tag, User
+from app.models import Article, Category, Tag, User, ResourceCategory
 from app.utils import generate_slug, get_current_user
 from app.utils.helpers import (
     generate_unique_slug, 
@@ -31,6 +31,11 @@ def get_existing_slugs(db: Session, entity_type: str, exclude_id: Optional[int] 
         query = db.query(Tag.slug)
         if exclude_id:
             query = query.filter(Tag.id != exclude_id)
+        return [r[0] for r in query.all() if r[0]]
+    elif entity_type == "resource_category":
+        query = db.query(ResourceCategory.slug)
+        if exclude_id:
+            query = query.filter(ResourceCategory.id != exclude_id)
         return [r[0] for r in query.all() if r[0]]
     return []
 
@@ -178,6 +183,11 @@ async def check_slug_uniqueness(
         query = db.query(Tag).filter(Tag.slug == slug)
         if exclude_id:
             query = query.filter(Tag.id != exclude_id)
+        exists = query.first() is not None
+    elif entity_type == "resource_category":
+        query = db.query(ResourceCategory).filter(ResourceCategory.slug == slug)
+        if exclude_id:
+            query = query.filter(ResourceCategory.id != exclude_id)
         exists = query.first() is not None
     
     return {

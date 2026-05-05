@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, nextTick, watch } from 'vue'
 import { userApi, roleApi } from '@/api'
 import type { User, Role } from '@/types'
 import { useDialogStore, useUserProfileStore, useAuthStore } from '@/stores'
@@ -88,67 +88,48 @@ const handleCreateSubmit = async () => {
   
   if (!requirePermission('user.create')) return
   
+  createErrors.value = []
+  
   if (!createForm.value.username) {
-    await dialog.showError({
-      title: '用户名不能为空',
-      message: '请输入用户名，用户名长度为3-50个字符',
-      type: 'warning'
-    })
+    createErrors.value.push({ field: 'username', message: '请输入用户名' })
+    await scrollToField('create-username')
     return
   }
   
   if (createForm.value.username.length < 3) {
-    await dialog.showError({
-      title: '用户名太短',
-      message: '用户名长度至少需要3个字符，请重新输入',
-      type: 'warning'
-    })
+    createErrors.value.push({ field: 'username', message: '用户名长度至少需要3个字符' })
+    await scrollToField('create-username')
     return
   }
   
   if (!createForm.value.email) {
-    await dialog.showError({
-      title: '邮箱不能为空',
-      message: '请输入有效的邮箱地址，用于账户验证和通知',
-      type: 'warning'
-    })
+    createErrors.value.push({ field: 'email', message: '请输入邮箱地址' })
+    await scrollToField('create-email')
     return
   }
   
   const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
   if (!emailPattern.test(createForm.value.email)) {
-    await dialog.showError({
-      title: '邮箱格式不正确',
-      message: '请输入正确的邮箱格式，例如：user@example.com',
-      type: 'warning'
-    })
+    createErrors.value.push({ field: 'email', message: '请输入正确的邮箱格式' })
+    await scrollToField('create-email')
     return
   }
   
   if (!createForm.value.password) {
-    await dialog.showError({
-      title: '密码不能为空',
-      message: '请设置用户密码，密码长度至少6位',
-      type: 'warning'
-    })
+    createErrors.value.push({ field: 'password', message: '请输入密码' })
+    await scrollToField('create-password')
     return
   }
   
   if (createForm.value.password.length < 6) {
-    await dialog.showError({
-      title: '密码太短',
-      message: '密码长度至少需要6个字符，建议使用字母、数字和符号的组合',
-      type: 'warning'
-    })
+    createErrors.value.push({ field: 'password', message: '密码长度至少需要6个字符' })
+    await scrollToField('create-password')
     return
   }
   
   if (createForm.value.roleIds.length === 0) {
-    await dialog.showError({
-      title: '请选择角色',
-      message: '用户必须至少分配一个角色才能正常使用系统功能',
-      type: 'warning'
-    })
+    createErrors.value.push({ field: 'roleIds', message: '请至少选择一个角色' })
+    await scrollToField('create-roles')
     return
   }
   
@@ -392,6 +373,35 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
     fetchUsers()
   }
 })
+
+interface ValidationError {
+  field: string
+  message: string
+}
+
+const createErrors = ref<ValidationError[]>([])
+
+const scrollToField = async (fieldId: string) => {
+  await nextTick()
+  const element = document.getElementById(fieldId)
+  if (element) {
+    element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    element.focus({ preventScroll: true })
+  }
+}
+
+const hasCreateError = (field: string): boolean => {
+  return createErrors.value.some(e => e.field === field)
+}
+
+const getCreateErrorMessage = (field: string): string => {
+  const error = createErrors.value.find(e => e.field === field)
+  return error?.message || ''
+}
+
+const clearCreateError = (field: string) => {
+  createErrors.value = createErrors.value.filter(e => e.field !== field)
+}
 </script>
 
 <template>
@@ -953,75 +963,79 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
             <label
               for="create-username"
               class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-            >用户名 <span class="text-red-400">*</span></label>
+            >用户名 <span class="text-red-500">*</span></label>
             <input
               id="create-username"
               v-model="createForm.username"
               type="text"
               name="create-username"
               autocomplete="username"
-              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              :class="hasCreateError('username') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
               placeholder="请输入用户名"
+              @input="clearCreateError('username')"
             >
+            <p
+              v-if="hasCreateError('username')"
+              class="mt-1 text-xs text-red-500"
+            >
+              {{ getCreateErrorMessage('username') }}
+            </p>
           </div>
 
           <div>
             <label
               for="create-email"
               class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-            >邮箱 <span class="text-red-400">*</span></label>
+            >邮箱 <span class="text-red-500">*</span></label>
             <input
               id="create-email"
               v-model="createForm.email"
               type="email"
               name="create-email"
               autocomplete="email"
-              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              :class="hasCreateError('email') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
               placeholder="请输入邮箱地址"
+              @input="clearCreateError('email')"
             >
+            <p
+              v-if="hasCreateError('email')"
+              class="mt-1 text-xs text-red-500"
+            >
+              {{ getCreateErrorMessage('email') }}
+            </p>
           </div>
 
           <div>
             <label
               for="create-password"
               class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-            >密码 <span class="text-red-400">*</span></label>
+            >密码 <span class="text-red-500">*</span></label>
             <input
               id="create-password"
               v-model="createForm.password"
               type="password"
               name="create-password"
               autocomplete="new-password"
-              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              :class="hasCreateError('password') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
               placeholder="请输入密码（至少6位）"
+              @input="clearCreateError('password')"
             >
+            <p
+              v-if="hasCreateError('password')"
+              class="mt-1 text-xs text-red-500"
+            >
+              {{ getCreateErrorMessage('password') }}
+            </p>
           </div>
 
           <div>
-            <label for="create-user-roles-helper" class="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-              角色 <span class="text-red-400">*</span>
-              <span
-                v-if="createForm.roleIds.length === 0"
-                class="flex items-center gap-1 text-amber-500"
-              >
-                <svg
-                  class="w-3 h-3"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                  />
-                </svg>
-                <span>请至少选择一个角色</span>
-              </span>
+            <label for="create-roles" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              角色 <span class="text-red-500">*</span>
             </label>
-            <input id="create-user-roles-helper" type="text" class="sr-only" :value="createForm.roleIds.length" tabindex="-1" readonly autocomplete="off">
-            <div class="flex flex-wrap gap-2">
+            <div id="create-roles" class="flex flex-wrap gap-2">
               <button
                 v-for="role in allRoles"
                 :key="role.id"
@@ -1032,11 +1046,17 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                     ? 'bg-primary text-white'
                     : 'bg-gray-100 dark:bg-dark-200 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-300'
                 ]"
-                @click="toggleCreateRole(role.id)"
+                @click="toggleCreateRole(role.id); clearCreateError('roleIds')"
               >
                 {{ role.name }}
               </button>
             </div>
+            <p
+              v-if="hasCreateError('roleIds')"
+              class="mt-1 text-xs text-red-500"
+            >
+              {{ getCreateErrorMessage('roleIds') }}
+            </p>
           </div>
 
           <div class="flex justify-end gap-3 pt-2">

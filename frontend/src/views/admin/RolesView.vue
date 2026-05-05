@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { roleApi, permissionApi } from '@/api'
 import type { Role, Permission, PermissionTree } from '@/api'
 import { useDialogStore, usePermissionStore } from '@/stores'
@@ -110,12 +110,16 @@ const scrollToModule = (moduleCode: string) => {
 }
 
 const handleSave = async () => {
+  validationErrors.value = []
+  
   if (!form.value.name.trim()) {
-    dialog.showError('请输入角色名称')
+    validationErrors.value.push({ field: 'name', message: '请输入角色名称' })
+    await scrollToField('role-name')
     return
   }
   if (!form.value.code.trim()) {
-    dialog.showError('请输入角色代码')
+    validationErrors.value.push({ field: 'code', message: '请输入角色代码' })
+    await scrollToField('role-code')
     return
   }
 
@@ -256,6 +260,35 @@ onMounted(() => {
   fetchRoles()
   fetchPermissionTree()
 })
+
+interface ValidationError {
+  field: string
+  message: string
+}
+
+const validationErrors = ref<ValidationError[]>([])
+
+const scrollToField = async (fieldId: string) => {
+  await nextTick()
+  const element = document.getElementById(fieldId)
+  if (element) {
+    element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    element.focus({ preventScroll: true })
+  }
+}
+
+const hasError = (field: string): boolean => {
+  return validationErrors.value.some(e => e.field === field)
+}
+
+const getErrorMessage = (field: string): string => {
+  const error = validationErrors.value.find(e => e.field === field)
+  return error?.message || ''
+}
+
+const clearValidationError = (field: string) => {
+  validationErrors.value = validationErrors.value.filter(e => e.field !== field)
+}
 </script>
 
 <template>
@@ -469,30 +502,46 @@ onMounted(() => {
 
         <form class="space-y-4" @submit.prevent="handleSave">
           <div>
-            <label for="input-form-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label for="role-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
               角色名称 <span class="text-red-500">*</span>
             </label>
-            <input id="input-form-name"
+            <input id="role-name"
               v-model="form.name"
               type="text"
               name="role-name"
-              class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-dark-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-gray-900 dark:text-white"
+              class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-gray-900 dark:text-white"
+              :class="hasError('name') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-dark-300'"
               placeholder="请输入角色名称"
+              @input="clearValidationError('name')"
             />
+            <p
+              v-if="hasError('name')"
+              class="mt-1 text-xs text-red-500"
+            >
+              {{ getErrorMessage('name') }}
+            </p>
           </div>
 
           <div>
-            <label for="input-form-code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label for="role-code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
               角色代码 <span class="text-red-500">*</span>
             </label>
-            <input id="input-form-code"
+            <input id="role-code"
               v-model="form.code"
               type="text"
               name="role-code"
               :disabled="!isCreating"
-              class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-dark-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              :class="hasError('code') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-dark-300'"
               placeholder="请输入角色代码（英文）"
+              @input="clearValidationError('code')"
             />
+            <p
+              v-if="hasError('code')"
+              class="mt-1 text-xs text-red-500"
+            >
+              {{ getErrorMessage('code') }}
+            </p>
           </div>
 
           <div>

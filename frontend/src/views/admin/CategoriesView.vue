@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useDialogStore, useBlogStore } from '@/stores'
 import { categoryApi, utilsApi } from '@/api'
 import type { Category } from '@/types'
@@ -79,6 +79,20 @@ const handleSubmit = async () => {
   const permission = editingCategory.value ? 'category.edit' : 'category.create'
   if (!await requirePermission(permission, '保存分类')) return
   
+  validationErrors.value = []
+  
+  if (!form.value.name.trim()) {
+    validationErrors.value.push({ field: 'name', message: '请输入分类名称' })
+    await scrollToField('category-name')
+    return
+  }
+  
+  if (!form.value.slug.trim()) {
+    validationErrors.value.push({ field: 'slug', message: '请输入分类 Slug' })
+    await scrollToField('category-slug')
+    return
+  }
+  
   try {
     let savedCategory: Category
     if (editingCategory.value) {
@@ -107,6 +121,7 @@ const resetForm = () => {
     order: 0
   }
   slugManuallyEdited.value = false
+  validationErrors.value = []
 }
 
 const generateSlug = async () => {
@@ -155,6 +170,35 @@ const openCreateModal = async () => {
 }
 
 onMounted(fetchCategories)
+
+interface ValidationError {
+  field: string
+  message: string
+}
+
+const validationErrors = ref<ValidationError[]>([])
+
+const scrollToField = async (fieldId: string) => {
+  await nextTick()
+  const element = document.getElementById(fieldId)
+  if (element) {
+    element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    element.focus({ preventScroll: true })
+  }
+}
+
+const hasError = (field: string): boolean => {
+  return validationErrors.value.some(e => e.field === field)
+}
+
+const getErrorMessage = (field: string): string => {
+  const error = validationErrors.value.find(e => e.field === field)
+  return error?.message || ''
+}
+
+const clearValidationError = (field: string) => {
+  validationErrors.value = validationErrors.value.filter(e => e.field !== field)
+}
 </script>
 
 <template>
@@ -290,25 +334,32 @@ onMounted(fetchCategories)
             <label
               for="category-name"
               class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-            >名称</label>
+            >名称 <span class="text-red-500">*</span></label>
             <input
               id="category-name"
               v-model="form.name"
               type="text"
               name="name"
               autocomplete="off"
-              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              :class="hasError('name') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
               placeholder="分类名称"
-              @input="handleNameInput"
+              @input="handleNameInput; clearValidationError('name')"
               @blur="handleNameBlur"
             >
+            <p
+              v-if="hasError('name')"
+              class="mt-1 text-xs text-red-500"
+            >
+              {{ getErrorMessage('name') }}
+            </p>
           </div>
 
           <div>
             <label
               for="category-slug"
               class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-            >Slug (留空自动生成)</label>
+            >Slug <span class="text-red-500">*</span> <span class="text-gray-400 font-normal">(留空自动生成)</span></label>
             <div class="relative">
               <input
                 id="category-slug"
@@ -316,9 +367,10 @@ onMounted(fetchCategories)
                 type="text"
                 name="slug"
                 autocomplete="off"
-                class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none pr-8"
+                class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none pr-8"
+                :class="hasError('slug') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
                 placeholder="留空自动生成"
-                @input="handleSlugInput"
+                @input="handleSlugInput; clearValidationError('slug')"
               >
               <div 
                 v-if="isGeneratingSlug" 
@@ -345,6 +397,12 @@ onMounted(fetchCategories)
                 </svg>
               </div>
             </div>
+            <p
+              v-if="hasError('slug')"
+              class="mt-1 text-xs text-red-500"
+            >
+              {{ getErrorMessage('slug') }}
+            </p>
           </div>
 
           <div>
