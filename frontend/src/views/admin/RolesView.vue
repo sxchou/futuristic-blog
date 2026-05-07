@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick, watch } from 'vue'
 import { roleApi, permissionApi } from '@/api'
 import type { Role, Permission, PermissionTree } from '@/api'
 import { useDialogStore, usePermissionStore } from '@/stores'
@@ -20,8 +20,63 @@ const showPermissionEditor = ref(false)
 const editingRole = ref<Role | null>(null)
 const isCreating = ref(false)
 const isViewOnly = ref(false)
+const isSubmitting = ref(false)
 const activeModule = ref('')
 const permissionContentRef = ref<HTMLElement | null>(null)
+
+const nameChecking = ref(false)
+const codeChecking = ref(false)
+const nameExists = ref(false)
+const codeExists = ref(false)
+
+let nameCheckTimer: ReturnType<typeof setTimeout> | null = null
+let codeCheckTimer: ReturnType<typeof setTimeout> | null = null
+
+const checkNameUnique = async (name: string) => {
+  if (!name.trim()) {
+    nameExists.value = false
+    return
+  }
+  
+  nameChecking.value = true
+  try {
+    const result = await roleApi.checkUnique('name', name, editingRole.value?.id)
+    nameExists.value = result.exists
+    if (result.exists) {
+      validationErrors.value = validationErrors.value.filter(e => e.field !== 'name')
+      validationErrors.value.push({ field: 'name', message: '角色名称已存在，请使用其他名称' })
+    } else {
+      validationErrors.value = validationErrors.value.filter(e => e.field !== 'name')
+    }
+  } catch (error) {
+    console.error('Failed to check name uniqueness:', error)
+  } finally {
+    nameChecking.value = false
+  }
+}
+
+const checkCodeUnique = async (code: string) => {
+  if (!code.trim()) {
+    codeExists.value = false
+    return
+  }
+  
+  codeChecking.value = true
+  try {
+    const result = await roleApi.checkUnique('code', code, editingRole.value?.id)
+    codeExists.value = result.exists
+    if (result.exists) {
+      validationErrors.value = validationErrors.value.filter(e => e.field !== 'code')
+      validationErrors.value.push({ field: 'code', message: '角色代码已存在，请使用其他代码' })
+    } else {
+      validationErrors.value = validationErrors.value.filter(e => e.field !== 'code')
+    }
+  } catch (error) {
+    console.error('Failed to check code uniqueness:', error)
+  } finally {
+    codeChecking.value = false
+  }
+}
 
 const form = ref({
   name: '',
@@ -61,6 +116,11 @@ const openCreateDialog = async () => {
     priority: 0,
     permission_ids: []
   }
+  nameExists.value = false
+  codeExists.value = false
+  nameChecking.value = false
+  codeChecking.value = false
+  validationErrors.value = []
   showEditor.value = true
 }
 
@@ -79,6 +139,11 @@ const openEditDialog = async (role: Role) => {
     priority: role.priority,
     permission_ids: role.permissions.map(p => p.id)
   }
+  nameExists.value = false
+  codeExists.value = false
+  nameChecking.value = false
+  codeChecking.value = false
+  validationErrors.value = []
   showEditor.value = true
 }
 
@@ -114,15 +179,31 @@ const handleSave = async () => {
   
   if (!form.value.name.trim()) {
     validationErrors.value.push({ field: 'name', message: '请输入角色名称' })
-    await scrollToField('role-name')
-    return
   }
   if (!form.value.code.trim()) {
     validationErrors.value.push({ field: 'code', message: '请输入角色代码' })
-    await scrollToField('role-code')
+  }
+  
+  if (nameChecking.value || (isCreating.value && codeChecking.value)) {
+    await new Promise(resolve => setTimeout(resolve, 600))
+  }
+  
+  if (nameExists.value) {
+    validationErrors.value.push({ field: 'name', message: '角色名称已存在，请使用其他名称' })
+  }
+  
+  if (isCreating.value && codeExists.value) {
+    validationErrors.value.push({ field: 'code', message: '角色代码已存在，请使用其他代码' })
+  }
+  
+  if (validationErrors.value.length > 0) {
+    const firstError = validationErrors.value[0]
+    const fieldIdMap: Record<string, string> = { name: 'role-name', code: 'role-code' }
+    await scrollToField(fieldIdMap[firstError.field] || firstError.field)
     return
   }
 
+  isSubmitting.value = true
   try {
     if (isCreating.value) {
       await roleApi.createRole({
@@ -146,7 +227,8 @@ const handleSave = async () => {
     await fetchRoles()
   } catch (error: any) {
     console.error('Failed to save role:', error)
-    dialog.showError(error.response?.data?.detail || '操作失败')
+  } finally {
+    isSubmitting.value = false
   }
 }
 
@@ -206,7 +288,8 @@ const executeDeletion = async () => {
   } catch (error: any) {
     console.error('Failed to delete role:', error)
     deletion.cancelDeletion()
-    dialog.showError(error.response?.data?.detail || '删除失败')
+  } finally {
+    deletionLoading.value = false
   }
 }
 
@@ -289,6 +372,35 @@ const getErrorMessage = (field: string): string => {
 const clearValidationError = (field: string) => {
   validationErrors.value = validationErrors.value.filter(e => e.field !== field)
 }
+
+watch(() => form.value.name, (newName) => {
+  if (nameCheckTimer) {
+    clearTimeout(nameCheckTimer)
+  }
+  nameExists.value = false
+  validationErrors.value = validationErrors.value.filter(e => e.field !== 'name')
+  
+  if (newName.trim()) {
+    nameCheckTimer = setTimeout(() => {
+      checkNameUnique(newName)
+    }, 500)
+  }
+})
+
+watch(() => form.value.code, (newCode) => {
+  if (!isCreating.value) return
+  if (codeCheckTimer) {
+    clearTimeout(codeCheckTimer)
+  }
+  codeExists.value = false
+  validationErrors.value = validationErrors.value.filter(e => e.field !== 'code')
+  
+  if (newCode.trim()) {
+    codeCheckTimer = setTimeout(() => {
+      checkCodeUnique(newCode)
+    }, 500)
+  }
+})
 </script>
 
 <template>
@@ -504,13 +616,14 @@ const clearValidationError = (field: string) => {
           <div>
             <label for="role-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
               角色名称 <span class="text-red-500">*</span>
+              <span v-if="nameChecking" class="ml-2 text-gray-400">检查中...</span>
             </label>
             <input id="role-name"
               v-model="form.name"
               type="text"
               name="role-name"
-              class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-gray-900 dark:text-white"
-              :class="hasError('name') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-dark-300'"
+              class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border rounded-lg outline-none transition-all text-gray-900 dark:text-white"
+              :class="hasError('name') || nameExists ? 'border-red-500 dark:border-red-500' : nameChecking ? 'border-yellow-500 dark:border-yellow-500' : 'border-gray-200 dark:border-dark-300'"
               placeholder="请输入角色名称"
               @input="clearValidationError('name')"
             />
@@ -525,14 +638,15 @@ const clearValidationError = (field: string) => {
           <div>
             <label for="role-code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
               角色代码 <span class="text-red-500">*</span>
+              <span v-if="codeChecking" class="ml-2 text-gray-400">检查中...</span>
             </label>
             <input id="role-code"
               v-model="form.code"
               type="text"
               name="role-code"
               :disabled="!isCreating"
-              class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-              :class="hasError('code') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-dark-300'"
+              class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border rounded-lg outline-none transition-all text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              :class="hasError('code') || codeExists ? 'border-red-500 dark:border-red-500' : codeChecking ? 'border-yellow-500 dark:border-yellow-500' : 'border-gray-200 dark:border-dark-300'"
               placeholder="请输入角色代码（英文）"
               @input="clearValidationError('code')"
             />
@@ -552,7 +666,7 @@ const clearValidationError = (field: string) => {
               v-model="form.description"
               rows="3"
               name="role-description"
-              class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-dark-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-gray-900 dark:text-white resize-none"
+              class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-dark-300 rounded-lg outline-none transition-all text-gray-900 dark:text-white resize-none"
               placeholder="请输入角色描述"
             ></textarea>
           </div>
@@ -564,7 +678,7 @@ const clearValidationError = (field: string) => {
             <input id="role-is-default"
               v-model.number="form.priority"
               type="number"
-              class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-dark-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-gray-900 dark:text-white"
+              class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-dark-300 rounded-lg outline-none transition-all text-gray-900 dark:text-white"
               placeholder="数字越大优先级越高"
             />
           </div>
@@ -578,10 +692,18 @@ const clearValidationError = (field: string) => {
             取消
           </button>
           <button
-            class="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/25"
+            class="btn-primary text-sm px-4 py-1.5"
+            :disabled="isSubmitting"
             @click="handleSave"
           >
-            保存
+            <span v-if="isSubmitting" class="flex items-center gap-2">
+              <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              保存中...
+            </span>
+            <span v-else>保存</span>
           </button>
         </div>
       </div>
@@ -744,7 +866,7 @@ const clearValidationError = (field: string) => {
           </button>
           <button
             v-if="!isViewOnly"
-            class="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/25"
+            class="btn-primary text-sm px-4 py-1.5"
             @click="handleSavePermissions"
           >
             保存权限

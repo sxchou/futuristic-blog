@@ -1,6 +1,7 @@
 import json
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from app.core.database import get_db
 from app.models import Profile
 from app.schemas import ProfileResponse, ProfileUpdate
@@ -109,8 +110,12 @@ async def update_profile(
         else:
             setattr(profile, field, value)
     
-    db.commit()
-    db.refresh(profile)
+    try:
+        db.commit()
+        db.refresh(profile)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="数据保存失败，请检查输入内容")
     
     cache.delete(PROFILE_CACHE_KEY)
     

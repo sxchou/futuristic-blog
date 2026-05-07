@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from typing import List, Optional
 from pydantic import BaseModel
 from app.core.database import get_db
@@ -210,8 +211,13 @@ def create_oauth_provider(
     
     provider = OAuthProvider(**data.model_dump())
     db.add(provider)
-    db.commit()
-    db.refresh(provider)
+    
+    try:
+        db.commit()
+        db.refresh(provider)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="数据保存失败，请检查输入内容")
     
     LogService.log_operation(
         db=db,
@@ -295,8 +301,12 @@ def update_oauth_provider(
     for key, value in update_data.items():
         setattr(provider, key, value)
     
-    db.commit()
-    db.refresh(provider)
+    try:
+        db.commit()
+        db.refresh(provider)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="数据保存失败，请检查输入内容")
     
     description = f"更新OAuth提供商: {provider.display_name}"
     action = "update"

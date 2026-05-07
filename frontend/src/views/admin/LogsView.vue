@@ -424,7 +424,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 </option>
               </select>
               <button
-                class="px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
+                class="btn-primary text-sm px-4 py-1.5"
                 @click="handleSearch"
               >
                 搜索
@@ -538,7 +538,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 </option>
               </select>
               <button
-                class="px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
+                class="btn-primary text-sm px-4 py-1.5"
                 @click="handleSearch"
               >
                 搜索
@@ -665,7 +665,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 </option>
               </select>
               <button
-                class="px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
+                class="btn-primary text-sm px-4 py-1.5"
                 @click="handleSearch"
               >
                 搜索

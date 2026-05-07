@@ -29,10 +29,63 @@ const uploadProgress = ref(0)
 const markdownEditorRef = ref<InstanceType<typeof MarkdownEditor> | null>(null)
 const isGeneratingSlug = ref(false)
 const slugManuallyEdited = ref(false)
+const slugChecking = ref(false)
+const slugExists = ref(false)
+let slugCheckTimer: ReturnType<typeof setTimeout> | null = null
+const titleChecking = ref(false)
+const titleExists = ref(false)
+let titleCheckTimer: ReturnType<typeof setTimeout> | null = null
+
+const checkTitleUnique = async (title: string) => {
+  if (!title.trim()) {
+    titleExists.value = false
+    return
+  }
+  
+  titleChecking.value = true
+  try {
+    const result = await articleApi.checkUnique('title', title, editingArticle.value?.id)
+    titleExists.value = result.exists
+    if (result.exists) {
+      validationErrors.value = validationErrors.value.filter(e => e.field !== 'title')
+      validationErrors.value.push({ field: 'title', message: '文章标题已存在，请使用其他标题' })
+    } else {
+      validationErrors.value = validationErrors.value.filter(e => e.field !== 'title')
+    }
+  } catch (error) {
+    console.error('Failed to check title uniqueness:', error)
+  } finally {
+    titleChecking.value = false
+  }
+}
+
+const checkSlugUnique = async (slug: string) => {
+  if (!slug.trim()) {
+    slugExists.value = false
+    return
+  }
+  
+  slugChecking.value = true
+  try {
+    const result = await articleApi.checkUnique('slug', slug, editingArticle.value?.id)
+    slugExists.value = result.exists
+    if (result.exists) {
+      validationErrors.value = validationErrors.value.filter(e => e.field !== 'slug')
+      validationErrors.value.push({ field: 'slug', message: 'Slug 已存在，请使用其他 Slug' })
+    } else {
+      validationErrors.value = validationErrors.value.filter(e => e.field !== 'slug')
+    }
+  } catch (error) {
+    console.error('Failed to check slug uniqueness:', error)
+  } finally {
+    slugChecking.value = false
+  }
+}
 const showCategoryModal = ref(false)
 const showTagModal = ref(false)
 const isCreatingCategory = ref(false)
 const isCreatingTag = ref(false)
+const isSubmitting = ref(false)
 const showPreview = ref(false)
 const previewFile = ref<ArticleFile | null>(null)
 const draggedFileIndex = ref<number | null>(null)
@@ -137,6 +190,18 @@ const loadFormDraft = () => {
     const draftStr = localStorage.getItem(DRAFT_KEY)
     if (draftStr) {
       const draft = JSON.parse(draftStr)
+      const hasContent = draft.title?.trim() || 
+                         draft.slug?.trim() || 
+                         draft.summary?.trim() || 
+                         draft.content?.trim() || 
+                         draft.cover_image?.trim() ||
+                         draft.category_id ||
+                         (draft.tag_ids && draft.tag_ids.length > 0)
+      
+      if (!hasContent) {
+        return false
+      }
+      
       form.value = {
         title: draft.title || '',
         slug: draft.slug || '',
@@ -202,6 +267,10 @@ const handleEdit = async (article: ArticleListItem) => {
   
   editingArticle.value = article
   validationErrors.value = []
+  slugExists.value = false
+  slugChecking.value = false
+  titleExists.value = false
+  titleChecking.value = false
   
   try {
     const fullArticle = await articleApi.getAdminArticle(article.slug)
@@ -245,7 +314,8 @@ const executeArticleDeletion = async () => {
   } catch (error: any) {
     console.error('Failed to delete article:', error)
     articleDeletion.cancelDeletion()
-    await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
+  } finally {
+    articleDeletionLoading.value = false
   }
 }
 
@@ -267,37 +337,60 @@ const validateForm = async (): Promise<boolean> => {
   
   if (!form.value.title.trim()) {
     validationErrors.value.push({ field: 'title', message: '请输入文章标题' })
-    await scrollToField('article-title')
-    return false
+  }
+  
+  if (titleChecking.value) {
+    await new Promise(resolve => setTimeout(resolve, 600))
+  }
+  
+  if (titleExists.value) {
+    validationErrors.value.push({ field: 'title', message: '文章标题已存在，请使用其他标题' })
   }
   
   if (!form.value.slug.trim()) {
     validationErrors.value.push({ field: 'slug', message: '请输入文章 Slug' })
-    await scrollToField('article-slug')
-    return false
+  }
+  
+  if (slugChecking.value) {
+    await new Promise(resolve => setTimeout(resolve, 600))
+  }
+  
+  if (slugExists.value) {
+    validationErrors.value.push({ field: 'slug', message: 'Slug 已存在，请使用其他 Slug' })
+  }
+  
+  if (!form.value.summary.trim()) {
+    validationErrors.value.push({ field: 'summary', message: '请输入文章摘要' })
   }
   
   if (!form.value.cover_image) {
     validationErrors.value.push({ field: 'cover_image', message: '请设置文章封面图' })
-    await scrollToField('cover-image-section')
-    return false
   }
   
   if (!form.value.content.trim()) {
     validationErrors.value.push({ field: 'content', message: '请输入文章内容' })
-    await scrollToField('content-section')
-    return false
   }
   
   if (!form.value.category_id) {
     validationErrors.value.push({ field: 'category_id', message: '请选择文章分类' })
-    await scrollToField('category-select')
-    return false
   }
   
   if (!form.value.tag_ids || form.value.tag_ids.length === 0) {
     validationErrors.value.push({ field: 'tag_ids', message: '请至少选择一个标签' })
-    await scrollToField('tags-section')
+  }
+  
+  if (validationErrors.value.length > 0) {
+    const firstError = validationErrors.value[0]
+    const fieldIdMap: Record<string, string> = {
+      title: 'article-title',
+      slug: 'article-slug',
+      summary: 'article-summary',
+      cover_image: 'cover-image-section',
+      content: 'content-section',
+      category_id: 'category-select',
+      tag_ids: 'tags-section'
+    }
+    await scrollToField(fieldIdMap[firstError.field] || firstError.field)
     return false
   }
   
@@ -320,6 +413,7 @@ const handleSubmit = async () => {
   const isValid = await validateForm()
   if (!isValid) return
   
+  isSubmitting.value = true
   try {
     let savedArticle: Article
     let response: any
@@ -384,11 +478,9 @@ const handleSubmit = async () => {
         element.scrollIntoView({ behavior: 'smooth', block: 'center' })
         element.focus()
       }
-      
-      await dialog.showError(errorDetail.message, '验证错误')
-    } else {
-      await dialog.showError(errorDetail || '保存失败', '错误')
     }
+  } finally {
+    isSubmitting.value = false
   }
 }
 
@@ -409,6 +501,10 @@ const resetForm = () => {
   articleFiles.value = []
   selectedFileIds.value.clear()
   slugManuallyEdited.value = false
+  slugExists.value = false
+  slugChecking.value = false
+  titleExists.value = false
+  titleChecking.value = false
   validationErrors.value = []
   clearFormDraft()
 }
@@ -420,6 +516,7 @@ const generateSlug = async () => {
   try {
     const result = await utilsApi.generateSlug(form.value.title, 'article', editingArticle.value?.id)
     form.value.slug = result.slug
+    validationErrors.value = validationErrors.value.filter(e => e.field !== 'slug')
   } catch (error) {
     console.error('Failed to generate slug:', error)
     form.value.slug = form.value.title
@@ -437,17 +534,44 @@ const handleSlugInput = () => {
   } else {
     slugManuallyEdited.value = true
   }
+  
+  if (slugCheckTimer) {
+    clearTimeout(slugCheckTimer)
+  }
+  slugExists.value = false
+  validationErrors.value = validationErrors.value.filter(e => e.field !== 'slug')
+  
+  if (form.value.slug.trim()) {
+    slugCheckTimer = setTimeout(() => {
+      checkSlugUnique(form.value.slug)
+    }, 500)
+  }
 }
 
 const handleTitleBlur = () => {
   if (!slugManuallyEdited.value && form.value.title) {
     generateSlug()
   }
+  if (form.value.title.trim()) {
+    checkTitleUnique(form.value.title.trim())
+  }
 }
 
 const handleTitleInput = () => {
   if (!form.value.slug || form.value.slug.trim() === '') {
     slugManuallyEdited.value = false
+  }
+  if (titleCheckTimer) {
+    clearTimeout(titleCheckTimer)
+    titleCheckTimer = null
+  }
+  titleExists.value = false
+  titleChecking.value = false
+  validationErrors.value = validationErrors.value.filter(e => e.field !== 'title')
+  if (form.value.title.trim()) {
+    titleCheckTimer = setTimeout(() => {
+      checkTitleUnique(form.value.title.trim())
+    }, 500)
   }
 }
 
@@ -459,6 +583,9 @@ const openCategoryModal = () => {
     color: '#00d4ff',
     order: 0
   }
+  categoryModalErrors.value = []
+  categoryChecking.value = { name: false, slug: false }
+  categoryExists.value = { name: false, slug: false }
   showCategoryModal.value = true
 }
 
@@ -468,14 +595,140 @@ const openTagModal = () => {
     slug: '',
     color: '#00d4ff'
   }
+  tagModalErrors.value = []
+  tagChecking.value = { name: false, slug: false }
+  tagExists.value = { name: false, slug: false }
   showTagModal.value = true
 }
 
-const handleCreateCategory = async () => {
-  if (!newCategory.value.name.trim()) {
-    await dialog.showError('请输入分类名称', '验证失败')
+const categoryModalErrors = ref<ValidationError[]>([])
+const tagModalErrors = ref<ValidationError[]>([])
+
+const categoryChecking = ref({ name: false, slug: false })
+const categoryExists = ref({ name: false, slug: false })
+let categoryNameCheckTimer: ReturnType<typeof setTimeout> | null = null
+let categorySlugCheckTimer: ReturnType<typeof setTimeout> | null = null
+
+const tagChecking = ref({ name: false, slug: false })
+const tagExists = ref({ name: false, slug: false })
+let tagNameCheckTimer: ReturnType<typeof setTimeout> | null = null
+let tagSlugCheckTimer: ReturnType<typeof setTimeout> | null = null
+
+const checkCategoryUnique = async (field: 'name' | 'slug', value: string) => {
+  if (!value.trim()) {
+    categoryExists.value[field] = false
+    categoryChecking.value[field] = false
     return
   }
+  categoryChecking.value[field] = true
+  try {
+    const result = await categoryApi.checkUnique(field, value)
+    categoryExists.value[field] = result.exists
+    if (result.exists) {
+      const existing = categoryModalErrors.value.find(e => e.field === field)
+      if (existing) {
+        existing.message = field === 'name' ? '分类名称已存在，请使用其他名称' : '分类 Slug 已存在，请使用其他 Slug'
+      } else {
+        categoryModalErrors.value.push({ field, message: field === 'name' ? '分类名称已存在，请使用其他名称' : '分类 Slug 已存在，请使用其他 Slug' })
+      }
+    } else {
+      categoryModalErrors.value = categoryModalErrors.value.filter(e => !(e.field === field && e.message.includes('已存在')))
+    }
+  } catch (error) {
+    console.error(`Failed to check category ${field} uniqueness:`, error)
+  } finally {
+    categoryChecking.value[field] = false
+  }
+}
+
+const checkTagUnique = async (field: 'name' | 'slug', value: string) => {
+  if (!value.trim()) {
+    tagExists.value[field] = false
+    tagChecking.value[field] = false
+    return
+  }
+  tagChecking.value[field] = true
+  try {
+    const result = await tagApi.checkUnique(field, value)
+    tagExists.value[field] = result.exists
+    if (result.exists) {
+      const existing = tagModalErrors.value.find(e => e.field === field)
+      if (existing) {
+        existing.message = field === 'name' ? '标签名称已存在，请使用其他名称' : '标签 Slug 已存在，请使用其他 Slug'
+      } else {
+        tagModalErrors.value.push({ field, message: field === 'name' ? '标签名称已存在，请使用其他名称' : '标签 Slug 已存在，请使用其他 Slug' })
+      }
+    } else {
+      tagModalErrors.value = tagModalErrors.value.filter(e => !(e.field === field && e.message.includes('已存在')))
+    }
+  } catch (error) {
+    console.error(`Failed to check tag ${field} uniqueness:`, error)
+  } finally {
+    tagChecking.value[field] = false
+  }
+}
+
+const handleCategoryNameInput = () => {
+  if (categoryNameCheckTimer) { clearTimeout(categoryNameCheckTimer); categoryNameCheckTimer = null }
+  categoryExists.value.name = false
+  categoryModalErrors.value = categoryModalErrors.value.filter(e => !(e.field === 'name' && e.message.includes('已存在')))
+  if (newCategory.value.name.trim()) {
+    categoryNameCheckTimer = setTimeout(() => checkCategoryUnique('name', newCategory.value.name.trim()), 500)
+  }
+}
+
+const handleCategorySlugInput = () => {
+  if (categorySlugCheckTimer) { clearTimeout(categorySlugCheckTimer); categorySlugCheckTimer = null }
+  categoryExists.value.slug = false
+  categoryModalErrors.value = categoryModalErrors.value.filter(e => !(e.field === 'slug' && e.message.includes('已存在')))
+  if (newCategory.value.slug.trim()) {
+    categorySlugCheckTimer = setTimeout(() => checkCategoryUnique('slug', newCategory.value.slug.trim()), 500)
+  }
+}
+
+const handleTagNameInput = () => {
+  if (tagNameCheckTimer) { clearTimeout(tagNameCheckTimer); tagNameCheckTimer = null }
+  tagExists.value.name = false
+  tagModalErrors.value = tagModalErrors.value.filter(e => !(e.field === 'name' && e.message.includes('已存在')))
+  if (newTag.value.name.trim()) {
+    tagNameCheckTimer = setTimeout(() => checkTagUnique('name', newTag.value.name.trim()), 500)
+  }
+}
+
+const handleTagSlugInput = () => {
+  if (tagSlugCheckTimer) { clearTimeout(tagSlugCheckTimer); tagSlugCheckTimer = null }
+  tagExists.value.slug = false
+  tagModalErrors.value = tagModalErrors.value.filter(e => !(e.field === 'slug' && e.message.includes('已存在')))
+  if (newTag.value.slug.trim()) {
+    tagSlugCheckTimer = setTimeout(() => checkTagUnique('slug', newTag.value.slug.trim()), 500)
+  }
+}
+
+const handleCreateCategory = async () => {
+  categoryModalErrors.value = []
+  
+  if (!newCategory.value.name.trim()) {
+    categoryModalErrors.value.push({ field: 'name', message: '请输入分类名称' })
+  }
+  
+  if (!newCategory.value.slug.trim()) {
+    categoryModalErrors.value.push({ field: 'slug', message: '请输入分类 Slug' })
+  }
+  
+  if (categoryChecking.value.name || categoryChecking.value.slug) {
+    await new Promise(resolve => setTimeout(resolve, 600))
+  }
+  
+  if (categoryExists.value.name) {
+    const existing = categoryModalErrors.value.find(e => e.field === 'name')
+    if (!existing) categoryModalErrors.value.push({ field: 'name', message: '分类名称已存在，请使用其他名称' })
+  }
+  if (categoryExists.value.slug) {
+    const existing = categoryModalErrors.value.find(e => e.field === 'slug')
+    if (!existing) categoryModalErrors.value.push({ field: 'slug', message: '分类 Slug 已存在，请使用其他 Slug' })
+  }
+  
+  if (categoryModalErrors.value.length > 0) return
   
   isCreatingCategory.value = true
   try {
@@ -486,17 +739,53 @@ const handleCreateCategory = async () => {
     await dialog.showSuccess('分类创建成功', '成功')
   } catch (error: any) {
     console.error('Failed to create category:', error)
-    await dialog.showError(error.response?.data?.detail || '创建分类失败', '错误')
+    const detail = error.response?.data?.detail
+    if (typeof detail === 'string') {
+      if (detail.includes('名称')) {
+        categoryModalErrors.value.push({ field: 'name', message: detail })
+      } else if (detail.toLowerCase().includes('slug')) {
+        categoryModalErrors.value.push({ field: 'slug', message: detail })
+      } else {
+        categoryModalErrors.value.push({ field: 'name', message: detail })
+      }
+    } else if (Array.isArray(detail)) {
+      detail.forEach((err: any) => {
+        const field = err.loc?.join('.') || err.field || 'name'
+        categoryModalErrors.value.push({ field, message: err.msg || '验证失败' })
+      })
+    } else {
+      categoryModalErrors.value.push({ field: 'name', message: '创建分类失败' })
+    }
   } finally {
     isCreatingCategory.value = false
   }
 }
 
 const handleCreateTag = async () => {
+  tagModalErrors.value = []
+  
   if (!newTag.value.name.trim()) {
-    await dialog.showError('请输入标签名称', '验证失败')
-    return
+    tagModalErrors.value.push({ field: 'name', message: '请输入标签名称' })
   }
+  
+  if (!newTag.value.slug.trim()) {
+    tagModalErrors.value.push({ field: 'slug', message: '请输入标签 Slug' })
+  }
+  
+  if (tagChecking.value.name || tagChecking.value.slug) {
+    await new Promise(resolve => setTimeout(resolve, 600))
+  }
+  
+  if (tagExists.value.name) {
+    const existing = tagModalErrors.value.find(e => e.field === 'name')
+    if (!existing) tagModalErrors.value.push({ field: 'name', message: '标签名称已存在，请使用其他名称' })
+  }
+  if (tagExists.value.slug) {
+    const existing = tagModalErrors.value.find(e => e.field === 'slug')
+    if (!existing) tagModalErrors.value.push({ field: 'slug', message: '标签 Slug 已存在，请使用其他 Slug' })
+  }
+  
+  if (tagModalErrors.value.length > 0) return
   
   isCreatingTag.value = true
   try {
@@ -509,7 +798,23 @@ const handleCreateTag = async () => {
     await dialog.showSuccess('标签创建成功', '成功')
   } catch (error: any) {
     console.error('Failed to create tag:', error)
-    await dialog.showError(error.response?.data?.detail || '创建标签失败', '错误')
+    const detail = error.response?.data?.detail
+    if (typeof detail === 'string') {
+      if (detail.includes('名称')) {
+        tagModalErrors.value.push({ field: 'name', message: detail })
+      } else if (detail.toLowerCase().includes('slug')) {
+        tagModalErrors.value.push({ field: 'slug', message: detail })
+      } else {
+        tagModalErrors.value.push({ field: 'name', message: detail })
+      }
+    } else if (Array.isArray(detail)) {
+      detail.forEach((err: any) => {
+        const field = err.loc?.join('.') || err.field || 'name'
+        tagModalErrors.value.push({ field, message: err.msg || '验证失败' })
+      })
+    } else {
+      tagModalErrors.value.push({ field: 'name', message: '创建标签失败' })
+    }
   } finally {
     isCreatingTag.value = false
   }
@@ -521,6 +826,7 @@ const generateCategorySlug = async () => {
   try {
     const result = await utilsApi.generateSlug(newCategory.value.name, 'category')
     newCategory.value.slug = result.slug
+    categoryModalErrors.value = categoryModalErrors.value.filter(e => e.field !== 'slug')
   } catch (error) {
     console.error('Failed to generate category slug:', error)
   }
@@ -532,6 +838,7 @@ const generateTagSlug = async () => {
   try {
     const result = await utilsApi.generateSlug(newTag.value.name, 'tag')
     newTag.value.slug = result.slug
+    tagModalErrors.value = tagModalErrors.value.filter(e => e.field !== 'slug')
   } catch (error) {
     console.error('Failed to generate tag slug:', error)
   }
@@ -893,7 +1200,8 @@ const executeFileDeletion = async () => {
   } catch (error: any) {
     console.error('Failed to delete file:', error)
     fileDeletion.cancelDeletion()
-    await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
+  } finally {
+    fileDeletionLoading.value = false
   }
 }
 
@@ -1236,6 +1544,13 @@ const openCreateModal = async () => {
     })
     if (!confirmed) {
       resetForm()
+    } else {
+      if (form.value.title.trim()) {
+        checkTitleUnique(form.value.title.trim())
+      }
+      if (form.value.slug.trim()) {
+        checkSlugUnique(form.value.slug.trim())
+      }
     }
   } else {
     resetForm()
@@ -1529,30 +1844,34 @@ watch(form, () => {
               <label
                 for="article-title"
                 class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-              >标题 <span class="text-red-500">*</span></label>
+              >标题 <span class="text-red-500">*</span>
+                <span v-if="titleChecking" class="ml-2 text-gray-400">检查中...</span>
+              </label>
               <input
                 id="article-title"
                 v-model="form.title"
                 type="text"
                 name="title"
                 class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
-                :class="hasError('title') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
+                :class="hasError('title') || titleExists ? 'border-red-500 dark:border-red-500' : titleChecking ? 'border-yellow-500 dark:border-yellow-500' : 'border-gray-200 dark:border-white/10'"
                 placeholder="请输入文章标题"
-                @input="handleTitleInput; clearValidationError('title')"
+                @input="handleTitleInput"
                 @blur="handleTitleBlur"
               >
               <p
-                v-if="hasError('title')"
+                v-if="hasError('title') || titleExists"
                 class="mt-1 text-xs text-red-500"
               >
-                {{ getErrorMessage('title') }}
+                {{ titleExists ? '文章标题已存在，请使用其他标题' : getErrorMessage('title') }}
               </p>
             </div>
             <div>
               <label
                 for="article-slug"
                 class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-              >Slug <span class="text-red-500">*</span></label>
+              >Slug <span class="text-red-500">*</span>
+                <span v-if="slugChecking" class="ml-2 text-gray-400">检查中...</span>
+              </label>
               <div class="relative">
                 <input
                   id="article-slug"
@@ -1560,9 +1879,9 @@ watch(form, () => {
                   type="text"
                   name="slug"
                   class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none pr-8"
-                  :class="hasError('slug') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
+                  :class="hasError('slug') || slugExists ? 'border-red-500 dark:border-red-500' : slugChecking ? 'border-yellow-500 dark:border-yellow-500' : 'border-gray-200 dark:border-white/10'"
                   placeholder="请输入文章 Slug"
-                  @input="handleSlugInput; clearValidationError('slug')"
+                  @input="handleSlugInput"
                 >
                 <div 
                   v-if="isGeneratingSlug" 
@@ -1590,10 +1909,10 @@ watch(form, () => {
                 </div>
               </div>
               <p
-                v-if="hasError('slug')"
+                v-if="hasError('slug') || slugExists"
                 class="mt-1 text-xs text-red-500"
               >
-                {{ getErrorMessage('slug') }}
+                {{ getErrorMessage('slug') || 'Slug 已存在，请使用其他 Slug' }}
               </p>
             </div>
           </div>
@@ -1602,15 +1921,23 @@ watch(form, () => {
             <label
               for="article-summary"
               class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-            >摘要</label>
+            >摘要 <span class="text-red-500">*</span></label>
             <textarea
               id="article-summary"
               v-model="form.summary"
               name="summary"
               rows="2"
-              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none resize-none"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none resize-none"
+              :class="hasError('summary') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
               placeholder="请输入文章摘要"
+              @input="clearValidationError('summary')"
             />
+            <p
+              v-if="hasError('summary')"
+              class="mt-1 text-xs text-red-500"
+            >
+              {{ getErrorMessage('summary') }}
+            </p>
           </div>
 
           <div id="cover-image-section">
@@ -2452,8 +2779,16 @@ watch(form, () => {
             <button
               type="submit"
               class="btn-primary text-sm px-4 py-1.5"
+              :disabled="isSubmitting"
             >
-              保存
+              <span v-if="isSubmitting" class="flex items-center gap-2">
+                <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                保存中...
+              </span>
+              <span v-else>保存</span>
             </button>
           </div>
         </form>
@@ -2496,30 +2831,50 @@ watch(form, () => {
             <label
               for="new-category-name"
               class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-            >名称</label>
+            >名称 <span class="text-red-500">*</span>
+              <span v-if="categoryChecking.name" class="ml-2 text-gray-400">检查中...</span>
+            </label>
             <input
               id="new-category-name"
               v-model="newCategory.name"
               type="text"
               name="name"
-              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              :class="categoryModalErrors.some(e => e.field === 'name') || categoryExists.name ? 'border-red-500 dark:border-red-500' : categoryChecking.name ? 'border-yellow-500 dark:border-yellow-500' : 'border-gray-200 dark:border-white/10'"
               placeholder="分类名称"
               @blur="generateCategorySlug"
+              @input="handleCategoryNameInput"
             >
+            <p
+              v-if="categoryModalErrors.some(e => e.field === 'name') || categoryExists.name"
+              class="mt-1 text-xs text-red-500"
+            >
+              {{ categoryExists.name ? '分类名称已存在，请使用其他名称' : categoryModalErrors.find(e => e.field === 'name')?.message }}
+            </p>
           </div>
           <div>
             <label
               for="new-category-slug"
               class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-            >Slug (留空自动生成)</label>
+            >Slug <span class="text-red-500">*</span> <span class="text-gray-400 font-normal">(留空自动生成)</span>
+              <span v-if="categoryChecking.slug" class="ml-2 text-gray-400">检查中...</span>
+            </label>
             <input
               id="new-category-slug"
               v-model="newCategory.slug"
               type="text"
               name="slug"
-              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              :class="categoryModalErrors.some(e => e.field === 'slug') || categoryExists.slug ? 'border-red-500 dark:border-red-500' : categoryChecking.slug ? 'border-yellow-500 dark:border-yellow-500' : 'border-gray-200 dark:border-white/10'"
               placeholder="留空自动生成"
+              @input="handleCategorySlugInput"
             >
+            <p
+              v-if="categoryModalErrors.some(e => e.field === 'slug') || categoryExists.slug"
+              class="mt-1 text-xs text-red-500"
+            >
+              {{ categoryExists.slug ? '分类 Slug 已存在，请使用其他 Slug' : categoryModalErrors.find(e => e.field === 'slug')?.message }}
+            </p>
           </div>
           <div>
             <label
@@ -2569,9 +2924,16 @@ watch(form, () => {
             <button
               type="submit"
               :disabled="isCreatingCategory"
-              class="btn-primary text-sm px-4 py-1.5 disabled:opacity-50"
+              class="btn-primary text-sm px-4 py-1.5"
             >
-              {{ isCreatingCategory ? '创建中...' : '创建' }}
+              <span v-if="isCreatingCategory" class="flex items-center gap-2">
+                <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                创建中...
+              </span>
+              <span v-else>创建</span>
             </button>
           </div>
         </form>
@@ -2614,30 +2976,50 @@ watch(form, () => {
             <label
               for="new-tag-name"
               class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-            >名称</label>
+            >名称 <span class="text-red-500">*</span>
+              <span v-if="tagChecking.name" class="ml-2 text-gray-400">检查中...</span>
+            </label>
             <input
               id="new-tag-name"
               v-model="newTag.name"
               type="text"
               name="name"
-              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              :class="tagModalErrors.some(e => e.field === 'name') || tagExists.name ? 'border-red-500 dark:border-red-500' : tagChecking.name ? 'border-yellow-500 dark:border-yellow-500' : 'border-gray-200 dark:border-white/10'"
               placeholder="标签名称"
               @blur="generateTagSlug"
+              @input="handleTagNameInput"
             >
+            <p
+              v-if="tagModalErrors.some(e => e.field === 'name') || tagExists.name"
+              class="mt-1 text-xs text-red-500"
+            >
+              {{ tagExists.name ? '标签名称已存在，请使用其他名称' : tagModalErrors.find(e => e.field === 'name')?.message }}
+            </p>
           </div>
           <div>
             <label
               for="new-tag-slug"
               class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-            >Slug (留空自动生成)</label>
+            >Slug <span class="text-red-500">*</span> <span class="text-gray-400 font-normal">(留空自动生成)</span>
+              <span v-if="tagChecking.slug" class="ml-2 text-gray-400">检查中...</span>
+            </label>
             <input
               id="new-tag-slug"
               v-model="newTag.slug"
               type="text"
               name="slug"
-              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              :class="tagModalErrors.some(e => e.field === 'slug') || tagExists.slug ? 'border-red-500 dark:border-red-500' : tagChecking.slug ? 'border-yellow-500 dark:border-yellow-500' : 'border-gray-200 dark:border-white/10'"
               placeholder="留空自动生成"
+              @input="handleTagSlugInput"
             >
+            <p
+              v-if="tagModalErrors.some(e => e.field === 'slug') || tagExists.slug"
+              class="mt-1 text-xs text-red-500"
+            >
+              {{ tagExists.slug ? '标签 Slug 已存在，请使用其他 Slug' : tagModalErrors.find(e => e.field === 'slug')?.message }}
+            </p>
           </div>
           <div>
             <label
@@ -2673,9 +3055,16 @@ watch(form, () => {
             <button
               type="submit"
               :disabled="isCreatingTag"
-              class="btn-primary text-sm px-4 py-1.5 disabled:opacity-50"
+              class="btn-primary text-sm px-4 py-1.5"
             >
-              {{ isCreatingTag ? '创建中...' : '创建' }}
+              <span v-if="isCreatingTag" class="flex items-center gap-2">
+                <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                创建中...
+              </span>
+              <span v-else>创建</span>
             </button>
           </div>
         </form>

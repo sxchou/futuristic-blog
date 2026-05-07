@@ -1,6 +1,7 @@
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks, Query
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from datetime import timedelta
 import random
 import string
@@ -17,6 +18,29 @@ from app.services.permission_service import PermissionService
 from app.utils.timezone import get_db_now
 
 router = APIRouter(prefix="/users", tags=["Users"])
+
+
+@router.get("/check-unique")
+async def check_unique(
+    field: str = Query(..., description="Field to check: 'username' or 'email'"),
+    value: str = Query(..., description="Value to check"),
+    exclude_id: Optional[int] = Query(None, description="User ID to exclude (for updates)"),
+    db: Session = Depends(get_db)
+):
+    if field not in ["username", "email"]:
+        raise HTTPException(status_code=400, detail="Invalid field. Must be 'username' or 'email'")
+    
+    query = db.query(User)
+    if field == "username":
+        query = query.filter(User.username == value)
+    else:
+        query = query.filter(User.email == value)
+    
+    if exclude_id:
+        query = query.filter(User.id != exclude_id)
+    
+    exists = query.first() is not None
+    return {"exists": exists, "field": field, "value": value}
 
 
 @router.get("", response_model=PaginatedResponse)
@@ -103,9 +127,20 @@ async def create_user(
         hashed_password=get_password_hash(user_data.password),
         is_verified=True
     )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
+    
+    try:
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    except IntegrityError as e:
+        db.rollback()
+        error_msg = str(e.orig) if hasattr(e, 'orig') else str(e)
+        if 'username' in error_msg.lower():
+            raise HTTPException(status_code=400, detail="用户名已存在")
+        elif 'email' in error_msg.lower():
+            raise HTTPException(status_code=400, detail="邮箱已存在")
+        else:
+            raise HTTPException(status_code=400, detail="数据保存失败，请检查输入内容")
     
     profile = UserProfile(user_id=user.id)
     db.add(profile)
@@ -199,8 +234,18 @@ async def update_user(
     if user_data.bio is not None:
         user.bio = user_data.bio
     
-    db.commit()
-    db.refresh(user)
+    try:
+        db.commit()
+        db.refresh(user)
+    except IntegrityError as e:
+        db.rollback()
+        error_msg = str(e.orig) if hasattr(e, 'orig') else str(e)
+        if 'username' in error_msg.lower():
+            raise HTTPException(status_code=400, detail="用户名已存在")
+        elif 'email' in error_msg.lower():
+            raise HTTPException(status_code=400, detail="邮箱已存在")
+        else:
+            raise HTTPException(status_code=400, detail="数据保存失败，请检查输入内容")
     
     LogService.log_operation(
         db=db,
@@ -333,6 +378,9 @@ async def reset_user_password(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("user.reset_password"))
 ):
+    if len(new_password) < 6:
+        raise HTTPException(status_code=400, detail="密码长度至少需要6个字符")
+    
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")

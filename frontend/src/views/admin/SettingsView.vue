@@ -315,44 +315,17 @@ const handleLogoReset = () => {
           <button
             type="button"
             :disabled="isSaving"
-            :class="['inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg transition-all shadow-lg shadow-primary/25', canEdit ? 'bg-primary text-white hover:bg-primary/90' : 'bg-primary/50 text-white/70 cursor-not-allowed']"
+            :class="['btn-primary text-sm px-4 py-1.5', canEdit && !isSaving ? '' : 'opacity-50 cursor-not-allowed']"
             @click="canEdit ? handleSave() : warnReadonly('保存系统设置')"
           >
-            <svg
-              v-if="isSaving"
-              class="w-4 h-4 animate-spin"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                class="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                stroke-width="4"
-              />
-              <path
-                class="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
-            <svg
-              v-else
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-            {{ isSaving ? '保存中...' : '保存设置' }}
+            <span v-if="isSaving" class="flex items-center gap-2">
+              <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              保存中...
+            </span>
+            <span v-else>保存设置</span>
           </button>
         </div>
       </div>

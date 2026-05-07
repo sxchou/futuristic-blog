@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { resourceApi, resourceCategoryApi } from '@/api'
+import { resourceApi } from '@/api'
 import { isCancelError } from '@/utils/error'
 import { dataPrefetch } from '@/utils/prefetch'
 import type { Resource } from '@/types'
-import type { ResourceCategory } from '@/api/resourceCategories'
+import type { ResourceCategory } from '@/api/resources'
 import BlogSidebar from '@/components/common/BlogSidebar.vue'
 import LeftSidebar from '@/components/common/LeftSidebar.vue'
 
@@ -33,7 +33,7 @@ const fetchCategories = async (force = false) => {
   }
   
   try {
-    const data = await resourceCategoryApi.getCategories()
+    const data = await resourceApi.getCategories()
     categories.value = data
     categoriesCache = { data, timestamp: Date.now() }
     dataPrefetch.set('categories', data)
@@ -125,7 +125,7 @@ const groupedResources = computed(() => {
   return groups
 })
 
-const activeCategories = computed(() => categories.value.filter(c => c.is_active))
+const activeCategories = computed(() => categories.value)
 
 onMounted(async () => {
   await Promise.all([fetchCategories(), fetchResources()])

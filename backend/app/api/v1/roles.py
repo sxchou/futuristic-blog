@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from sqlalchemy.exc import IntegrityError
 from app.core.database import get_db
 from app.utils import get_current_user
 from app.utils.permissions import require_permission, require_super_admin as require_super_admin_dep
@@ -15,6 +16,29 @@ from app.services.log_service import LogService
 import json
 
 router = APIRouter(prefix="/roles", tags=["roles"])
+
+
+@router.get("/check-unique")
+async def check_unique(
+    field: str = Query(..., description="Field to check: 'name' or 'code'"),
+    value: str = Query(..., description="Value to check"),
+    exclude_id: Optional[int] = Query(None, description="Role ID to exclude (for updates)"),
+    db: Session = Depends(get_db)
+):
+    if field not in ["name", "code"]:
+        raise HTTPException(status_code=400, detail="Invalid field. Must be 'name' or 'code'")
+    
+    query = db.query(Role)
+    if field == "name":
+        query = query.filter(Role.name == value)
+    else:
+        query = query.filter(Role.code == value)
+    
+    if exclude_id:
+        query = query.filter(Role.id != exclude_id)
+    
+    exists = query.first() is not None
+    return {"exists": exists, "field": field, "value": value}
 
 
 def get_client_ip(request: Request) -> Optional[str]:
@@ -142,8 +166,18 @@ async def create_role(
                     )
                 )
     
-    db.commit()
-    db.refresh(role)
+    try:
+        db.commit()
+        db.refresh(role)
+    except IntegrityError as e:
+        db.rollback()
+        error_msg = str(e.orig) if hasattr(e, 'orig') else str(e)
+        if 'name' in error_msg.lower() or 'uq_role' in error_msg.lower():
+            raise HTTPException(status_code=400, detail="角色名称已存在，请使用其他名称")
+        elif 'code' in error_msg.lower():
+            raise HTTPException(status_code=400, detail="角色代码已存在，请使用其他代码")
+        else:
+            raise HTTPException(status_code=400, detail="数据保存失败，请检查输入内容")
     
     PermissionService.log_permission_change(
         db=db,
@@ -359,8 +393,18 @@ async def update_role(
                     )
                 )
     
-    db.commit()
-    db.refresh(role)
+    try:
+        db.commit()
+        db.refresh(role)
+    except IntegrityError as e:
+        db.rollback()
+        error_msg = str(e.orig) if hasattr(e, 'orig') else str(e)
+        if 'name' in error_msg.lower() or 'uq_role' in error_msg.lower():
+            raise HTTPException(status_code=400, detail="角色名称已存在，请使用其他名称")
+        elif 'code' in error_msg.lower():
+            raise HTTPException(status_code=400, detail="角色代码已存在，请使用其他代码")
+        else:
+            raise HTTPException(status_code=400, detail="数据保存失败，请检查输入内容")
     
     new_perms = db.execute(
         role_permissions.select().where(

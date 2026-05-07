@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick, watch } from 'vue'
 import { tagApi, utilsApi } from '@/api'
 import type { Tag } from '@/types'
 import { useDialogStore, useBlogStore } from '@/stores'
@@ -13,10 +13,65 @@ const { requirePermission } = useAdminCheck()
 const deletion = useDeletionConfirm()
 
 const isLoading = ref(false)
+const isSubmitting = ref(false)
 const showEditor = ref(false)
 const editingTag = ref<Tag | null>(null)
 const isGeneratingSlug = ref(false)
 const slugManuallyEdited = ref(false)
+
+const nameChecking = ref(false)
+const slugChecking = ref(false)
+const nameExists = ref(false)
+const slugExists = ref(false)
+
+let nameCheckTimer: ReturnType<typeof setTimeout> | null = null
+let slugCheckTimer: ReturnType<typeof setTimeout> | null = null
+
+const checkNameUnique = async (name: string) => {
+  if (!name.trim()) {
+    nameExists.value = false
+    return
+  }
+  
+  nameChecking.value = true
+  try {
+    const result = await tagApi.checkUnique('name', name, editingTag.value?.id)
+    nameExists.value = result.exists
+    if (result.exists) {
+      validationErrors.value = validationErrors.value.filter(e => e.field !== 'name')
+      validationErrors.value.push({ field: 'name', message: '标签名称已存在，请使用其他名称' })
+    } else {
+      validationErrors.value = validationErrors.value.filter(e => e.field !== 'name')
+    }
+  } catch (error) {
+    console.error('Failed to check name uniqueness:', error)
+  } finally {
+    nameChecking.value = false
+  }
+}
+
+const checkSlugUnique = async (slug: string) => {
+  if (!slug.trim()) {
+    slugExists.value = false
+    return
+  }
+  
+  slugChecking.value = true
+  try {
+    const result = await tagApi.checkUnique('slug', slug, editingTag.value?.id)
+    slugExists.value = result.exists
+    if (result.exists) {
+      validationErrors.value = validationErrors.value.filter(e => e.field !== 'slug')
+      validationErrors.value.push({ field: 'slug', message: '标签 Slug 已存在，请使用其他 Slug' })
+    } else {
+      validationErrors.value = validationErrors.value.filter(e => e.field !== 'slug')
+    }
+  } catch (error) {
+    console.error('Failed to check slug uniqueness:', error)
+  } finally {
+    slugChecking.value = false
+  }
+}
 
 const form = ref({
   name: '',
@@ -44,6 +99,11 @@ const handleEdit = async (tag: Tag) => {
     color: tag.color
   }
   slugManuallyEdited.value = true
+  nameExists.value = false
+  slugExists.value = false
+  nameChecking.value = false
+  slugChecking.value = false
+  validationErrors.value = []
   showEditor.value = true
 }
 
@@ -65,7 +125,8 @@ const executeDeletion = async () => {
   } catch (error: any) {
     console.error('Failed to delete tag:', error)
     deletion.cancelDeletion()
-    await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
+  } finally {
+    deletionLoading.value = false
   }
 }
 
@@ -77,10 +138,32 @@ const handleSubmit = async () => {
   
   if (!form.value.name.trim()) {
     validationErrors.value.push({ field: 'name', message: '请输入标签名称' })
-    await scrollToField('tag-name')
+  }
+  
+  if (!form.value.slug.trim()) {
+    validationErrors.value.push({ field: 'slug', message: '请输入标签 Slug' })
+  }
+  
+  if (nameChecking.value || slugChecking.value) {
+    await new Promise(resolve => setTimeout(resolve, 600))
+  }
+  
+  if (nameExists.value) {
+    validationErrors.value.push({ field: 'name', message: '标签名称已存在，请使用其他名称' })
+  }
+  
+  if (slugExists.value) {
+    validationErrors.value.push({ field: 'slug', message: '标签 Slug 已存在，请使用其他 Slug' })
+  }
+  
+  if (validationErrors.value.length > 0) {
+    const firstError = validationErrors.value[0]
+    const fieldIdMap: Record<string, string> = { name: 'tag-name', slug: 'tag-slug' }
+    await scrollToField(fieldIdMap[firstError.field] || firstError.field)
     return
   }
   
+  isSubmitting.value = true
   try {
     const isEditing = !!editingTag.value
     let savedTag: Tag
@@ -96,7 +179,25 @@ const handleSubmit = async () => {
     await dialog.showSuccess(isEditing ? '标签已更新' : '标签已创建', '成功')
   } catch (error: any) {
     console.error('Failed to save tag:', error)
-    await dialog.showError(error.response?.data?.detail || '保存失败', '错误')
+    const detail = error.response?.data?.detail
+    if (typeof detail === 'string') {
+      if (detail.includes('名称')) {
+        validationErrors.value.push({ field: 'name', message: detail })
+      } else if (detail.toLowerCase().includes('slug')) {
+        validationErrors.value.push({ field: 'slug', message: detail })
+      } else {
+        await dialog.showError(detail, '错误')
+      }
+    } else if (Array.isArray(detail)) {
+      detail.forEach((err: any) => {
+        const field = err.loc?.join('.') || err.field || 'name'
+        validationErrors.value.push({ field, message: err.msg || '验证失败' })
+      })
+    } else {
+      await dialog.showError('保存标签失败', '错误')
+    }
+  } finally {
+    isSubmitting.value = false
   }
 }
 
@@ -108,6 +209,18 @@ const resetForm = () => {
   }
   slugManuallyEdited.value = false
   validationErrors.value = []
+  nameChecking.value = false
+  slugChecking.value = false
+  nameExists.value = false
+  slugExists.value = false
+  if (nameCheckTimer) {
+    clearTimeout(nameCheckTimer)
+    nameCheckTimer = null
+  }
+  if (slugCheckTimer) {
+    clearTimeout(slugCheckTimer)
+    slugCheckTimer = null
+  }
 }
 
 const generateSlug = async () => {
@@ -117,6 +230,7 @@ const generateSlug = async () => {
   try {
     const result = await utilsApi.generateSlug(form.value.name, 'tag', editingTag.value?.id)
     form.value.slug = result.slug
+    validationErrors.value = validationErrors.value.filter(e => e.field !== 'slug')
   } catch (error) {
     console.error('Failed to generate slug:', error)
     form.value.slug = form.value.name
@@ -134,6 +248,7 @@ const handleSlugInput = () => {
   } else {
     slugManuallyEdited.value = true
   }
+  validationErrors.value = validationErrors.value.filter(e => e.field !== 'slug')
 }
 
 const handleNameBlur = () => {
@@ -146,6 +261,7 @@ const handleNameInput = () => {
   if (!form.value.slug || form.value.slug.trim() === '') {
     slugManuallyEdited.value = false
   }
+  validationErrors.value = validationErrors.value.filter(e => e.field !== 'name')
 }
 
 const openCreateModal = async () => {
@@ -182,9 +298,33 @@ const getErrorMessage = (field: string): string => {
   return error?.message || ''
 }
 
-const clearValidationError = (field: string) => {
-  validationErrors.value = validationErrors.value.filter(e => e.field !== field)
-}
+watch(() => form.value.name, (newName) => {
+  if (nameCheckTimer) {
+    clearTimeout(nameCheckTimer)
+  }
+  nameExists.value = false
+  validationErrors.value = validationErrors.value.filter(e => e.field !== 'name')
+  
+  if (newName.trim()) {
+    nameCheckTimer = setTimeout(() => {
+      checkNameUnique(newName)
+    }, 500)
+  }
+})
+
+watch(() => form.value.slug, (newSlug) => {
+  if (slugCheckTimer) {
+    clearTimeout(slugCheckTimer)
+  }
+  slugExists.value = false
+  validationErrors.value = validationErrors.value.filter(e => e.field !== 'slug')
+  
+  if (newSlug.trim()) {
+    slugCheckTimer = setTimeout(() => {
+      checkSlugUnique(newSlug)
+    }, 500)
+  }
+})
 </script>
 
 <template>
@@ -302,7 +442,9 @@ const clearValidationError = (field: string) => {
             <label
               for="tag-name"
               class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-            >名称 <span class="text-red-500">*</span></label>
+            >名称 <span class="text-red-500">*</span>
+              <span v-if="nameChecking" class="ml-2 text-gray-400">检查中...</span>
+            </label>
             <input
               id="tag-name"
               v-model="form.name"
@@ -310,16 +452,16 @@ const clearValidationError = (field: string) => {
               name="name"
               autocomplete="off"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
-              :class="hasError('name') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
+              :class="hasError('name') || nameExists ? 'border-red-500 dark:border-red-500' : nameChecking ? 'border-yellow-500 dark:border-yellow-500' : 'border-gray-200 dark:border-white/10'"
               placeholder="标签名称"
-              @input="handleNameInput; clearValidationError('name')"
+              @input="handleNameInput"
               @blur="handleNameBlur"
             >
             <p
-              v-if="hasError('name')"
+              v-if="hasError('name') || nameExists"
               class="mt-1 text-xs text-red-500"
             >
-              {{ getErrorMessage('name') }}
+              {{ nameExists ? '标签名称已存在，请使用其他名称' : getErrorMessage('name') }}
             </p>
           </div>
 
@@ -327,7 +469,9 @@ const clearValidationError = (field: string) => {
             <label
               for="tag-slug"
               class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-            >Slug (留空自动生成)</label>
+            >Slug <span class="text-red-500">*</span> <span class="text-gray-400 font-normal">(留空自动生成)</span>
+              <span v-if="slugChecking" class="ml-2 text-gray-400">检查中...</span>
+            </label>
             <div class="relative">
               <input
                 id="tag-slug"
@@ -335,7 +479,8 @@ const clearValidationError = (field: string) => {
                 type="text"
                 name="slug"
                 autocomplete="off"
-                class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none pr-8"
+                class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none pr-8"
+                :class="hasError('slug') || slugExists ? 'border-red-500 dark:border-red-500' : slugChecking ? 'border-yellow-500 dark:border-yellow-500' : 'border-gray-200 dark:border-white/10'"
                 placeholder="留空自动生成"
                 @input="handleSlugInput"
               >
@@ -364,6 +509,12 @@ const clearValidationError = (field: string) => {
                 </svg>
               </div>
             </div>
+            <p
+              v-if="hasError('slug') || slugExists"
+              class="mt-1 text-xs text-red-500"
+            >
+              {{ slugExists ? '标签 Slug 已存在，请使用其他 Slug' : getErrorMessage('slug') }}
+            </p>
           </div>
 
           <div>
@@ -403,8 +554,16 @@ const clearValidationError = (field: string) => {
             <button
               type="submit"
               class="btn-primary text-sm px-4 py-1.5"
+              :disabled="isSubmitting"
             >
-              保存
+              <span v-if="isSubmitting" class="flex items-center gap-2">
+                <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                保存中...
+              </span>
+              <span v-else>保存</span>
             </button>
           </div>
         </form>

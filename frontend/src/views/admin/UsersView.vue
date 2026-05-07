@@ -24,14 +24,18 @@ const totalPages = ref(1)
 const pageSize = 10
 
 const showEditor = ref(false)
+const isSubmitting = ref(false)
 const editingUser = ref<User | null>(null)
 const showPasswordModal = ref(false)
+const isResetting = ref(false)
 const newPassword = ref('')
+const passwordError = ref('')
 
 const showRoleModal = ref(false)
 const roleAssignUser = ref<User | null>(null)
 const allRoles = ref<Role[]>([])
 const selectedRoleIds = ref<number[]>([])
+const roleError = ref('')
 
 const form = ref({
   username: '',
@@ -46,6 +50,88 @@ const createForm = ref({
   email: '',
   password: '',
   roleIds: [] as number[]
+})
+
+const usernameChecking = ref(false)
+const emailChecking = ref(false)
+const usernameExists = ref(false)
+const emailExists = ref(false)
+
+let usernameCheckTimer: ReturnType<typeof setTimeout> | null = null
+let emailCheckTimer: ReturnType<typeof setTimeout> | null = null
+
+const checkUsernameUnique = async (username: string) => {
+  if (!username.trim()) {
+    usernameExists.value = false
+    return
+  }
+  
+  usernameChecking.value = true
+  try {
+    const result = await userApi.checkUnique('username', username)
+    usernameExists.value = result.exists
+    if (result.exists) {
+      createErrors.value = createErrors.value.filter(e => e.field !== 'username')
+      createErrors.value.push({ field: 'username', message: '用户名已存在' })
+    } else {
+      createErrors.value = createErrors.value.filter(e => e.field !== 'username')
+    }
+  } catch (error) {
+    console.error('Failed to check username uniqueness:', error)
+  } finally {
+    usernameChecking.value = false
+  }
+}
+
+const checkEmailUnique = async (email: string) => {
+  if (!email.trim()) {
+    emailExists.value = false
+    return
+  }
+  
+  emailChecking.value = true
+  try {
+    const result = await userApi.checkUnique('email', email)
+    emailExists.value = result.exists
+    if (result.exists) {
+      createErrors.value = createErrors.value.filter(e => e.field !== 'email')
+      createErrors.value.push({ field: 'email', message: '邮箱已存在' })
+    } else {
+      createErrors.value = createErrors.value.filter(e => e.field !== 'email')
+    }
+  } catch (error) {
+    console.error('Failed to check email uniqueness:', error)
+  } finally {
+    emailChecking.value = false
+  }
+}
+
+watch(() => createForm.value.username, (newUsername) => {
+  if (usernameCheckTimer) {
+    clearTimeout(usernameCheckTimer)
+  }
+  usernameExists.value = false
+  createErrors.value = createErrors.value.filter(e => e.field !== 'username')
+  
+  if (newUsername.trim()) {
+    usernameCheckTimer = setTimeout(() => {
+      checkUsernameUnique(newUsername)
+    }, 500)
+  }
+})
+
+watch(() => createForm.value.email, (newEmail) => {
+  if (emailCheckTimer) {
+    clearTimeout(emailCheckTimer)
+  }
+  emailExists.value = false
+  createErrors.value = createErrors.value.filter(e => e.field !== 'email')
+  
+  if (newEmail.trim()) {
+    emailCheckTimer = setTimeout(() => {
+      checkEmailUnique(newEmail)
+    }, 500)
+  }
 })
 
 const fetchUsers = async () => {
@@ -69,6 +155,7 @@ const handleEdit = async (user: User) => {
     email: user.email,
     bio: user.bio || ''
   }
+  editErrors.value = []
   showEditor.value = true
 }
 
@@ -80,6 +167,11 @@ const handleCreate = async () => {
     password: '',
     roleIds: []
   }
+  usernameExists.value = false
+  emailExists.value = false
+  usernameChecking.value = false
+  emailChecking.value = false
+  createErrors.value = []
   showCreateModal.value = true
 }
 
@@ -92,44 +184,52 @@ const handleCreateSubmit = async () => {
   
   if (!createForm.value.username) {
     createErrors.value.push({ field: 'username', message: '请输入用户名' })
-    await scrollToField('create-username')
-    return
-  }
-  
-  if (createForm.value.username.length < 3) {
+  } else if (createForm.value.username.length < 3) {
     createErrors.value.push({ field: 'username', message: '用户名长度至少需要3个字符' })
-    await scrollToField('create-username')
-    return
   }
   
   if (!createForm.value.email) {
     createErrors.value.push({ field: 'email', message: '请输入邮箱地址' })
-    await scrollToField('create-email')
-    return
-  }
-  
-  const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
-  if (!emailPattern.test(createForm.value.email)) {
-    createErrors.value.push({ field: 'email', message: '请输入正确的邮箱格式' })
-    await scrollToField('create-email')
-    return
+  } else {
+    const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+    if (!emailPattern.test(createForm.value.email)) {
+      createErrors.value.push({ field: 'email', message: '请输入正确的邮箱格式' })
+    }
   }
   
   if (!createForm.value.password) {
     createErrors.value.push({ field: 'password', message: '请输入密码' })
-    await scrollToField('create-password')
-    return
-  }
-  
-  if (createForm.value.password.length < 6) {
+  } else if (createForm.value.password.length < 6) {
     createErrors.value.push({ field: 'password', message: '密码长度至少需要6个字符' })
-    await scrollToField('create-password')
-    return
   }
   
   if (createForm.value.roleIds.length === 0) {
     createErrors.value.push({ field: 'roleIds', message: '请至少选择一个角色' })
-    await scrollToField('create-roles')
+  }
+  
+  if (usernameChecking.value || emailChecking.value) {
+    await new Promise(resolve => setTimeout(resolve, 600))
+  }
+  
+  if (usernameExists.value) {
+    const existing = createErrors.value.find(e => e.field === 'username')
+    if (!existing) createErrors.value.push({ field: 'username', message: '用户名已存在，请使用其他用户名' })
+  }
+  
+  if (emailExists.value) {
+    const existing = createErrors.value.find(e => e.field === 'email')
+    if (!existing) createErrors.value.push({ field: 'email', message: '邮箱已存在，请使用其他邮箱' })
+  }
+  
+  if (createErrors.value.length > 0) {
+    const firstError = createErrors.value[0]
+    const fieldIdMap: Record<string, string> = {
+      username: 'create-username',
+      email: 'create-email',
+      password: 'create-password',
+      roleIds: 'create-roles'
+    }
+    await scrollToField(fieldIdMap[firstError.field] || firstError.field)
     return
   }
   
@@ -146,33 +246,6 @@ const handleCreateSubmit = async () => {
     await dialog.showSuccess('用户创建成功', '成功')
   } catch (error: any) {
     console.error('Failed to create user:', error)
-    const detail = error.response?.data?.detail || '创建失败'
-    
-    if (detail.includes('用户名已存在')) {
-      await dialog.showError({
-        title: '用户名已被使用',
-        message: '该用户名已被注册，请更换一个用户名',
-        type: 'error'
-      })
-    } else if (detail.includes('邮箱已存在')) {
-      await dialog.showError({
-        title: '邮箱已被使用',
-        message: '该邮箱已被注册，请使用其他邮箱地址',
-        type: 'error'
-      })
-    } else if (detail.includes('角色不存在')) {
-      await dialog.showError({
-        title: '角色选择无效',
-        message: '所选角色不存在或已被删除，请刷新页面后重试',
-        type: 'error'
-      })
-    } else {
-      await dialog.showError({
-        title: '创建用户失败',
-        message: detail,
-        type: 'error'
-      })
-    }
   } finally {
     isCreating.value = false
   }
@@ -213,7 +286,8 @@ const executeDeletion = async () => {
   } catch (error: any) {
     console.error('Failed to delete user:', error)
     deletion.cancelDeletion()
-    await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
+  } finally {
+    deletionLoading.value = false
   }
 }
 
@@ -222,6 +296,31 @@ const deletionLoading = ref(false)
 const handleSubmit = async () => {
   if (!await requirePermission('user.edit', '保存用户信息')) return
   
+  editErrors.value = []
+  
+  if (!form.value.username.trim()) {
+    editErrors.value.push({ field: 'username', message: '请输入用户名' })
+  } else if (form.value.username.trim().length < 3) {
+    editErrors.value.push({ field: 'username', message: '用户名长度至少需要3个字符' })
+  }
+  
+  if (!form.value.email.trim()) {
+    editErrors.value.push({ field: 'email', message: '请输入邮箱地址' })
+  } else {
+    const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+    if (!emailPattern.test(form.value.email)) {
+      editErrors.value.push({ field: 'email', message: '请输入正确的邮箱格式' })
+    }
+  }
+  
+  if (editErrors.value.length > 0) {
+    const firstError = editErrors.value[0]
+    const fieldIdMap: Record<string, string> = { username: 'user-username', email: 'user-email' }
+    await scrollToField(fieldIdMap[firstError.field] || firstError.field)
+    return
+  }
+  
+  isSubmitting.value = true
   try {
     if (editingUser.value) {
       await userApi.updateUser(editingUser.value.id, form.value)
@@ -233,6 +332,8 @@ const handleSubmit = async () => {
   } catch (error: any) {
     console.error('Failed to save user:', error)
     await dialog.showError(error.response?.data?.detail || '保存失败', '错误')
+  } finally {
+    isSubmitting.value = false
   }
 }
 
@@ -248,14 +349,17 @@ const openRoleModal = async (user: User) => {
   if (!await requirePermission('role.assign', '分配角色')) return
   roleAssignUser.value = user
   selectedRoleIds.value = user.roles?.map(r => r.id) || []
+  roleError.value = ''
   showRoleModal.value = true
 }
 
 const handleRoleAssign = async () => {
   if (!roleAssignUser.value) return
   
+  roleError.value = ''
+  
   if (selectedRoleIds.value.length === 0) {
-    await dialog.showError('请至少选择一个角色', '提示')
+    roleError.value = '请至少选择一个角色'
     return
   }
   
@@ -289,6 +393,7 @@ const handleRoleAssign = async () => {
 }
 
 const toggleRole = (roleId: number) => {
+  roleError.value = ''
   const index = selectedRoleIds.value.indexOf(roleId)
   if (index === -1) {
     selectedRoleIds.value.push(roleId)
@@ -297,10 +402,35 @@ const toggleRole = (roleId: number) => {
   }
 }
 
+const getRoleGradient = (code: string) => {
+  const gradients: Record<string, string> = {
+    super_admin: 'from-amber-500 to-orange-600',
+    admin: 'from-blue-500 to-indigo-600',
+    editor: 'from-purple-500 to-pink-600',
+    author: 'from-green-500 to-teal-600',
+    guest: 'from-gray-500 to-slate-600'
+  }
+  return gradients[code] || 'from-primary to-blue-600'
+}
+
 const handleResetPassword = async () => {
   if (!await requirePermission('user.reset_password', '重置用户密码')) return
-  if (!editingUser.value || !newPassword.value) return
   
+  passwordError.value = ''
+  
+  if (!newPassword.value) {
+    passwordError.value = '请输入新密码'
+    return
+  }
+  
+  if (newPassword.value.length < 6) {
+    passwordError.value = '密码长度至少需要6个字符'
+    return
+  }
+  
+  if (!editingUser.value) return
+  
+  isResetting.value = true
   try {
     await userApi.resetPassword(editingUser.value.id, newPassword.value)
     showPasswordModal.value = false
@@ -309,6 +439,8 @@ const handleResetPassword = async () => {
   } catch (error: any) {
     console.error('Failed to reset password:', error)
     await dialog.showError(error.response?.data?.detail || '密码重置失败', '错误')
+  } finally {
+    isResetting.value = false
   }
 }
 
@@ -316,6 +448,7 @@ const openPasswordModal = async (user: User) => {
   if (!await requirePermission('user.reset_password', '重置用户密码')) return
   editingUser.value = user
   newPassword.value = ''
+  passwordError.value = ''
   showPasswordModal.value = true
 }
 
@@ -380,6 +513,7 @@ interface ValidationError {
 }
 
 const createErrors = ref<ValidationError[]>([])
+const editErrors = ref<ValidationError[]>([])
 
 const scrollToField = async (fieldId: string) => {
   await nextTick()
@@ -401,6 +535,19 @@ const getCreateErrorMessage = (field: string): string => {
 
 const clearCreateError = (field: string) => {
   createErrors.value = createErrors.value.filter(e => e.field !== field)
+}
+
+const hasEditError = (field: string): boolean => {
+  return editErrors.value.some(e => e.field === field)
+}
+
+const getEditErrorMessage = (field: string): string => {
+  const error = editErrors.value.find(e => e.field === field)
+  return error?.message || ''
+}
+
+const clearEditError = (field: string) => {
+  editErrors.value = editErrors.value.filter(e => e.field !== field)
 }
 </script>
 
@@ -428,7 +575,7 @@ const clearCreateError = (field: string) => {
         </h1>
       </div>
       <button
-        class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm"
+        class="btn-primary text-sm px-4 py-1.5 flex items-center gap-2"
         @click="handleCreate"
       >
         <svg
@@ -644,32 +791,36 @@ const clearCreateError = (field: string) => {
             <label
               for="user-username"
               class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-            >用户名</label>
+            >用户名 <span class="text-red-500">*</span></label>
             <input
               id="user-username"
               v-model="form.username"
               type="text"
               name="username"
               autocomplete="username"
-              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              :class="['w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none', hasEditError('username') ? 'border-red-300 dark:border-red-500' : 'border-gray-200 dark:border-white/10']"
               placeholder="用户名"
+              @input="clearEditError('username')"
             >
+            <p v-if="hasEditError('username')" class="mt-1 text-xs text-red-500">{{ getEditErrorMessage('username') }}</p>
           </div>
 
           <div>
             <label
               for="user-email"
               class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-            >邮箱</label>
+            >邮箱 <span class="text-red-500">*</span></label>
             <input
               id="user-email"
               v-model="form.email"
               type="email"
               name="email"
               autocomplete="email"
-              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
+              :class="['w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none', hasEditError('email') ? 'border-red-300 dark:border-red-500' : 'border-gray-200 dark:border-white/10']"
               placeholder="邮箱地址"
+              @input="clearEditError('email')"
             >
+            <p v-if="hasEditError('email')" class="mt-1 text-xs text-red-500">{{ getEditErrorMessage('email') }}</p>
           </div>
 
           <div>
@@ -698,8 +849,16 @@ const clearCreateError = (field: string) => {
             <button
               type="submit"
               class="btn-primary text-sm px-4 py-1.5"
+              :disabled="isSubmitting"
             >
-              保存
+              <span v-if="isSubmitting" class="flex items-center gap-2">
+                <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                保存中...
+              </span>
+              <span v-else>保存</span>
             </button>
           </div>
         </form>
@@ -787,16 +946,18 @@ const clearCreateError = (field: string) => {
             <label
               for="user-new-password"
               class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-            >新密码</label>
+            >新密码 <span class="text-red-500">*</span></label>
             <input
               id="user-new-password"
               v-model="newPassword"
               type="password"
               name="new-password"
               autocomplete="new-password"
-              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
-              placeholder="请输入新密码"
+              :class="['w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none', passwordError ? 'border-red-300 dark:border-red-500' : 'border-gray-200 dark:border-white/10']"
+              placeholder="请输入新密码（至少6位）"
+              @input="passwordError = ''"
             >
+            <p v-if="passwordError" class="mt-1 text-xs text-red-500">{{ passwordError }}</p>
           </div>
 
           <div class="flex justify-end gap-3 pt-2">
@@ -810,8 +971,16 @@ const clearCreateError = (field: string) => {
             <button
               type="submit"
               class="btn-primary text-sm px-4 py-1.5"
+              :disabled="isResetting"
             >
-              确认重置
+              <span v-if="isResetting" class="flex items-center gap-2">
+                <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                重置中...
+              </span>
+              <span v-else>确认重置</span>
             </button>
           </div>
         </form>
@@ -872,6 +1041,12 @@ const clearCreateError = (field: string) => {
         </div>
 
         <div class="space-y-2 max-h-60 overflow-y-auto">
+          <p
+            v-if="roleError"
+            class="text-xs text-red-500 mb-2"
+          >
+            {{ roleError }}
+          </p>
           <label
             v-for="role in allRoles"
             :key="role.id"
@@ -963,7 +1138,9 @@ const clearCreateError = (field: string) => {
             <label
               for="create-username"
               class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-            >用户名 <span class="text-red-500">*</span></label>
+            >用户名 <span class="text-red-500">*</span>
+              <span v-if="usernameChecking" class="ml-2 text-gray-400">检查中...</span>
+            </label>
             <input
               id="create-username"
               v-model="createForm.username"
@@ -971,7 +1148,7 @@ const clearCreateError = (field: string) => {
               name="create-username"
               autocomplete="username"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
-              :class="hasCreateError('username') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
+              :class="hasCreateError('username') || usernameExists ? 'border-red-500 dark:border-red-500' : usernameChecking ? 'border-yellow-500 dark:border-yellow-500' : 'border-gray-200 dark:border-white/10'"
               placeholder="请输入用户名"
               @input="clearCreateError('username')"
             >
@@ -987,7 +1164,9 @@ const clearCreateError = (field: string) => {
             <label
               for="create-email"
               class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-            >邮箱 <span class="text-red-500">*</span></label>
+            >邮箱 <span class="text-red-500">*</span>
+              <span v-if="emailChecking" class="ml-2 text-gray-400">检查中...</span>
+            </label>
             <input
               id="create-email"
               v-model="createForm.email"
@@ -995,7 +1174,7 @@ const clearCreateError = (field: string) => {
               name="create-email"
               autocomplete="email"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
-              :class="hasCreateError('email') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
+              :class="hasCreateError('email') || emailExists ? 'border-red-500 dark:border-red-500' : emailChecking ? 'border-yellow-500 dark:border-yellow-500' : 'border-gray-200 dark:border-white/10'"
               placeholder="请输入邮箱地址"
               @input="clearCreateError('email')"
             >
@@ -1043,7 +1222,7 @@ const clearCreateError = (field: string) => {
                 :class="[
                   'px-3 py-1.5 text-xs rounded-full transition-all',
                   createForm.roleIds.includes(role.id)
-                    ? 'bg-primary text-white'
+                    ? `bg-gradient-to-r ${getRoleGradient(role.code)} text-white`
                     : 'bg-gray-100 dark:bg-dark-200 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-300'
                 ]"
                 @click="toggleCreateRole(role.id); clearCreateError('roleIds')"
@@ -1070,31 +1249,12 @@ const clearCreateError = (field: string) => {
             <button
               type="submit"
               :disabled="isCreating"
-              class="text-sm px-4 py-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              :class="isCreating ? 'bg-gray-400 text-white' : 'btn-primary'"
+              class="btn-primary text-sm px-4 py-1.5"
             >
-              <span
-                v-if="isCreating"
-                class="flex items-center gap-1.5"
-              >
-                <svg
-                  class="w-4 h-4 animate-spin"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    class="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    stroke-width="4"
-                  />
-                  <path
-                    class="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
+              <span v-if="isCreating" class="flex items-center gap-2">
+                <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
                 创建中...
               </span>

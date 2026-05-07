@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1 import auth, articles, categories, tags, resources, resource_categories, site_config, likes, bookmarks, comments, users, profile, files, email, notifications, logs, dashboard, user_profile, oauth, utils, announcements, init, permissions, roles, deletion_preview
+from app.api.v1 import auth, articles, categories, tags, resources, site_config, likes, bookmarks, comments, users, profile, files, email, notifications, logs, dashboard, user_profile, oauth, utils, announcements, init, permissions, roles, deletion_preview
 
 router = APIRouter()
 
@@ -9,7 +9,6 @@ router.include_router(articles.router)
 router.include_router(categories.router)
 router.include_router(tags.router)
 router.include_router(resources.router)
-router.include_router(resource_categories.router)
 router.include_router(site_config.router)
 router.include_router(likes.router)
 router.include_router(bookmarks.router)

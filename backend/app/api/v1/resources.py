@@ -1,6 +1,7 @@
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, Request
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, Request, Query
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from app.core.database import get_db
 from app.models import Resource, ResourceCategory
 from app.schemas import ResourceCreate, ResourceUpdate, ResourceResponse
@@ -16,6 +17,43 @@ CACHE_NAME = "resources"
 
 def invalidate_resources_cache():
     cache_manager.clear_cache(CACHE_NAME)
+
+
+@router.get("/categories")
+async def get_resource_categories(db: Session = Depends(get_db)):
+    cache_key = "categories"
+    cached = cache_manager.get(CACHE_NAME, cache_key)
+    if cached:
+        return cached
+    
+    categories = db.query(ResourceCategory).filter(ResourceCategory.is_active == True).order_by(ResourceCategory.order).all()
+    result = [{"id": c.id, "name": c.name, "slug": c.slug, "icon": c.icon} for c in categories]
+    
+    cache_manager.set(CACHE_NAME, cache_key, result)
+    return result
+
+
+@router.get("/check-unique")
+async def check_unique(
+    field: str = Query(..., description="Field to check: 'title' or 'url'"),
+    value: str = Query(..., description="Value to check"),
+    exclude_id: Optional[int] = Query(None, description="Resource ID to exclude (for updates)"),
+    db: Session = Depends(get_db)
+):
+    if field not in ["title", "url"]:
+        raise HTTPException(status_code=400, detail="Invalid field. Must be 'title' or 'url'")
+    
+    query = db.query(Resource)
+    if field == "title":
+        query = query.filter(Resource.title == value)
+    else:
+        query = query.filter(Resource.url == value)
+    
+    if exclude_id:
+        query = query.filter(Resource.id != exclude_id)
+    
+    exists = query.first() is not None
+    return {"exists": exists, "field": field, "value": value}
 
 
 @router.get("", response_model=List[ResourceResponse])
@@ -48,10 +86,19 @@ async def create_resource(
     db: Session = Depends(get_db),
     current_user = Depends(require_permission("resource.create"))
 ):
+    resource_dict = resource_data.model_dump()
+    
+    existing_title = db.query(Resource).filter(Resource.title == resource_dict.get('title')).first()
+    if existing_title:
+        raise HTTPException(status_code=400, detail="资源标题已存在，请使用其他标题")
+    
+    existing_url = db.query(Resource).filter(Resource.url == resource_dict.get('url')).first()
+    if existing_url:
+        raise HTTPException(status_code=400, detail="资源链接已存在，请使用其他链接")
+    
     max_order = db.query(Resource).order_by(Resource.order.desc()).first()
     next_order = (max_order.order + 1) if max_order else 1
     
-    resource_dict = resource_data.model_dump()
     if resource_dict.get('order', 0) == 0:
         resource_dict['order'] = next_order
     
@@ -62,10 +109,20 @@ async def create_resource(
     elif resource_dict.get('category') is None:
         resource_dict['category'] = ''
     
-    new_resource = Resource(**resource_dict)
-    db.add(new_resource)
-    db.commit()
-    db.refresh(new_resource)
+    try:
+        new_resource = Resource(**resource_dict)
+        db.add(new_resource)
+        db.commit()
+        db.refresh(new_resource)
+    except IntegrityError as e:
+        db.rollback()
+        error_msg = str(e.orig) if hasattr(e, 'orig') else str(e)
+        if 'title' in error_msg.lower() or 'uq_resource' in error_msg.lower():
+            raise HTTPException(status_code=400, detail="资源标题已存在，请使用其他标题")
+        elif 'url' in error_msg.lower():
+            raise HTTPException(status_code=400, detail="资源链接已存在，请使用其他链接")
+        else:
+            raise HTTPException(status_code=400, detail="数据保存失败，请检查输入内容")
     
     invalidate_resources_cache()
     
@@ -100,6 +157,22 @@ async def update_resource(
     old_is_active = resource.is_active
     update_data = resource_data.model_dump(exclude_unset=True)
     
+    if 'title' in update_data:
+        existing_title = db.query(Resource).filter(
+            Resource.title == update_data['title'],
+            Resource.id != resource_id
+        ).first()
+        if existing_title:
+            raise HTTPException(status_code=400, detail="资源标题已存在，请使用其他标题")
+    
+    if 'url' in update_data:
+        existing_url = db.query(Resource).filter(
+            Resource.url == update_data['url'],
+            Resource.id != resource_id
+        ).first()
+        if existing_url:
+            raise HTTPException(status_code=400, detail="资源链接已存在，请使用其他链接")
+    
     if 'category_id' in update_data:
         if update_data['category_id']:
             cat = db.query(ResourceCategory).filter(ResourceCategory.id == update_data['category_id']).first()
@@ -111,8 +184,18 @@ async def update_resource(
     for field, value in update_data.items():
         setattr(resource, field, value)
     
-    db.commit()
-    db.refresh(resource)
+    try:
+        db.commit()
+        db.refresh(resource)
+    except IntegrityError as e:
+        db.rollback()
+        error_msg = str(e.orig) if hasattr(e, 'orig') else str(e)
+        if 'title' in error_msg.lower() or 'uq_resource' in error_msg.lower():
+            raise HTTPException(status_code=400, detail="资源标题已存在，请使用其他标题")
+        elif 'url' in error_msg.lower():
+            raise HTTPException(status_code=400, detail="资源链接已存在，请使用其他链接")
+        else:
+            raise HTTPException(status_code=400, detail="数据保存失败，请检查输入内容")
     
     invalidate_resources_cache()
     

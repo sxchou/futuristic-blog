@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { authApi } from '@/api'
 import { useSiteConfigStore, useDialogStore } from '@/stores'
@@ -24,6 +24,15 @@ const passwordError = ref('')
 const confirmError = ref('')
 
 let countdownTimer: ReturnType<typeof setInterval> | null = null
+
+const scrollToField = async (fieldId: string) => {
+  await nextTick()
+  const element = document.getElementById(fieldId)
+  if (element) {
+    element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    element.focus({ preventScroll: true })
+  }
+}
 
 const isEmailValid = computed(() => {
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
@@ -165,7 +174,18 @@ const handleResetPassword = async () => {
   const codeValid = validateCode()
   const passwordValid = validatePassword()
   
-  if (!emailValid || !codeValid || !passwordValid) return
+  if (!emailValid || !codeValid || !passwordValid) {
+    if (emailError.value) {
+      await scrollToField('forgot-email')
+    } else if (codeError.value) {
+      await scrollToField('forgot-code')
+    } else if (passwordError.value) {
+      await scrollToField('forgot-new-password')
+    } else if (confirmError.value) {
+      await scrollToField('forgot-confirm-password')
+    }
+    return
+  }
   
   isLoading.value = true
   try {

@@ -190,7 +190,7 @@ onMounted(fetchStorageInfo)
         </h1>
       </div>
       <button
-        class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
+        class="btn-primary text-sm px-4 py-1.5 flex items-center gap-2"
         @click="fetchStorageInfo"
       >
         <svg

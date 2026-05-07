@@ -286,41 +286,6 @@ class BookmarkResponse(BaseModel):
     bookmark_count: int = 0
 
 
-class ResourceCategoryBase(BaseModel):
-    name: str = Field(..., max_length=50)
-    slug: str = Field(..., max_length=50)
-    description: Optional[str] = None
-    icon: Optional[str] = None
-    order: Optional[int] = 0
-    is_active: bool = True
-
-
-class ResourceCategoryCreate(ResourceCategoryBase):
-    pass
-
-
-class ResourceCategoryUpdate(BaseModel):
-    name: Optional[str] = Field(None, max_length=50)
-    slug: Optional[str] = Field(None, max_length=50)
-    description: Optional[str] = None
-    icon: Optional[str] = None
-    order: Optional[int] = None
-    is_active: Optional[bool] = None
-
-
-class ResourceCategoryResponse(ResourceCategoryBase):
-    id: int
-    created_at: Optional[str] = None
-    
-    @field_validator('created_at', mode='before')
-    @classmethod
-    def serialize_created_at(cls, v):
-        return serialize_datetime(v)
-    
-    class Config:
-        from_attributes = True
-
-
 class ResourceBase(BaseModel):
     title: str = Field(..., max_length=100)
     description: Optional[str] = None

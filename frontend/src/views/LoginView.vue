@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore, useSiteConfigStore, useDialogStore } from '@/stores'
 import { authApi } from '@/api'
@@ -134,6 +134,15 @@ const onPasswordInput = () => {
   passwordError.value = ''
 }
 
+const scrollToField = async (fieldId: string) => {
+  await nextTick()
+  const element = document.getElementById(fieldId)
+  if (element) {
+    element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    element.focus({ preventScroll: true })
+  }
+}
+
 const handleLogin = async () => {
   usernameError.value = ''
   passwordError.value = ''
@@ -157,7 +166,14 @@ const handleLogin = async () => {
     hasError = true
   }
 
-  if (hasError) return
+  if (hasError) {
+    if (usernameError.value) {
+      await scrollToField('login-username')
+    } else if (passwordError.value) {
+      await scrollToField('login-password')
+    }
+    return
+  }
 
   isLoading.value = true
 
@@ -475,13 +491,10 @@ onMounted(fetchOAuthProviders)
           v-if="oauthProviders.length > 0"
           class="mt-4"
         >
-          <div class="relative">
-            <div class="absolute inset-0 flex items-center">
-              <div class="w-full border-t border-gray-200 dark:border-white/10" />
-            </div>
-            <div class="relative flex justify-center text-xs">
-              <span class="px-2 bg-white dark:bg-dark-100 text-gray-500 dark:text-gray-400">或</span>
-            </div>
+          <div class="flex items-center gap-[1px]">
+            <div class="flex-1 border-t border-gray-200 dark:border-white/10" />
+            <span class="px-[1px] bg-white dark:bg-dark-200 text-xs text-gray-500 dark:text-gray-400">或</span>
+            <div class="flex-1 border-t border-gray-200 dark:border-white/10" />
           </div>
 
           <div class="mt-3 flex items-center justify-center gap-2 flex-wrap">

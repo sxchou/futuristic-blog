@@ -63,8 +63,8 @@ export const prefetchCategoriesData = async () => {
   if (dataPrefetch.has('categories')) return
 
   try {
-    const { resourceCategoryApi } = await import('@/api')
-    const data = await resourceCategoryApi.getCategories()
+    const { resourceApi } = await import('@/api')
+    const data = await resourceApi.getCategories()
     dataPrefetch.set('categories', data)
   } catch {
     // Prefetch failures are silent

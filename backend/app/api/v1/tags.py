@@ -1,7 +1,8 @@
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, Request
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, Request, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from app.core.database import get_db
 from app.models import Tag, Article, article_tags
 from app.schemas import TagCreate, TagUpdate, TagResponse
@@ -18,6 +19,29 @@ CACHE_NAME = "tags"
 
 def invalidate_tags_cache():
     cache_manager.clear_cache(CACHE_NAME)
+
+
+@router.get("/check-unique")
+async def check_unique(
+    field: str = Query(..., description="Field to check: 'name' or 'slug'"),
+    value: str = Query(..., description="Value to check"),
+    exclude_id: Optional[int] = Query(None, description="Tag ID to exclude (for updates)"),
+    db: Session = Depends(get_db)
+):
+    if field not in ["name", "slug"]:
+        raise HTTPException(status_code=400, detail="Invalid field. Must be 'name' or 'slug'")
+    
+    query = db.query(Tag)
+    if field == "name":
+        query = query.filter(Tag.name == value)
+    else:
+        query = query.filter(Tag.slug == value)
+    
+    if exclude_id:
+        query = query.filter(Tag.id != exclude_id)
+    
+    exists = query.first() is not None
+    return {"exists": exists, "field": field, "value": value}
 
 
 @router.get("", response_model=List[TagResponse])
@@ -93,9 +117,20 @@ async def create_tag(
         slug=slug,
         color=tag_data.color
     )
-    db.add(new_tag)
-    db.commit()
-    db.refresh(new_tag)
+    
+    try:
+        db.add(new_tag)
+        db.commit()
+        db.refresh(new_tag)
+    except IntegrityError as e:
+        db.rollback()
+        error_msg = str(e.orig) if hasattr(e, 'orig') else str(e)
+        if 'name' in error_msg.lower() or 'uq_tag' in error_msg.lower():
+            raise HTTPException(status_code=400, detail="标签名称已存在，请使用其他名称")
+        elif 'slug' in error_msg.lower():
+            raise HTTPException(status_code=400, detail="标签 Slug 已存在，请使用其他 Slug")
+        else:
+            raise HTTPException(status_code=400, detail="数据保存失败，请检查输入内容")
     
     invalidate_tags_cache()
     
@@ -130,11 +165,37 @@ async def update_tag(
     old_is_active = tag.is_active
     update_data = tag_data.model_dump(exclude_unset=True)
     
+    if 'name' in update_data:
+        existing_name = db.query(Tag).filter(
+            Tag.name == update_data['name'],
+            Tag.id != tag_id
+        ).first()
+        if existing_name:
+            raise HTTPException(status_code=400, detail="标签名称已存在，请使用其他名称")
+    
+    if 'slug' in update_data:
+        existing_slug = db.query(Tag).filter(
+            Tag.slug == update_data['slug'],
+            Tag.id != tag_id
+        ).first()
+        if existing_slug:
+            raise HTTPException(status_code=400, detail="标签 Slug 已存在，请使用其他 Slug")
+    
     for field, value in update_data.items():
         setattr(tag, field, value)
     
-    db.commit()
-    db.refresh(tag)
+    try:
+        db.commit()
+        db.refresh(tag)
+    except IntegrityError as e:
+        db.rollback()
+        error_msg = str(e.orig) if hasattr(e, 'orig') else str(e)
+        if 'name' in error_msg.lower() or 'uq_tag' in error_msg.lower():
+            raise HTTPException(status_code=400, detail="标签名称已存在，请使用其他名称")
+        elif 'slug' in error_msg.lower():
+            raise HTTPException(status_code=400, detail="标签 Slug 已存在，请使用其他 Slug")
+        else:
+            raise HTTPException(status_code=400, detail="数据保存失败，请检查输入内容")
     
     invalidate_tags_cache()
     

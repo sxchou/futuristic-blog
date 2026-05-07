@@ -10,6 +10,7 @@ const { requirePermission, hasPermission } = useAdminCheck()
 const canEdit = computed(() => hasPermission('profile.edit'))
 const profile = ref<Profile | null>(null)
 const isLoading = ref(false)
+const isSubmitting = ref(false)
 const activeTab = ref('basic')
 
 const tabs = [
@@ -71,12 +72,15 @@ const fetchProfile = async () => {
 const handleSave = async () => {
   if (!await requirePermission('profile.edit', '保存网站资料')) return
   
+  isSubmitting.value = true
   try {
     await profileApi.updateProfile(form.value)
     await fetchProfile()
     await dialog.showSuccess('保存成功', '成功')
   } catch (error: any) {
     await dialog.showError(error.response?.data?.detail || '保存失败', '错误')
+  } finally {
+    isSubmitting.value = false
   }
 }
 
@@ -213,10 +217,18 @@ onMounted(() => {
         </h1>
       </div>
       <button
-        :class="['text-xs sm:text-sm px-3 sm:px-4 py-1.5 whitespace-nowrap', canEdit ? 'btn-primary' : 'bg-primary/50 text-white/70 cursor-not-allowed']"
+        :class="['text-xs sm:text-sm px-3 sm:px-4 py-1.5 whitespace-nowrap', canEdit && !isSubmitting ? 'btn-primary' : 'bg-primary/50 text-white/70 cursor-not-allowed']"
+        :disabled="isSubmitting"
         @click="canEdit ? handleSave() : warnReadonly('保存网站资料')"
       >
-        保存更改
+        <span v-if="isSubmitting" class="flex items-center gap-2">
+          <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          </svg>
+          保存中...
+        </span>
+        <span v-else>保存更改</span>
       </button>
     </div>
 

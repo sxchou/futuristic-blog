@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, nextTick } from 'vue'
-import { resourceApi, resourceCategoryApi, utilsApi } from '@/api'
+import { ref, onMounted, computed, nextTick, watch } from 'vue'
+import { resourceApi } from '@/api'
 import type { Resource } from '@/types'
-import type { ResourceCategory } from '@/api/resourceCategories'
+import type { ResourceCategory } from '@/api/resources'
 import { useDialogStore } from '@/stores'
 import { useAdminCheck } from '@/composables/useAdminCheck'
 import { useDeletionConfirm } from '@/composables/useDeletionConfirm'
@@ -16,22 +16,15 @@ import IconPicker from '@/components/common/IconPicker.vue'
 
 const dialog = useDialogStore()
 const resourceDeletion = useDeletionConfirm()
-const categoryDeletion = useDeletionConfirm()
 const { requirePermission } = useAdminCheck()
 
 const resources = ref<Resource[]>([])
 const categories = ref<ResourceCategory[]>([])
 const isLoading = ref(false)
-const isGeneratingSlug = ref(false)
-const slugManuallyEdited = ref(false)
 const isSubmitting = ref(false)
-const activeTab = ref<'resources' | 'categories'>('resources')
 
 const showResourceEditor = ref(false)
 const editingResource = ref<Resource | null>(null)
-
-const showCategoryEditor = ref(false)
-const editingCategory = ref<ResourceCategory | null>(null)
 
 const resourceForm = ref({
   title: '',
@@ -43,18 +36,91 @@ const resourceForm = ref({
   order: 0
 })
 
-const categoryForm = ref({
-  name: '',
-  slug: '',
-  description: '',
-  icon: '',
-  order: 0,
-  is_active: true
+const titleChecking = ref(false)
+const urlChecking = ref(false)
+const titleExists = ref(false)
+const urlExists = ref(false)
+
+let titleCheckTimer: ReturnType<typeof setTimeout> | null = null
+let urlCheckTimer: ReturnType<typeof setTimeout> | null = null
+
+const checkTitleUnique = async (title: string) => {
+  if (!title.trim()) {
+    titleExists.value = false
+    return
+  }
+  
+  titleChecking.value = true
+  try {
+    const result = await resourceApi.checkUnique('title', title, editingResource.value?.id)
+    titleExists.value = result.exists
+    if (result.exists) {
+      resourceErrors.value = resourceErrors.value.filter(e => e.field !== 'title')
+      resourceErrors.value.push({ field: 'title', message: '资源标题已存在，请使用其他标题' })
+    } else {
+      resourceErrors.value = resourceErrors.value.filter(e => e.field !== 'title')
+    }
+  } catch (error) {
+    console.error('Failed to check title uniqueness:', error)
+  } finally {
+    titleChecking.value = false
+  }
+}
+
+const checkUrlUnique = async (url: string) => {
+  if (!url.trim()) {
+    urlExists.value = false
+    return
+  }
+  
+  urlChecking.value = true
+  try {
+    const result = await resourceApi.checkUnique('url', url, editingResource.value?.id)
+    urlExists.value = result.exists
+    if (result.exists) {
+      resourceErrors.value = resourceErrors.value.filter(e => e.field !== 'url')
+      resourceErrors.value.push({ field: 'url', message: '资源链接已存在，请使用其他链接' })
+    } else {
+      resourceErrors.value = resourceErrors.value.filter(e => e.field !== 'url')
+    }
+  } catch (error) {
+    console.error('Failed to check url uniqueness:', error)
+  } finally {
+    urlChecking.value = false
+  }
+}
+
+watch(() => resourceForm.value.title, (newTitle) => {
+  if (titleCheckTimer) {
+    clearTimeout(titleCheckTimer)
+  }
+  titleExists.value = false
+  resourceErrors.value = resourceErrors.value.filter(e => e.field !== 'title')
+  
+  if (newTitle.trim()) {
+    titleCheckTimer = setTimeout(() => {
+      checkTitleUnique(newTitle)
+    }, 500)
+  }
+})
+
+watch(() => resourceForm.value.url, (newUrl) => {
+  if (urlCheckTimer) {
+    clearTimeout(urlCheckTimer)
+  }
+  urlExists.value = false
+  resourceErrors.value = resourceErrors.value.filter(e => e.field !== 'url')
+  
+  if (newUrl.trim()) {
+    urlCheckTimer = setTimeout(() => {
+      checkUrlUnique(newUrl)
+    }, 500)
+  }
 })
 
 const fetchCategories = async () => {
   try {
-    categories.value = await resourceCategoryApi.getCategories()
+    categories.value = await resourceApi.getCategories()
   } catch (error) {
     console.error('Failed to fetch categories:', error)
   }
@@ -95,6 +161,11 @@ const handleEditResource = async (resource: Resource) => {
     is_active: resource.is_active,
     order: resource.order
   }
+  titleExists.value = false
+  urlExists.value = false
+  titleChecking.value = false
+  urlChecking.value = false
+  resourceErrors.value = []
   showResourceEditor.value = true
 }
 
@@ -116,7 +187,8 @@ const executeResourceDeletion = async () => {
   } catch (error: any) {
     console.error('Failed to delete resource:', error)
     resourceDeletion.cancelDeletion()
-    await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
+  } finally {
+    resourceDeletionLoading.value = false
   }
 }
 
@@ -166,7 +238,6 @@ const handleSubmitResource = async () => {
     await dialog.showSuccess(isEditing ? '资源已更新' : '资源已创建', '成功')
   } catch (error: any) {
     console.error('Failed to save resource:', error)
-    await dialog.showError(error.response?.data?.detail || '保存失败', '错误')
   } finally {
     isSubmitting.value = false
   }
@@ -183,6 +254,18 @@ const resetResourceForm = () => {
     order: 0
   }
   resourceErrors.value = []
+  titleChecking.value = false
+  urlChecking.value = false
+  titleExists.value = false
+  urlExists.value = false
+  if (titleCheckTimer) {
+    clearTimeout(titleCheckTimer)
+    titleCheckTimer = null
+  }
+  if (urlCheckTimer) {
+    clearTimeout(urlCheckTimer)
+    urlCheckTimer = null
+  }
 }
 
 const openCreateResourceModal = async () => {
@@ -192,170 +275,7 @@ const openCreateResourceModal = async () => {
   showResourceEditor.value = true
 }
 
-const handleEditCategory = async (category: ResourceCategory) => {
-  if (!await requirePermission('resource.edit', '编辑资源分类')) return
-  editingCategory.value = category
-  categoryForm.value = {
-    name: category.name,
-    slug: category.slug,
-    description: category.description || '',
-    icon: category.icon || '',
-    order: category.order,
-    is_active: category.is_active
-  }
-  slugManuallyEdited.value = true
-  showCategoryEditor.value = true
-}
-
-const handleDeleteCategory = async (category: ResourceCategory) => {
-  if (!await requirePermission('resource.delete', '删除资源分类')) return
-  
-  const previewed = await categoryDeletion.requestDeletion('resource_category', category.id, category.name)
-  if (!previewed) return
-}
-
-const categoryDeletionLoading = ref(false)
-const executeCategoryDeletion = async () => {
-  try {
-    categoryDeletionLoading.value = true
-    await resourceCategoryApi.deleteCategory(categoryDeletion.currentItemId.value)
-    await fetchCategories()
-    categoryDeletion.confirmDeletion()
-    await dialog.showSuccess('分类已删除', '成功')
-  } catch (error: any) {
-    console.error('Failed to delete category:', error)
-    categoryDeletion.cancelDeletion()
-    await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
-  }
-}
-
-const handleSubmitCategory = async () => {
-  if (!await requirePermission('resource.edit', '保存资源分类')) return
-  
-  const isValid = await validateCategoryForm()
-  if (!isValid) return
-  
-  try {
-    const isEditing = !!editingCategory.value
-    if (editingCategory.value) {
-      await resourceCategoryApi.updateCategory(editingCategory.value.id, categoryForm.value)
-    } else {
-      await resourceCategoryApi.createCategory(categoryForm.value)
-    }
-    showCategoryEditor.value = false
-    editingCategory.value = null
-    resetCategoryForm()
-    await fetchCategories()
-    await dialog.showSuccess(isEditing ? '分类已更新' : '分类已创建', '成功')
-  } catch (error: any) {
-    console.error('Failed to save category:', error)
-    await dialog.showError(error.response?.data?.detail || '保存失败', '错误')
-  }
-}
-
-const resetCategoryForm = () => {
-  categoryForm.value = {
-    name: '',
-    slug: '',
-    description: '',
-    icon: '',
-    order: 0,
-    is_active: true
-  }
-  categoryErrors.value = []
-  slugManuallyEdited.value = false
-}
-
-const generateCategorySlug = async () => {
-  if (!categoryForm.value.name.trim() || slugManuallyEdited.value) return
-  
-  isGeneratingSlug.value = true
-  try {
-    const result = await utilsApi.generateSlug(categoryForm.value.name, 'resource_category', editingCategory.value?.id)
-    categoryForm.value.slug = result.slug
-  } catch (error) {
-    console.error('Failed to generate slug:', error)
-    categoryForm.value.slug = categoryForm.value.name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '')
-  } finally {
-    isGeneratingSlug.value = false
-  }
-}
-
-const handleCategorySlugInput = () => {
-  if (!categoryForm.value.slug || categoryForm.value.slug.trim() === '') {
-    slugManuallyEdited.value = false
-  } else {
-    slugManuallyEdited.value = true
-  }
-}
-
-const handleCategoryNameBlur = () => {
-  if (!slugManuallyEdited.value && categoryForm.value.name) {
-    generateCategorySlug()
-  }
-}
-
-const handleCategoryNameInput = () => {
-  if (!categoryForm.value.slug || categoryForm.value.slug.trim() === '') {
-    slugManuallyEdited.value = false
-  }
-}
-
-const openCreateCategoryModal = async () => {
-  if (!await requirePermission('resource.create', '创建资源分类')) return
-  editingCategory.value = null
-  resetCategoryForm()
-  showCategoryEditor.value = true
-}
-
-const moveCategoryUp = async (index: number) => {
-  if (index === 0) return
-  if (!await requirePermission('resource.edit', '排序资源分类')) return
-  
-  const newCategories = [...categories.value]
-  const temp = newCategories[index].order
-  newCategories[index].order = newCategories[index - 1].order
-  newCategories[index - 1].order = temp
-  
-  try {
-    await resourceCategoryApi.reorderCategories(
-      newCategories.map(c => ({ id: c.id, order: c.order }))
-    )
-    await fetchCategories()
-  } catch (error: any) {
-    console.error('Failed to reorder categories:', error)
-    await dialog.showError('排序失败', '错误')
-  }
-}
-
-const moveCategoryDown = async (index: number) => {
-  if (index === categories.value.length - 1) return
-  if (!await requirePermission('resource.edit', '排序资源分类')) return
-  
-  const newCategories = [...categories.value]
-  const temp = newCategories[index].order
-  newCategories[index].order = newCategories[index + 1].order
-  newCategories[index + 1].order = temp
-  
-  try {
-    await resourceCategoryApi.reorderCategories(
-      newCategories.map(c => ({ id: c.id, order: c.order }))
-    )
-    await fetchCategories()
-  } catch (error: any) {
-    console.error('Failed to reorder categories:', error)
-    await dialog.showError('排序失败', '错误')
-  }
-}
-
-const activeCategories = computed(() => categories.value.filter(c => c.is_active))
-
-const getResourceCount = (categoryId: number) => {
-  return resources.value.filter(r => r.category_id === categoryId).length
-}
+const activeCategories = computed(() => categories.value)
 
 interface ValidationError {
   field: string
@@ -363,7 +283,6 @@ interface ValidationError {
 }
 
 const resourceErrors = ref<ValidationError[]>([])
-const categoryErrors = ref<ValidationError[]>([])
 
 const scrollToField = async (fieldId: string) => {
   await nextTick()
@@ -383,61 +302,39 @@ const getResourceErrorMessage = (field: string): string => {
   return error?.message || ''
 }
 
-const clearResourceError = (field: string) => {
-  resourceErrors.value = resourceErrors.value.filter(e => e.field !== field)
-}
-
-const hasCategoryError = (field: string): boolean => {
-  return categoryErrors.value.some(e => e.field === field)
-}
-
-const getCategoryErrorMessage = (field: string): string => {
-  const error = categoryErrors.value.find(e => e.field === field)
-  return error?.message || ''
-}
-
-const clearCategoryError = (field: string) => {
-  categoryErrors.value = categoryErrors.value.filter(e => e.field !== field)
-}
-
 const validateResourceForm = async (): Promise<boolean> => {
   resourceErrors.value = []
 
   if (!resourceForm.value.title.trim()) {
     resourceErrors.value.push({ field: 'title', message: '请输入资源标题' })
-    await scrollToField('resource-title')
-    return false
+  }
+
+  if (titleChecking.value || urlChecking.value) {
+    await new Promise(resolve => setTimeout(resolve, 600))
+  }
+
+  if (titleExists.value) {
+    resourceErrors.value.push({ field: 'title', message: '资源标题已存在，请使用其他标题' })
   }
 
   if (!resourceForm.value.url.trim()) {
     resourceErrors.value.push({ field: 'url', message: '请输入资源链接' })
-    await scrollToField('resource-url')
-    return false
+  } else {
+    try {
+      new URL(resourceForm.value.url)
+    } catch {
+      resourceErrors.value.push({ field: 'url', message: '请输入有效的URL地址' })
+    }
   }
 
-  try {
-    new URL(resourceForm.value.url)
-  } catch {
-    resourceErrors.value.push({ field: 'url', message: '请输入有效的URL地址' })
-    await scrollToField('resource-url')
-    return false
+  if (urlExists.value) {
+    resourceErrors.value.push({ field: 'url', message: '资源链接已存在，请使用其他链接' })
   }
 
-  return true
-}
-
-const validateCategoryForm = async (): Promise<boolean> => {
-  categoryErrors.value = []
-
-  if (!categoryForm.value.name.trim()) {
-    categoryErrors.value.push({ field: 'name', message: '请输入分类名称' })
-    await scrollToField('category-name')
-    return false
-  }
-
-  if (!categoryForm.value.slug.trim()) {
-    categoryErrors.value.push({ field: 'slug', message: '请输入分类 Slug' })
-    await scrollToField('category-slug')
+  if (resourceErrors.value.length > 0) {
+    const firstError = resourceErrors.value[0]
+    const fieldIdMap: Record<string, string> = { title: 'resource-title', url: 'resource-url' }
+    await scrollToField(fieldIdMap[firstError.field] || firstError.field)
     return false
   }
 
@@ -464,7 +361,7 @@ onMounted(async () => {
               stroke-linecap="round"
               stroke-linejoin="round"
               stroke-width="2"
-              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
             />
           </svg>
         </div>
@@ -474,137 +371,24 @@ onMounted(async () => {
       </div>
       <button
         class="btn-primary text-xs sm:text-sm px-3 sm:px-4 py-1.5 whitespace-nowrap"
-        @click="activeTab === 'resources' ? openCreateResourceModal() : openCreateCategoryModal()"
+        @click="openCreateResourceModal"
       >
-        {{ activeTab === 'resources' ? '新建资源' : '新建分类' }}
+        新建资源
       </button>
     </div>
 
-    <div class="flex gap-1 mb-4 p-1 bg-gray-100 dark:bg-dark-200 rounded-lg w-fit">
-      <button
-        class="px-4 py-1.5 text-sm rounded-md transition-all"
-        :class="activeTab === 'resources' 
-          ? 'bg-white dark:bg-dark-400 text-gray-900 dark:text-white shadow-sm' 
-          : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
-        @click="activeTab = 'resources'"
-      >
-        资源
-      </button>
-      <button
-        class="px-4 py-1.5 text-sm rounded-md transition-all"
-        :class="activeTab === 'categories' 
-          ? 'bg-white dark:bg-dark-400 text-gray-900 dark:text-white shadow-sm' 
-          : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
-        @click="activeTab = 'categories'"
-      >
-        分类
-      </button>
-    </div>
-
-    <template v-if="isLoading && activeTab === 'resources'">
+    <template v-if="isLoading">
       <div class="flex justify-center py-16">
         <div class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
     </template>
 
-    <template v-else-if="activeTab === 'resources'">
-      <div>
-        <div
-          v-if="resources.length === 0"
-          class="text-center py-16 text-gray-500"
-        >
-          暂无资源，点击右上角按钮添加
-        </div>
-
-        <div
-          v-else
-          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-        >
-          <div
-            v-for="resource in resources"
-            :key="resource.id"
-            class="glass-card p-4 flex flex-col min-h-[120px]"
-            :class="resource.is_active ? '' : 'border-gray-300 dark:border-gray-600'"
-          >
-            <div class="flex items-center gap-2 mb-2">
-              <div
-                class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                :style="{ backgroundColor: getCategoryColor(resource.category_id) + '20' }"
-              >
-                <span
-                  v-if="resource.icon"
-                  class="text-base"
-                >{{ resource.icon }}</span>
-                <svg
-                  v-else
-                  class="w-4 h-4"
-                  :style="{ color: getCategoryColor(resource.category_id) }"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-                  />
-                </svg>
-              </div>
-              <div class="flex-1 min-w-0">
-                <h3 class="text-gray-900 dark:text-white font-medium text-sm truncate">
-                  {{ resource.title }}
-                </h3>
-                <p class="text-gray-500 text-xs truncate">
-                  {{ getCategoryName(resource.category_id) }}
-                </p>
-              </div>
-            </div>
-            
-            <p
-              class="text-gray-500 dark:text-gray-400 text-xs mb-2 flex-1 line-clamp-2"
-            >
-              {{ resource.description || '暂无描述' }}
-            </p>
-            
-            <div class="flex items-center justify-between mt-auto pt-2 border-t border-gray-100 dark:border-dark-300">
-              <button
-                class="flex items-center gap-1.5 text-xs transition-colors"
-                :class="resource.is_active ? 'text-green-500' : 'text-gray-400'"
-                @click="handleToggleResourceStatus(resource)"
-              >
-                <span
-                  class="w-2 h-2 rounded-full"
-                  :class="resource.is_active ? 'bg-green-500' : 'bg-gray-400'"
-                />
-                {{ resource.is_active ? '已启用' : '已禁用' }}
-              </button>
-              <div class="flex gap-2">
-                <button
-                  class="text-primary hover:text-primary/80 text-xs"
-                  @click="handleEditResource(resource)"
-                >
-                  编辑
-                </button>
-                <button
-                  class="text-red-400 hover:text-red-300 text-xs"
-                  @click="handleDeleteResource(resource)"
-                >
-                  删除
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </template>
-
     <template v-else>
       <div
-        v-if="categories.length === 0"
+        v-if="resources.length === 0"
         class="text-center py-16 text-gray-500"
       >
-        暂无分类，点击右上角按钮添加
+        暂无资源，点击右上角按钮添加
       </div>
 
       <div
@@ -612,19 +396,24 @@ onMounted(async () => {
         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
       >
         <div
-          v-for="(category, index) in categories"
-          :key="category.id"
+          v-for="resource in resources"
+          :key="resource.id"
           class="glass-card p-4 flex flex-col min-h-[120px]"
+          :class="resource.is_active ? '' : 'border-gray-300 dark:border-gray-600'"
         >
           <div class="flex items-center gap-2 mb-2">
-            <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <div
+              class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+              :style="{ backgroundColor: getCategoryColor(resource.category_id) + '20' }"
+            >
               <span
-                v-if="category.icon"
+                v-if="resource.icon"
                 class="text-base"
-              >{{ category.icon }}</span>
+              >{{ resource.icon }}</span>
               <svg
                 v-else
-                class="w-4 h-4 text-primary"
+                class="w-4 h-4"
+                :style="{ color: getCategoryColor(resource.category_id) }"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -633,78 +422,48 @@ onMounted(async () => {
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                  d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
                 />
               </svg>
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="text-gray-900 dark:text-white font-medium text-sm truncate">
-                {{ category.name }}
+                {{ resource.title }}
               </h3>
               <p class="text-gray-500 text-xs truncate">
-                {{ category.slug }}
+                {{ getCategoryName(resource.category_id) }}
               </p>
             </div>
           </div>
           
-          <p class="text-gray-500 dark:text-gray-400 text-xs mb-2 flex-1 line-clamp-2">
-            {{ category.description || '暂无描述' }}
+          <p
+            class="text-gray-500 dark:text-gray-400 text-xs mb-2 flex-1 line-clamp-2"
+          >
+            {{ resource.description || '暂无描述' }}
           </p>
           
           <div class="flex items-center justify-between mt-auto pt-2 border-t border-gray-100 dark:border-dark-300">
-            <div class="flex items-center gap-2">
-              <span class="text-gray-500 text-xs">{{ getResourceCount(category.id) }} 个资源</span>
-              <div class="flex items-center gap-0.5">
-                <button
-                  class="p-1 text-gray-400 hover:text-primary disabled:opacity-30 transition-colors"
-                  :disabled="index === 0"
-                  @click="moveCategoryUp(index)"
-                >
-                  <svg
-                    class="w-3.5 h-3.5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M5 15l7-7 7 7"
-                    />
-                  </svg>
-                </button>
-                <button
-                  class="p-1 text-gray-400 hover:text-primary disabled:opacity-30 transition-colors"
-                  :disabled="index === categories.length - 1"
-                  @click="moveCategoryDown(index)"
-                >
-                  <svg
-                    class="w-3.5 h-3.5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
+            <button
+              class="flex items-center gap-1.5 text-xs transition-colors"
+              :class="resource.is_active ? 'text-green-500' : 'text-gray-400'"
+              @click="handleToggleResourceStatus(resource)"
+            >
+              <span
+                class="w-2 h-2 rounded-full"
+                :class="resource.is_active ? 'bg-green-500' : 'bg-gray-400'"
+              />
+              {{ resource.is_active ? '已启用' : '已禁用' }}
+            </button>
             <div class="flex gap-2">
               <button
                 class="text-primary hover:text-primary/80 text-xs"
-                @click="handleEditCategory(category)"
+                @click="handleEditResource(resource)"
               >
                 编辑
               </button>
               <button
                 class="text-red-400 hover:text-red-300 text-xs"
-                @click="handleDeleteCategory(category)"
+                @click="handleDeleteResource(resource)"
               >
                 删除
               </button>
@@ -748,14 +507,16 @@ onMounted(async () => {
           @submit.prevent="handleSubmitResource"
         >
           <div>
-            <label for="resource-title" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">标题 <span class="text-red-500">*</span></label>
+            <label for="resource-title" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              标题 <span class="text-red-500">*</span>
+              <span v-if="titleChecking" class="ml-2 text-gray-400">检查中...</span>
+            </label>
             <input id="resource-title"
               v-model="resourceForm.title"
               type="text"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
-              :class="hasResourceError('title') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
+              :class="hasResourceError('title') || titleExists ? 'border-red-500 dark:border-red-500' : titleChecking ? 'border-yellow-500 dark:border-yellow-500' : 'border-gray-200 dark:border-white/10'"
               placeholder="资源标题"
-              @input="clearResourceError('title')"
             >
             <p
               v-if="hasResourceError('title')"
@@ -766,14 +527,16 @@ onMounted(async () => {
           </div>
 
           <div>
-            <label for="resource-url" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">链接 <span class="text-red-500">*</span></label>
+            <label for="resource-url" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              链接 <span class="text-red-500">*</span>
+              <span v-if="urlChecking" class="ml-2 text-gray-400">检查中...</span>
+            </label>
             <input id="resource-url"
               v-model="resourceForm.url"
               type="url"
               class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
-              :class="hasResourceError('url') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
+              :class="hasResourceError('url') || urlExists ? 'border-red-500 dark:border-red-500' : urlChecking ? 'border-yellow-500 dark:border-yellow-500' : 'border-gray-200 dark:border-white/10'"
               placeholder="https://example.com"
-              @input="clearResourceError('url')"
             >
             <p
               v-if="hasResourceError('url')"
@@ -875,154 +638,12 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div
-      v-if="showCategoryEditor"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-    >
-      <div class="glass-card w-full max-w-md m-4 p-5">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-base font-bold text-gray-900 dark:text-white">
-            {{ editingCategory ? '编辑分类' : '新建分类' }}
-          </h2>
-          <button
-            class="text-gray-400 hover:text-gray-900 dark:hover:text-white"
-            @click="showCategoryEditor = false; editingCategory = null; resetCategoryForm()"
-          >
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
-
-        <form
-          class="space-y-3"
-          @submit.prevent="handleSubmitCategory"
-        >
-          <div>
-            <label for="category-name" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">名称 <span class="text-red-500">*</span></label>
-            <input id="category-name"
-              v-model="categoryForm.name"
-              type="text"
-              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
-              :class="hasCategoryError('name') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
-              placeholder="分类名称"
-              @input="clearCategoryError('name'); handleCategoryNameInput()"
-              @blur="handleCategoryNameBlur"
-            >
-            <p
-              v-if="hasCategoryError('name')"
-              class="mt-1 text-xs text-red-500"
-            >
-              {{ getCategoryErrorMessage('name') }}
-            </p>
-          </div>
-
-          <div>
-            <label for="category-slug" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Slug <span class="text-red-500">*</span></label>
-            <input id="category-slug"
-              v-model="categoryForm.slug"
-              type="text"
-              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
-              :class="hasCategoryError('slug') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
-              placeholder="category-slug"
-              @input="clearCategoryError('slug'); handleCategorySlugInput()"
-            >
-            <p
-              v-if="isGeneratingSlug"
-              class="mt-1 text-xs text-gray-400"
-            >
-              正在生成 Slug...
-            </p>
-            <p
-              v-else-if="hasCategoryError('slug')"
-              class="mt-1 text-xs text-red-500"
-            >
-              {{ getCategoryErrorMessage('slug') }}
-            </p>
-          </div>
-
-          <div>
-            <label for="textarea-categoryForm-description" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">描述</label>
-            <textarea id="textarea-categoryForm-description"
-              v-model="categoryForm.description"
-              rows="2"
-              class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none resize-none"
-              placeholder="分类描述"
-            />
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label for="category-icon-helper" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">图标</label>
-              <input id="category-icon-helper" type="text" class="sr-only" :value="categoryForm.icon" tabindex="-1" readonly autocomplete="off">
-              <IconPicker v-model="categoryForm.icon" />
-            </div>
-
-            <div>
-              <label for="resource-category-is-active" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">排序</label>
-              <input id="resource-category-is-active"
-                v-model.number="categoryForm.order"
-                type="number"
-                min="0"
-                class="w-full px-3 py-2 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:border-primary focus:outline-none"
-              >
-            </div>
-          </div>
-
-          <div>
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input id="input-categoryForm-is_active"
-                v-model="categoryForm.is_active"
-                type="checkbox"
-                class="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-100 text-primary focus:ring-primary"
-              >
-              <span class="text-gray-700 dark:text-gray-300 text-sm">启用</span>
-            </label>
-          </div>
-
-          <div class="flex justify-end gap-3 pt-2">
-            <button
-              type="button"
-              class="px-4 py-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-              @click="showCategoryEditor = false; editingCategory = null; resetCategoryForm()"
-            >
-              取消
-            </button>
-            <button
-              type="submit"
-              class="btn-primary text-sm px-4 py-1.5"
-            >
-              保存
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
     <DeletionConfirmDialog
       :visible="resourceDeletion.showDeletionDialog.value"
       :preview="resourceDeletion.deletionPreview.value"
       :loading="resourceDeletionLoading"
       @confirm="executeResourceDeletion"
       @cancel="resourceDeletion.cancelDeletion()"
-    />
-
-    <DeletionConfirmDialog
-      :visible="categoryDeletion.showDeletionDialog.value"
-      :preview="categoryDeletion.deletionPreview.value"
-      :loading="categoryDeletionLoading"
-      @confirm="executeCategoryDeletion"
-      @cancel="categoryDeletion.cancelDeletion()"
     />
   </div>
 </template>

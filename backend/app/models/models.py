@@ -62,7 +62,7 @@ class Article(Base):
     __tablename__ = "articles"
     
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String(200), nullable=False)
+    title = Column(String(200), nullable=False, unique=True, index=True)
     slug = Column(String(200), unique=True, nullable=False, index=True)
     summary = Column(Text, nullable=True)
     content = Column(Text, nullable=False)
@@ -160,7 +160,7 @@ class Resource(Base):
     __tablename__ = "resources"
     
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String(100), nullable=False)
+    title = Column(String(100), nullable=False, unique=True, index=True)
     description = Column(Text, nullable=True)
     url = Column(String(500), nullable=False, unique=True, index=True)
     icon = Column(String(50), nullable=True)

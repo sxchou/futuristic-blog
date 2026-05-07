@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query, R
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from app.core.database import get_db
 from app.models import Comment, Article, User, NotificationSettings, CommentAuditLog, UserProfile, AvatarType
 from app.schemas import (
@@ -328,8 +329,12 @@ async def create_comment(
     if initial_status == 'approved':
         article.comment_count = (article.comment_count or 0) + 1
     
-    db.commit()
-    db.refresh(new_comment)
+    try:
+        db.commit()
+        db.refresh(new_comment)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="数据保存失败，请检查输入内容")
     
     article_author = db.query(User).filter(User.id == article.author_id).first() if article.author_id else None
     author_email = article_author.email if article_author else None

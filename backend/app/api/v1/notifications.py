@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from app.core.database import get_db
 from app.models import NotificationSettings, User
 from app.schemas import NotificationSettingsUpdate, NotificationSettingsResponse
@@ -91,8 +92,12 @@ async def update_notification_settings(
             last_new_value = settings_data.require_comment_audit
         settings.require_comment_audit = settings_data.require_comment_audit
     
-    db.commit()
-    db.refresh(settings)
+    try:
+        db.commit()
+        db.refresh(settings)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="数据保存失败，请检查输入内容")
     
     if update_count == 0:
         description = "更新通知设置"

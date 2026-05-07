@@ -1,7 +1,22 @@
 import apiClient, { clearCacheByPattern } from './client'
 import type { Tag } from '@/types'
 
+export interface UniqueCheckResult {
+  exists: boolean
+  field: string
+  value: string
+}
+
 export const tagApi = {
+  checkUnique: async (field: 'name' | 'slug', value: string, excludeId?: number): Promise<UniqueCheckResult> => {
+    const params: Record<string, string | number> = { field, value }
+    if (excludeId) {
+      params.exclude_id = excludeId
+    }
+    const response = await apiClient.get('/tags/check-unique', { params })
+    return response.data
+  },
+
   getTags: async (): Promise<Tag[]> => {
     const response = await apiClient.get('/tags')
     return response.data

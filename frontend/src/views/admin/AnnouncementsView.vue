@@ -129,13 +129,16 @@ const handleSave = async () => {
   
   if (!formData.value.title.trim()) {
     validationErrors.value.push({ field: 'title', message: '请输入公告标题' })
-    await scrollToField('announcement-title')
-    return
   }
   
   if (!formData.value.content.trim()) {
     validationErrors.value.push({ field: 'content', message: '请输入公告内容' })
-    await scrollToField('announcement-content')
+  }
+  
+  if (validationErrors.value.length > 0) {
+    const firstError = validationErrors.value[0]
+    const fieldIdMap: Record<string, string> = { title: 'announcement-title', content: 'announcement-content' }
+    await scrollToField(fieldIdMap[firstError.field] || firstError.field)
     return
   }
   
@@ -153,7 +156,7 @@ const handleSave = async () => {
     closeEditor()
     fetchAnnouncements()
   } catch (error: any) {
-    await dialog.showError(error.response?.data?.detail || '操作失败', '保存失败')
+    console.error('Failed to save announcement:', error)
   } finally {
     isSaving.value = false
   }
@@ -175,8 +178,10 @@ const executeDeletion = async () => {
     await dialog.showSuccess('公告删除成功', '成功')
     fetchAnnouncements()
   } catch (error: any) {
+    console.error('Failed to delete announcement:', error)
     deletion.cancelDeletion()
-    await dialog.showError(error.response?.data?.detail || '删除失败', '删除失败')
+  } finally {
+    deletionLoading.value = false
   }
 }
 
@@ -416,7 +421,7 @@ const getTypeStyles = (type: string) => {
                 v-model="formData.title"
                 type="text"
                 :disabled="!canEdit"
-                class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border rounded-xl text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border rounded-xl text-gray-900 dark:text-white outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 :class="hasError('title') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
                 placeholder="请输入公告标题"
                 @input="clearValidationError('title')"
@@ -437,7 +442,7 @@ const getTypeStyles = (type: string) => {
                 v-model="formData.content"
                 rows="4"
                 :disabled="!canEdit"
-                class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border rounded-xl text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all resize-none disabled:opacity-50 disabled:cursor-not-allowed"
+                class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border rounded-xl text-gray-900 dark:text-white outline-none transition-all resize-none disabled:opacity-50 disabled:cursor-not-allowed"
                 :class="hasError('content') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
                 placeholder="请输入公告内容"
                 @input="clearValidationError('content')"
@@ -504,7 +509,7 @@ const getTypeStyles = (type: string) => {
                   type="number"
                   min="0"
                   :disabled="!canEdit"
-                  class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="数字越小越靠前"
                 >
                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -534,7 +539,7 @@ const getTypeStyles = (type: string) => {
           <div class="px-4 py-3 border-t border-gray-200 dark:border-white/10 flex justify-end gap-2 bg-gray-50/50 dark:bg-white/[0.02]">
             <button
               type="button"
-              class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-dark-300 transition-colors"
+              class="px-4 py-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
               @click="closeEditor"
             >
               取消
@@ -542,44 +547,17 @@ const getTypeStyles = (type: string) => {
             <button
               type="button"
               :disabled="isSaving || !canEdit"
-              class="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/25"
+              class="btn-primary text-sm px-4 py-1.5"
               @click="handleSave"
             >
-              <svg
-                v-if="isSaving"
-                class="w-4 h-4 animate-spin"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  class="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  stroke-width="4"
-                />
-                <path
-                  class="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
-              </svg>
-              <svg
-                v-else
-                class="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-              {{ isSaving ? '保存中...' : '保存公告' }}
+              <span v-if="isSaving" class="flex items-center gap-2">
+                <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                保存中...
+              </span>
+              <span v-else>保存</span>
             </button>
           </div>
         </div>

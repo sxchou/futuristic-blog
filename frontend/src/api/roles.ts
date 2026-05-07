@@ -1,6 +1,12 @@
 import apiClient from './client'
 import type { Permission } from './permissions'
 
+export interface UniqueCheckResult {
+  exists: boolean
+  field: string
+  value: string
+}
+
 export interface Role {
   id: number
   name: string
@@ -52,6 +58,15 @@ export interface UserWithRoles {
 }
 
 export const roleApi = {
+  checkUnique: async (field: 'name' | 'code', value: string, excludeId?: number): Promise<UniqueCheckResult> => {
+    const params: Record<string, string | number> = { field, value }
+    if (excludeId) {
+      params.exclude_id = excludeId
+    }
+    const response = await apiClient.get('/roles/check-unique', { params })
+    return response.data
+  },
+
   getRoles: async (isActive?: boolean): Promise<Role[]> => {
     const params = new URLSearchParams()
     if (isActive !== undefined) params.append('is_active', String(isActive))

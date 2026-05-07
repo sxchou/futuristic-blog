@@ -24,7 +24,6 @@ class ItemType(str, Enum):
     tag = "tag"
     comment = "comment"
     resource = "resource"
-    resource_category = "resource_category"
     announcement = "announcement"
     oauth_provider = "oauth_provider"
     role = "role"
@@ -63,7 +62,6 @@ TYPE_LABELS = {
     "tag": "标签",
     "comment": "评论",
     "resource": "资源",
-    "resource_category": "资源分类",
     "announcement": "公告",
     "oauth_provider": "OAuth提供商",
     "role": "角色",
@@ -108,8 +106,6 @@ async def preview_deletion(
         _preview_comment_deletion(db, item_id, preview)
     elif item_type == ItemType.resource:
         _preview_resource_deletion(db, item_id, preview)
-    elif item_type == ItemType.resource_category:
-        _preview_resource_category_deletion(db, item_id, preview)
     elif item_type == ItemType.announcement:
         _preview_announcement_deletion(db, item_id, preview)
     elif item_type == ItemType.oauth_provider:
@@ -280,20 +276,6 @@ def _preview_resource_deletion(db: Session, resource_id: int, preview: DeletionP
         category = db.query(ResourceCategory).filter(ResourceCategory.id == resource.category_id).first()
         if category:
             _add_item(preview, "resource_category", "所属分类", f"将从分类「{category.name}」中移除", action="unlink")
-
-
-def _preview_resource_category_deletion(db: Session, category_id: int, preview: DeletionPreviewResponse):
-    category = db.query(ResourceCategory).filter(ResourceCategory.id == category_id).first()
-    if not category:
-        raise HTTPException(status_code=404, detail="资源分类不存在")
-
-    preview.item_name = category.name
-
-    count = db.query(Resource).filter(Resource.category_id == category_id).count()
-    if count > 0:
-        preview.can_delete = False
-        preview.block_reason = f"此分类下有 {count} 个资源，无法删除。"
-        _add_item(preview, "resource", "资源", f"{count} 个资源正在使用此分类", action="unlink", count=count)
 
 
 def _preview_announcement_deletion(db: Session, announcement_id: int, preview: DeletionPreviewResponse):
@@ -593,15 +575,6 @@ def _fetch_comment_children(db: Session, comment_id: int, limit: int):
     return DetailResponse(items=items, total=total, showing=len(items))
 
 
-@_register_detail_fetcher("resource_category", "resource")
-def _fetch_resource_category_resources(db: Session, category_id: int, limit: int):
-    query = db.query(Resource).filter(Resource.category_id == category_id)
-    total = query.count()
-    rows = query.limit(limit).all() if limit > 0 else query.all()
-    items = [DetailItem(id=r.id, name=r.title, detail=r.url[:60] if r.url else None) for r in rows]
-    return DetailResponse(items=items, total=total, showing=len(items))
-
-
 @_register_detail_fetcher("oauth_provider", "oauth_connection")
 def _fetch_oauth_provider_connections(db: Session, provider_id: int, limit: int):
     query = db.query(OAuthConnection).filter(OAuthConnection.provider_id == provider_id)
@@ -715,7 +688,6 @@ ASSOC_KEY_MAP = {
     ("tag", "文章"): "article",
     ("comment", "审核日志"): "audit_log",
     ("comment", "子评论"): "child_comment",
-    ("resource_category", "资源"): "resource",
     ("oauth_provider", "OAuth连接"): "oauth_connection",
     ("role", "用户角色分配"): "user_role",
     ("role", "权限分配"): "role_permission",

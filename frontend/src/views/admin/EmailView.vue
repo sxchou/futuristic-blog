@@ -37,6 +37,9 @@ const configForm = ref({
 
 const testEmail = ref('')
 const testResendEmail = ref('')
+const testEmailError = ref('')
+const testResendEmailError = ref('')
+const configFormErrors = ref<Record<string, string>>({})
 
 const logs = ref<EmailLog[]>([])
 const logsPage = ref(1)
@@ -193,6 +196,7 @@ function resetForm() {
     from_name: 'Futuristic Blog'
   }
   editingConfig.value = null
+  configFormErrors.value = {}
 }
 
 function closeEditModal() {
@@ -226,13 +230,37 @@ async function saveConfig() {
     if (!await requirePermission('email.create', '创建邮箱配置')) return
   }
   
-  if (!configForm.value.smtp_user || !configForm.value.from_email) {
-    await dialog.showError('请填写所有必填字段', '提示')
-    return
+  configFormErrors.value = {}
+  
+  const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+  
+  if (!configForm.value.smtp_user) {
+    configFormErrors.value.smtp_user = '请填写邮箱账号'
+  } else if (!emailPattern.test(configForm.value.smtp_user)) {
+    configFormErrors.value.smtp_user = '请输入正确的邮箱格式'
   }
-
+  if (!configForm.value.from_email) {
+    configFormErrors.value.from_email = '请填写发件人邮箱'
+  } else if (!emailPattern.test(configForm.value.from_email)) {
+    configFormErrors.value.from_email = '请输入正确的邮箱格式'
+  }
   if (!editingConfig.value && !configForm.value.smtp_password) {
-    await dialog.showError('请填写密码/授权码', '提示')
+    configFormErrors.value.smtp_password = '请填写密码/授权码'
+  }
+  
+  if (Object.keys(configFormErrors.value).length > 0) {
+    const fieldIdMap: Record<string, string> = {
+      smtp_user: 'email-smtp-user',
+      smtp_password: 'email-smtp-password',
+      from_email: 'email-from-email'
+    }
+    for (const [field, id] of Object.entries(fieldIdMap)) {
+      if (configFormErrors.value[field]) {
+        const el = document.getElementById(id)
+        if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.focus({ preventScroll: true }) }
+        break
+      }
+    }
     return
   }
 
@@ -296,16 +324,26 @@ async function executeDeletion() {
     await loadConfigs()
     await loadProviderStatus()
   } catch (error: any) {
+    console.error('Failed to delete email config:', error)
     deletion.cancelDeletion()
-    await dialog.showError(error.response?.data?.detail || '删除失败', '错误')
+  } finally {
+    deletionLoading.value = false
   }
 }
 
 async function sendTestEmail() {
   if (!await requirePermission('email.test', '发送测试邮件')) return
   
+  testEmailError.value = ''
+  
+  const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+  
   if (!testEmail.value) {
-    await dialog.showError('请输入测试邮箱地址', '提示')
+    testEmailError.value = '请输入测试邮箱地址'
+    return
+  }
+  if (!emailPattern.test(testEmail.value)) {
+    testEmailError.value = '请输入正确的邮箱格式'
     return
   }
 
@@ -330,8 +368,16 @@ async function sendTestEmail() {
 async function sendResendTestEmail() {
   if (!await requirePermission('email.test', '发送Resend测试邮件')) return
   
+  testResendEmailError.value = ''
+  
+  const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+  
   if (!testResendEmail.value) {
-    await dialog.showError('请输入测试邮箱地址', '提示')
+    testResendEmailError.value = '请输入测试邮箱地址'
+    return
+  }
+  if (!emailPattern.test(testResendEmail.value)) {
+    testResendEmailError.value = '请输入正确的邮箱格式'
     return
   }
 
@@ -638,7 +684,8 @@ function getProviderBgColor(provider: string) {
               name="test-email"
               placeholder="输入测试邮箱"
               :disabled="!canTest"
-              class="flex-1 px-2.5 py-1.5 text-sm bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-md text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:outline-none disabled:opacity-50"
+              :class="['flex-1 px-2.5 py-1.5 text-sm bg-gray-50 dark:bg-dark-200 border rounded-md text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:outline-none disabled:opacity-50', testEmailError ? 'border-red-300 dark:border-red-500' : 'border-gray-200 dark:border-white/10']"
+              @input="testEmailError = ''"
             >
             <button
               type="button"
@@ -649,8 +696,9 @@ function getProviderBgColor(provider: string) {
               {{ isTesting ? '发送中' : '测试' }}
             </button>
           </form>
+          <p v-if="testEmailError" class="mt-1.5 text-xs text-red-500">{{ testEmailError }}</p>
           <p
-            v-if="!activeConfig"
+            v-else-if="!activeConfig"
             class="mt-1.5 text-xs text-yellow-500"
           >
             请先激活一个配置
@@ -671,7 +719,8 @@ function getProviderBgColor(provider: string) {
               name="test-resend-email"
               placeholder="输入测试邮箱"
               :disabled="!canTest"
-              class="flex-1 px-2.5 py-1.5 text-sm bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-md text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:outline-none disabled:opacity-50"
+              :class="['flex-1 px-2.5 py-1.5 text-sm bg-gray-50 dark:bg-dark-200 border rounded-md text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:outline-none disabled:opacity-50', testResendEmailError ? 'border-red-300 dark:border-red-500' : 'border-gray-200 dark:border-white/10']"
+              @input="testResendEmailError = ''"
             >
             <button
               :disabled="isTestingResend"
@@ -681,6 +730,7 @@ function getProviderBgColor(provider: string) {
               {{ isTestingResend ? '发送中' : '测试' }}
             </button>
           </form>
+          <p v-if="testResendEmailError" class="mt-1.5 text-xs text-red-500">{{ testResendEmailError }}</p>
         </div>
       </div>
     </div>
@@ -1059,8 +1109,16 @@ function getProviderBgColor(provider: string) {
                     name="smtp-user"
                     autocomplete="email"
                     :placeholder="configForm.provider === 'qq' ? 'QQ邮箱' : '邮箱地址'"
-                    class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
+                    class="w-full px-2.5 py-1.5 text-sm rounded-md border bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
+                    :class="configFormErrors.smtp_user ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
+                    @input="delete configFormErrors.smtp_user"
                   >
+                  <p
+                    v-if="configFormErrors.smtp_user"
+                    class="mt-1 text-xs text-red-500"
+                  >
+                    {{ configFormErrors.smtp_user }}
+                  </p>
                 </div>
                 <div>
                   <label
@@ -1079,8 +1137,16 @@ function getProviderBgColor(provider: string) {
                     name="smtp-password"
                     autocomplete="new-password"
                     :placeholder="editingConfig ? '留空保持原值' : '授权码/密码'"
-                    class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
+                    class="w-full px-2.5 py-1.5 text-sm rounded-md border bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
+                    :class="configFormErrors.smtp_password ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
+                    @input="delete configFormErrors.smtp_password"
                   >
+                  <p
+                    v-if="configFormErrors.smtp_password"
+                    class="mt-1 text-xs text-red-500"
+                  >
+                    {{ configFormErrors.smtp_password }}
+                  </p>
                 </div>
               </div>
 
@@ -1099,8 +1165,16 @@ function getProviderBgColor(provider: string) {
                     name="from-email"
                     autocomplete="email"
                     placeholder="发件人邮箱"
-                    class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
+                    class="w-full px-2.5 py-1.5 text-sm rounded-md border bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
+                    :class="configFormErrors.from_email ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
+                    @input="delete configFormErrors.from_email"
                   >
+                  <p
+                    v-if="configFormErrors.from_email"
+                    class="mt-1 text-xs text-red-500"
+                  >
+                    {{ configFormErrors.from_email }}
+                  </p>
                 </div>
                 <div>
                   <label
@@ -1132,14 +1206,17 @@ function getProviderBgColor(provider: string) {
             </button>
             <button
               :disabled="isSaving"
-              class="px-3 py-1.5 text-sm rounded-md bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+              class="btn-primary text-sm px-4 py-1.5"
               @click="saveConfig"
             >
-              <div
-                v-if="isSaving"
-                class="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"
-              />
-              {{ isSaving ? '保存中' : '保存' }}
+              <span v-if="isSaving" class="flex items-center gap-2">
+                <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                保存中...
+              </span>
+              <span v-else>保存</span>
             </button>
           </div>
         </div>

@@ -38,6 +38,13 @@ def run_database_migrations():
                 conn.commit()
                 print("Migration: Added unique index on articles.slug")
             
+            has_unique_title = any('title' in str(idx) and idx[2] == 1 for idx in indexes)
+            
+            if not has_unique_title:
+                cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS ix_articles_title ON articles(title)")
+                conn.commit()
+                print("Migration: Added unique index on articles.title")
+            
             if 'is_pinned' not in article_columns:
                 cursor.execute("ALTER TABLE articles ADD COLUMN is_pinned BOOLEAN DEFAULT 0")
                 cursor.execute("CREATE INDEX IF NOT EXISTS ix_articles_published_pinned ON articles(is_published, is_pinned)")
@@ -196,6 +203,15 @@ def run_database_migrations():
                 conn.commit()
                 print("Migration: Fixed duplicate order values in resources table")
             
+            cursor.execute("PRAGMA index_list(resources)")
+            indexes = cursor.fetchall()
+            has_unique_title = any('title' in str(idx) and 'UNIQUE' in str(idx) for idx in indexes)
+            
+            if not has_unique_title:
+                cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS ix_resources_title ON resources(title)")
+                conn.commit()
+                print("Migration: Added unique index on resources.title")
+            
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='email_change_verifications'")
             if not cursor.fetchone():
                 cursor.execute('''
@@ -228,6 +244,12 @@ def run_database_migrations():
                     print("Migration: Added 'deleted_by' column to comments table")
                 else:
                     print("Migration: 'deleted_by' column already exists")
+                
+                result = db.execute(text("SELECT indexname FROM pg_indexes WHERE tablename = 'articles' AND indexname = 'ix_articles_title'"))
+                if not result.fetchone():
+                    db.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_articles_title ON articles(title)"))
+                    db.commit()
+                    print("Migration: Added unique index on articles.title")
                 
                 result = db.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'articles' AND column_name = 'is_pinned'"))
                 if not result.fetchone():
@@ -331,6 +353,18 @@ def run_database_migrations():
                     '''))
                     db.commit()
                     print("Migration: Fixed duplicate order values in resources table")
+                
+                result = db.execute(text("SELECT indexname FROM pg_indexes WHERE tablename = 'resources' AND indexname = 'ix_resources_url'"))
+                if not result.fetchone():
+                    db.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_resources_url ON resources(url)"))
+                    db.commit()
+                    print("Migration: Added unique index on resources.url")
+                
+                result = db.execute(text("SELECT indexname FROM pg_indexes WHERE tablename = 'resources' AND indexname = 'ix_resources_title'"))
+                if not result.fetchone():
+                    db.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_resources_title ON resources(title)"))
+                    db.commit()
+                    print("Migration: Added unique index on resources.title")
                 
                 result = db.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'email_change_verifications'"))
                 if not result.fetchone():

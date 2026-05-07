@@ -233,6 +233,25 @@ const validateForm = (): boolean => {
     isValid = false
   }
   
+  if (!isValid) {
+    const fieldIdMap: Record<string, string> = {
+      display_name: 'oauth-display-name',
+      scope: 'oauth-scope',
+      client_id: 'oauth-client-id',
+      redirect_uri: 'oauth-redirect-uri',
+      authorize_url: 'oauth-authorize-url',
+      token_url: 'oauth-token-url',
+      userinfo_url: 'oauth-userinfo-url'
+    }
+    for (const [field, id] of Object.entries(fieldIdMap)) {
+      if (formErrors.value[field as keyof typeof formErrors.value]) {
+        const el = document.getElementById(id)
+        if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.focus({ preventScroll: true }) }
+        break
+      }
+    }
+  }
+  
   return isValid
 }
 
@@ -565,7 +584,7 @@ onMounted(fetchProviders)
                     name="display-name"
                     autocomplete="off"
                     :disabled="!canEdit"
-                    :class="['w-full px-2.5 py-1.5 text-sm rounded-md border bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed', formErrors.display_name ? 'border-red-300 dark:border-red-500' : 'border-gray-200 dark:border-white/10']"
+                    :class="['w-full px-2.5 py-1.5 text-sm rounded-md border bg-white dark:bg-dark-100 text-gray-900 dark:text-white outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed', formErrors.display_name ? 'border-red-300 dark:border-red-500' : 'border-gray-200 dark:border-white/10']"
                   >
                   <p v-if="formErrors.display_name" class="mt-1 text-xs text-red-500">{{ formErrors.display_name }}</p>
                 </div>
@@ -579,7 +598,7 @@ onMounted(fetchProviders)
                     v-model="form.scope"
                     name="scope"
                     :disabled="!canEdit"
-                    :class="['w-full px-2.5 py-1.5 text-sm rounded-md border bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed', formErrors.scope ? 'border-red-300 dark:border-red-500' : 'border-gray-200 dark:border-white/10']"
+                    :class="['w-full px-2.5 py-1.5 text-sm rounded-md border bg-white dark:bg-dark-100 text-gray-900 dark:text-white outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed', formErrors.scope ? 'border-red-300 dark:border-red-500' : 'border-gray-200 dark:border-white/10']"
                   >
                     <option value="" disabled>请选择授权范围</option>
                     <option v-for="opt in currentScopeOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
@@ -603,7 +622,7 @@ onMounted(fetchProviders)
                     name="client-id"
                     autocomplete="off"
                     :disabled="!canEdit"
-                    :class="['w-full px-2.5 py-1.5 text-sm rounded-md border bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed', formErrors.client_id ? 'border-red-300 dark:border-red-500' : 'border-gray-200 dark:border-white/10']"
+                    :class="['w-full px-2.5 py-1.5 text-sm rounded-md border bg-white dark:bg-dark-100 text-gray-900 dark:text-white outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed', formErrors.client_id ? 'border-red-300 dark:border-red-500' : 'border-gray-200 dark:border-white/10']"
                   >
                   <p v-if="formErrors.client_id" class="mt-1 text-xs text-red-500">{{ formErrors.client_id }}</p>
                 </div>
@@ -621,7 +640,7 @@ onMounted(fetchProviders)
                     name="client-secret"
                     autocomplete="new-password"
                     :disabled="!canEdit"
-                    class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="留空保持原值"
                   >
                 </div>
@@ -641,7 +660,7 @@ onMounted(fetchProviders)
                     name="redirect-uri"
                     autocomplete="url"
                   :disabled="!canEdit"
-                  :class="['w-full px-2.5 py-1.5 text-sm rounded-md border bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed', formErrors.redirect_uri ? 'border-red-300 dark:border-red-500' : 'border-gray-200 dark:border-white/10']"
+                  :class="['w-full px-2.5 py-1.5 text-sm rounded-md border bg-white dark:bg-dark-100 text-gray-900 dark:text-white outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed', formErrors.redirect_uri ? 'border-red-300 dark:border-red-500' : 'border-gray-200 dark:border-white/10']"
                   placeholder="http://localhost:3001/oauth/callback/{provider}"
                 >
                 <p v-if="formErrors.redirect_uri" class="mt-1 text-xs text-red-500">{{ formErrors.redirect_uri }}</p>
@@ -673,7 +692,7 @@ onMounted(fetchProviders)
                         name="authorize-url"
                         autocomplete="url"
                         :disabled="!canEdit"
-                        :class="['w-full px-2 py-1 text-xs rounded border bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none disabled:opacity-50 disabled:cursor-not-allowed', formErrors.authorize_url ? 'border-red-300 dark:border-red-500' : 'border-gray-200 dark:border-white/10']"
+                        :class="['w-full px-2 py-1 text-xs rounded border bg-white dark:bg-dark-100 text-gray-900 dark:text-white outline-none disabled:opacity-50 disabled:cursor-not-allowed', formErrors.authorize_url ? 'border-red-300 dark:border-red-500' : 'border-gray-200 dark:border-white/10']"
                       >
                       <p v-if="formErrors.authorize_url" class="mt-0.5 text-xs text-red-500">{{ formErrors.authorize_url }}</p>
                     </div>
@@ -689,7 +708,7 @@ onMounted(fetchProviders)
                         name="token-url"
                         autocomplete="url"
                         :disabled="!canEdit"
-                        :class="['w-full px-2 py-1 text-xs rounded border bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none disabled:opacity-50 disabled:cursor-not-allowed', formErrors.token_url ? 'border-red-300 dark:border-red-500' : 'border-gray-200 dark:border-white/10']"
+                        :class="['w-full px-2 py-1 text-xs rounded border bg-white dark:bg-dark-100 text-gray-900 dark:text-white outline-none disabled:opacity-50 disabled:cursor-not-allowed', formErrors.token_url ? 'border-red-300 dark:border-red-500' : 'border-gray-200 dark:border-white/10']"
                       >
                       <p v-if="formErrors.token_url" class="mt-0.5 text-xs text-red-500">{{ formErrors.token_url }}</p>
                     </div>
@@ -705,7 +724,7 @@ onMounted(fetchProviders)
                         name="userinfo-url"
                         autocomplete="url"
                         :disabled="!canEdit"
-                        :class="['w-full px-2 py-1 text-xs rounded border bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none disabled:opacity-50 disabled:cursor-not-allowed', formErrors.userinfo_url ? 'border-red-300 dark:border-red-500' : 'border-gray-200 dark:border-white/10']"
+                        :class="['w-full px-2 py-1 text-xs rounded border bg-white dark:bg-dark-100 text-gray-900 dark:text-white outline-none disabled:opacity-50 disabled:cursor-not-allowed', formErrors.userinfo_url ? 'border-red-300 dark:border-red-500' : 'border-gray-200 dark:border-white/10']"
                       >
                       <p v-if="formErrors.userinfo_url" class="mt-0.5 text-xs text-red-500">{{ formErrors.userinfo_url }}</p>
                     </div>
@@ -746,14 +765,17 @@ onMounted(fetchProviders)
             </button>
             <button
               :disabled="isSaving || !canEdit"
-              class="px-3 py-1.5 text-sm rounded-md bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+              class="btn-primary text-sm px-4 py-1.5"
               @click="saveConfig"
             >
-              <div
-                v-if="isSaving"
-                class="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"
-              />
-              {{ isSaving ? '保存中' : '保存' }}
+              <span v-if="isSaving" class="flex items-center gap-2">
+                <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                保存中...
+              </span>
+              <span v-else>保存</span>
             </button>
           </div>
         </div>

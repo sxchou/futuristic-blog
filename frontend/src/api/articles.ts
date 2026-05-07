@@ -1,7 +1,22 @@
 import apiClient, { clearCacheByPattern } from './client'
 import type { Article, ArticleListItem, PaginatedResponse } from '@/types'
 
+export interface UniqueCheckResult {
+  exists: boolean
+  field: string
+  value: string
+}
+
 export const articleApi = {
+  checkUnique: async (field: 'slug' | 'title', value: string, excludeId?: number): Promise<UniqueCheckResult> => {
+    const params: Record<string, string | number> = { field, value }
+    if (excludeId) {
+      params.exclude_id = excludeId
+    }
+    const response = await apiClient.get('/articles/check-unique', { params })
+    return response.data
+  },
+
   getArticles: async (params: {
     page?: number
     page_size?: number

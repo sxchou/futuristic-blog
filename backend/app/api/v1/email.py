@@ -3,6 +3,7 @@ from typing import List, Optional
 import asyncio
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from app.core.database import get_db
 from app.core.config import settings
 from app.models import EmailConfig, EmailLog, User, SiteConfig
@@ -302,8 +303,13 @@ async def create_email_config(
     )
     
     db.add(new_config)
-    db.commit()
-    db.refresh(new_config)
+    
+    try:
+        db.commit()
+        db.refresh(new_config)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="数据保存失败，请检查输入内容")
     
     LogService.log_operation(
         db=db,
@@ -338,8 +344,12 @@ async def update_email_config(
     for field, value in update_data.items():
         setattr(config, field, value)
     
-    db.commit()
-    db.refresh(config)
+    try:
+        db.commit()
+        db.refresh(config)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="数据保存失败，请检查输入内容")
     
     LogService.log_operation(
         db=db,

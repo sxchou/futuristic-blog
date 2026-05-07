@@ -9,6 +9,12 @@ interface PaginatedResponse<T> {
   total_pages: number
 }
 
+export interface UniqueCheckResult {
+  exists: boolean
+  field: string
+  value: string
+}
+
 export interface ChangePasswordData {
   current_password: string
   new_password: string
@@ -47,6 +53,15 @@ export interface CreateUserInput {
 }
 
 export const userApi = {
+  checkUnique: async (field: 'username' | 'email', value: string, excludeId?: number): Promise<UniqueCheckResult> => {
+    const params: Record<string, string | number> = { field, value }
+    if (excludeId) {
+      params.exclude_id = excludeId
+    }
+    const response = await apiClient.get('/users/check-unique', { params })
+    return response.data
+  },
+
   getUsers: async (page: number = 1, pageSize: number = 10): Promise<PaginatedResponse<User>> => {
     const response = await apiClient.get(`/users?page=${page}&page_size=${pageSize}`)
     return response.data

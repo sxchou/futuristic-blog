@@ -1,7 +1,8 @@
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, Request
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, Request, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from app.core.database import get_db
 from app.models import Category, Article
 from app.schemas import CategoryCreate, CategoryUpdate, CategoryResponse
@@ -18,6 +19,29 @@ CACHE_NAME = "categories"
 
 def invalidate_categories_cache():
     cache_manager.clear_cache(CACHE_NAME)
+
+
+@router.get("/check-unique")
+async def check_unique(
+    field: str = Query(..., description="Field to check: 'name' or 'slug'"),
+    value: str = Query(..., description="Value to check"),
+    exclude_id: Optional[int] = Query(None, description="Category ID to exclude (for updates)"),
+    db: Session = Depends(get_db)
+):
+    if field not in ["name", "slug"]:
+        raise HTTPException(status_code=400, detail="Invalid field. Must be 'name' or 'slug'")
+    
+    query = db.query(Category)
+    if field == "name":
+        query = query.filter(Category.name == value)
+    else:
+        query = query.filter(Category.slug == value)
+    
+    if exclude_id:
+        query = query.filter(Category.id != exclude_id)
+    
+    exists = query.first() is not None
+    return {"exists": exists, "field": field, "value": value}
 
 
 @router.get("", response_model=List[CategoryResponse])
@@ -98,9 +122,20 @@ async def create_category(
         color=category_data.color,
         order=category_data.order
     )
-    db.add(new_category)
-    db.commit()
-    db.refresh(new_category)
+    
+    try:
+        db.add(new_category)
+        db.commit()
+        db.refresh(new_category)
+    except IntegrityError as e:
+        db.rollback()
+        error_msg = str(e.orig) if hasattr(e, 'orig') else str(e)
+        if 'name' in error_msg.lower() or 'uq_category' in error_msg.lower():
+            raise HTTPException(status_code=400, detail="分类名称已存在，请使用其他名称")
+        elif 'slug' in error_msg.lower():
+            raise HTTPException(status_code=400, detail="分类 Slug 已存在，请使用其他 Slug")
+        else:
+            raise HTTPException(status_code=400, detail="数据保存失败，请检查输入内容")
     
     invalidate_categories_cache()
     
@@ -133,11 +168,38 @@ async def update_category(
         raise HTTPException(status_code=404, detail="Category not found")
     
     update_data = category_data.model_dump(exclude_unset=True)
+    
+    if 'name' in update_data:
+        existing_name = db.query(Category).filter(
+            Category.name == update_data['name'],
+            Category.id != category_id
+        ).first()
+        if existing_name:
+            raise HTTPException(status_code=400, detail="分类名称已存在，请使用其他名称")
+    
+    if 'slug' in update_data:
+        existing_slug = db.query(Category).filter(
+            Category.slug == update_data['slug'],
+            Category.id != category_id
+        ).first()
+        if existing_slug:
+            raise HTTPException(status_code=400, detail="分类 Slug 已存在，请使用其他 Slug")
+    
     for field, value in update_data.items():
         setattr(category, field, value)
     
-    db.commit()
-    db.refresh(category)
+    try:
+        db.commit()
+        db.refresh(category)
+    except IntegrityError as e:
+        db.rollback()
+        error_msg = str(e.orig) if hasattr(e, 'orig') else str(e)
+        if 'name' in error_msg.lower() or 'uq_category' in error_msg.lower():
+            raise HTTPException(status_code=400, detail="分类名称已存在，请使用其他名称")
+        elif 'slug' in error_msg.lower():
+            raise HTTPException(status_code=400, detail="分类 Slug 已存在，请使用其他 Slug")
+        else:
+            raise HTTPException(status_code=400, detail="数据保存失败，请检查输入内容")
     
     invalidate_categories_cache()
     

@@ -1,6 +1,7 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from app.core.database import get_db
 from app.models.models import Announcement
 from app.schemas.schemas import AnnouncementCreate, AnnouncementUpdate, AnnouncementResponse
@@ -69,9 +70,14 @@ def create_announcement(
         is_active=announcement_data.is_active,
         order=order_value
     )
-    db.add(announcement)
-    db.commit()
-    db.refresh(announcement)
+    
+    try:
+        db.add(announcement)
+        db.commit()
+        db.refresh(announcement)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="数据保存失败，请检查输入内容")
     
     invalidate_announcements_cache()
     
@@ -109,8 +115,12 @@ def update_announcement(
     for key, value in update_data.items():
         setattr(announcement, key, value)
     
-    db.commit()
-    db.refresh(announcement)
+    try:
+        db.commit()
+        db.refresh(announcement)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="数据保存失败，请检查输入内容")
     
     invalidate_announcements_cache()
     

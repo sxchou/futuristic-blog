@@ -1,7 +1,22 @@
 import apiClient, { clearCacheByPattern } from './client'
 import type { Category } from '@/types'
 
+export interface UniqueCheckResult {
+  exists: boolean
+  field: string
+  value: string
+}
+
 export const categoryApi = {
+  checkUnique: async (field: 'name' | 'slug', value: string, excludeId?: number): Promise<UniqueCheckResult> => {
+    const params: Record<string, string | number> = { field, value }
+    if (excludeId) {
+      params.exclude_id = excludeId
+    }
+    const response = await apiClient.get('/categories/check-unique', { params })
+    return response.data
+  },
+
   getCategories: async (): Promise<Category[]> => {
     const response = await apiClient.get('/categories')
     return response.data

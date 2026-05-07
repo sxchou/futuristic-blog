@@ -34,6 +34,28 @@ from functools import lru_cache
 
 router = APIRouter(prefix="/articles", tags=["Articles"])
 
+
+@router.get("/check-unique")
+async def check_unique(
+    field: str = Query(..., description="Field to check: 'slug' or 'title'"),
+    value: str = Query(..., description="Value to check"),
+    exclude_id: Optional[int] = Query(None, description="Article ID to exclude (for updates)"),
+    db: Session = Depends(get_db)
+):
+    if field not in ["slug", "title"]:
+        raise HTTPException(status_code=400, detail="Invalid field. Must be 'slug' or 'title'")
+    
+    if field == "slug":
+        query = db.query(Article).filter(Article.slug == value)
+    else:
+        query = db.query(Article).filter(Article.title == value)
+    
+    if exclude_id:
+        query = query.filter(Article.id != exclude_id)
+    
+    exists = query.first() is not None
+    return {"exists": exists, "field": field, "value": value}
+
 CACHE_NAME = "articles"
 
 
@@ -606,8 +628,24 @@ async def create_article(
         new_article.tags = tags
     
     db.add(new_article)
-    db.commit()
-    db.refresh(new_article)
+    try:
+        db.commit()
+        db.refresh(new_article)
+    except IntegrityError as e:
+        db.rollback()
+        error_msg = str(e)
+        if "ix_articles_title" in error_msg or ("title" in error_msg.lower() and "unique" in error_msg.lower()):
+            raise HTTPException(
+                status_code=400,
+                detail={"message": "该标题已存在，请使用其他标题", "field": "title"}
+            )
+        elif "ix_articles_slug" in error_msg or "slug" in error_msg.lower():
+            raise HTTPException(
+                status_code=400,
+                detail={"message": "该slug已存在，请使用其他slug", "field": "slug"}
+            )
+        else:
+            raise HTTPException(status_code=400, detail="保存失败，数据冲突")
     
     invalidate_articles_cache()
     
@@ -681,7 +719,12 @@ async def update_article(
     except IntegrityError as e:
         db.rollback()
         error_msg = str(e)
-        if "ix_articles_slug" in error_msg or "slug" in error_msg.lower():
+        if "ix_articles_title" in error_msg or ("title" in error_msg.lower() and "unique" in error_msg.lower()):
+            raise HTTPException(
+                status_code=400,
+                detail={"message": "该标题已存在，请使用其他标题", "field": "title"}
+            )
+        elif "ix_articles_slug" in error_msg or "slug" in error_msg.lower():
             raise HTTPException(
                 status_code=400,
                 detail={"message": "该slug已存在，请使用其他slug", "field": "slug"}

@@ -221,7 +221,8 @@ const executeCommentDeletion = async () => {
   } catch (error: any) {
     console.error('Failed to delete comment:', error)
     commentDeletion.cancelDeletion()
-    await dialog.showError(error.response?.data?.detail || '删除评论失败', '错误')
+  } finally {
+    commentDeletionLoading.value = false
   }
 }
 
@@ -684,7 +685,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
             取消
           </button>
           <button
-            class="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+            class="btn-primary text-sm px-4 py-1.5"
             @click="submitAudit"
           >
             确认
@@ -750,7 +751,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
             取消
           </button>
           <button
-            class="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+            class="btn-primary text-sm px-4 py-1.5"
             @click="submitBatchAudit"
           >
             确认
