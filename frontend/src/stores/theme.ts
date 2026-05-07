@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 
 export const useThemeStore = defineStore('theme', () => {
-  const isDark = ref(true)
+  const isDark = ref(false)
 
   const toggleTheme = () => {
     isDark.value = !isDark.value
@@ -12,8 +12,10 @@ export const useThemeStore = defineStore('theme', () => {
     const savedTheme = localStorage.getItem('theme')
     if (savedTheme) {
       isDark.value = savedTheme === 'dark'
+    } else {
+      isDark.value = window.matchMedia('(prefers-color-scheme: dark)').matches
     }
-    
+
     if (isDark.value) {
       document.documentElement.classList.add('dark')
     } else {

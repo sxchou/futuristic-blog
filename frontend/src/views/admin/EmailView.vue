@@ -531,7 +531,7 @@ function getProviderBgColor(provider: string) {
       v-else-if="activeTab === 'config'"
       class="space-y-4"
     >
-      <div class="bg-white dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden">
+      <div class="glass-card overflow-hidden">
         <div class="px-4 py-2.5 border-b border-gray-200 dark:border-white/10 flex items-center justify-between">
           <h2 class="text-sm font-semibold text-gray-900 dark:text-white">
             服务提供商
@@ -583,7 +583,7 @@ function getProviderBgColor(provider: string) {
         </div>
       </div>
 
-      <div class="bg-white dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden">
+      <div class="glass-card overflow-hidden">
         <div class="px-4 py-2.5 border-b border-gray-200 dark:border-white/10 flex items-center justify-between">
           <h2 class="text-sm font-semibold text-gray-900 dark:text-white">
             SMTP 配置
@@ -672,7 +672,7 @@ function getProviderBgColor(provider: string) {
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div
           v-if="!(providerStatus?.current_provider === 'resend' && providerStatus?.has_resend_api_key)"
-          class="bg-white dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10 p-3"
+          class="glass-card p-3"
         >
           <h3 class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
             SMTP 测试
@@ -684,7 +684,7 @@ function getProviderBgColor(provider: string) {
               name="test-email"
               placeholder="输入测试邮箱"
               :disabled="!canTest"
-              :class="['flex-1 px-2.5 py-1.5 text-sm bg-gray-50 dark:bg-dark-200 border rounded-md text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:outline-none disabled:opacity-50', testEmailError ? 'border-red-300 dark:border-red-500' : 'border-gray-200 dark:border-white/10']"
+              :class="['flex-1 px-2.5 py-1.5 text-sm bg-gray-50 dark:bg-dark-200 border rounded-md text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none disabled:opacity-50', testEmailError ? 'border-red-300 dark:border-red-500' : 'border-gray-200 dark:border-white/10']"
               @input="testEmailError = ''"
             >
             <button
@@ -707,7 +707,7 @@ function getProviderBgColor(provider: string) {
 
         <div
           v-if="providerStatus?.current_provider === 'resend' && providerStatus?.has_resend_api_key"
-          class="bg-white dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10 p-3"
+          class="glass-card p-3"
         >
           <h3 class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
             Resend 测试
@@ -719,7 +719,7 @@ function getProviderBgColor(provider: string) {
               name="test-resend-email"
               placeholder="输入测试邮箱"
               :disabled="!canTest"
-              :class="['flex-1 px-2.5 py-1.5 text-sm bg-gray-50 dark:bg-dark-200 border rounded-md text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:outline-none disabled:opacity-50', testResendEmailError ? 'border-red-300 dark:border-red-500' : 'border-gray-200 dark:border-white/10']"
+              :class="['flex-1 px-2.5 py-1.5 text-sm bg-gray-50 dark:bg-dark-200 border rounded-md text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none disabled:opacity-50', testResendEmailError ? 'border-red-300 dark:border-red-500' : 'border-gray-200 dark:border-white/10']"
               @input="testResendEmailError = ''"
             >
             <button
@@ -737,7 +737,7 @@ function getProviderBgColor(provider: string) {
 
     <div
       v-else-if="activeTab === 'logs'"
-      class="bg-white dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden"
+      class="glass-card overflow-hidden"
     >
       <form class="px-4 py-2.5 border-b border-gray-200 dark:border-white/10 flex items-center gap-3" @submit.prevent>
         <select id="select-logsFilter-email_type"
@@ -964,7 +964,7 @@ function getProviderBgColor(provider: string) {
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
       >
         <div
-          class="bg-white dark:bg-dark-100 rounded-xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-hidden"
+          class="glass-card shadow-2xl w-full max-w-lg max-h-[85vh] overflow-hidden"
           @click.stop
         >
           <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-white/10">
@@ -1109,7 +1109,7 @@ function getProviderBgColor(provider: string) {
                     name="smtp-user"
                     autocomplete="email"
                     :placeholder="configForm.provider === 'qq' ? 'QQ邮箱' : '邮箱地址'"
-                    class="w-full px-2.5 py-1.5 text-sm rounded-md border bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
+                    class="w-full px-2.5 py-1.5 text-sm rounded-md border bg-white dark:bg-dark-200 text-gray-900 dark:text-white outline-none"
                     :class="configFormErrors.smtp_user ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
                     @input="delete configFormErrors.smtp_user"
                   >
@@ -1137,7 +1137,7 @@ function getProviderBgColor(provider: string) {
                     name="smtp-password"
                     autocomplete="new-password"
                     :placeholder="editingConfig ? '留空保持原值' : '授权码/密码'"
-                    class="w-full px-2.5 py-1.5 text-sm rounded-md border bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
+                    class="w-full px-2.5 py-1.5 text-sm rounded-md border bg-white dark:bg-dark-200 text-gray-900 dark:text-white outline-none"
                     :class="configFormErrors.smtp_password ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
                     @input="delete configFormErrors.smtp_password"
                   >
@@ -1165,7 +1165,7 @@ function getProviderBgColor(provider: string) {
                     name="from-email"
                     autocomplete="email"
                     placeholder="发件人邮箱"
-                    class="w-full px-2.5 py-1.5 text-sm rounded-md border bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
+                    class="w-full px-2.5 py-1.5 text-sm rounded-md border bg-white dark:bg-dark-200 text-gray-900 dark:text-white outline-none"
                     :class="configFormErrors.from_email ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
                     @input="delete configFormErrors.from_email"
                   >
@@ -1189,7 +1189,7 @@ function getProviderBgColor(provider: string) {
                     type="text"
                     name="from-name"
                     placeholder="显示名称"
-                    class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none"
+                    class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white outline-none"
                   >
                 </div>
               </div>

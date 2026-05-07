@@ -59,23 +59,11 @@ export const prefetchResourcesData = async () => {
   }
 }
 
-export const prefetchCategoriesData = async () => {
-  if (dataPrefetch.has('categories')) return
-
-  try {
-    const { resourceApi } = await import('@/api')
-    const data = await resourceApi.getCategories()
-    dataPrefetch.set('categories', data)
-  } catch {
-    // Prefetch failures are silent
-  }
-}
-
 export const prefetchAllData = () => {
   requestIdleCallback(() => {
     prefetchArchiveData().then(() => {
       requestIdleCallback(() => {
-        Promise.all([prefetchResourcesData(), prefetchCategoriesData()])
+        prefetchResourcesData()
       }, { timeout: 2000 })
     })
   }, { timeout: 2000 })

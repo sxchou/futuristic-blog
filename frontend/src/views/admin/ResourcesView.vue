@@ -14,12 +14,21 @@ import {
 } from '@/utils/reactiveUpdate'
 import IconPicker from '@/components/common/IconPicker.vue'
 
+const RESOURCE_CATEGORIES: ResourceCategory[] = [
+  { id: 1, name: '部署平台', slug: 'deployment-platforms', description: '应用部署与托管平台', icon: '🚀', order: 1, is_active: true },
+  { id: 2, name: '常用工具', slug: 'common-tools', description: '日常开发常用工具集合', icon: '🔧', order: 2, is_active: true },
+  { id: 3, name: '学习网站', slug: 'learning-sites', description: '优质学习资源网站', icon: '📚', order: 3, is_active: true },
+  { id: 4, name: '开发工具', slug: 'dev-tools', description: '常用开发工具', icon: '🛠️', order: 4, is_active: true },
+  { id: 5, name: '设计灵感', slug: 'design-inspiration', description: '设计参考与灵感', icon: '🎨', order: 5, is_active: true },
+  { id: 6, name: 'API服务', slug: 'api-services', description: 'API接口服务', icon: '🔌', order: 6, is_active: true },
+]
+
 const dialog = useDialogStore()
 const resourceDeletion = useDeletionConfirm()
 const { requirePermission } = useAdminCheck()
 
 const resources = ref<Resource[]>([])
-const categories = ref<ResourceCategory[]>([])
+const categories = ref<ResourceCategory[]>(RESOURCE_CATEGORIES)
 const isLoading = ref(false)
 const isSubmitting = ref(false)
 
@@ -117,14 +126,6 @@ watch(() => resourceForm.value.url, (newUrl) => {
     }, 500)
   }
 })
-
-const fetchCategories = async () => {
-  try {
-    categories.value = await resourceApi.getCategories()
-  } catch (error) {
-    console.error('Failed to fetch categories:', error)
-  }
-}
 
 const fetchResources = async () => {
   isLoading.value = true
@@ -342,7 +343,7 @@ const validateResourceForm = async (): Promise<boolean> => {
 }
 
 onMounted(async () => {
-  await Promise.all([fetchCategories(), fetchResources()])
+  await fetchResources()
 })
 </script>
 
@@ -393,80 +394,110 @@ onMounted(async () => {
 
       <div
         v-else
-        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
       >
         <div
           v-for="resource in resources"
           :key="resource.id"
-          class="glass-card p-4 flex flex-col min-h-[120px]"
-          :class="resource.is_active ? '' : 'border-gray-300 dark:border-gray-600'"
+          class="group glass-card overflow-hidden hover:border-primary/30 transition-colors h-full min-h-[120px]"
+          :class="resource.is_active ? '' : 'opacity-60'"
         >
-          <div class="flex items-center gap-2 mb-2">
-            <div
-              class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-              :style="{ backgroundColor: getCategoryColor(resource.category_id) + '20' }"
-            >
-              <span
-                v-if="resource.icon"
-                class="text-base"
-              >{{ resource.icon }}</span>
-              <svg
-                v-else
-                class="w-4 h-4"
-                :style="{ color: getCategoryColor(resource.category_id) }"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+          <div class="p-3 flex flex-col h-full">
+            <div class="flex items-start gap-2">
+              <div
+                class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                :style="{ backgroundColor: getCategoryColor(resource.category_id) + '20' }"
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                <span
+                  v-if="resource.icon"
+                  class="text-base"
+                >{{ resource.icon }}</span>
+                <svg
+                  v-else
+                  class="w-4 h-4"
+                  :style="{ color: getCategoryColor(resource.category_id) }"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                  />
+                </svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                  {{ resource.title }}
+                </h3>
+                <div class="flex items-center gap-2 mt-1">
+                  <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap shrink-0">
+                    {{ getCategoryName(resource.category_id) }}
+                  </span>
+                  <p
+                    v-if="resource.description"
+                    class="text-xs text-gray-500 dark:text-gray-400 line-clamp-1 flex-1"
+                  >
+                    {{ resource.description }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between mt-auto pt-2 border-t border-gray-100 dark:border-white/5">
+              <button
+                class="flex items-center gap-1.5 text-xs transition-colors"
+                :class="resource.is_active ? 'text-green-500' : 'text-gray-400'"
+                @click="handleToggleResourceStatus(resource)"
+              >
+                <span
+                  class="w-2 h-2 rounded-full"
+                  :class="resource.is_active ? 'bg-green-500' : 'bg-gray-400'"
                 />
-              </svg>
-            </div>
-            <div class="flex-1 min-w-0">
-              <h3 class="text-gray-900 dark:text-white font-medium text-sm truncate">
-                {{ resource.title }}
-              </h3>
-              <p class="text-gray-500 text-xs truncate">
-                {{ getCategoryName(resource.category_id) }}
-              </p>
-            </div>
-          </div>
-          
-          <p
-            class="text-gray-500 dark:text-gray-400 text-xs mb-2 flex-1 line-clamp-2"
-          >
-            {{ resource.description || '暂无描述' }}
-          </p>
-          
-          <div class="flex items-center justify-between mt-auto pt-2 border-t border-gray-100 dark:border-dark-300">
-            <button
-              class="flex items-center gap-1.5 text-xs transition-colors"
-              :class="resource.is_active ? 'text-green-500' : 'text-gray-400'"
-              @click="handleToggleResourceStatus(resource)"
-            >
-              <span
-                class="w-2 h-2 rounded-full"
-                :class="resource.is_active ? 'bg-green-500' : 'bg-gray-400'"
-              />
-              {{ resource.is_active ? '已启用' : '已禁用' }}
-            </button>
-            <div class="flex gap-2">
-              <button
-                class="text-primary hover:text-primary/80 text-xs"
-                @click="handleEditResource(resource)"
-              >
-                编辑
+                {{ resource.is_active ? '已启用' : '已禁用' }}
               </button>
-              <button
-                class="text-red-400 hover:text-red-300 text-xs"
-                @click="handleDeleteResource(resource)"
-              >
-                删除
-              </button>
+              <div class="flex items-center gap-1">
+                <button
+                  class="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-dark-200 rounded transition-colors"
+                  title="编辑资源"
+                  @click="handleEditResource(resource)"
+                >
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    />
+                  </svg>
+                </button>
+                <button
+                  class="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                  title="删除资源"
+                  @click="handleDeleteResource(resource)"
+                >
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -1629,11 +1629,11 @@ watch(form, () => {
       v-else
       class="glass-card overflow-hidden"
     >
-      <div class="hidden sm:block overflow-x-auto">
+      <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead class="bg-gray-100 dark:bg-dark-100">
             <tr>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 w-[280px]">
                 标题
               </th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
@@ -1662,11 +1662,11 @@ watch(form, () => {
               :key="article.id"
               class="hover:bg-gray-50 dark:hover:bg-white/5"
             >
-              <td class="px-4 py-3">
-                <div class="flex items-center gap-2">
+              <td class="px-4 py-3 max-w-[280px]">
+                <div class="flex items-center gap-2 min-w-0">
                   <span
                     v-if="article.is_pinned"
-                    class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded border border-amber-500/30"
+                    class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded border border-amber-500/30 flex-shrink-0"
                   >
                     <svg
                       class="w-3 h-3"
@@ -1679,9 +1679,9 @@ watch(form, () => {
                   </span>
                   <span
                     v-if="article.is_featured"
-                    class="px-2 py-0.5 text-xs font-medium bg-primary text-white rounded-full"
+                    class="px-2 py-0.5 text-xs font-medium bg-primary text-white rounded-full flex-shrink-0"
                   >精选</span>
-                  <span class="text-gray-900 dark:text-white">{{ article.title }}</span>
+                  <span class="text-gray-900 dark:text-white truncate">{{ article.title }}</span>
                 </div>
               </td>
               <td class="px-4 py-3">
@@ -1740,69 +1740,6 @@ watch(form, () => {
             </tr>
           </tbody>
         </table>
-      </div>
-
-      <div class="sm:hidden divide-y divide-gray-200 dark:divide-white/5">
-        <div
-          v-for="article in articles"
-          :key="article.id"
-          class="p-4 hover:bg-gray-50 dark:hover:bg-white/5"
-        >
-          <div class="flex items-start justify-between gap-2 mb-2">
-            <div class="flex items-center gap-2 min-w-0">
-              <span
-                v-if="article.is_pinned"
-                class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded border border-amber-500/30 flex-shrink-0"
-              >
-                <svg
-                  class="w-3 h-3"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                ><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" /></svg>
-                置顶
-              </span>
-              <span
-                v-if="article.is_featured"
-                class="px-2 py-0.5 text-xs font-medium bg-primary text-white rounded-full flex-shrink-0"
-              >精选</span>
-              <span class="text-gray-900 dark:text-white text-sm font-medium truncate">{{ article.title }}</span>
-            </div>
-            <span
-              v-if="article.is_published"
-              class="px-1.5 py-0.5 text-xs rounded bg-green-500/20 text-green-400 flex-shrink-0"
-            >已发布</span>
-            <span
-              v-else
-              class="px-1.5 py-0.5 text-xs rounded bg-yellow-500/20 text-yellow-400 flex-shrink-0"
-            >未发布</span>
-          </div>
-          <div class="flex items-center justify-between text-xs text-gray-400">
-            <div class="flex items-center gap-3">
-              <span
-                v-if="article.category"
-                :style="{ color: article.category.color }"
-              >{{ article.category.name }}</span>
-              <span v-else>未分类</span>
-              <span v-if="article.author || article.author_name">{{ article.author?.username || article.author_name || '已注销用户' }}</span>
-              <span>{{ article.view_count }} 浏览</span>
-              <span>{{ formatDate(article.created_at) }}</span>
-            </div>
-            <div class="flex items-center gap-3">
-              <button
-                class="text-primary hover:text-primary/80"
-                @click="handleEdit(article)"
-              >
-                编辑
-              </button>
-              <button
-                class="text-red-400 hover:text-red-300"
-                @click="handleDelete(article)"
-              >
-                删除
-              </button>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
 

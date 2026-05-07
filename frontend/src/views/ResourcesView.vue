@@ -8,42 +8,22 @@ import type { ResourceCategory } from '@/api/resources'
 import BlogSidebar from '@/components/common/BlogSidebar.vue'
 import LeftSidebar from '@/components/common/LeftSidebar.vue'
 
+const RESOURCE_CATEGORIES: ResourceCategory[] = [
+  { id: 1, name: '部署平台', slug: 'deployment-platforms', description: '应用部署与托管平台', icon: '🚀', order: 1, is_active: true },
+  { id: 2, name: '常用工具', slug: 'common-tools', description: '日常开发常用工具集合', icon: '🔧', order: 2, is_active: true },
+  { id: 3, name: '学习网站', slug: 'learning-sites', description: '优质学习资源网站', icon: '📚', order: 3, is_active: true },
+  { id: 4, name: '开发工具', slug: 'dev-tools', description: '常用开发工具', icon: '🛠️', order: 4, is_active: true },
+  { id: 5, name: '设计灵感', slug: 'design-inspiration', description: '设计参考与灵感', icon: '🎨', order: 5, is_active: true },
+  { id: 6, name: 'API服务', slug: 'api-services', description: 'API接口服务', icon: '🔌', order: 6, is_active: true },
+]
+
 const resources = ref<Resource[]>([])
-const categories = ref<ResourceCategory[]>([])
+const categories = ref<ResourceCategory[]>(RESOURCE_CATEGORIES)
 const loading = ref(true)
 const activeCategory = ref<number | null>(null)
 
 let resourcesCache: { data: Resource[]; timestamp: number } | null = null
-let categoriesCache: { data: ResourceCategory[]; timestamp: number } | null = null
 const CACHE_TTL = 600000
-
-const fetchCategories = async (force = false) => {
-  if (!force) {
-    const globalCache = dataPrefetch.get<ResourceCategory[]>('categories')
-    if (globalCache) {
-      categories.value = globalCache
-      return
-    }
-    
-    const now = Date.now()
-    if (categoriesCache && now - categoriesCache.timestamp < CACHE_TTL) {
-      categories.value = categoriesCache.data
-      return
-    }
-  }
-  
-  try {
-    const data = await resourceApi.getCategories()
-    categories.value = data
-    categoriesCache = { data, timestamp: Date.now() }
-    dataPrefetch.set('categories', data)
-  } catch (error: unknown) {
-    if (isCancelError(error)) {
-      return
-    }
-    console.error('Failed to fetch categories:', error)
-  }
-}
 
 const fetchResources = async (force = false) => {
   if (!force) {
@@ -128,7 +108,7 @@ const groupedResources = computed(() => {
 const activeCategories = computed(() => categories.value)
 
 onMounted(async () => {
-  await Promise.all([fetchCategories(), fetchResources()])
+  await fetchResources()
 })
 </script>
 
@@ -152,18 +132,8 @@ onMounted(async () => {
         </div>
 
         <div class="flex flex-wrap justify-center gap-2 mb-8 min-h-[40px]">
-          <template v-if="loading">
-            <div
-              v-for="i in 5"
-              :key="i"
-              class="px-3 py-1.5 text-sm rounded-full border bg-gray-100 dark:bg-dark-100/50 border-gray-200 dark:border-white/10 animate-pulse"
-            >
-              <span class="inline-block w-12 h-4 bg-gray-200 dark:bg-dark-300 rounded" />
-            </div>
-          </template>
-          <template v-else>
-            <button
-              class="px-3 py-1.5 text-sm rounded-full border transition-all duration-300 flex items-center gap-1.5"
+          <button
+            class="px-3 py-1.5 text-sm rounded-full border transition-all duration-300 flex items-center gap-1.5"
               :class="activeCategory === null
                 ? 'bg-primary/20 border-primary text-primary'
                 : 'bg-gray-100 dark:bg-dark-100/50 border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:border-primary/50'"
@@ -210,42 +180,9 @@ onMounted(async () => {
               </svg>
               {{ category.name }}
             </button>
-          </template>
         </div>
 
         <div
-          v-if="loading"
-          class="space-y-10"
-        >
-          <div
-            v-for="i in 3"
-            :key="i"
-          >
-            <div class="flex items-center gap-3 mb-5">
-              <div class="w-9 h-9 rounded-lg bg-gray-200 dark:bg-dark-300 animate-pulse" />
-              <div class="h-6 w-24 bg-gray-200 dark:bg-dark-300 rounded animate-pulse" />
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div
-                v-for="j in 4"
-                :key="j"
-                class="glass-card-hover p-5"
-              >
-                <div class="flex items-start gap-3">
-                  <div class="w-11 h-11 rounded-lg bg-gray-200 dark:bg-dark-300 animate-pulse flex-shrink-0" />
-                  <div class="flex-1 space-y-2">
-                    <div class="h-5 w-3/4 bg-gray-200 dark:bg-dark-300 rounded animate-pulse" />
-                    <div class="h-4 w-full bg-gray-200 dark:bg-dark-300 rounded animate-pulse" />
-                    <div class="h-4 w-2/3 bg-gray-200 dark:bg-dark-300 rounded animate-pulse" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div
-          v-else
           class="space-y-10"
         >
           <div

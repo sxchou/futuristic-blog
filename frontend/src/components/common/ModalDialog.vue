@@ -83,11 +83,11 @@ const isConfirmType = () => {
         >
           <div
             v-if="dialogStore.isVisible.value"
-            class="relative bg-gray-900 dark:bg-dark-50 border border-gray-700 dark:border-white/10 rounded-xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden"
+            class="relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden"
           >
             <div class="p-6">
               <div class="flex items-start gap-4">
-                <div :class="['flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-gray-800', getIconClass()]">
+                <div :class="['flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-800', getIconClass()]">
                   <svg
                     class="w-6 h-6"
                     fill="none"
@@ -105,25 +105,25 @@ const isConfirmType = () => {
                 <div class="flex-1 min-w-0">
                   <h3
                     v-if="dialogStore.dialogOptions.value.title"
-                    class="text-lg font-semibold text-white mb-2"
+                    class="text-lg font-semibold text-gray-900 dark:text-white mb-2"
                   >
                     {{ dialogStore.dialogOptions.value.title }}
                   </h3>
                   <p
                     v-if="dialogStore.dialogOptions.value.message"
-                    class="text-gray-300 text-sm leading-relaxed"
+                    class="text-gray-600 dark:text-gray-300 text-sm leading-relaxed"
                   >
                     {{ dialogStore.dialogOptions.value.message }}
                   </p>
                 </div>
               </div>
             </div>
-            
-            <div class="flex border-t border-gray-700 dark:border-white/10">
+
+            <div class="flex border-t border-gray-200 dark:border-white/10">
               <button
                 v-if="isConfirmType()"
                 type="button"
-                class="flex-1 px-4 py-3 text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+                class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 @click="handleCancelClick"
               >
                 {{ dialogStore.dialogOptions.value.cancelText || '取消' }}
@@ -141,12 +141,12 @@ const isConfirmType = () => {
                 type="button"
                 :class="[
                   'flex-1 px-4 py-3 text-sm font-medium transition-colors',
-                  dialogStore.dialogOptions.value.type === 'error' 
-                    ? 'text-red-400 hover:text-red-300 hover:bg-red-500/10'
+                  dialogStore.dialogOptions.value.type === 'error'
+                    ? 'text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10'
                     : dialogStore.dialogOptions.value.type === 'success'
-                      ? 'text-green-400 hover:text-green-300 hover:bg-green-500/10'
+                      ? 'text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-500/10'
                       : dialogStore.dialogOptions.value.type === 'warning'
-                        ? 'text-amber-400 hover:text-amber-300 hover:bg-amber-500/10'
+                        ? 'text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-500/10'
                         : 'text-primary hover:text-primary/80 hover:bg-primary/10'
                 ]"
                 @click="handleCancelClick"

@@ -249,7 +249,7 @@ watch(() => route.path, (newPath) => {
                   <span
                     v-for="role in authStore.user.roles"
                     :key="role.id"
-                    :class="getRoleColorClasses(role.code, 'label')"
+                    :class="getRoleColorClasses(role.code, 'badge')"
                   >
                     {{ role.name }}
                   </span>

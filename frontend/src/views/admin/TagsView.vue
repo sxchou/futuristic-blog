@@ -367,40 +367,85 @@ watch(() => form.value.slug, (newSlug) => {
 
     <div
       v-else
-      class="flex flex-wrap gap-3"
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
     >
       <div
         v-for="tag in blogStore.tags"
         :key="tag.id"
-        class="glass-card p-3 flex items-center gap-3"
+        class="group glass-card overflow-hidden hover:border-primary/30 transition-colors h-full min-h-[120px]"
       >
-        <div
-          class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
-          :style="{ backgroundColor: tag.color }"
-        >
-          {{ tag.name.charAt(0) }}
-        </div>
-        <div>
-          <h3 class="text-gray-900 dark:text-white font-medium text-sm">
-            {{ tag.name }}
-          </h3>
-          <p class="text-gray-500 text-xs">
-            {{ tag.article_count }} 篇文章
-          </p>
-        </div>
-        <div class="flex gap-2 ml-2">
-          <button
-            class="text-primary hover:text-primary/80 text-xs"
-            @click="handleEdit(tag)"
-          >
-            编辑
-          </button>
-          <button
-            class="text-red-400 hover:text-red-300 text-xs"
-            @click="handleDelete(tag)"
-          >
-            删除
-          </button>
+        <div class="p-3 flex flex-col h-full">
+          <div class="flex items-start gap-2">
+            <div
+              class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-white text-sm font-bold"
+              :style="{ backgroundColor: tag.color }"
+            >
+              {{ tag.name.charAt(0) }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                {{ tag.name }}
+              </h3>
+              <div class="flex items-center justify-between mt-1">
+                <code class="text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-dark-200 rounded text-gray-600 dark:text-gray-400 whitespace-nowrap shrink-0">
+                  {{ tag.slug }}
+                </code>
+                <span class="text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-dark-200 text-gray-600 dark:text-gray-400 rounded whitespace-nowrap shrink-0">
+                  {{ tag.article_count }} 篇文章
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between mt-auto pt-2 border-t border-gray-100 dark:border-white/5">
+            <div class="flex items-center gap-1.5">
+              <span
+                class="w-3 h-3 rounded-full border border-gray-200 dark:border-white/10"
+                :style="{ backgroundColor: tag.color }"
+              />
+              <span class="text-xs text-gray-400 dark:text-gray-500">{{ tag.color }}</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <button
+                class="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-dark-200 rounded transition-colors"
+                title="编辑标签"
+                @click="handleEdit(tag)"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                  />
+                </svg>
+              </button>
+              <button
+                class="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                title="删除标签"
+                @click="handleDelete(tag)"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

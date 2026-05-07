@@ -376,17 +376,17 @@ watch(() => form.value.slug, (newSlug) => {
 
     <div
       v-else
-      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
     >
       <div
         v-for="category in blogStore.categories"
         :key="category.id"
-        class="glass-card p-4"
+        class="group glass-card overflow-hidden hover:border-primary/30 transition-colors h-full min-h-[120px]"
       >
-        <div class="flex items-start justify-between mb-3">
-          <div class="flex items-center gap-2">
+        <div class="p-3 flex flex-col h-full">
+          <div class="flex items-start gap-2">
             <div
-              class="w-8 h-8 rounded-lg flex items-center justify-center"
+              class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
               :style="{ backgroundColor: category.color + '20' }"
             >
               <span
@@ -394,39 +394,72 @@ watch(() => form.value.slug, (newSlug) => {
                 :style="{ color: category.color }"
               >📁</span>
             </div>
-            <div>
-              <h3 class="text-gray-900 dark:text-white font-medium text-sm">
+            <div class="flex-1 min-w-0">
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-white truncate">
                 {{ category.name }}
               </h3>
-              <p class="text-gray-500 text-xs">
-                {{ category.slug }}
-              </p>
+              <div class="flex items-center gap-2 mt-1">
+                <p
+                  v-if="category.description"
+                  class="text-xs text-gray-500 dark:text-gray-400 line-clamp-1 flex-1"
+                >
+                  {{ category.description }}
+                </p>
+                <span class="text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-dark-200 text-gray-600 dark:text-gray-400 rounded whitespace-nowrap shrink-0">
+                  {{ category.article_count }} 篇文章
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-        
-        <p
-          v-if="category.description"
-          class="text-gray-500 dark:text-gray-400 text-xs mb-3"
-        >
-          {{ category.description }}
-        </p>
-        
-        <div class="flex items-center justify-between">
-          <span class="text-gray-500 text-xs">{{ category.article_count }} 篇文章</span>
-          <div class="flex gap-2">
-            <button
-              class="text-primary hover:text-primary/80 text-xs"
-              @click="handleEdit(category)"
-            >
-              编辑
-            </button>
-            <button
-              class="text-red-400 hover:text-red-300 text-xs"
-              @click="handleDelete(category)"
-            >
-              删除
-            </button>
+
+          <div class="flex items-center justify-between mt-auto pt-2 border-t border-gray-100 dark:border-white/5">
+            <div class="flex items-center gap-1.5">
+              <span
+                class="w-3 h-3 rounded-full border border-gray-200 dark:border-white/10"
+                :style="{ backgroundColor: category.color }"
+              />
+              <span class="text-xs text-gray-400 dark:text-gray-500">{{ category.color }}</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <button
+                class="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-dark-200 rounded transition-colors"
+                title="编辑分类"
+                @click="handleEdit(category)"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                  />
+                </svg>
+              </button>
+              <button
+                class="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                title="删除分类"
+                @click="handleDelete(category)"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>

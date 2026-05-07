@@ -366,7 +366,7 @@ const getTypeStyles = (type: string) => {
       >
         <div
           v-if="showEditor"
-          class="bg-white dark:bg-dark-100 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden"
+          class="glass-card shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden"
         >
           <div class="px-4 py-3 border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-dark-200">
             <div class="flex items-center justify-between">

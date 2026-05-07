@@ -392,7 +392,7 @@ onMounted(fetchProviders)
 
     <div
       v-else
-      class="bg-white dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden"
+      class="glass-card overflow-hidden"
     >
       <div class="overflow-x-auto">
         <table class="w-full">
@@ -519,7 +519,7 @@ onMounted(fetchProviders)
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
       >
         <div
-          class="bg-white dark:bg-dark-100 rounded-xl shadow-2xl w-full max-w-xl max-h-[85vh] overflow-hidden"
+          class="glass-card shadow-2xl w-full max-w-xl max-h-[85vh] overflow-hidden"
           @click.stop
         >
           <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-white/10">

@@ -105,7 +105,7 @@ const handleLogoReset = () => {
 
     <form class="grid grid-cols-1 lg:grid-cols-3 gap-6" @submit.prevent="handleSave">
       <div class="lg:col-span-2 space-y-4 sm:space-y-6">
-        <div class="bg-white dark:bg-dark-100 rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
+        <div class="glass-card overflow-hidden">
           <div class="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02]">
             <div class="flex items-center gap-2">
               <svg
@@ -149,7 +149,7 @@ const handleLogoReset = () => {
                     type="text"
                     name="site-name"
                     :disabled="!canEdit"
-                    class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="请输入网站名称"
                   >
                 </div>
@@ -166,7 +166,7 @@ const handleLogoReset = () => {
                     name="site-description"
                     rows="2"
                     :disabled="!canEdit"
-                    class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-colors resize-none disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:outline-none transition-colors resize-none disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="请输入网站描述"
                   />
                 </div>
@@ -175,7 +175,7 @@ const handleLogoReset = () => {
           </div>
         </div>
 
-        <div class="bg-white dark:bg-dark-100 rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
+        <div class="glass-card overflow-hidden">
           <div class="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02]">
             <div class="flex items-center gap-2">
               <svg
@@ -210,7 +210,7 @@ const handleLogoReset = () => {
                 type="text"
                 name="site-keywords"
                 :disabled="!canEdit"
-                class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="请输入网站关键词，用逗号分隔"
               >
               <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
@@ -220,7 +220,7 @@ const handleLogoReset = () => {
           </div>
         </div>
 
-        <div class="bg-white dark:bg-dark-100 rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
+        <div class="glass-card overflow-hidden">
           <div class="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02]">
             <div class="flex items-center gap-2">
               <svg
@@ -249,7 +249,7 @@ const handleLogoReset = () => {
                 type="text"
                 name="github-repo-url"
                 :disabled="!canEdit"
-                class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-white focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="例如: https://github.com/username/repo"
               >
               <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
@@ -294,7 +294,7 @@ const handleLogoReset = () => {
                 role="switch"
                 :aria-checked="formData.showGithubStats"
                 :class="[
-                  'relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+                  'relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
                   'cursor-pointer',
                   formData.showGithubStats ? 'bg-primary' : 'bg-gray-200 dark:bg-dark-400'
                 ]"
@@ -331,7 +331,7 @@ const handleLogoReset = () => {
       </div>
 
       <div class="lg:col-span-1">
-        <div class="bg-white dark:bg-dark-100 rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden lg:sticky lg:top-6">
+        <div class="glass-card overflow-hidden lg:sticky lg:top-6">
           <div class="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02]">
             <div class="flex items-center gap-2">
               <svg

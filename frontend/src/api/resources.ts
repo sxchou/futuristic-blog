@@ -5,7 +5,11 @@ export interface ResourceCategory {
   id: number
   name: string
   slug: string
+  description?: string
   icon?: string
+  order?: number
+  is_active?: boolean
+  created_at?: string
 }
 
 export interface UniqueCheckResult {

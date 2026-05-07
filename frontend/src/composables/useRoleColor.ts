@@ -14,34 +14,34 @@ type RoleColorClasses = {
 
 const ROLE_COLORS: Record<string, RoleColorClasses> = {
   super_admin: {
-    bg: 'bg-indigo-500/20',
-    text: 'text-indigo-400',
-    border: 'border-indigo-500/30',
-    combined: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30'
+    bg: 'bg-amber-50/70 dark:bg-white/5',
+    text: 'text-amber-800/80 dark:text-amber-300/80',
+    border: 'border-amber-200/60 dark:border-amber-700/20',
+    combined: 'bg-amber-50/70 dark:bg-white/5 text-amber-800/80 dark:text-amber-300/80 border-amber-200/60 dark:border-amber-700/20'
   },
   admin: {
-    bg: 'bg-primary/10 dark:bg-primary/20',
-    text: 'text-primary',
-    border: 'border-primary/30',
-    combined: 'bg-primary/10 dark:bg-primary/20 text-primary border-primary/30'
+    bg: 'bg-blue-50/70 dark:bg-white/5',
+    text: 'text-blue-800/80 dark:text-blue-300/80',
+    border: 'border-blue-200/60 dark:border-blue-700/20',
+    combined: 'bg-blue-50/70 dark:bg-white/5 text-blue-800/80 dark:text-blue-300/80 border-blue-200/60 dark:border-blue-700/20'
   },
   editor: {
-    bg: 'bg-blue-500/20',
-    text: 'text-blue-400',
-    border: 'border-blue-500/30',
-    combined: 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+    bg: 'bg-purple-50/70 dark:bg-white/5',
+    text: 'text-purple-800/80 dark:text-purple-300/80',
+    border: 'border-purple-200/60 dark:border-purple-700/20',
+    combined: 'bg-purple-50/70 dark:bg-white/5 text-purple-800/80 dark:text-purple-300/80 border-purple-200/60 dark:border-purple-700/20'
   },
   author: {
-    bg: 'bg-green-500/20',
-    text: 'text-green-400',
-    border: 'border-green-500/30',
-    combined: 'bg-green-500/20 text-green-400 border-green-500/30'
+    bg: 'bg-green-50/70 dark:bg-white/5',
+    text: 'text-green-800/80 dark:text-green-300/80',
+    border: 'border-green-200/60 dark:border-green-700/20',
+    combined: 'bg-green-50/70 dark:bg-white/5 text-green-800/80 dark:text-green-300/80 border-green-200/60 dark:border-green-700/20'
   },
-  user: {
-    bg: 'bg-gray-100 dark:bg-dark-100',
-    text: 'text-gray-600 dark:text-gray-400',
-    border: 'border-gray-200 dark:border-white/10',
-    combined: 'bg-gray-100 dark:bg-dark-100 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10'
+  guest: {
+    bg: 'bg-gray-100/80 dark:bg-white/5',
+    text: 'text-gray-600/90 dark:text-gray-400/90',
+    border: 'border-gray-200/60 dark:border-white/10',
+    combined: 'bg-gray-100/80 dark:bg-white/5 text-gray-600/90 dark:text-gray-400/90 border-gray-200/60 dark:border-white/10'
   }
 }
 
@@ -58,12 +58,12 @@ const ROLE_NAMES: Record<string, string> = {
   admin: '管理员',
   editor: '编辑',
   author: '作者',
-  user: '用户'
+  guest: '访客'
 }
 
 export function useRoleColor() {
   const getRoleColor = (roleCode: string): RoleColorClasses => {
-    return ROLE_COLORS[roleCode] || ROLE_COLORS.user
+    return ROLE_COLORS[roleCode] || ROLE_COLORS.guest
   }
 
   const getRoleColorClasses = (roleCode: string, variant: 'badge' | 'tag' | 'label' = 'badge'): string => {

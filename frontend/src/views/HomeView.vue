@@ -333,7 +333,7 @@ const handlePageChange = (page: number) => {
                       <img
                         :src="getMediaUrl(currentFeatured.cover_image)"
                         :alt="currentFeatured.title"
-                        class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 rounded-none"
                         loading="eager"
                         decoding="async"
                       >

@@ -361,7 +361,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
     </div>
 
     <template v-else>
-      <div class="bg-white dark:bg-dark-100 rounded-xl border border-gray-200 dark:border-white/10 p-4">
+      <div class="glass-card p-4">
         <div class="flex items-center justify-between">
           <div class="flex-1">
             <h3 class="text-sm font-medium text-gray-900 dark:text-white">
@@ -414,13 +414,12 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
         </div>
       </div>
 
-      <div class="bg-white dark:bg-dark-100 rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden"
-      >
+      <div class="glass-card overflow-hidden">
       <div class="p-4 border-b border-gray-200 dark:border-white/10 flex flex-wrap items-center justify-between gap-4">
         <form class="flex items-center gap-4" @submit.prevent>
           <select id="select-statusFilter"
             v-model="statusFilter"
-            class="px-3 py-2 bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            class="px-3 py-2 bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-sm focus:outline-none focus:border-gray-300 dark:focus:border-white/20"
             @change="handleStatusFilter"
           >
             <option
@@ -635,7 +634,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
       v-if="showAuditModal"
       class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
     >
-      <div class="bg-white dark:bg-dark-100 rounded-xl p-6 w-full max-w-md mx-4">
+      <div class="glass-card p-6 w-full max-w-md mx-4">
         <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">
           审核评论
         </h3>
@@ -649,7 +648,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
               id="comment-audit-status"
               v-model="auditStatus"
               name="audit-status"
-              class="w-full px-3 py-2 bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+              class="w-full px-3 py-2 bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:outline-none focus:border-gray-300 dark:focus:border-white/20"
             >
               <option value="pending">
                 待审核
@@ -672,7 +671,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
               v-model="auditReason"
               name="audit-reason"
               rows="3"
-              class="w-full px-3 py-2 bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+              class="w-full px-3 py-2 bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:outline-none focus:border-gray-300 dark:focus:border-white/20"
               placeholder="请输入审核原因..."
             />
           </div>
@@ -698,7 +697,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
       v-if="showBatchAuditModal"
       class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
     >
-      <div class="bg-white dark:bg-dark-100 rounded-xl p-6 w-full max-w-md mx-4">
+      <div class="glass-card p-6 w-full max-w-md mx-4">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           批量审核
         </h3>
@@ -715,7 +714,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
               id="batch-audit-status"
               v-model="batchAuditStatus"
               name="batch-audit-status"
-              class="w-full px-3 py-2 bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+              class="w-full px-3 py-2 bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:outline-none focus:border-gray-300 dark:focus:border-white/20"
             >
               <option value="pending">
                 待审核
@@ -738,7 +737,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
               v-model="batchAuditReason"
               name="batch-audit-reason"
               rows="3"
-              class="w-full px-3 py-2 bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+              class="w-full px-3 py-2 bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:outline-none focus:border-gray-300 dark:focus:border-white/20"
               placeholder="请输入审核原因..."
             />
           </div>
@@ -764,7 +763,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
       v-if="showLogsModal"
       class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
     >
-      <div class="bg-white dark:bg-dark-100 rounded-xl p-6 w-full max-w-lg mx-4 max-h-[80vh] overflow-y-auto">
+      <div class="glass-card p-6 w-full max-w-lg mx-4 max-h-[80vh] overflow-y-auto">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
             审核日志
@@ -849,7 +848,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
       v-if="showDeleteModal"
       class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
     >
-      <div class="bg-white dark:bg-dark-100 rounded-xl p-6 w-full max-w-md mx-4">
+      <div class="glass-card p-6 w-full max-w-md mx-4">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           删除评论
         </h3>
@@ -914,7 +913,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
       v-if="showBatchDeleteModal"
       class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
     >
-      <div class="bg-white dark:bg-dark-100 rounded-xl p-6 w-full max-w-md mx-4">
+      <div class="glass-card p-6 w-full max-w-md mx-4">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           批量删除评论
         </h3>

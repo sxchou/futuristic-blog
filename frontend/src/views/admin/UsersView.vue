@@ -402,17 +402,6 @@ const toggleRole = (roleId: number) => {
   }
 }
 
-const getRoleGradient = (code: string) => {
-  const gradients: Record<string, string> = {
-    super_admin: 'from-amber-500 to-orange-600',
-    admin: 'from-blue-500 to-indigo-600',
-    editor: 'from-purple-500 to-pink-600',
-    author: 'from-green-500 to-teal-600',
-    guest: 'from-gray-500 to-slate-600'
-  }
-  return gradients[code] || 'from-primary to-blue-600'
-}
-
 const handleResetPassword = async () => {
   if (!await requirePermission('user.reset_password', '重置用户密码')) return
   
@@ -446,6 +435,18 @@ const handleResetPassword = async () => {
 
 const openPasswordModal = async (user: User) => {
   if (!await requirePermission('user.reset_password', '重置用户密码')) return
+  if (!canResetPassword(user)) {
+    let reason = ''
+    if (user.id === 1) {
+      reason = '该用户为超级管理员'
+    } else if (authStore.user && authStore.user.id !== 1 && user.is_admin) {
+      reason = '您没有权限重置管理员的密码'
+    } else {
+      reason = '无法重置该用户的密码'
+    }
+    await dialog.showWarning(`无法重置 ${user.username} 的密码`, reason)
+    return
+  }
   editingUser.value = user
   newPassword.value = ''
   passwordError.value = ''
@@ -636,8 +637,8 @@ const clearEditError = (field: string) => {
               :key="user.id"
               class="hover:bg-gray-50 dark:hover:bg-white/5"
             >
-              <td class="px-4 py-3">
-                <div class="flex items-center gap-3">
+              <td class="px-4 py-3 max-w-[200px]">
+                <div class="flex items-center gap-3 min-w-0">
                   <div
                     class="w-8 h-8 rounded-full flex items-center justify-center text-white font-medium overflow-hidden flex-shrink-0"
                     :style="getUserAvatarStyle(user)"
@@ -646,11 +647,11 @@ const clearEditError = (field: string) => {
                       {{ user.username.charAt(0).toUpperCase() }}
                     </span>
                   </div>
-                  <div>
-                    <p class="text-gray-900 dark:text-white font-medium">
+                  <div class="min-w-0">
+                    <p class="text-gray-900 dark:text-white font-medium truncate">
                       {{ user.username }}
                     </p>
-                    <p class="text-gray-500 text-xs">
+                    <p class="text-gray-500 text-xs truncate">
                       {{ user.bio || '暂无简介' }}
                     </p>
                   </div>
@@ -665,13 +666,13 @@ const clearEditError = (field: string) => {
                     v-if="user.roles && user.roles.length > 0"
                     v-for="role in user.roles"
                     :key="role.id"
-                    :class="getRoleColorClasses(role.code, 'tag')"
+                    :class="getRoleColorClasses(role.code, 'badge')"
                   >
                     {{ role.name }}
                   </span>
                   <span
                     v-else
-                    class="px-2 py-1 text-xs rounded bg-gray-100 dark:bg-dark-100 text-gray-600 dark:text-gray-400"
+                    class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-full border bg-gray-100 dark:bg-dark-100 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10"
                   >
                     未分配角色
                   </span>
@@ -707,16 +708,11 @@ const clearEditError = (field: string) => {
                     角色
                   </button>
                   <button
-                    v-if="canResetPassword(user)"
                     class="text-accent hover:text-accent/80 text-xs"
                     @click="openPasswordModal(user)"
                   >
                     重置密码
                   </button>
-                  <span
-                    v-else
-                    class="text-xs text-gray-400 dark:text-gray-500"
-                  >-</span>
                   <button
                     class="text-red-400 hover:text-red-300 text-xs"
                     @click="handleDelete(user)"
@@ -1047,39 +1043,22 @@ const clearEditError = (field: string) => {
           >
             {{ roleError }}
           </p>
-          <label
-            v-for="role in allRoles"
-            :key="role.id"
-            class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 cursor-pointer transition-colors"
-            :class="{ 'bg-primary/5 dark:bg-primary/10': selectedRoleIds.includes(role.id) }"
-          >
-            <input :id="`user-role-${role.id}`"
-              type="checkbox"
-              autocomplete="off"
-              :checked="selectedRoleIds.includes(role.id)"
-              class="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-100 text-primary focus:ring-primary"
-              @change="toggleRole(role.id)"
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="role in allRoles"
+              :key="role.id"
+              type="button"
+              :class="[
+                'px-3 py-1.5 text-xs rounded-full border transition-all',
+                selectedRoleIds.includes(role.id)
+                  ? getRoleColorClasses(role.code, 'badge')
+                  : 'bg-gray-200 dark:bg-dark-300 text-gray-600 dark:text-gray-400 border-transparent hover:bg-gray-300 dark:hover:bg-dark-400'
+              ]"
+              @click="toggleRole(role.id)"
             >
-            <div class="flex-1">
-              <div class="flex items-center gap-2">
-                <span class="text-sm font-medium text-gray-900 dark:text-white">
-                  {{ role.name }}
-                </span>
-                <span
-                  v-if="role.is_system"
-                  class="px-1.5 py-0.5 text-xs rounded bg-blue-500/20 text-blue-400"
-                >
-                  系统角色
-                </span>
-              </div>
-              <div
-                v-if="role.description"
-                class="text-xs text-gray-500 dark:text-gray-400 mt-0.5"
-              >
-                {{ role.description }}
-              </div>
-            </div>
-          </label>
+              {{ role.name }}
+            </button>
+          </div>
         </div>
 
         <div class="flex justify-end gap-3 pt-4">
@@ -1220,10 +1199,10 @@ const clearEditError = (field: string) => {
                 :key="role.id"
                 type="button"
                 :class="[
-                  'px-3 py-1.5 text-xs rounded-full transition-all',
+                  'px-3 py-1.5 text-xs rounded-full border transition-all',
                   createForm.roleIds.includes(role.id)
-                    ? `bg-gradient-to-r ${getRoleGradient(role.code)} text-white`
-                    : 'bg-gray-100 dark:bg-dark-200 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-300'
+                    ? getRoleColorClasses(role.code, 'badge')
+                    : 'bg-gray-200 dark:bg-dark-300 text-gray-600 dark:text-gray-400 border-transparent hover:bg-gray-300 dark:hover:bg-dark-400'
                 ]"
                 @click="toggleCreateRole(role.id); clearCreateError('roleIds')"
               >

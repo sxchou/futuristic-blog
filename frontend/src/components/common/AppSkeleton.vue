@@ -59,8 +59,9 @@ const skeletonType = computed(() => {
           </div>
           
           <div class="flex items-center gap-2">
-            <div class="h-8 w-40 bg-gray-200 dark:bg-dark-300 rounded-lg animate-pulse" />
-            <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-dark-300 animate-pulse" />
+            <div class="h-8 w-10 md:w-24 bg-gray-200 dark:bg-dark-300 rounded-lg animate-pulse" />
+            <div class="w-8 h-8 rounded-lg bg-gray-200 dark:bg-dark-300 animate-pulse" />
+            <div class="w-8 h-8 rounded-lg bg-gray-200 dark:bg-dark-300 animate-pulse" />
           </div>
         </div>
       </nav>
@@ -495,32 +496,39 @@ const skeletonType = computed(() => {
                 <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-48" />
               </div>
               <div class="flex flex-wrap justify-center gap-2 mb-8">
+                <div class="px-3 py-1 rounded-full border bg-gray-100 dark:bg-dark-100/50 border-gray-200 dark:border-white/10 animate-pulse">
+                  <span class="inline-block w-10 h-[14px] bg-gray-200 dark:bg-dark-300 rounded" />
+                </div>
                 <div
-                  v-for="i in 5"
+                  v-for="i in 6"
                   :key="i"
-                  class="px-3 py-1.5 rounded-full border bg-gray-100 dark:bg-dark-100/50 border-gray-200 dark:border-white/10 animate-pulse"
+                  class="px-[18px] py-1 rounded-full border bg-gray-100 dark:bg-dark-100/50 border-gray-200 dark:border-white/10 animate-pulse"
                 >
-                  <span class="inline-block w-12 h-4 bg-gray-200 dark:bg-dark-300 rounded" />
+                  <span class="inline-block w-[68px] h-[14px] bg-gray-200 dark:bg-dark-300 rounded" />
                 </div>
               </div>
               <div class="space-y-8">
                 <div
-                  v-for="i in 2"
-                  :key="i"
+                  v-for="(count, idx) in [7, 7, 3, 2, 1, 1]"
+                  :key="idx"
                   class="animate-pulse"
                 >
-                  <div class="h-6 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-4" />
+                  <div class="flex items-center gap-3 mb-4">
+                    <div class="w-9 h-9 rounded-lg bg-gray-200 dark:bg-dark-300 animate-pulse flex-shrink-0" />
+                    <div class="h-6 bg-gray-200 dark:bg-dark-300 rounded w-24 animate-pulse" />
+                  </div>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div
-                      v-for="j in 4"
+                      v-for="j in count"
                       :key="j"
-                      class="glass-card p-4"
+                      class="glass-card p-5 min-h-[90px]"
                     >
                       <div class="flex items-start gap-3">
-                        <div class="w-10 h-10 rounded-lg bg-gray-200 dark:bg-dark-300" />
-                        <div class="flex-1">
-                          <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-3/4 mb-2" />
-                          <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-full" />
+                        <div class="w-11 h-11 rounded-lg bg-gray-200 dark:bg-dark-300 flex-shrink-0" />
+                        <div class="flex-1 space-y-2.5">
+                          <div class="h-[18px] bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
+                          <div class="h-[14px] bg-gray-200 dark:bg-dark-300 rounded w-full" />
+                          <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-2/3" />
                         </div>
                       </div>
                     </div>

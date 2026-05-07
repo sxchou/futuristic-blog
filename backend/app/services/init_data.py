@@ -1,6 +1,6 @@
 from app.core.database import SessionLocal, engine
 from app.core.config import settings
-from app.models import User, Category, Tag, Article, Resource, ResourceCategory, SiteConfig, OAuthProvider
+from app.models import User, Category, Tag, Article, Resource, SiteConfig, OAuthProvider
 from app.utils import get_password_hash
 from app.utils.timezone import get_db_now
 from datetime import datetime
@@ -477,55 +477,28 @@ def init_database():
         
         db.commit()
         
-        resource_categories_data = [
-            {"name": "部署平台", "slug": "deployment-platforms", "description": "应用部署与托管平台", "icon": "🚀", "order": 1, "is_active": True},
-            {"name": "常用工具", "slug": "common-tools", "description": "日常开发常用工具集合", "icon": "🔧", "order": 2, "is_active": True},
-            {"name": "学习网站", "slug": "learning-sites", "description": "优质学习资源网站", "icon": "📚", "order": 3, "is_active": True},
-            {"name": "开发工具", "slug": "dev-tools", "description": "常用开发工具", "icon": "🛠️", "order": 4, "is_active": True},
-            {"name": "设计灵感", "slug": "design-inspiration", "description": "设计参考与灵感", "icon": "🎨", "order": 5, "is_active": True},
-            {"name": "API服务", "slug": "api-services", "description": "API接口服务", "icon": "🔌", "order": 6, "is_active": True},
-        ]
-        
-        print("\n=== Initializing resource categories ===")
-        resource_categories_map = {}
-        for cat_data in resource_categories_data:
-            existing = db.query(ResourceCategory).filter(ResourceCategory.slug == cat_data["slug"]).first()
-            if not existing:
-                category = ResourceCategory(**cat_data)
-                db.add(category)
-                db.commit()
-                db.refresh(category)
-                resource_categories_map[cat_data["name"]] = category.id
-                print(f"✓ Created resource category: {cat_data['name']} (ID: {category.id})")
-            else:
-                resource_categories_map[cat_data["name"]] = existing.id
-                print(f"✓ Found existing resource category: {cat_data['name']} (ID: {existing.id})")
-        
-        db.commit()
-        print(f"Resource categories map: {resource_categories_map}")
-        
         resources_data = [
-            {"title": "MDN Web Docs", "description": "Mozilla开发者网络文档", "url": "https://developer.mozilla.org", "icon": "📖", "category_id": resource_categories_map.get("学习网站"), "category": "学习网站", "order": 1},
-            {"title": "Vue.js 官方文档", "description": "Vue 3 官方中文文档", "url": "https://cn.vuejs.org", "icon": "💚", "category_id": resource_categories_map.get("学习网站"), "category": "学习网站", "order": 2},
-            {"title": "FastAPI 官方文档", "description": "FastAPI 官方文档", "url": "https://fastapi.tiangolo.com", "icon": "⚡", "category_id": resource_categories_map.get("学习网站"), "category": "学习网站", "order": 3},
-            {"title": "VS Code", "description": "强大的代码编辑器", "url": "https://code.visualstudio.com", "icon": "💻", "category_id": resource_categories_map.get("开发工具"), "category": "开发工具", "order": 1},
-            {"title": "GitHub", "description": "代码托管平台", "url": "https://github.com", "icon": "🐙", "category_id": resource_categories_map.get("开发工具"), "category": "开发工具", "order": 2},
-            {"title": "Dribbble", "description": "设计师作品展示平台", "url": "https://dribbble.com", "icon": "🏀", "category_id": resource_categories_map.get("设计灵感"), "category": "设计灵感", "order": 1},
-            {"title": "OpenAI API", "description": "OpenAI API文档", "url": "https://platform.openai.com", "icon": "🤖", "category_id": resource_categories_map.get("API服务"), "category": "API服务", "order": 1},
-            {"title": "Vercel", "description": "前端应用部署平台，支持 Next.js、Vue、React 等框架", "url": "https://vercel.com", "icon": "▲", "category_id": resource_categories_map.get("部署平台"), "category": "部署平台", "order": 1},
-            {"title": "Render", "description": "后端服务部署平台，支持 Python、Node.js、Go 等语言", "url": "https://render.com", "icon": "🔵", "category_id": resource_categories_map.get("部署平台"), "category": "部署平台", "order": 2},
-            {"title": "Neon", "description": "无服务器 PostgreSQL 数据库，支持自动扩缩容", "url": "https://neon.tech", "icon": "💚", "category_id": resource_categories_map.get("部署平台"), "category": "部署平台", "order": 3},
-            {"title": "Supabase", "description": "开源 Firebase 替代方案，提供数据库、认证、存储等服务", "url": "https://supabase.com", "icon": "⚡", "category_id": resource_categories_map.get("部署平台"), "category": "部署平台", "order": 4},
-            {"title": "Resend", "description": "开发者友好的邮件发送服务，简单易用的 API", "url": "https://resend.com", "icon": "📧", "category_id": resource_categories_map.get("部署平台"), "category": "部署平台", "order": 5},
-            {"title": "UptimeRobot", "description": "免费的网站监控服务，支持定时检测和告警", "url": "https://uptimerobot.com", "icon": "🤖", "category_id": resource_categories_map.get("部署平台"), "category": "部署平台", "order": 6},
-            {"title": "Cloudflare", "description": "全球 CDN 服务，提供 DDoS 防护和 DNS 解析", "url": "https://cloudflare.com", "icon": "☁️", "category_id": resource_categories_map.get("部署平台"), "category": "部署平台", "order": 7},
-            {"title": "Hero SMS", "description": "在线短信接收平台，用于验证码接收和测试", "url": "https://hero-sms.com/cn", "icon": "📱", "category_id": resource_categories_map.get("常用工具"), "category": "常用工具", "order": 1},
-            {"title": "DokiDoki Web", "description": "实用工具导航网站，汇集各类在线工具和资源", "url": "https://dokidokiweb.com/", "icon": "🔮", "category_id": resource_categories_map.get("常用工具"), "category": "常用工具", "order": 2},
-            {"title": "Remove.bg", "description": "智能图片背景去除工具，一键移除图片背景", "url": "https://www.remove.bg/zh", "icon": "✂️", "category_id": resource_categories_map.get("常用工具"), "category": "常用工具", "order": 3},
-            {"title": "SQLPub", "description": "免费的 MySQL 无服务器数据库平台，支持自动扩缩容", "url": "https://www.sqlpub.com/", "icon": "🗄️", "category_id": resource_categories_map.get("常用工具"), "category": "常用工具", "order": 4},
-            {"title": "Regex 快速参考", "description": "正则表达式快速参考手册，包含常用语法和示例", "url": "https://quickref.cn/docs/regex.html", "icon": "📋", "category_id": resource_categories_map.get("常用工具"), "category": "常用工具", "order": 5},
-            {"title": "PCRE 文档", "description": "PCRE 正则表达式完整文档，详细的语法说明", "url": "https://www.pcre.org/current/doc/html/index.html", "icon": "📖", "category_id": resource_categories_map.get("常用工具"), "category": "常用工具", "order": 6},
-            {"title": "Regex101", "description": "在线正则表达式测试工具，支持多种语言和实时调试", "url": "https://regex101.com/", "icon": "🧪", "category_id": resource_categories_map.get("常用工具"), "category": "常用工具", "order": 7},
+            {"title": "MDN Web Docs", "description": "Mozilla开发者网络文档", "url": "https://developer.mozilla.org", "icon": "📖", "category_id": 3, "category": "学习网站", "order": 1},
+            {"title": "Vue.js 官方文档", "description": "Vue 3 官方中文文档", "url": "https://cn.vuejs.org", "icon": "💚", "category_id": 3, "category": "学习网站", "order": 2},
+            {"title": "FastAPI 官方文档", "description": "FastAPI 官方文档", "url": "https://fastapi.tiangolo.com", "icon": "⚡", "category_id": 3, "category": "学习网站", "order": 3},
+            {"title": "VS Code", "description": "强大的代码编辑器", "url": "https://code.visualstudio.com", "icon": "💻", "category_id": 4, "category": "开发工具", "order": 1},
+            {"title": "GitHub", "description": "代码托管平台", "url": "https://github.com", "icon": "🐙", "category_id": 4, "category": "开发工具", "order": 2},
+            {"title": "Dribbble", "description": "设计师作品展示平台", "url": "https://dribbble.com", "icon": "🏀", "category_id": 5, "category": "设计灵感", "order": 1},
+            {"title": "OpenAI API", "description": "OpenAI API文档", "url": "https://platform.openai.com", "icon": "🤖", "category_id": 6, "category": "API服务", "order": 1},
+            {"title": "Vercel", "description": "前端应用部署平台，支持 Next.js、Vue、React 等框架", "url": "https://vercel.com", "icon": "▲", "category_id": 1, "category": "部署平台", "order": 1},
+            {"title": "Render", "description": "后端服务部署平台，支持 Python、Node.js、Go 等语言", "url": "https://render.com", "icon": "🔵", "category_id": 1, "category": "部署平台", "order": 2},
+            {"title": "Neon", "description": "无服务器 PostgreSQL 数据库，支持自动扩缩容", "url": "https://neon.tech", "icon": "💚", "category_id": 1, "category": "部署平台", "order": 3},
+            {"title": "Supabase", "description": "开源 Firebase 替代方案，提供数据库、认证、存储等服务", "url": "https://supabase.com", "icon": "⚡", "category_id": 1, "category": "部署平台", "order": 4},
+            {"title": "Resend", "description": "开发者友好的邮件发送服务，简单易用的 API", "url": "https://resend.com", "icon": "📧", "category_id": 1, "category": "部署平台", "order": 5},
+            {"title": "UptimeRobot", "description": "免费的网站监控服务，支持定时检测和告警", "url": "https://uptimerobot.com", "icon": "🤖", "category_id": 1, "category": "部署平台", "order": 6},
+            {"title": "Cloudflare", "description": "全球 CDN 服务，提供 DDoS 防护和 DNS 解析", "url": "https://cloudflare.com", "icon": "☁️", "category_id": 1, "category": "部署平台", "order": 7},
+            {"title": "Hero SMS", "description": "在线短信接收平台，用于验证码接收和测试", "url": "https://hero-sms.com/cn", "icon": "📱", "category_id": 2, "category": "常用工具", "order": 1},
+            {"title": "DokiDoki Web", "description": "实用工具导航网站，汇集各类在线工具和资源", "url": "https://dokidokiweb.com/", "icon": "🔮", "category_id": 2, "category": "常用工具", "order": 2},
+            {"title": "Remove.bg", "description": "智能图片背景去除工具，一键移除图片背景", "url": "https://www.remove.bg/zh", "icon": "✂️", "category_id": 2, "category": "常用工具", "order": 3},
+            {"title": "SQLPub", "description": "免费的 MySQL 无服务器数据库平台，支持自动扩缩容", "url": "https://www.sqlpub.com/", "icon": "🗄️", "category_id": 2, "category": "常用工具", "order": 4},
+            {"title": "Regex 快速参考", "description": "正则表达式快速参考手册，包含常用语法和示例", "url": "https://quickref.cn/docs/regex.html", "icon": "📋", "category_id": 2, "category": "常用工具", "order": 5},
+            {"title": "PCRE 文档", "description": "PCRE 正则表达式完整文档，详细的语法说明", "url": "https://www.pcre.org/current/doc/html/index.html", "icon": "📖", "category_id": 2, "category": "常用工具", "order": 6},
+            {"title": "Regex101", "description": "在线正则表达式测试工具，支持多种语言和实时调试", "url": "https://regex101.com/", "icon": "🧪", "category_id": 2, "category": "常用工具", "order": 7},
         ]
         
         print("\n=== Initializing resources ===")

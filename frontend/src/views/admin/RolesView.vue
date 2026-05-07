@@ -456,12 +456,12 @@ watch(() => form.value.code, (newCode) => {
 
     <div
       v-else
-      class="grid grid-cols-1 md:grid-cols-2 gap-3"
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
     >
       <div
         v-for="role in roles"
         :key="role.id"
-        class="group bg-white dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden hover:border-primary/30 transition-colors"
+        class="group glass-card overflow-hidden hover:border-primary/30 transition-colors"
       >
         <div class="p-4">
           <div class="flex items-start gap-3">

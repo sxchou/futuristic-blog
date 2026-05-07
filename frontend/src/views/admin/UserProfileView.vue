@@ -857,7 +857,7 @@ onMounted(fetchProfile)
                 <span
                   v-for="role in user.roles"
                   :key="role.id"
-                  :class="getRoleColorClasses(role.code, 'label')"
+                  :class="getRoleColorClasses(role.code, 'badge')"
                 >
                   {{ role.name }}
                 </span>
