@@ -1,6 +1,6 @@
 import { nextTick, type Ref } from 'vue'
 
-export async function updateArrayItem<T extends { id: number }>(
+export async function updateArrayItem<T extends { id: number; order?: number }>(
   array: Ref<T[]>,
   id: number,
   updateFn: () => Promise<T>
@@ -9,24 +9,24 @@ export async function updateArrayItem<T extends { id: number }>(
   if (index === -1) {
     throw new Error(`Item with id ${id} not found`)
   }
-  
+
   const updatedItem = await updateFn()
   const newArray = [...array.value]
   newArray[index] = updatedItem
-  array.value = newArray
+  array.value = newArray.sort((a, b) => (a.order || 0) - (b.order || 0))
   await nextTick()
-  
+
   return updatedItem
 }
 
-export async function addArrayItem<T>(
+export async function addArrayItem<T extends { order?: number }>(
   array: Ref<T[]>,
   createFn: () => Promise<T>
 ): Promise<T> {
   const newItem = await createFn()
-  array.value = [...array.value, newItem]
+  array.value = [...array.value, newItem].sort((a, b) => (a.order || 0) - (b.order || 0))
   await nextTick()
-  
+
   return newItem
 }
 

@@ -205,8 +205,7 @@ def _get_articles_list(page: int, page_size: int, is_featured: Optional[bool] = 
                 func.count(Comment.id).label('count')
             ).filter(
                 Comment.article_id.in_(article_ids),
-                Comment.status == 'approved',
-                Comment.is_deleted == False
+                Comment.status == 'approved'
             ).group_by(Comment.article_id).all()
             
             comment_counts = {c.article_id: c.count for c in comment_query}
@@ -398,7 +397,6 @@ def _get_public_stats_cached() -> PublicStats:
         total_likes = db.query(func.count(ArticleLike.id)).scalar() or 0
         
         total_comments = db.query(func.count(Comment.id)).filter(
-            Comment.is_deleted == False,
             Comment.status == 'approved'
         ).scalar() or 0
         

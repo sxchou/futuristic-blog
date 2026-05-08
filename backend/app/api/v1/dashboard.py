@@ -97,7 +97,6 @@ async def get_public_stats(
     total_likes = db.query(func.count(ArticleLike.id)).scalar() or 0
     
     total_comments = db.query(func.count(Comment.id)).filter(
-        Comment.is_deleted == False, 
         Comment.status == 'approved'
     ).scalar() or 0
     
@@ -133,7 +132,6 @@ async def get_overview_stats(
     
     total_likes = db.query(func.count(ArticleLike.id)).scalar() or 0
     total_comments = db.query(func.count(Comment.id)).filter(
-        Comment.is_deleted == False, 
         Comment.status == 'approved'
     ).scalar() or 0
     
@@ -306,7 +304,6 @@ async def get_article_rank(
         Comment.article_id,
         func.count(Comment.id).label('comment_count')
     ).filter(
-        Comment.is_deleted == False,
         Comment.status == 'approved'
     ).group_by(Comment.article_id).subquery()
     
@@ -382,8 +379,7 @@ async def get_user_activity(
             func.date(Comment.created_at).label('date'),
             func.count(Comment.id).label('count')
         ).filter(
-            Comment.created_at >= start_date,
-            Comment.is_deleted == False
+            Comment.created_at >= start_date
         ).group_by(func.date(Comment.created_at)).all()
     )
     
@@ -465,8 +461,7 @@ async def get_comment_trend(
         func.date(Comment.created_at).label('date'),
         func.count(Comment.id).label('count')
     ).filter(
-        Comment.created_at >= start_date,
-        Comment.is_deleted == False
+        Comment.created_at >= start_date
     ).group_by(
         func.date(Comment.created_at)
     ).all()

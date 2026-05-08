@@ -113,14 +113,19 @@ async def create_category(
         existing_slug = db.query(Category).filter(Category.slug == slug).first()
         if existing_slug:
             raise HTTPException(status_code=400, detail="Slug已存在")
-    
+
+    max_order = db.query(Category).order_by(Category.order.desc()).first()
+    next_order = (max_order.order + 1) if max_order else 1
+
+    category_order = category_data.order if category_data.order and category_data.order > 0 else next_order
+
     new_category = Category(
         name=category_data.name,
         slug=slug,
         description=category_data.description,
         icon=category_data.icon,
         color=category_data.color,
-        order=category_data.order
+        order=category_order
     )
     
     try:

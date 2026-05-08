@@ -33,6 +33,7 @@ const previewFile = ref<ArticleFile | null>(null)
 const showPreview = ref(false)
 const selectedFileIds = ref<Set<number>>(new Set())
 const highlightKeyword = ref('')
+const commentSectionRef = ref<InstanceType<typeof CommentSection> | null>(null)
 
 const activeTooltip = ref<string | null>(null)
 
@@ -473,6 +474,8 @@ const scrollToComment = (commentId: number) => {
       commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
       commentElement.classList.add('highlight-comment')
       setTimeout(() => { commentElement.classList.remove('highlight-comment') }, 3000)
+    } else if (commentSectionRef.value) {
+      commentSectionRef.value.navigateToComment(commentId)
     } else {
       const commentsSection = document.getElementById('comments')
       if (commentsSection) commentsSection.scrollIntoView({ behavior: 'smooth' })
@@ -1418,6 +1421,7 @@ watch(article, async (newVal) => {
 
         <CommentSection
           v-if="article"
+          ref="commentSectionRef"
           :article-id="article.id"
           :article-title="article.title"
         />

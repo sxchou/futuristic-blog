@@ -248,24 +248,231 @@ def send_reply_notification_bg(
         db.close()
 
 
-@router.get("/article/{article_id}", response_model=List[CommentResponse])
+@router.get("/article/{article_id}")
 async def get_article_comments(
     article_id: int,
+    page: int = Query(1, ge=1, description="页码"),
+    page_size: int = Query(5, ge=1, le=50, description="每页数量"),
     db: Session = Depends(get_db)
 ):
     article = db.query(Article).filter(Article.id == article_id, Article.is_published == True).first()
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
     
-    comments = db.query(Comment).options(
+    root_total = db.query(func.count(Comment.id)).filter(
+        Comment.article_id == article_id,
+        Comment.status == 'approved',
+        Comment.parent_id == None
+    ).scalar()
+    
+    root_comments = db.query(Comment).options(
         joinedload(Comment.user),
         joinedload(Comment.reply_to_user)
     ).filter(
         Comment.article_id == article_id,
+        Comment.status == 'approved',
+        Comment.parent_id == None
+    ).order_by(Comment.created_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
+    
+    root_ids = [c.id for c in root_comments]
+    
+    all_non_root = []
+    if root_ids:
+        all_non_root = db.query(Comment).options(
+            joinedload(Comment.user),
+            joinedload(Comment.reply_to_user)
+        ).filter(
+            Comment.article_id == article_id,
+            Comment.status == 'approved',
+            Comment.parent_id != None
+        ).order_by(Comment.created_at.asc()).all()
+    
+    tree = build_comment_tree(list(root_comments) + all_non_root, db)
+    
+    def count_all_descendants(comment_data: dict) -> int:
+        count = len(comment_data.get('replies', []))
+        for reply in comment_data.get('replies', []):
+            count += count_all_descendants(reply)
+        return count
+    
+    def limit_direct_replies(comment_data: dict, limit: int) -> dict:
+        direct_replies = comment_data.get('replies', [])
+        if len(direct_replies) <= limit:
+            return comment_data
+        limited = direct_replies[:limit]
+        remaining_ids = set(r['id'] for r in direct_replies[limit:])
+        
+        def keep_or_trim(node: dict) -> dict:
+            node_replies = node.get('replies', [])
+            if node['id'] in remaining_ids:
+                return { **node, 'replies': [] }
+            trimmed_replies = [keep_or_trim(r) for r in node_replies]
+            return { **node, 'replies': trimmed_replies }
+        
+        trimmed_children = [keep_or_trim(r) for r in limited]
+        return { **comment_data, 'replies': trimmed_children }
+    
+    total_all = db.query(func.count(Comment.id)).filter(
+        Comment.article_id == article_id,
         Comment.status == 'approved'
+    ).scalar() or 0
+    result = []
+    for rc in root_comments:
+        comment_data = next((c for c in tree if c['id'] == rc.id), None)
+        if comment_data:
+            total_descendants = count_all_descendants(comment_data)
+            limited_data = limit_direct_replies(comment_data, 0)
+            limited_data['reply_count'] = total_descendants
+            result.append(limited_data)
+    
+    total_pages = max(1, (root_total + page_size - 1) // page_size)
+    
+    return {
+        'items': result,
+        'total': root_total,
+        'total_all': total_all,
+        'page': page,
+        'page_size': page_size,
+        'total_pages': total_pages
+    }
+
+
+@router.get("/article/{article_id}/replies/{comment_id}")
+async def get_comment_replies(
+    article_id: int,
+    comment_id: int,
+    offset: int = Query(0, ge=0, description="偏移量"),
+    limit: int = Query(0, ge=0, description="数量限制，0表示不限制"),
+    db: Session = Depends(get_db)
+):
+    article = db.query(Article).filter(Article.id == article_id, Article.is_published == True).first()
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+    
+    parent = db.query(Comment).filter(
+        Comment.id == comment_id,
+        Comment.article_id == article_id,
+        Comment.status == 'approved'
+    ).first()
+    if not parent:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    
+    all_direct = db.query(Comment).options(
+        joinedload(Comment.user),
+        joinedload(Comment.reply_to_user)
+    ).filter(
+        Comment.article_id == article_id,
+        Comment.status == 'approved',
+        Comment.parent_id == comment_id
+    ).order_by(Comment.created_at.asc()).all()
+    
+    total_direct = len(all_direct)
+    
+    if offset >= total_direct:
+        return {
+            'items': [],
+            'total': total_direct,
+            'offset': offset,
+            'has_more': False
+        }
+    
+    if limit > 0:
+        page_direct = all_direct[offset:offset + limit]
+    else:
+        page_direct = all_direct[offset:]
+    
+    all_descendant_ids = set(r.id for r in page_direct)
+    queue = list(page_direct)
+    while queue:
+        current = queue.pop(0)
+        children = db.query(Comment).filter(
+            Comment.article_id == article_id,
+            Comment.status == 'approved',
+            Comment.parent_id == current.id
+        ).all()
+        for child in children:
+            if child.id not in all_descendant_ids:
+                all_descendant_ids.add(child.id)
+                queue.append(child)
+    
+    all_related = db.query(Comment).options(
+        joinedload(Comment.user),
+        joinedload(Comment.reply_to_user)
+    ).filter(
+        Comment.article_id == article_id,
+        Comment.status == 'approved',
+        Comment.id.in_(all_descendant_ids | {comment_id})
+    ).order_by(Comment.created_at.asc()).all()
+    
+    tree = build_comment_tree(all_related, db)
+    
+    target_node = next((n for n in tree if n.get('id') == comment_id), None)
+    page_items = target_node.get('replies', []) if target_node else []
+    
+    return {
+        'items': page_items,
+        'total': total_direct,
+        'offset': offset,
+        'has_more': offset + len(page_items) < total_direct
+    }
+
+
+@router.get("/article/{article_id}/locate/{comment_id}")
+async def locate_comment_page(
+    article_id: int,
+    comment_id: int,
+    page_size: int = Query(5, ge=1, le=50, description="每页数量"),
+    db: Session = Depends(get_db)
+):
+    article = db.query(Article).filter(Article.id == article_id, Article.is_published == True).first()
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+    
+    target_comment = db.query(Comment).filter(
+        Comment.id == comment_id,
+        Comment.article_id == article_id,
+        Comment.status == 'approved'
+    ).first()
+    
+    if not target_comment:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    
+    def find_root_id(cid: int) -> int:
+        current_id = cid
+        visited = set()
+        while current_id:
+            if current_id in visited:
+                break
+            visited.add(current_id)
+            c = db.query(Comment.parent_id).filter(Comment.id == current_id).first()
+            if c and c[0] is not None:
+                current_id = c[0]
+            else:
+                return current_id
+        return cid
+    
+    root_id = find_root_id(target_comment.id) if target_comment.parent_id else target_comment.id
+    
+    root_ids_ordered = db.query(Comment.id).filter(
+        Comment.article_id == article_id,
+        Comment.status == 'approved',
+        Comment.parent_id == None
     ).order_by(Comment.created_at.desc()).all()
     
-    return build_comment_tree(comments, db)
+    root_ids_list = [r[0] for r in root_ids_ordered]
+    
+    try:
+        index = root_ids_list.index(root_id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Root comment not found")
+    
+    page = (index // page_size) + 1
+    
+    return {
+        'page': page,
+        'root_comment_id': root_id,
+        'is_reply': target_comment.parent_id is not None
+    }
 
 
 @router.post("", response_model=CommentResponse)
@@ -494,7 +701,10 @@ async def delete_comment(
     comment = db.query(Comment).filter(Comment.id == comment_id).first()
     if not comment:
         raise HTTPException(status_code=404, detail="Comment not found")
-    
+
+    if comment.is_deleted:
+        raise HTTPException(status_code=400, detail="此评论已被删除，无法再次删除")
+
     is_owner = comment.user_id == current_user.id
     has_permission = PermissionService.has_permission_strict(db, current_user.id, "comment.delete")
     
@@ -608,7 +818,10 @@ async def audit_comment(
     
     if not comment:
         raise HTTPException(status_code=404, detail="Comment not found")
-    
+
+    if comment.is_deleted:
+        raise HTTPException(status_code=400, detail="此评论已被删除，无法更新状态")
+
     old_status = comment.status
     comment.status = audit_data.status
     
@@ -802,7 +1015,10 @@ async def admin_delete_comment(
     comment = db.query(Comment).filter(Comment.id == comment_id).first()
     if not comment:
         raise HTTPException(status_code=404, detail="Comment not found")
-    
+
+    if comment.is_deleted and keep_record:
+        raise HTTPException(status_code=400, detail="此评论已被删除，无法再次软删除")
+
     if not comment.is_deleted and comment.status == 'approved':
         article = db.query(Article).filter(Article.id == comment.article_id).first()
         if article and article.comment_count and article.comment_count > 0:
@@ -879,6 +1095,7 @@ async def batch_delete_comments(
             article_comment_changes[comment.article_id] += 1
     
     deleted_count = 0
+    skipped_count = 0
     if delete_data.permanent:
         for comment in comments:
             child_comments = db.query(Comment).filter(Comment.parent_id == comment.id).all()
@@ -886,12 +1103,15 @@ async def batch_delete_comments(
                 if not child.reply_to_user_name and comment.author_name:
                     child.reply_to_user_name = comment.author_name
                 child.parent_id = None
-            
+
             db.query(CommentAuditLog).filter(CommentAuditLog.comment_id == comment.id).delete()
             db.delete(comment)
             deleted_count += 1
     else:
         for comment in comments:
+            if comment.is_deleted:
+                skipped_count += 1
+                continue
             comment.is_deleted = True
             comment.deleted_by = 'admin'
             comment.content = "此评论已被管理员删除"
@@ -910,14 +1130,15 @@ async def batch_delete_comments(
         username=current_user.username,
         action="batch_delete",
         module="comment",
-        description=f"批量删除评论: {'永久删除' if delete_data.permanent else '软删除'} ({deleted_count}条)",
+        description=f"批量删除评论: {'永久删除' if delete_data.permanent else '软删除'} ({deleted_count}条, 跳过{skipped_count}条已删除)",
         target_type="comment",
         request=request
     )
-    
+
     return {
-        "message": f"Successfully deleted {deleted_count} comments",
+        "message": f"Successfully deleted {deleted_count} comments" + (f", skipped {skipped_count} already deleted" if skipped_count > 0 else ""),
         "deleted_count": deleted_count,
+        "skipped_count": skipped_count,
         "type": "permanent" if delete_data.permanent else "soft"
     }
 
@@ -936,8 +1157,7 @@ async def sync_comment_counts(
     for article in articles:
         actual_count = db.query(func.count(Comment.id)).filter(
             Comment.article_id == article.id,
-            Comment.status == 'approved',
-            Comment.is_deleted == False
+            Comment.status == 'approved'
         ).scalar()
         
         if article.comment_count != actual_count:

@@ -149,8 +149,10 @@ export const useBlogStore = defineStore('blog', () => {
     const existingIndex = categories.value.findIndex(c => c.id === category.id)
     if (existingIndex >= 0) {
       categories.value[existingIndex] = category
+      categories.value.sort((a, b) => (a.order || 0) - (b.order || 0))
     } else {
       categories.value.push(category)
+      categories.value.sort((a, b) => (a.order || 0) - (b.order || 0))
     }
   }
 

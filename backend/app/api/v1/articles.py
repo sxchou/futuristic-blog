@@ -240,8 +240,7 @@ async def get_articles(
                 func.count(Comment.id).label('count')
             ).filter(
                 Comment.article_id.in_(article_ids),
-                Comment.status == 'approved',
-                Comment.is_deleted == False
+                Comment.status == 'approved'
             ).group_by(Comment.article_id).all()
             
             comment_counts = {c.article_id: c.count for c in comment_query}
@@ -312,8 +311,7 @@ async def get_articles(
             func.count(Comment.id).label('count')
         ).filter(
             Comment.article_id.in_(article_ids),
-            Comment.status == 'approved',
-            Comment.is_deleted == False
+            Comment.status == 'approved'
         ).group_by(Comment.article_id).all()
         
         comment_counts = {c.article_id: c.count for c in comment_query}
@@ -377,8 +375,7 @@ async def get_user_articles(
             func.count(Comment.id).label('count')
         ).filter(
             Comment.article_id.in_(article_ids),
-            Comment.status == 'approved',
-            Comment.is_deleted == False
+            Comment.status == 'approved'
         ).group_by(Comment.article_id).all()
         
         comment_counts = {c.article_id: c.count for c in comment_query}
@@ -442,8 +439,7 @@ async def get_admin_articles(
             func.count(Comment.id).label('count')
         ).filter(
             Comment.article_id.in_(article_ids),
-            Comment.status == 'approved',
-            Comment.is_deleted == False
+            Comment.status == 'approved'
         ).group_by(Comment.article_id).all()
         
         comment_counts = {c.article_id: c.count for c in comment_query}

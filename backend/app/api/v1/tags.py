@@ -161,8 +161,7 @@ async def update_tag(
     tag = db.query(Tag).filter(Tag.id == tag_id).first()
     if not tag:
         raise HTTPException(status_code=404, detail="Tag not found")
-    
-    old_is_active = tag.is_active
+
     update_data = tag_data.model_dump(exclude_unset=True)
     
     if 'name' in update_data:
@@ -198,19 +197,10 @@ async def update_tag(
             raise HTTPException(status_code=400, detail="数据保存失败，请检查输入内容")
     
     invalidate_tags_cache()
-    
+
     description = f"更新标签: {tag.name}"
     action = "更新"
-    
-    if 'is_active' in update_data and len(update_data) == 1:
-        if old_is_active != tag.is_active:
-            if tag.is_active:
-                description = f"启用标签: {tag.name}"
-                action = "启用"
-            else:
-                description = f"禁用标签: {tag.name}"
-                action = "禁用"
-    
+
     LogService.log_operation(
         db=db,
         user_id=current_user.id,

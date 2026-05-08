@@ -530,7 +530,18 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 {{ comment.id }}
               </td>
               <td class="px-4 py-3">
-                <div class="max-w-xs truncate text-sm text-gray-900 dark:text-white">
+                <router-link
+                  v-if="comment.article_slug"
+                  :to="`/article/${comment.article_slug}#comment-${comment.id}`"
+                  class="max-w-xs truncate text-sm text-primary hover:underline block"
+                  title="点击查看评论"
+                >
+                  {{ comment.content }}
+                </router-link>
+                <div
+                  v-else
+                  class="max-w-xs truncate text-sm text-gray-900 dark:text-white"
+                >
                   {{ comment.content }}
                 </div>
               </td>

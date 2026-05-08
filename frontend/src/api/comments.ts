@@ -2,8 +2,24 @@ import apiClient from './client'
 import type { Comment, CommentCreate, AdminComment, CommentAuditLog, CommentAuditRequest, BatchAuditRequest, PaginatedResponse, ArticleListItem } from '@/types'
 
 export const commentApi = {
-  getArticleComments: async (articleId: number): Promise<Comment[]> => {
-    const response = await apiClient.get(`/comments/article/${articleId}`)
+  getArticleComments: async (articleId: number, page: number = 1, pageSize: number = 5): Promise<PaginatedResponse<Comment>> => {
+    const response = await apiClient.get(`/comments/article/${articleId}`, {
+      params: { page, page_size: pageSize }
+    })
+    return response.data
+  },
+
+  getCommentReplies: async (articleId: number, commentId: number, offset: number = 0, limit: number = 0): Promise<{ items: Comment[]; total: number; offset: number; has_more: boolean }> => {
+    const response = await apiClient.get(`/comments/article/${articleId}/replies/${commentId}`, {
+      params: { offset, limit }
+    })
+    return response.data
+  },
+
+  locateComment: async (articleId: number, commentId: number, pageSize: number = 5): Promise<{ page: number; root_comment_id: number; is_reply: boolean }> => {
+    const response = await apiClient.get(`/comments/article/${articleId}/locate/${commentId}`, {
+      params: { page_size: pageSize }
+    })
     return response.data
   },
 
