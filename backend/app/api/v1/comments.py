@@ -24,7 +24,7 @@ from app.services.log_service import LogService
 router = APIRouter(prefix="/comments", tags=["Comments"])
 
 
-def get_user_avatar_info(db: Session, user_id: Optional[int]) -> Dict[str, Any]:
+def get_user_avatar_info(db: Session, user_id: Optional[int], user_profiles: dict = None) -> Dict[str, Any]:
     if not user_id:
         return {
             'avatar_type': None,
@@ -32,7 +32,10 @@ def get_user_avatar_info(db: Session, user_id: Optional[int]) -> Dict[str, Any]:
             'avatar_gradient': None
         }
     
-    profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
+    profile = user_profiles.get(user_id) if user_profiles else None
+    
+    if not profile and not user_profiles:
+        profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
     
     if profile:
         if profile.avatar_type == AvatarType.custom and profile.avatar_url:
@@ -73,29 +76,20 @@ def build_comment_tree(comments: List[Comment], db: Session) -> List[dict]:
         if comment.reply_to_user_id:
             user_ids.add(comment.reply_to_user_id)
     
-    user_cache = {}
-    if user_ids:
-        users = db.query(User).filter(User.id.in_(user_ids)).all()
-        user_cache = {u.id: u for u in users}
-    
-    avatar_cache = {}
+    user_profiles = {}
     if user_ids:
         profiles = db.query(UserProfile).filter(UserProfile.user_id.in_(user_ids)).all()
-        for p in profiles:
-            avatar_info = None
-            if p.avatar_type == AvatarType.custom and p.avatar_url:
-                avatar_info = {'avatar_type': 'custom', 'avatar_url': p.avatar_url, 'avatar_gradient': p.default_avatar_gradient}
-            elif p.oauth_avatar_url:
-                avatar_info = {'avatar_type': 'oauth', 'avatar_url': p.oauth_avatar_url, 'avatar_gradient': p.default_avatar_gradient}
-            else:
-                avatar_info = {'avatar_type': 'default', 'avatar_url': None, 'avatar_gradient': p.default_avatar_gradient}
-            avatar_cache[p.user_id] = avatar_info
+        user_profiles = {profile.user_id: profile for profile in profiles}
     
-    _default_avatar = {'avatar_type': 'default', 'avatar_url': None, 'avatar_gradient': None}
+    user_avatar_cache = {}
     
     for comment in comments:
         reply_to_user_name = None
-        reply_to_user_avatar = _default_avatar
+        reply_to_user_avatar = {
+            'avatar_type': None,
+            'avatar_url': None,
+            'avatar_gradient': None
+        }
         
         if comment.reply_to_user_id:
             if comment.reply_to_user:
@@ -103,16 +97,23 @@ def build_comment_tree(comments: List[Comment], db: Session) -> List[dict]:
             elif comment.reply_to_user_name:
                 reply_to_user_name = comment.reply_to_user_name
             else:
-                reply_to_user = user_cache.get(comment.reply_to_user_id)
-                reply_to_user_name = reply_to_user.username if reply_to_user else None
+                reply_to_user_name = None
             
-            reply_to_user_avatar = avatar_cache.get(comment.reply_to_user_id, _default_avatar)
+            if comment.reply_to_user_id not in user_avatar_cache:
+                user_avatar_cache[comment.reply_to_user_id] = get_user_avatar_info(db, comment.reply_to_user_id, user_profiles)
+            reply_to_user_avatar = user_avatar_cache[comment.reply_to_user_id]
         elif comment.reply_to_user_name:
             reply_to_user_name = comment.reply_to_user_name
         
-        author_avatar = _default_avatar
+        author_avatar = {
+            'avatar_type': None,
+            'avatar_url': None,
+            'avatar_gradient': None
+        }
         if comment.user_id:
-            author_avatar = avatar_cache.get(comment.user_id, _default_avatar)
+            if comment.user_id not in user_avatar_cache:
+                user_avatar_cache[comment.user_id] = get_user_avatar_info(db, comment.user_id, user_profiles)
+            author_avatar = user_avatar_cache[comment.user_id]
         
         comment_data = {
             'id': comment.id,
@@ -139,13 +140,48 @@ def build_comment_tree(comments: List[Comment], db: Session) -> List[dict]:
         }
         comment_dict[comment.id] = comment_data
     
+    root_cache = {}
+    
+    def find_root_comment_iterative(comment_id: int) -> int:
+        if comment_id in root_cache:
+            return root_cache[comment_id]
+        
+        path = []
+        current_id = comment_id
+        
+        while current_id:
+            comment_data = comment_dict.get(current_id)
+            if not comment_data:
+                break
+            
+            if current_id in root_cache:
+                root_id = root_cache[current_id]
+                for id_in_path in path:
+                    root_cache[id_in_path] = root_id
+                return root_id
+            
+            path.append(current_id)
+            
+            if comment_data['parent_id'] is None:
+                for id_in_path in path:
+                    root_cache[id_in_path] = current_id
+                return current_id
+            
+            current_id = comment_data['parent_id']
+        
+        return None
+    
     for comment_id, comment_data in comment_dict.items():
         if comment_data['parent_id'] is None:
             root_comments.append(comment_data)
         else:
-            parent = comment_dict.get(comment_data['parent_id'])
-            if parent:
-                parent['replies'].append(comment_data)
+            root_id = find_root_comment_iterative(comment_id)
+            if root_id and root_id in comment_dict:
+                comment_dict[root_id]['replies'].append(comment_data)
+    
+    for root_comment in root_comments:
+        if root_comment['replies']:
+            root_comment['replies'].sort(key=lambda x: x['created_at'])
     
     return root_comments
 
@@ -261,285 +297,25 @@ def send_reply_notification_bg(
         db.close()
 
 
-@router.get("/article/{article_id}")
+@router.get("/article/{article_id}", response_model=List[CommentResponse])
 async def get_article_comments(
     article_id: int,
-    page: int = Query(1, ge=1, description="页码"),
-    page_size: int = Query(5, ge=1, le=50, description="每页数量"),
     db: Session = Depends(get_db)
 ):
     article = db.query(Article).filter(Article.id == article_id, Article.is_published == True).first()
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
     
-    root_total = db.query(func.count(Comment.id)).filter(
-        Comment.article_id == article_id,
-        Comment.status == 'approved',
-        Comment.parent_id == None
-    ).scalar()
-    
-    root_comments = db.query(Comment).options(
+    comments = db.query(Comment).options(
         joinedload(Comment.user),
         joinedload(Comment.reply_to_user)
     ).filter(
         Comment.article_id == article_id,
         Comment.status == 'approved',
-        Comment.parent_id == None
-    ).order_by(Comment.created_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
+        Comment.is_deleted == False
+    ).order_by(Comment.created_at.desc()).all()
     
-    root_ids = [c.id for c in root_comments]
-    
-    total_all = db.query(func.count(Comment.id)).filter(
-        Comment.article_id == article_id,
-        Comment.status == 'approved'
-    ).scalar() or 0
-    
-    descendant_counts: Dict[int, int] = {}
-    if root_ids:
-        parent_map = {
-            r[0]: r[1] for r in db.query(Comment.id, Comment.parent_id).filter(
-                Comment.article_id == article_id,
-                Comment.status == 'approved',
-                Comment.parent_id != None
-            ).all()
-        }
-        child_map: Dict[int, List[int]] = {}
-        for cid, pid in parent_map.items():
-            child_map.setdefault(pid, []).append(cid)
-        
-        def count_descendants(root_id: int) -> int:
-            count = 0
-            queue = child_map.get(root_id, [])
-            while queue:
-                current = queue.pop()
-                count += 1
-                if current in child_map:
-                    queue.extend(child_map[current])
-            return count
-        
-        for rid in root_ids:
-            descendant_counts[rid] = count_descendants(rid)
-    
-    avatar_cache: Dict[int, Dict[str, Any]] = {}
-    if root_comments:
-        needed_user_ids: set = set()
-        for rc in root_comments:
-            if rc.user_id:
-                needed_user_ids.add(rc.user_id)
-            if rc.reply_to_user_id:
-                needed_user_ids.add(rc.reply_to_user_id)
-        if needed_user_ids:
-            profiles = db.query(UserProfile).filter(UserProfile.user_id.in_(needed_user_ids)).all()
-            for p in profiles:
-                avatar_info = None
-                if p.avatar_type == AvatarType.custom and p.avatar_url:
-                    avatar_info = {'avatar_type': 'custom', 'avatar_url': p.avatar_url, 'avatar_gradient': p.default_avatar_gradient}
-                elif p.oauth_avatar_url:
-                    avatar_info = {'avatar_type': 'oauth', 'avatar_url': p.oauth_avatar_url, 'avatar_gradient': p.default_avatar_gradient}
-                else:
-                    avatar_info = {'avatar_type': 'default', 'avatar_url': None, 'avatar_gradient': p.default_avatar_gradient}
-                avatar_cache[p.user_id] = avatar_info
-    
-    _default_avatar = {'avatar_type': 'default', 'avatar_url': None, 'avatar_gradient': None}
-    
-    result = []
-    for rc in root_comments:
-        avatar_info = avatar_cache.get(rc.user_id, _default_avatar) if rc.user_id else _default_avatar
-        reply_to_avatar = _default_avatar
-        if rc.reply_to_user_id:
-            reply_to_avatar = avatar_cache.get(rc.reply_to_user_id, _default_avatar)
-        
-        result.append({
-            'id': rc.id,
-            'content': rc.content,
-            'article_id': rc.article_id,
-            'parent_id': rc.parent_id,
-            'user_id': rc.user_id,
-            'author_name': rc.author_name,
-            'author_email': rc.author_email,
-            'author_url': rc.author_url,
-            'author_avatar_type': avatar_info['avatar_type'],
-            'author_avatar_url': avatar_info['avatar_url'],
-            'author_avatar_gradient': avatar_info['avatar_gradient'],
-            'status': rc.status,
-            'is_deleted': rc.is_deleted,
-            'deleted_by': rc.deleted_by,
-            'reply_to_user_id': rc.reply_to_user_id,
-            'reply_to_user_name': rc.reply_to_user_name if rc.reply_to_user_name else (rc.reply_to_user.username if rc.reply_to_user else None),
-            'reply_to_user_avatar_type': reply_to_avatar['avatar_type'],
-            'reply_to_user_avatar_url': reply_to_avatar['avatar_url'],
-            'reply_to_user_avatar_gradient': reply_to_avatar['avatar_gradient'],
-            'created_at': rc.created_at,
-            'replies': [],
-            'reply_count': descendant_counts.get(rc.id, 0)
-        })
-    
-    total_pages = max(1, (root_total + page_size - 1) // page_size)
-    
-    return {
-        'items': result,
-        'total': root_total,
-        'total_all': total_all,
-        'page': page,
-        'page_size': page_size,
-        'total_pages': total_pages
-    }
-
-
-@router.get("/article/{article_id}/replies/{comment_id}")
-async def get_comment_replies(
-    article_id: int,
-    comment_id: int,
-    offset: int = Query(0, ge=0, description="偏移量"),
-    limit: int = Query(0, ge=0, description="数量限制，0表示不限制"),
-    db: Session = Depends(get_db)
-):
-    article = db.query(Article).filter(Article.id == article_id, Article.is_published == True).first()
-    if not article:
-        raise HTTPException(status_code=404, detail="Article not found")
-    
-    parent = db.query(Comment).filter(
-        Comment.id == comment_id,
-        Comment.article_id == article_id,
-        Comment.status == 'approved'
-    ).first()
-    if not parent:
-        raise HTTPException(status_code=404, detail="Comment not found")
-    
-    all_direct = db.query(Comment).options(
-        joinedload(Comment.user),
-        joinedload(Comment.reply_to_user)
-    ).filter(
-        Comment.article_id == article_id,
-        Comment.status == 'approved',
-        Comment.parent_id == comment_id
-    ).order_by(Comment.created_at.asc()).all()
-    
-    total_direct = len(all_direct)
-    
-    if offset >= total_direct:
-        return {
-            'items': [],
-            'total': total_direct,
-            'offset': offset,
-            'has_more': False
-        }
-    
-    if limit > 0:
-        page_direct = all_direct[offset:offset + limit]
-    else:
-        page_direct = all_direct[offset:]
-    
-    all_descendant_ids = set(r.id for r in page_direct)
-    batch_ids = set(all_descendant_ids)
-    while batch_ids:
-        children_batch = db.query(Comment.id, Comment.parent_id).filter(
-            Comment.article_id == article_id,
-            Comment.status == 'approved',
-            Comment.parent_id.in_(batch_ids),
-            Comment.id.notin_(all_descendant_ids)
-        ).all()
-        if not children_batch:
-            break
-        new_ids = set()
-        for cid, pid in children_batch:
-            if cid not in all_descendant_ids:
-                all_descendant_ids.add(cid)
-                new_ids.add(cid)
-        batch_ids = new_ids
-    
-    all_related = db.query(Comment).options(
-        joinedload(Comment.user),
-        joinedload(Comment.reply_to_user)
-    ).filter(
-        Comment.article_id == article_id,
-        Comment.status == 'approved',
-        Comment.id.in_(all_descendant_ids | {comment_id})
-    ).order_by(Comment.created_at.asc()).all()
-    
-    tree = build_comment_tree(all_related, db)
-    
-    target_node = next((n for n in tree if n.get('id') == comment_id), None)
-    page_items = target_node.get('replies', []) if target_node else []
-    
-    return {
-        'items': page_items,
-        'total': total_direct,
-        'offset': offset,
-        'has_more': offset + len(page_items) < total_direct
-    }
-
-
-@router.get("/article/{article_id}/locate/{comment_id}")
-async def locate_comment_page(
-    article_id: int,
-    comment_id: int,
-    page_size: int = Query(5, ge=1, le=50, description="每页数量"),
-    db: Session = Depends(get_db)
-):
-    article = db.query(Article).filter(Article.id == article_id, Article.is_published == True).first()
-    if not article:
-        raise HTTPException(status_code=404, detail="Article not found")
-    
-    target_comment = db.query(Comment).filter(
-        Comment.id == comment_id,
-        Comment.article_id == article_id,
-        Comment.status == 'approved'
-    ).first()
-    
-    if not target_comment:
-        raise HTTPException(status_code=404, detail="Comment not found")
-    
-    if target_comment.parent_id is None:
-        root_id = target_comment.id
-    else:
-        all_parent_map: Dict[int, int] = {
-            r[0]: r[1] for r in db.query(Comment.id, Comment.parent_id).filter(
-                Comment.article_id == article_id,
-                Comment.status == 'approved',
-                Comment.parent_id != None
-            ).all()
-        }
-        current_id = target_comment.id
-        visited: set = set()
-        while current_id:
-            if current_id in visited:
-                break
-            visited.add(current_id)
-            pid = all_parent_map.get(current_id)
-            if pid is None:
-                root_id = current_id
-                break
-            current_id = pid
-        else:
-            root_id = current_id
-    
-    root_comment = db.query(Comment).filter(Comment.id == root_id).first()
-    if not root_comment:
-        raise HTTPException(status_code=404, detail="Root comment not found")
-    
-    index = db.query(func.count(Comment.id)).filter(
-        Comment.article_id == article_id,
-        Comment.status == 'approved',
-        Comment.parent_id == None,
-        Comment.created_at > root_comment.created_at
-    ).scalar()
-    
-    total_root = db.query(func.count(Comment.id)).filter(
-        Comment.article_id == article_id,
-        Comment.status == 'approved',
-        Comment.parent_id == None
-    ).scalar()
-    
-    position = total_root - index
-    
-    page = (position - 1) // page_size + 1
-    
-    return {
-        'page': page,
-        'root_comment_id': root_id,
-        'is_reply': target_comment.parent_id is not None
-    }
+    return build_comment_tree(comments, db)
 
 
 @router.post("", response_model=CommentResponse)
@@ -817,6 +593,18 @@ async def get_admin_comments(
     
     comments = query.order_by(Comment.created_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
     
+    user_ids = set()
+    for comment in comments:
+        if comment.user_id:
+            user_ids.add(comment.user_id)
+        if comment.reply_to_user_id:
+            user_ids.add(comment.reply_to_user_id)
+    
+    user_profiles = {}
+    if user_ids:
+        profiles = db.query(UserProfile).filter(UserProfile.user_id.in_(user_ids)).all()
+        user_profiles = {profile.user_id: profile for profile in profiles}
+    
     user_avatar_cache = {}
     
     items = []
@@ -824,16 +612,20 @@ async def get_admin_comments(
         reply_to_user_name = None
         reply_to_user_avatar = {'avatar_type': None, 'avatar_url': None, 'avatar_gradient': None}
         if comment.reply_to_user_id:
-            reply_to_user = db.query(User).filter(User.id == comment.reply_to_user_id).first()
-            reply_to_user_name = reply_to_user.username if reply_to_user else None
+            if comment.reply_to_user:
+                reply_to_user_name = comment.reply_to_user.username
+            elif comment.reply_to_user_name:
+                reply_to_user_name = comment.reply_to_user_name
+            else:
+                reply_to_user_name = None
             if comment.reply_to_user_id not in user_avatar_cache:
-                user_avatar_cache[comment.reply_to_user_id] = get_user_avatar_info(db, comment.reply_to_user_id)
+                user_avatar_cache[comment.reply_to_user_id] = get_user_avatar_info(db, comment.reply_to_user_id, user_profiles)
             reply_to_user_avatar = user_avatar_cache[comment.reply_to_user_id]
         
         author_avatar = {'avatar_type': None, 'avatar_url': None, 'avatar_gradient': None}
         if comment.user_id:
             if comment.user_id not in user_avatar_cache:
-                user_avatar_cache[comment.user_id] = get_user_avatar_info(db, comment.user_id)
+                user_avatar_cache[comment.user_id] = get_user_avatar_info(db, comment.user_id, user_profiles)
             author_avatar = user_avatar_cache[comment.user_id]
         
         items.append(AdminCommentResponse(
@@ -1224,7 +1016,8 @@ async def sync_comment_counts(
     for article in articles:
         actual_count = db.query(func.count(Comment.id)).filter(
             Comment.article_id == article.id,
-            Comment.status == 'approved'
+            Comment.status == 'approved',
+            Comment.is_deleted == False
         ).scalar()
         
         if article.comment_count != actual_count:

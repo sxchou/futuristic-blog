@@ -181,7 +181,6 @@ export interface Comment {
   reply_to_user_avatar_gradient?: string[]
   created_at: string
   replies: Comment[]
-  reply_count?: number
 }
 
 export interface AdminComment {
@@ -240,7 +239,6 @@ export interface CommentCreate {
 export interface PaginatedResponse<T> {
   items: T[]
   total: number
-  total_all?: number
   page: number
   page_size: number
   total_pages: number

@@ -174,59 +174,47 @@
         </div>
         
         <div
-          v-if="hasReplies || (isRootComment && totalReplyCount > 0)"
+          v-if="comment.replies && comment.replies.length > 0 && depth === 0"
           class="mt-4"
         >
-          <div
-            v-if="displayedReplies.length > 0"
-            :class="[
-              'space-y-3',
-              isDeeplyNested 
-                ? 'bg-gray-50/50 dark:bg-white/[0.02] rounded-md px-2 py-1' 
-                : 'pl-4 border-l-2 border-gray-300 dark:border-white/10'
-            ]"
+          <button
+            class="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors mb-3 pl-4"
+            @click="showReplies = !showReplies"
           >
-            <CommentItem
-              v-for="reply in (isDeeplyNested ? flattenedDeepReplies : displayedReplies)"
-              :key="reply.id"
-              :comment="reply"
-              :article-id="articleId"
-              :depth="isDeeplyNested ? MAX_DEPTH : depth + 1"
-              :expand-target-id="expandTargetId"
-              :root-comment-id="props.rootCommentId || (isRootComment ? props.comment.id : undefined)"
-              @reply="$emit('reply', $event)"
-              @delete="$emit('delete', $event)"
-              @load-replies="$emit('loadReplies', $event)"
-            />
-          </div>
-
-          <div
-            v-if="isRootComment && totalReplyCount > 0"
-            class="mt-3 pl-4"
-          >
-            <button
-              class="text-xs text-primary hover:text-primary/80 transition-colors flex items-center gap-1.5 group"
-              :disabled="isLoadingBatch"
-              @click="handleReplyButtonClick"
+            <svg 
+              class="w-4 h-4 transition-transform duration-300" 
+              :class="{ 'rotate-90': showReplies }"
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
             >
-              <svg
-                class="w-4 h-4 transition-transform duration-200"
-                :class="{ 'rotate-180': !isCollapsed, 'group-hover:translate-y-0.5': isCollapsed, 'group-hover:-translate-y-0.5': !isCollapsed }"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-              <span v-if="isLoadingBatch">加载中...</span>
-              <span v-else>{{ replyButtonText }}</span>
-            </button>
-          </div>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+            <span v-if="!showReplies">展开 {{ comment.replies.length }} 条回复</span>
+            <span v-else>收起所有回复</span>
+          </button>
+          
+          <Transition name="replies">
+            <div
+              v-show="showReplies"
+              class="space-y-3 pl-4 border-l-2 border-gray-300 dark:border-white/10"
+            >
+              <CommentItem
+                v-for="reply in comment.replies"
+                :key="reply.id"
+                :comment="reply"
+                :article-id="articleId"
+                :depth="depth + 1"
+                @reply="$emit('reply', $event)"
+                @delete="$emit('delete', $event)"
+              />
+            </div>
+          </Transition>
         </div>
       </div>
     </div>
@@ -234,35 +222,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, inject, watch, type Ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import type { Comment } from '@/types'
 import CommentMarkdownPreview from './CommentMarkdownPreview.vue'
 import CommentEditor from './CommentEditor.vue'
 import { formatDateTime } from '@/utils/date'
 
-const FIRST_BATCH_SIZE = 2
-const BATCH_SIZE = 3
-const MAX_DEPTH = 3
-
 const props = withDefaults(defineProps<{
   comment: Comment
   articleId: number
   depth?: number
-  preloadedReplyData?: { items: Comment[]; total: number; has_more: boolean } | null
-  expandTargetId?: number | null
-  rootCommentId?: number
 }>(), {
-  depth: 0,
-  preloadedReplyData: null,
-  expandTargetId: null,
-  rootCommentId: undefined
+  depth: 0
 })
 
 const emit = defineEmits<{
-  reply: [data: { content: string; parentId: number; replyToUserId?: number; rootCommentId?: number }]
+  reply: [data: { content: string; parentId: number; replyToUserId?: number }]
   delete: [commentId: number]
-  loadReplies: [data: { commentId: number; offset: number; limit: number; resolve: (result: { items: Comment[]; total: number; has_more: boolean }) => void }]
 }>()
 
 const authStore = useAuthStore()
@@ -273,75 +250,25 @@ const replyEditorRef = ref<InstanceType<typeof CommentEditor> | null>(null)
 const isExpanded = ref(false)
 const contentRef = ref<HTMLElement | null>(null)
 const shouldShowExpand = ref(false)
+const showReplies = ref(false)
 
-const isRootComment = computed(() => props.depth === 0)
-
-const isDeeplyNested = computed(() => props.depth >= 1)
-
-const totalReplyCount = computed(() => {
-  return props.comment.reply_count ?? (props.comment.replies?.length ?? 0)
-})
-
-const allLoadedReplies = ref<Comment[]>([])
-const currentOffset = ref(0)
-const displayedCount = ref(0)
-const isLoadingBatch = ref(false)
-const isCollapsed = ref(true)
-
-const hasReplies = computed(() => {
-  return props.comment.replies && props.comment.replies.length > 0
-})
-
-const displayedReplies = computed(() => {
-  if (!isRootComment.value) {
-    return props.comment.replies || []
-  }
-  return allLoadedReplies.value.slice(0, displayedCount.value)
-})
-
-const flattenedDeepReplies = computed(() => {
-  if (!isDeeplyNested.value) return []
-  const items = isRootComment.value
-    ? allLoadedReplies.value
-    : (props.comment.replies || [])
-  if (items.length === 0) return []
-  const result: Comment[] = []
-  function flatten(list: Comment[]) {
-    for (let i = 0; i < list.length; i++) {
-      const item = list[i]
-      result.push({ id: item.id, content: item.content, author_name: item.author_name, user_id: item.user_id, created_at: item.created_at, status: item.status, is_deleted: item.is_deleted || false, deleted_by: item.deleted_by ?? undefined, reply_to_user_name: item.reply_to_user_name, reply_to_user_id: item.reply_to_user_id ?? undefined, reply_count: item.reply_count || 0, parent_id: item.parent_id, article_id: item.article_id, author_email: item.author_email || '', author_url: item.author_url || '', replies: [], author_avatar_type: item.author_avatar_type, author_avatar_url: item.author_avatar_url, author_avatar_gradient: item.author_avatar_gradient, reply_to_user_avatar_type: item.reply_to_user_avatar_type ?? undefined, reply_to_user_avatar_url: item.reply_to_user_avatar_url ?? undefined, reply_to_user_avatar_gradient: item.reply_to_user_avatar_gradient ?? undefined })
-      if (item.replies && item.replies.length > 0) flatten(item.replies)
-    }
-  }
-  flatten(items)
-  return result
-})
-
-const replyButtonText = computed(() => {
-  if (!isCollapsed.value) {
-    return '收起全部回复'
-  }
-  if (displayedCount.value === 0) {
-    return `展开 ${totalReplyCount.value} 条回复`
-  }
-  const remaining = totalReplyCount.value - displayedCount.value
-  if (remaining <= 0) return '收起全部回复'
-  return '展开更多回复'
-})
-
-const containsTarget = (comment: Comment, targetId: number): boolean => {
-  if (comment.id === targetId) return true
-  if (comment.replies) {
-    for (const reply of comment.replies) {
-      if (containsTarget(reply, targetId)) return true
-    }
-  }
-  return false
-}
+const expandedCommentIds = inject<Ref<Record<number, boolean>>>('expandedCommentIds')
 
 const shouldAutoExpand = computed(() => {
-  if (!props.expandTargetId) return false
-  return containsTarget(props.comment, props.expandTargetId)
+  if (!expandedCommentIds || !expandedCommentIds.value) return false
+  return !!expandedCommentIds.value[props.comment.id]
+})
+
+watch(shouldAutoExpand, (newVal) => {
+  if (newVal && props.depth === 0) {
+    showReplies.value = true
+  }
+})
+
+watch(showReplies, (newVal) => {
+  if (!newVal && expandedCommentIds && expandedCommentIds.value && props.depth === 0) {
+    delete expandedCommentIds.value[props.comment.id]
+  }
 })
 
 const avatarText = computed(() => {
@@ -396,78 +323,12 @@ const toggleExpand = () => {
   isExpanded.value = !isExpanded.value
 }
 
-const handleReplyButtonClick = async () => {
-  if (!isCollapsed.value) {
-    isCollapsed.value = true
-    displayedCount.value = 0
-    allLoadedReplies.value = []
-    currentOffset.value = 0
-    nextTick(() => {
-      const el = document.getElementById(`comment-${props.comment.id}`)
-      if (el) {
-        const navHeight = 80
-        const top = el.getBoundingClientRect().top + window.scrollY - navHeight
-        window.scrollTo({ behavior: 'smooth', top })
-      }
-    })
-    return
-  }
-  await loadBatch()
-}
-
-const loadBatch = async (): Promise<void> => {
-  isLoadingBatch.value = true
-  try {
-    const batchLimit = displayedCount.value === 0 ? FIRST_BATCH_SIZE : BATCH_SIZE
-    const result = await new Promise<{ items: Comment[]; total: number; has_more: boolean }>((resolve) => {
-      emit('loadReplies', {
-        commentId: props.comment.id,
-        offset: currentOffset.value,
-        limit: batchLimit,
-        resolve
-      })
-    })
-    allLoadedReplies.value = [...allLoadedReplies.value, ...result.items]
-    currentOffset.value += result.items.length
-    displayedCount.value = allLoadedReplies.value.length
-    if (!result.has_more || displayedCount.value >= totalReplyCount.value) {
-      isCollapsed.value = false
-    }
-  } catch (error) {
-    console.error('Failed to load replies:', error)
-  } finally {
-    isLoadingBatch.value = false
-  }
-}
-
-const applyPreloadedData = (data: { items: Comment[]; total: number; has_more: boolean } | null | undefined) => {
-  if (data && data.items.length > 0) {
-    allLoadedReplies.value = data.items
-    currentOffset.value = data.items.length
-    const targetInItems = props.expandTargetId ? findInItems(data.items, props.expandTargetId) : false
-    if (targetInItems || shouldAutoExpand.value || !data.has_more) {
-      displayedCount.value = allLoadedReplies.value.length
-      isCollapsed.value = false
-    }
-  }
-}
-
-const findInItems = (items: Comment[], targetId: number): boolean => {
-  for (const item of items) {
-    if (item.id === targetId) return true
-    if (item.replies && findInItems(item.replies, targetId)) return true
-  }
-  return false
-}
-
 onMounted(() => {
   checkContentHeight()
-  applyPreloadedData(props.preloadedReplyData)
+  if (shouldAutoExpand.value && props.depth === 0) {
+    showReplies.value = true
+  }
 })
-
-watch(() => props.preloadedReplyData, (newData) => {
-  applyPreloadedData(newData)
-}, { immediate: true })
 
 const submitReply = async () => {
   if (!replyContent.value.trim() || submittingReply.value) return
@@ -477,8 +338,7 @@ const submitReply = async () => {
     emit('reply', {
       content: replyContent.value.trim(),
       parentId: props.comment.id,
-      replyToUserId: props.comment.user_id,
-      rootCommentId: props.rootCommentId || (isRootComment.value ? props.comment.id : undefined)
+      replyToUserId: props.comment.user_id
     })
     replyContent.value = ''
     showReplyForm.value = false
@@ -488,3 +348,41 @@ const submitReply = async () => {
   }
 }
 </script>
+
+<style scoped>
+.highlight-comment {
+  animation: highlight-fade 3s ease-out;
+}
+
+@keyframes highlight-fade {
+  0% {
+    background-color: rgba(0, 212, 255, 0.3);
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: none;
+  }
+}
+
+.replies-enter-active,
+.replies-leave-active {
+  transition: all 0.3s ease;
+  transform-origin: top;
+}
+
+.replies-enter-from,
+.replies-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+  max-height: 0;
+  overflow: hidden;
+}
+
+.replies-enter-to,
+.replies-leave-from {
+  opacity: 1;
+  transform: translateY(0);
+  max-height: 99999px;
+}
+</style>

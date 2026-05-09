@@ -139,10 +139,19 @@ const createRenderer = () => {
   return renderer
 }
 
+let cachedRenderer: ReturnType<typeof createRenderer> | null = null
+
+const getRenderer = () => {
+  if (!cachedRenderer) {
+    cachedRenderer = createRenderer()
+  }
+  return cachedRenderer
+}
+
 const renderedContent = computed(() => {
   if (!props.content) return ''
   
-  const renderer = createRenderer()
+  const renderer = getRenderer()
   
   const rawHtml = marked.parse(props.content, { renderer, gfm: true, breaks: true, async: false }) as string
   
