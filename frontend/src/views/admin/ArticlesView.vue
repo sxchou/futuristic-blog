@@ -456,6 +456,12 @@ const handleSubmit = async () => {
     }
     markdownEditorRef.value?.markAsSaved()
     showEditor.value = false
+    
+    await dialog.showSuccess(
+      editingArticle.value ? '文章更新成功' : '文章创建成功',
+      '成功'
+    )
+    
     editingArticle.value = null
     resetForm()
     
@@ -478,6 +484,11 @@ const handleSubmit = async () => {
         element.scrollIntoView({ behavior: 'smooth', block: 'center' })
         element.focus()
       }
+    } else {
+      await dialog.showError(
+        error.response?.data?.detail || '保存文章失败，请重试',
+        '错误'
+      )
     }
   } finally {
     isSubmitting.value = false

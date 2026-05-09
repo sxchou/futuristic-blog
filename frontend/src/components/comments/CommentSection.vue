@@ -22,7 +22,7 @@
 
     <div
       v-if="!authStore.isAuthenticated"
-      class="bg-gray-100 dark:bg-dark-100/50 border border-gray-200 dark:border-white/10 rounded-lg p-6 text-center"
+      class="bg-gray-100 dark:bg-dark-100/50 border border-gray-200 dark:border-white/10 rounded-lg p-6 text-center mb-8"
     >
       <p class="text-gray-500 dark:text-gray-400 mb-4">
         登录后才能发表评论
@@ -92,7 +92,7 @@
       class="comments-list space-y-4"
     >
       <CommentItem
-        v-for="comment in comments"
+        v-for="comment in paginatedComments"
         :key="comment.id"
         :comment="comment"
         :article-id="articleId"
@@ -100,6 +100,14 @@
         @delete="handleDelete"
       />
     </div>
+
+    <Pagination
+      v-if="comments.length > pageSize"
+      :current-page="currentPage"
+      :total-pages="totalPages"
+      :page-size="pageSize"
+      @page-change="handlePageChange"
+    />
   </div>
 </template>
 
@@ -111,6 +119,7 @@ import { commentApi } from '@/api'
 import type { Comment } from '@/types'
 import CommentItem from './CommentItem.vue'
 import CommentEditor from './CommentEditor.vue'
+import Pagination from '@/components/common/Pagination.vue'
 
 const props = defineProps<{
   articleId: number
@@ -126,6 +135,9 @@ const newComment = ref('')
 const submitting = ref(false)
 const commentEditorRef = ref<InstanceType<typeof CommentEditor> | null>(null)
 const expandedCommentIds = ref<Record<number, boolean>>({})
+
+const currentPage = ref(1)
+const pageSize = 6
 
 const findParentCommentId = (commentId: number, commentList: Comment[]): number | null => {
   for (const comment of commentList) {
@@ -158,6 +170,29 @@ const totalComments = computed(() => {
   return count
 })
 
+const totalPages = computed(() => {
+  return Math.ceil(comments.value.length / pageSize)
+})
+
+const paginatedComments = computed(() => {
+  const start = (currentPage.value - 1) * pageSize
+  const end = start + pageSize
+  return comments.value.slice(start, end)
+})
+
+const handlePageChange = (page: number) => {
+  currentPage.value = page
+  const commentsSection = document.getElementById('comments')
+  if (commentsSection) {
+    const rect = commentsSection.getBoundingClientRect()
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+    window.scrollTo({
+      top: rect.top + scrollTop - 80,
+      behavior: 'smooth'
+    })
+  }
+}
+
 const scrollToComment = async (commentId: number, delay: number = 100) => {
   await nextTick()
   
@@ -188,11 +223,20 @@ const fetchComments = async () => {
   
   if (commentId) {
     const parentCommentId = findParentCommentId(commentId, comments.value)
-    if (parentCommentId) {
-      expandedCommentIds.value[parentCommentId] = true
-    }
+    const targetCommentId = parentCommentId || commentId
     
-    await scrollToComment(commentId, 350)
+    const commentIndex = comments.value.findIndex(c => c.id === targetCommentId)
+    if (commentIndex !== -1) {
+      const targetPage = Math.floor(commentIndex / pageSize) + 1
+      currentPage.value = targetPage
+      
+      if (parentCommentId) {
+        expandedCommentIds.value[parentCommentId] = true
+      }
+      
+      await nextTick()
+      await scrollToComment(commentId, 350)
+    }
   }
 }
 
@@ -208,6 +252,7 @@ const submitComment = async () => {
     
     if (comment.status === 'approved') {
       comments.value.unshift(comment)
+      currentPage.value = 1
       await dialog.showSuccess('评论发表成功', '成功')
       await scrollToComment(comment.id, 50)
     } else if (comment.status === 'pending') {
@@ -220,9 +265,12 @@ const submitComment = async () => {
     
     newComment.value = ''
     commentEditorRef.value?.markAsSaved()
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to submit comment:', error)
-    await dialog.showError('评论发送失败，请重试', '错误')
+    const errorMessage = error?.response?.status === 429 
+      ? '发送过于频繁，请稍后再试'
+      : '评论发送失败，请重试'
+    await dialog.showError(errorMessage, '错误')
   } finally {
     submitting.value = false
   }
@@ -269,9 +317,12 @@ const handleReply = async (data: { content: string; parentId: number; replyToUse
         type: 'alert'
       })
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to reply:', error)
-    await dialog.showError('回复发送失败，请重试', '错误')
+    const errorMessage = error?.response?.status === 429 
+      ? '发送过于频繁，请稍后再试'
+      : '回复发送失败，请重试'
+    await dialog.showError(errorMessage, '错误')
   }
 }
 

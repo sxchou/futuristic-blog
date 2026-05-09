@@ -116,8 +116,8 @@ watch(() => props.currentPage, () => {
     <div class="pagination-info mb-4 text-center text-sm text-gray-500 dark:text-gray-400">
       <span v-if="totalItems">
         第 {{ pageStart }}-{{ pageEnd }} 篇，共 {{ totalItems }} 篇
+        <span class="mx-2">|</span>
       </span>
-      <span class="mx-2">|</span>
       <span>第 {{ currentPage }} 页，共 {{ totalPages }} 页</span>
     </div>
 
