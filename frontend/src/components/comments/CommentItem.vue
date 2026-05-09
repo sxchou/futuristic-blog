@@ -307,9 +307,10 @@ const flattenedDeepReplies = computed(() => {
   if (items.length === 0) return []
   const result: Comment[] = []
   function flatten(list: Comment[]) {
-    for (const item of list) {
-      result.push({ ...item, replies: [] })
-      if (item.replies?.length) flatten(item.replies)
+    for (let i = 0; i < list.length; i++) {
+      const item = list[i]
+      result.push({ id: item.id, content: item.content, author_name: item.author_name, user_id: item.user_id, created_at: item.created_at, status: item.status, is_deleted: item.is_deleted || false, reply_to_user_name: item.reply_to_user_name, reply_count: item.reply_count || 0, parent_id: item.parent_id, article_id: item.article_id, replies: [], author_avatar_type: item.author_avatar_type, author_avatar_url: item.author_avatar_url, author_avatar_gradient: item.author_avatar_gradient })
+      if (item.replies && item.replies.length > 0) flatten(item.replies)
     }
   }
   flatten(items)

@@ -382,18 +382,22 @@ async def get_comment_replies(
         page_direct = all_direct[offset:]
     
     all_descendant_ids = set(r.id for r in page_direct)
-    queue = list(page_direct)
-    while queue:
-        current = queue.pop(0)
-        children = db.query(Comment).filter(
+    batch_ids = set(all_descendant_ids)
+    while batch_ids:
+        children_batch = db.query(Comment.id, Comment.parent_id).filter(
             Comment.article_id == article_id,
             Comment.status == 'approved',
-            Comment.parent_id == current.id
+            Comment.parent_id.in_(batch_ids),
+            Comment.id.notin_(all_descendant_ids)
         ).all()
-        for child in children:
-            if child.id not in all_descendant_ids:
-                all_descendant_ids.add(child.id)
-                queue.append(child)
+        if not children_batch:
+            break
+        new_ids = set()
+        for cid, pid in children_batch:
+            if cid not in all_descendant_ids:
+                all_descendant_ids.add(cid)
+                new_ids.add(cid)
+        batch_ids = new_ids
     
     all_related = db.query(Comment).options(
         joinedload(Comment.user),
@@ -437,21 +441,28 @@ async def locate_comment_page(
     if not target_comment:
         raise HTTPException(status_code=404, detail="Comment not found")
     
-    def find_root_id(cid: int) -> int:
-        current_id = cid
+    if target_comment.parent_id is None:
+        root_id = target_comment.id
+    else:
+        all_parent_map = {
+            r[0]: r[1] for r in db.query(Comment.id, Comment.parent_id).filter(
+                Comment.article_id == article_id,
+                Comment.status == 'approved'
+            ).all()
+        }
+        current_id = target_comment.id
         visited = set()
-        while current_id:
+        while current_id and current_id in all_parent_map:
             if current_id in visited:
                 break
             visited.add(current_id)
-            c = db.query(Comment.parent_id).filter(Comment.id == current_id).first()
-            if c and c[0] is not None:
-                current_id = c[0]
-            else:
-                return current_id
-        return cid
-    
-    root_id = find_root_id(target_comment.id) if target_comment.parent_id else target_comment.id
+            pid = all_parent_map.get(current_id)
+            if pid is None:
+                root_id = current_id
+                break
+            current_id = pid
+        else:
+            root_id = current_id
     
     root_ids_ordered = db.query(Comment.id).filter(
         Comment.article_id == article_id,

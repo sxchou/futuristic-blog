@@ -480,7 +480,7 @@ const scrollToComment = (commentId: number) => {
       const commentsSection = document.getElementById('comments')
       if (commentsSection) commentsSection.scrollIntoView({ behavior: 'smooth' })
     }
-  }, 500)
+  }, 100)
 }
 
 const scrollToHeading = (id: string) => {

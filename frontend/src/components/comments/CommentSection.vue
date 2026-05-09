@@ -431,25 +431,27 @@ const navigateToComment = async (commentId: number) => {
     expandTargetId.value = commentId
     const locateResult = await commentApi.locateComment(props.articleId, commentId, pageSize)
     const targetPage = locateResult.page
+    const needPageChange = targetPage !== currentPage.value
+    const needReplies = locateResult.is_reply && !!locateResult.root_comment_id
 
-    if (targetPage !== currentPage.value) {
-      await fetchComments(targetPage)
+    const promises: Promise<void>[] = []
+    if (needPageChange) {
+      promises.push(fetchComments(targetPage))
     }
-
-    if (locateResult.is_reply && locateResult.root_comment_id) {
-      const rootId = locateResult.root_comment_id
+    if (needReplies) {
+      const rootId = locateResult.root_comment_id!
       const existing = preloadedRepliesMap.value[rootId]
       if (!existing || !findInItems(existing.items, commentId)) {
-        try {
-          const result = await commentApi.getCommentReplies(props.articleId, rootId)
-          preloadedRepliesMap.value = { ...preloadedRepliesMap.value, [rootId]: result }
-        } catch (e) {
-          console.error('Failed to load replies for navigation:', e)
-        }
+        promises.push(
+          commentApi.getCommentReplies(props.articleId, rootId).then(result => {
+            preloadedRepliesMap.value = { ...preloadedRepliesMap.value, [rootId]: result }
+          }).catch(e => console.error('Failed to load replies for navigation:', e))
+        )
       }
     }
 
-    await scrollToTarget(commentId, 0)
+    await Promise.all(promises)
+    scrollToTarget(commentId, 0)
   } catch (error) {
     console.error('Failed to navigate to comment:', error)
     expandTargetId.value = null
@@ -468,7 +470,7 @@ const scrollToTarget = (commentId: number, retryCount: number): void => {
         commentElement.classList.remove('highlight-comment')
         expandTargetId.value = null
       }, 3000)
-    } else if (retryCount < 10) {
+    } else if (retryCount < 5) {
       setTimeout(() => scrollToTarget(commentId, retryCount + 1), 50)
     } else {
       expandTargetId.value = null
