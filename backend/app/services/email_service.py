@@ -893,7 +893,7 @@ class EmailService:
         site_name = EmailService.get_site_name(db)
         current_year = EmailService.get_current_year()
         
-        target_id = parent_comment_id or comment_id
+        target_id = comment_id or parent_comment_id
         if target_id:
             article_url = f"{settings.FRONTEND_URL}/article/{article_slug}#comment-{target_id}"
         else:
