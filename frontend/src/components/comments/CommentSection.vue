@@ -456,7 +456,11 @@ const navigateToComment = async (commentId: number) => {
     console.error('Failed to navigate to comment:', error)
     expandTargetId.value = null
     const commentsSection = document.getElementById('comments')
-    if (commentsSection) commentsSection.scrollIntoView({ behavior: 'smooth' })
+    if (commentsSection) {
+      const navHeight = 80
+      const top = commentsSection.getBoundingClientRect().top + window.scrollY - navHeight
+      window.scrollTo({ behavior: 'smooth', top })
+    }
   }
 }
 

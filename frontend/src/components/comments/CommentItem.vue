@@ -309,7 +309,7 @@ const flattenedDeepReplies = computed(() => {
   function flatten(list: Comment[]) {
     for (let i = 0; i < list.length; i++) {
       const item = list[i]
-      result.push({ id: item.id, content: item.content, author_name: item.author_name, user_id: item.user_id, created_at: item.created_at, status: item.status, is_deleted: item.is_deleted || false, reply_to_user_name: item.reply_to_user_name, reply_count: item.reply_count || 0, parent_id: item.parent_id, article_id: item.article_id, replies: [], author_avatar_type: item.author_avatar_type, author_avatar_url: item.author_avatar_url, author_avatar_gradient: item.author_avatar_gradient })
+      result.push({ id: item.id, content: item.content, author_name: item.author_name, user_id: item.user_id, created_at: item.created_at, status: item.status, is_deleted: item.is_deleted || false, deleted_by: item.deleted_by ?? undefined, reply_to_user_name: item.reply_to_user_name, reply_to_user_id: item.reply_to_user_id ?? undefined, reply_count: item.reply_count || 0, parent_id: item.parent_id, article_id: item.article_id, author_email: item.author_email || '', author_url: item.author_url || '', replies: [], author_avatar_type: item.author_avatar_type, author_avatar_url: item.author_avatar_url, author_avatar_gradient: item.author_avatar_gradient, reply_to_user_avatar_type: item.reply_to_user_avatar_type ?? undefined, reply_to_user_avatar_url: item.reply_to_user_avatar_url ?? undefined, reply_to_user_avatar_gradient: item.reply_to_user_avatar_gradient ?? undefined })
       if (item.replies && item.replies.length > 0) flatten(item.replies)
     }
   }

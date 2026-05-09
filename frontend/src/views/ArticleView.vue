@@ -478,7 +478,11 @@ const scrollToComment = (commentId: number) => {
       commentSectionRef.value.navigateToComment(commentId)
     } else {
       const commentsSection = document.getElementById('comments')
-      if (commentsSection) commentsSection.scrollIntoView({ behavior: 'smooth' })
+      if (commentsSection) {
+        const navHeight = 80
+        const top = commentsSection.getBoundingClientRect().top + window.scrollY - navHeight
+        window.scrollTo({ behavior: 'smooth', top })
+      }
     }
   }, 100)
 }
@@ -591,7 +595,11 @@ onMounted(async () => {
     if (route.hash === '#comments') {
       setTimeout(() => {
         const commentsSection = document.getElementById('comments')
-        if (commentsSection) commentsSection.scrollIntoView({ behavior: 'smooth' })
+        if (commentsSection) {
+          const navHeight = 80
+          const top = commentsSection.getBoundingClientRect().top + window.scrollY - navHeight
+          window.scrollTo({ behavior: 'smooth', top })
+        }
       }, 100)
     } else if (route.hash.startsWith('#comment-')) {
       const commentId = parseInt(route.hash.replace('#comment-', ''), 10)

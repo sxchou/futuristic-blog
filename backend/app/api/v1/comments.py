@@ -307,12 +307,34 @@ async def get_article_comments(
         for rid in root_ids:
             descendant_counts[rid] = count_descendants(rid)
     
+    avatar_cache: Dict[int, Dict[str, Any]] = {}
+    if root_comments:
+        needed_user_ids: set = set()
+        for rc in root_comments:
+            if rc.user_id:
+                needed_user_ids.add(rc.user_id)
+            if rc.reply_to_user_id:
+                needed_user_ids.add(rc.reply_to_user_id)
+        if needed_user_ids:
+            profiles = db.query(UserProfile).filter(UserProfile.user_id.in_(needed_user_ids)).all()
+            for p in profiles:
+                avatar_info = None
+                if p.avatar_type == AvatarType.custom and p.avatar_url:
+                    avatar_info = {'avatar_type': 'custom', 'avatar_url': p.avatar_url, 'avatar_gradient': p.default_avatar_gradient}
+                elif p.oauth_avatar_url:
+                    avatar_info = {'avatar_type': 'oauth', 'avatar_url': p.oauth_avatar_url, 'avatar_gradient': p.default_avatar_gradient}
+                else:
+                    avatar_info = {'avatar_type': 'default', 'avatar_url': None, 'avatar_gradient': p.default_avatar_gradient}
+                avatar_cache[p.user_id] = avatar_info
+    
+    _default_avatar = {'avatar_type': 'default', 'avatar_url': None, 'avatar_gradient': None}
+    
     result = []
     for rc in root_comments:
-        avatar_info = get_user_avatar_info(db, rc.user_id)
-        reply_to_avatar = {'avatar_type': None, 'avatar_url': None, 'avatar_gradient': None}
+        avatar_info = avatar_cache.get(rc.user_id, _default_avatar) if rc.user_id else _default_avatar
+        reply_to_avatar = _default_avatar
         if rc.reply_to_user_id:
-            reply_to_avatar = get_user_avatar_info(db, rc.reply_to_user_id)
+            reply_to_avatar = avatar_cache.get(rc.reply_to_user_id, _default_avatar)
         
         result.append({
             'id': rc.id,
