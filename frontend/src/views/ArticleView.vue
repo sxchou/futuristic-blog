@@ -621,24 +621,20 @@ onMounted(async () => {
     })()
   }
   
-  await articlePromise
+  await Promise.all([articlePromise, ...(commentPreloadPromise ? [commentPreloadPromise] : [])])
   
-  if (route.hash === '#comments' || targetCommentId) {
-    nextTick(() => {
+  nextTick(() => {
+    if (route.hash === '#comments') {
       const commentsSection = document.getElementById('comments')
       if (commentsSection) {
         const navHeight = 80
         const top = commentsSection.getBoundingClientRect().top + window.scrollY - navHeight
         window.scrollTo({ behavior: 'smooth', top })
       }
-    })
-  }
-  
-  if (targetCommentId && commentPreloadPromise) {
-    commentPreloadPromise.then(() => {
-      nextTick(() => scrollToComment(targetCommentId!))
-    })
-  }
+    } else if (targetCommentId) {
+      scrollToComment(targetCommentId)
+    }
+  })
 })
 
 watch(() => route.params.slug, async (newSlug, oldSlug) => {
