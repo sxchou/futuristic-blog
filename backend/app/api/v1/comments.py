@@ -66,15 +66,36 @@ def build_comment_tree(comments: List[Comment], db: Session) -> List[dict]:
     comment_dict = {}
     root_comments = []
     
-    user_avatar_cache = {}
+    user_ids = set()
+    for comment in comments:
+        if comment.user_id:
+            user_ids.add(comment.user_id)
+        if comment.reply_to_user_id:
+            user_ids.add(comment.reply_to_user_id)
+    
+    user_cache = {}
+    if user_ids:
+        users = db.query(User).filter(User.id.in_(user_ids)).all()
+        user_cache = {u.id: u for u in users}
+    
+    avatar_cache = {}
+    if user_ids:
+        profiles = db.query(UserProfile).filter(UserProfile.user_id.in_(user_ids)).all()
+        for p in profiles:
+            avatar_info = None
+            if p.avatar_type == AvatarType.custom and p.avatar_url:
+                avatar_info = {'avatar_type': 'custom', 'avatar_url': p.avatar_url, 'avatar_gradient': p.default_avatar_gradient}
+            elif p.oauth_avatar_url:
+                avatar_info = {'avatar_type': 'oauth', 'avatar_url': p.oauth_avatar_url, 'avatar_gradient': p.default_avatar_gradient}
+            else:
+                avatar_info = {'avatar_type': 'default', 'avatar_url': None, 'avatar_gradient': p.default_avatar_gradient}
+            avatar_cache[p.user_id] = avatar_info
+    
+    _default_avatar = {'avatar_type': 'default', 'avatar_url': None, 'avatar_gradient': None}
     
     for comment in comments:
         reply_to_user_name = None
-        reply_to_user_avatar = {
-            'avatar_type': None,
-            'avatar_url': None,
-            'avatar_gradient': None
-        }
+        reply_to_user_avatar = _default_avatar
         
         if comment.reply_to_user_id:
             if comment.reply_to_user:
@@ -82,24 +103,16 @@ def build_comment_tree(comments: List[Comment], db: Session) -> List[dict]:
             elif comment.reply_to_user_name:
                 reply_to_user_name = comment.reply_to_user_name
             else:
-                reply_to_user = db.query(User).filter(User.id == comment.reply_to_user_id).first()
+                reply_to_user = user_cache.get(comment.reply_to_user_id)
                 reply_to_user_name = reply_to_user.username if reply_to_user else None
             
-            if comment.reply_to_user_id not in user_avatar_cache:
-                user_avatar_cache[comment.reply_to_user_id] = get_user_avatar_info(db, comment.reply_to_user_id)
-            reply_to_user_avatar = user_avatar_cache[comment.reply_to_user_id]
+            reply_to_user_avatar = avatar_cache.get(comment.reply_to_user_id, _default_avatar)
         elif comment.reply_to_user_name:
             reply_to_user_name = comment.reply_to_user_name
         
-        author_avatar = {
-            'avatar_type': None,
-            'avatar_url': None,
-            'avatar_gradient': None
-        }
+        author_avatar = _default_avatar
         if comment.user_id:
-            if comment.user_id not in user_avatar_cache:
-                user_avatar_cache[comment.user_id] = get_user_avatar_info(db, comment.user_id)
-            author_avatar = user_avatar_cache[comment.user_id]
+            author_avatar = avatar_cache.get(comment.user_id, _default_avatar)
         
         comment_data = {
             'id': comment.id,
@@ -501,20 +514,26 @@ async def locate_comment_page(
         else:
             root_id = current_id
     
-    root_ids_ordered = db.query(Comment.id).filter(
+    root_comment = db.query(Comment).filter(Comment.id == root_id).first()
+    if not root_comment:
+        raise HTTPException(status_code=404, detail="Root comment not found")
+    
+    index = db.query(func.count(Comment.id)).filter(
+        Comment.article_id == article_id,
+        Comment.status == 'approved',
+        Comment.parent_id == None,
+        Comment.created_at > root_comment.created_at
+    ).scalar()
+    
+    total_root = db.query(func.count(Comment.id)).filter(
         Comment.article_id == article_id,
         Comment.status == 'approved',
         Comment.parent_id == None
-    ).order_by(Comment.created_at.desc()).all()
+    ).scalar()
     
-    root_ids_list = [r[0] for r in root_ids_ordered]
+    position = total_root - index
     
-    try:
-        index = root_ids_list.index(root_id)
-    except ValueError:
-        raise HTTPException(status_code=404, detail="Root comment not found")
-    
-    page = (index // page_size) + 1
+    page = (position - 1) // page_size + 1
     
     return {
         'page': page,

@@ -481,8 +481,10 @@ const scrollToTarget = (commentId: number, retryCount: number): void => {
         commentElement.classList.remove('highlight-comment')
         expandTargetId.value = null
       }, 3000)
-    } else if (retryCount < 10) {
-      setTimeout(() => scrollToTarget(commentId, retryCount + 1), 30)
+    } else if (retryCount < 30) {
+      requestAnimationFrame(() => {
+        setTimeout(() => scrollToTarget(commentId, retryCount + 1), 16)
+      })
     } else {
       expandTargetId.value = null
     }

@@ -39,6 +39,8 @@ const preloadedTargetCommentId = ref<number | null>(null)
 const preloadedCommentPage = ref<number | null>(null)
 const preloadedRepliesMap = ref<Record<number, { items: import('@/types').Comment[]; total: number; has_more: boolean } | null>>({})
 const preloadedCommentsData = ref<import('@/types').PaginatedResponse<import('@/types').Comment> | null>(null)
+const needsCommentPreload = ref(false)
+const commentPreloadComplete = ref(false)
 
 const activeTooltip = ref<string | null>(null)
 
@@ -481,8 +483,10 @@ const scrollToComment = (commentId: number, retryCount: number = 0) => {
     window.scrollTo({ behavior: 'smooth', top })
     commentElement.classList.add('highlight-comment')
     setTimeout(() => { commentElement.classList.remove('highlight-comment') }, 3000)
-  } else if (retryCount < 15) {
-    setTimeout(() => scrollToComment(commentId, retryCount + 1), 30)
+  } else if (retryCount < 30) {
+    requestAnimationFrame(() => {
+      setTimeout(() => scrollToComment(commentId, retryCount + 1), 16)
+    })
   } else if (commentSectionRef.value) {
     commentSectionRef.value.navigateToComment(commentId)
   }
@@ -596,6 +600,10 @@ onMounted(async () => {
     if (!isNaN(parsed)) targetCommentId = parsed
   }
   
+  if (targetCommentId) {
+    needsCommentPreload.value = true
+  }
+  
   const articlePromise = loadArticle(slug)
   
   let commentPreloadPromise: Promise<void> | null = null
@@ -621,6 +629,8 @@ onMounted(async () => {
         }
       } catch (e) {
         console.error('Failed to preload comment data:', e)
+      } finally {
+        commentPreloadComplete.value = true
       }
     })()
   }
@@ -650,6 +660,8 @@ watch(() => route.params.slug, async (newSlug, oldSlug) => {
     preloadedCommentPage.value = null
     preloadedRepliesMap.value = {}
     preloadedCommentsData.value = null
+    needsCommentPreload.value = false
+    commentPreloadComplete.value = false
     await loadArticle(newSlug as string)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -1466,7 +1478,7 @@ watch(article, async (newVal) => {
         </div>
 
         <CommentSection
-          v-if="article"
+          v-if="article && (!needsCommentPreload || commentPreloadComplete)"
           ref="commentSectionRef"
           :article-id="article.id"
           :article-title="article.title"
