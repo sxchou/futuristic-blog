@@ -186,6 +186,9 @@ import CommentEditor from './CommentEditor.vue'
 const props = defineProps<{
   articleId: number
   articleTitle?: string
+  initialPage?: number
+  preloadedRepliesMap?: Record<number, { items: Comment[]; total: number; has_more: boolean } | null>
+  expandTargetId?: number | null
 }>()
 
 const authStore = useAuthStore()
@@ -197,8 +200,8 @@ const newComment = ref('')
 const submitting = ref(false)
 const commentEditorRef = ref<InstanceType<typeof CommentEditor> | null>(null)
 
-const preloadedRepliesMap = ref<Record<number, { items: Comment[]; total: number; has_more: boolean } | null>>({})
-const expandTargetId = ref<number | null>(null)
+const preloadedRepliesMap = ref<Record<number, { items: Comment[]; total: number; has_more: boolean } | null>>(props.preloadedRepliesMap || {})
+const expandTargetId = ref<number | null>(props.expandTargetId ?? null)
 
 const currentPage = ref(1)
 const pageSize = 5
@@ -495,7 +498,7 @@ const handleKeydown = (event: KeyboardEvent) => {
 defineExpose({ navigateToComment })
 
 onMounted(() => {
-  fetchComments(1)
+  fetchComments(props.initialPage || 1)
   window.addEventListener('keydown', handleKeydown)
 })
 

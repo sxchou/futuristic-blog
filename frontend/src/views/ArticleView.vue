@@ -4,7 +4,7 @@ import { marked } from 'marked'
 import hljs from '@/utils/hljs'
 import DOMPurify from 'dompurify'
 import { useRoute, useRouter } from 'vue-router'
-import { articleApi, likeApi, bookmarkApi, fileApi } from '@/api'
+import { articleApi, likeApi, bookmarkApi, fileApi, commentApi } from '@/api'
 import { useAuthStore, useUserInteractionStore } from '@/stores'
 import { dataPrefetch } from '@/utils/prefetch'
 import type { Article, ArticleFile } from '@/types'
@@ -34,6 +34,10 @@ const showPreview = ref(false)
 const selectedFileIds = ref<Set<number>>(new Set())
 const highlightKeyword = ref('')
 const commentSectionRef = ref<InstanceType<typeof CommentSection> | null>(null)
+
+const preloadedTargetCommentId = ref<number | null>(null)
+const preloadedCommentPage = ref<number | null>(null)
+const preloadedRepliesMap = ref<Record<number, { items: import('@/types').Comment[]; total: number; has_more: boolean } | null>>({})
 
 const activeTooltip = ref<string | null>(null)
 
@@ -467,24 +471,24 @@ const handleFileLinkClick = (e: Event) => {
   }
 }
 
-const scrollToComment = (commentId: number) => {
-  setTimeout(() => {
-    const commentElement = document.getElementById(`comment-${commentId}`)
-    if (commentElement) {
-      commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      commentElement.classList.add('highlight-comment')
-      setTimeout(() => { commentElement.classList.remove('highlight-comment') }, 3000)
-    } else if (commentSectionRef.value) {
-      commentSectionRef.value.navigateToComment(commentId)
-    } else {
-      const commentsSection = document.getElementById('comments')
-      if (commentsSection) {
-        const navHeight = 80
-        const top = commentsSection.getBoundingClientRect().top + window.scrollY - navHeight
-        window.scrollTo({ behavior: 'smooth', top })
-      }
+const scrollToComment = (commentId: number, retryCount: number = 0) => {
+  const commentElement = document.getElementById(`comment-${commentId}`)
+  if (commentElement) {
+    commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    commentElement.classList.add('highlight-comment')
+    setTimeout(() => { commentElement.classList.remove('highlight-comment') }, 3000)
+  } else if (commentSectionRef.value) {
+    commentSectionRef.value.navigateToComment(commentId)
+  } else {
+    const commentsSection = document.getElementById('comments')
+    if (commentsSection) {
+      const navHeight = 80
+      const top = commentsSection.getBoundingClientRect().top + window.scrollY - navHeight
+      window.scrollTo({ behavior: 'smooth', top })
+    } else if (retryCount < 10) {
+      setTimeout(() => scrollToComment(commentId, retryCount + 1), 50)
     }
-  }, 100)
+  }
 }
 
 const scrollToHeading = (id: string) => {
@@ -589,22 +593,51 @@ onMounted(async () => {
   if (highlight) highlightKeyword.value = highlight
   
   const slug = route.params.slug as string
-  await loadArticle(slug)
   
-  if (route.hash) {
-    if (route.hash === '#comments') {
-      setTimeout(() => {
-        const commentsSection = document.getElementById('comments')
-        if (commentsSection) {
-          const navHeight = 80
-          const top = commentsSection.getBoundingClientRect().top + window.scrollY - navHeight
-          window.scrollTo({ behavior: 'smooth', top })
+  let targetCommentId: number | null = null
+  if (route.hash && route.hash.startsWith('#comment-')) {
+    const parsed = parseInt(route.hash.replace('#comment-', ''), 10)
+    if (!isNaN(parsed)) targetCommentId = parsed
+  }
+  
+  const articlePromise = loadArticle(slug)
+  
+  let commentPreloadPromise: Promise<void> | null = null
+  if (targetCommentId) {
+    commentPreloadPromise = (async () => {
+      try {
+        const articleId = await articlePromise.then(() => article.value?.id)
+        if (!articleId) return
+        preloadedTargetCommentId.value = targetCommentId
+        const locateResult = await commentApi.locateComment(articleId, targetCommentId)
+        preloadedCommentPage.value = locateResult.page
+        if (locateResult.is_reply && locateResult.root_comment_id) {
+          const replies = await commentApi.getCommentReplies(articleId, locateResult.root_comment_id)
+          preloadedRepliesMap.value = { [locateResult.root_comment_id]: replies }
         }
-      }, 100)
-    } else if (route.hash.startsWith('#comment-')) {
-      const commentId = parseInt(route.hash.replace('#comment-', ''), 10)
-      if (!isNaN(commentId)) scrollToComment(commentId)
-    }
+      } catch (e) {
+        console.error('Failed to preload comment data:', e)
+      }
+    })()
+  }
+  
+  await articlePromise
+  
+  if (route.hash === '#comments' || targetCommentId) {
+    nextTick(() => {
+      const commentsSection = document.getElementById('comments')
+      if (commentsSection) {
+        const navHeight = 80
+        const top = commentsSection.getBoundingClientRect().top + window.scrollY - navHeight
+        window.scrollTo({ behavior: 'smooth', top })
+      }
+    })
+  }
+  
+  if (targetCommentId && commentPreloadPromise) {
+    commentPreloadPromise.then(() => {
+      nextTick(() => scrollToComment(targetCommentId!))
+    })
   }
 })
 
@@ -1432,6 +1465,9 @@ watch(article, async (newVal) => {
           ref="commentSectionRef"
           :article-id="article.id"
           :article-title="article.title"
+          :initial-page="preloadedCommentPage ?? undefined"
+          :preloaded-replies-map="preloadedRepliesMap"
+          :expand-target-id="preloadedTargetCommentId ?? undefined"
         />
       </div>
 
