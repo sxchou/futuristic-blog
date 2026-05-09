@@ -269,29 +269,7 @@ const router = createRouter({
   routes,
   scrollBehavior(to, from, savedPosition) {
     if (savedPosition) {
-      return new Promise((resolve) => {
-        const targetTop = savedPosition.top || 0
-        const targetLeft = savedPosition.left || 0
-        
-        const checkContent = (attempts = 0) => {
-          requestAnimationFrame(() => {
-            const docHeight = document.documentElement.scrollHeight
-            const viewportHeight = window.innerHeight
-            
-            if (docHeight >= targetTop + viewportHeight || attempts >= 50) {
-              resolve({
-                left: targetLeft,
-                top: targetTop,
-                behavior: 'auto'
-              })
-            } else {
-              setTimeout(() => checkContent(attempts + 1), 100)
-            }
-          })
-        }
-        
-        checkContent()
-      })
+      return savedPosition
     }
     
     if (to.hash) {

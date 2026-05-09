@@ -174,7 +174,6 @@ const scrollToComment = async (commentId: number, delay: number = 100) => {
 }
 
 const fetchComments = async () => {
-  const scrollPosition = window.scrollY
   const hash = window.location.hash
   const commentIdStr = hash ? hash.substring(1) : null
   const commentId = commentIdStr ? parseInt(commentIdStr.replace('comment-', '')) : null
@@ -194,8 +193,6 @@ const fetchComments = async () => {
     }
     
     await scrollToComment(commentId, 350)
-  } else {
-    window.scrollTo(0, scrollPosition)
   }
 }
 

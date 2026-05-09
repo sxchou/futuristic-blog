@@ -466,20 +466,6 @@ const handleFileLinkClick = (e: Event) => {
   }
 }
 
-const scrollToComment = (commentId: number) => {
-  setTimeout(() => {
-    const commentElement = document.getElementById(`comment-${commentId}`)
-    if (commentElement) {
-      commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      commentElement.classList.add('highlight-comment')
-      setTimeout(() => { commentElement.classList.remove('highlight-comment') }, 3000)
-    } else {
-      const commentsSection = document.getElementById('comments')
-      if (commentsSection) commentsSection.scrollIntoView({ behavior: 'smooth' })
-    }
-  }, 500)
-}
-
 const scrollToHeading = (id: string) => {
   const element = document.getElementById(id)
   if (element) {
@@ -588,11 +574,42 @@ onMounted(async () => {
     if (route.hash === '#comments') {
       setTimeout(() => {
         const commentsSection = document.getElementById('comments')
-        if (commentsSection) commentsSection.scrollIntoView({ behavior: 'smooth' })
+        if (commentsSection) {
+          const rect = commentsSection.getBoundingClientRect()
+          const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+          window.scrollTo({
+            top: rect.top + scrollTop - 80,
+            behavior: 'smooth'
+          })
+        }
       }, 500)
     } else if (route.hash.startsWith('#comment-')) {
       const commentId = parseInt(route.hash.replace('#comment-', ''), 10)
-      if (!isNaN(commentId)) scrollToComment(commentId)
+      if (!isNaN(commentId)) {
+        setTimeout(() => {
+          const commentElement = document.getElementById(`comment-${commentId}`)
+          if (commentElement) {
+            const rect = commentElement.getBoundingClientRect()
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+            window.scrollTo({
+              top: rect.top + scrollTop - 80,
+              behavior: 'smooth'
+            })
+            commentElement.classList.add('highlight-comment')
+            setTimeout(() => { commentElement.classList.remove('highlight-comment') }, 3000)
+          } else {
+            const commentsSection = document.getElementById('comments')
+            if (commentsSection) {
+              const rect = commentsSection.getBoundingClientRect()
+              const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+              window.scrollTo({
+                top: rect.top + scrollTop - 80,
+                behavior: 'smooth'
+              })
+            }
+          }
+        }, 500)
+      }
     }
   }
 })
@@ -602,9 +619,6 @@ watch(() => route.params.slug, async (newSlug, oldSlug) => {
     const highlight = route.query.highlight as string
     highlightKeyword.value = highlight || ''
     await loadArticle(newSlug as string)
-    if (!route.hash) {
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    }
   }
 })
 
