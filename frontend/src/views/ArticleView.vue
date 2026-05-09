@@ -611,7 +611,10 @@ onMounted(async () => {
     commentPreloadPromise = (async () => {
       try {
         const articleId = await articlePromise.then(() => article.value?.id)
-        if (!articleId) return
+        if (!articleId) {
+          commentPreloadComplete.value = true
+          return
+        }
         preloadedTargetCommentId.value = targetCommentId
         const locateResult = await commentApi.locateComment(articleId, targetCommentId)
         preloadedCommentPage.value = locateResult.page
@@ -633,6 +636,8 @@ onMounted(async () => {
         commentPreloadComplete.value = true
       }
     })()
+  } else {
+    commentPreloadComplete.value = true
   }
   
   await Promise.all([articlePromise, ...(commentPreloadPromise ? [commentPreloadPromise] : [])])
