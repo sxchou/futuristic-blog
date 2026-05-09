@@ -276,54 +276,68 @@ async def get_article_comments(
     
     root_ids = [c.id for c in root_comments]
     
-    all_non_root = []
-    if root_ids:
-        all_non_root = db.query(Comment).options(
-            joinedload(Comment.user),
-            joinedload(Comment.reply_to_user)
-        ).filter(
-            Comment.article_id == article_id,
-            Comment.status == 'approved',
-            Comment.parent_id != None
-        ).order_by(Comment.created_at.asc()).all()
-    
-    tree = build_comment_tree(list(root_comments) + all_non_root, db)
-    
-    def count_all_descendants(comment_data: dict) -> int:
-        count = len(comment_data.get('replies', []))
-        for reply in comment_data.get('replies', []):
-            count += count_all_descendants(reply)
-        return count
-    
-    def limit_direct_replies(comment_data: dict, limit: int) -> dict:
-        direct_replies = comment_data.get('replies', [])
-        if len(direct_replies) <= limit:
-            return comment_data
-        limited = direct_replies[:limit]
-        remaining_ids = set(r['id'] for r in direct_replies[limit:])
-        
-        def keep_or_trim(node: dict) -> dict:
-            node_replies = node.get('replies', [])
-            if node['id'] in remaining_ids:
-                return { **node, 'replies': [] }
-            trimmed_replies = [keep_or_trim(r) for r in node_replies]
-            return { **node, 'replies': trimmed_replies }
-        
-        trimmed_children = [keep_or_trim(r) for r in limited]
-        return { **comment_data, 'replies': trimmed_children }
-    
     total_all = db.query(func.count(Comment.id)).filter(
         Comment.article_id == article_id,
         Comment.status == 'approved'
     ).scalar() or 0
+    
+    descendant_counts: Dict[int, int] = {}
+    if root_ids:
+        parent_map = {
+            r[0]: r[1] for r in db.query(Comment.id, Comment.parent_id).filter(
+                Comment.article_id == article_id,
+                Comment.status == 'approved',
+                Comment.parent_id != None
+            ).all()
+        }
+        child_map: Dict[int, List[int]] = {}
+        for cid, pid in parent_map.items():
+            child_map.setdefault(pid, []).append(cid)
+        
+        def count_descendants(root_id: int) -> int:
+            count = 0
+            queue = child_map.get(root_id, [])
+            while queue:
+                current = queue.pop()
+                count += 1
+                if current in child_map:
+                    queue.extend(child_map[current])
+            return count
+        
+        for rid in root_ids:
+            descendant_counts[rid] = count_descendants(rid)
+    
     result = []
     for rc in root_comments:
-        comment_data = next((c for c in tree if c['id'] == rc.id), None)
-        if comment_data:
-            total_descendants = count_all_descendants(comment_data)
-            limited_data = limit_direct_replies(comment_data, 0)
-            limited_data['reply_count'] = total_descendants
-            result.append(limited_data)
+        avatar_info = get_user_avatar_info(db, rc.user_id)
+        reply_to_avatar = {'avatar_type': None, 'avatar_url': None, 'avatar_gradient': None}
+        if rc.reply_to_user_id:
+            reply_to_avatar = get_user_avatar_info(db, rc.reply_to_user_id)
+        
+        result.append({
+            'id': rc.id,
+            'content': rc.content,
+            'article_id': rc.article_id,
+            'parent_id': rc.parent_id,
+            'user_id': rc.user_id,
+            'author_name': rc.author_name,
+            'author_email': rc.author_email,
+            'author_url': rc.author_url,
+            'author_avatar_type': avatar_info['avatar_type'],
+            'author_avatar_url': avatar_info['avatar_url'],
+            'author_avatar_gradient': avatar_info['avatar_gradient'],
+            'status': rc.status,
+            'is_deleted': rc.is_deleted,
+            'deleted_by': rc.deleted_by,
+            'reply_to_user_id': rc.reply_to_user_id,
+            'reply_to_user_name': rc.reply_to_user_name if rc.reply_to_user_name else (rc.reply_to_user.username if rc.reply_to_user else None),
+            'reply_to_user_avatar_type': reply_to_avatar['avatar_type'],
+            'reply_to_user_avatar_url': reply_to_avatar['avatar_url'],
+            'reply_to_user_avatar_gradient': reply_to_avatar['avatar_gradient'],
+            'created_at': rc.created_at,
+            'replies': [],
+            'reply_count': descendant_counts.get(rc.id, 0)
+        })
     
     total_pages = max(1, (root_total + page_size - 1) // page_size)
     
