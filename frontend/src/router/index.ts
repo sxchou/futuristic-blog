@@ -267,7 +267,7 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
-  scrollBehavior(_to, from, savedPosition) {
+  scrollBehavior(to, from, savedPosition) {
     if (savedPosition) {
       return new Promise((resolve) => {
         const targetTop = savedPosition.top || 0
@@ -292,6 +292,10 @@ const router = createRouter({
         
         checkContent()
       })
+    }
+    
+    if (to.hash) {
+      return false
     }
     
     if (from.name === undefined) {

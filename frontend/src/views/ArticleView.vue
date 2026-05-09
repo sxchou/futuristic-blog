@@ -589,7 +589,7 @@ onMounted(async () => {
       setTimeout(() => {
         const commentsSection = document.getElementById('comments')
         if (commentsSection) commentsSection.scrollIntoView({ behavior: 'smooth' })
-      }, 100)
+      }, 500)
     } else if (route.hash.startsWith('#comment-')) {
       const commentId = parseInt(route.hash.replace('#comment-', ''), 10)
       if (!isNaN(commentId)) scrollToComment(commentId)
