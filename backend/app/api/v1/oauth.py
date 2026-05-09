@@ -690,6 +690,12 @@ async def oauth_callback(
     db.add(connection)
     db.commit()
     
+    from app.api.v1.auth import send_register_notification_bg
+    send_register_notification_bg(
+        new_username=user.username,
+        new_email=user.email
+    )
+    
     if user.is_verified and oauth_email:
         jwt_token = create_access_token(data={"sub": user.username})
         refresh_token_obj = create_refresh_token(db=db, user_id=user.id, request=None)
