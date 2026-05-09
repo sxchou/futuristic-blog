@@ -480,15 +480,16 @@ async def locate_comment_page(
     if target_comment.parent_id is None:
         root_id = target_comment.id
     else:
-        all_parent_map = {
+        all_parent_map: Dict[int, int] = {
             r[0]: r[1] for r in db.query(Comment.id, Comment.parent_id).filter(
                 Comment.article_id == article_id,
-                Comment.status == 'approved'
+                Comment.status == 'approved',
+                Comment.parent_id != None
             ).all()
         }
         current_id = target_comment.id
-        visited = set()
-        while current_id and current_id in all_parent_map:
+        visited: set = set()
+        while current_id:
             if current_id in visited:
                 break
             visited.add(current_id)
