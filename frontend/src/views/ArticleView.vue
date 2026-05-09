@@ -602,7 +602,9 @@ watch(() => route.params.slug, async (newSlug, oldSlug) => {
     const highlight = route.query.highlight as string
     highlightKeyword.value = highlight || ''
     await loadArticle(newSlug as string)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    if (!route.hash) {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
   }
 })
 
