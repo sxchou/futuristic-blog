@@ -1,4 +1,4 @@
-export default async function handler(req: any, res: any) {
+export default async function handler(_req: any, res: any) {
   try {
     const apiUrl = process.env.VITE_API_URL || ''
     const baseUrl = apiUrl.replace(/\/api\/v1\/?$/, '')
