@@ -513,22 +513,36 @@ def migrate_foreign_key_ondelete():
         },
     ]
     
-    db = SessionLocal()
-    try:
-        inspector = inspect(engine)
-        
-        if is_sqlite:
-            _migrate_sqlite(db, inspector, migrations)
-        else:
-            _migrate_postgresql(db, inspector, migrations)
-        
-        db.commit()
-        logger.info("Foreign key ondelete migration completed successfully")
-    except Exception as e:
-        db.rollback()
-        logger.warning(f"Foreign key migration skipped or partially applied: {e}")
-    finally:
-        db.close()
+    max_retries = 3
+    retry_delay = 2
+    
+    for attempt in range(max_retries):
+        db = SessionLocal()
+        try:
+            inspector = inspect(engine)
+            
+            if is_sqlite:
+                _migrate_sqlite(db, inspector, migrations)
+            else:
+                _migrate_postgresql(db, inspector, migrations)
+            
+            db.commit()
+            logger.info("Foreign key ondelete migration completed successfully")
+            break
+        except Exception as e:
+            db.rollback()
+            error_str = str(e)
+            
+            if 'deadlock detected' in error_str.lower() and attempt < max_retries - 1:
+                logger.warning(f"Deadlock detected during migration, retrying in {retry_delay}s (attempt {attempt + 1}/{max_retries})")
+                import time
+                time.sleep(retry_delay)
+                retry_delay *= 2
+            else:
+                logger.warning(f"Foreign key migration skipped or partially applied: {e}")
+                break
+        finally:
+            db.close()
 
 
 def _migrate_postgresql(db, inspector, migrations):
