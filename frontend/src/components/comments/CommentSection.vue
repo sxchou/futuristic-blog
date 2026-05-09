@@ -179,7 +179,7 @@ import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import { useAuthStore, useUserProfileStore } from '@/stores'
 import { useDialogStore } from '@/stores'
 import { commentApi } from '@/api'
-import type { Comment } from '@/types'
+import type { Comment, PaginatedResponse } from '@/types'
 import CommentItem from './CommentItem.vue'
 import CommentEditor from './CommentEditor.vue'
 
@@ -187,6 +187,7 @@ const props = defineProps<{
   articleId: number
   articleTitle?: string
   initialPage?: number
+  preloadedCommentsData?: PaginatedResponse<Comment> | null
   preloadedRepliesMap?: Record<number, { items: Comment[]; total: number; has_more: boolean } | null>
   expandTargetId?: number | null
 }>()
@@ -471,14 +472,17 @@ const scrollToTarget = (commentId: number, retryCount: number): void => {
   nextTick(() => {
     const commentElement = document.getElementById(`comment-${commentId}`)
     if (commentElement) {
-      commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      const navHeight = 80
+      const rect = commentElement.getBoundingClientRect()
+      const top = rect.top + window.scrollY - navHeight - 20
+      window.scrollTo({ behavior: 'smooth', top })
       commentElement.classList.add('highlight-comment')
       setTimeout(() => { 
         commentElement.classList.remove('highlight-comment')
         expandTargetId.value = null
       }, 3000)
-    } else if (retryCount < 5) {
-      setTimeout(() => scrollToTarget(commentId, retryCount + 1), 50)
+    } else if (retryCount < 10) {
+      setTimeout(() => scrollToTarget(commentId, retryCount + 1), 30)
     } else {
       expandTargetId.value = null
     }
@@ -498,7 +502,16 @@ const handleKeydown = (event: KeyboardEvent) => {
 defineExpose({ navigateToComment })
 
 onMounted(() => {
-  fetchComments(props.initialPage || 1)
+  if (props.preloadedCommentsData) {
+    comments.value = props.preloadedCommentsData.items
+    totalRootComments.value = props.preloadedCommentsData.total
+    totalAllComments.value = props.preloadedCommentsData.total_all ?? props.preloadedCommentsData.total
+    totalPages.value = props.preloadedCommentsData.total_pages
+    currentPage.value = props.preloadedCommentsData.page
+    loading.value = false
+  } else {
+    fetchComments(props.initialPage || 1)
+  }
   window.addEventListener('keydown', handleKeydown)
 })
 
