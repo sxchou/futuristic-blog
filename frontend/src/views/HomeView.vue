@@ -267,7 +267,13 @@ onMounted(async () => {
     await initStore.initializeCore()
   }
   
-  if (blogStore.pagination.page !== pageFromUrl || blogStore.pagination.pageSize !== pageSize.value) {
+  const hasFilter = blogStore.currentFilter.category_id || 
+                    blogStore.currentFilter.tag_id || 
+                    blogStore.currentFilter.search
+  
+  if (hasFilter || 
+      blogStore.pagination.page !== pageFromUrl || 
+      blogStore.pagination.pageSize !== pageSize.value) {
     await blogStore.fetchArticles({ page: pageFromUrl, page_size: pageSize.value })
   }
   

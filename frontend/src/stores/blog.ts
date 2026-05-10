@@ -27,6 +27,11 @@ export const useBlogStore = defineStore('blog', () => {
   })
   const featuredArticles = ref<ArticleListItem[]>([])
   const publicStats = ref<PublicStats | null>(null)
+  const currentFilter = ref<{
+    category_id?: number
+    tag_id?: number
+    search?: string
+  }>({})
 
   const fetchArticles = async (params?: {
     page?: number
@@ -56,6 +61,11 @@ export const useBlogStore = defineStore('blog', () => {
         totalPages: response.total_pages
       }
       lastFetchTime.value = Date.now()
+      currentFilter.value = {
+        category_id: params?.category_id,
+        tag_id: params?.tag_id,
+        search: params?.search
+      }
     } catch (error: unknown) {
       if (error instanceof Error && (error.message === '请求已取消' || (error as unknown as Record<string, unknown>)?.isCancel)) {
         return
@@ -204,6 +214,7 @@ export const useBlogStore = defineStore('blog', () => {
     pagination,
     featuredArticles,
     publicStats,
+    currentFilter,
     fetchArticles,
     fetchCategories,
     fetchTags,
