@@ -533,7 +533,7 @@ onMounted(fetchOAuthProviders)
           </p>
         </div>
 
-        <div class="mt-4 min-h-[88px]">
+        <div class="mt-4">
           <div
             v-if="oauthLoading === 'loading' && oauthProviders.length === 0"
             class="animate-pulse"
