@@ -9,7 +9,7 @@ from app.utils.permissions import require_permission
 from app.models import OAuthProvider, OAuthConnection, User
 from app.core.config import settings
 from app.services.permission_service import PermissionService
-from app.services.log_service import LogService
+from app.services.log_service import LogService, log_login_sync
 import httpx
 import secrets
 from datetime import datetime, timedelta, timezone
@@ -560,6 +560,13 @@ async def oauth_callback(
         db.commit()
         
         if user.is_verified:
+            log_login_sync(
+                user_id=user.id,
+                username=user.username,
+                login_type=f"oauth_{provider_name}",
+                status="success"
+            )
+            
             jwt_token = create_access_token(data={"sub": user.username})
             refresh_token_obj = create_refresh_token(db=db, user_id=user.id, request=None)
             
@@ -583,6 +590,13 @@ async def oauth_callback(
                 user.email = oauth_email
                 user.is_verified = True
                 db.commit()
+                
+                log_login_sync(
+                    user_id=user.id,
+                    username=user.username,
+                    login_type=f"oauth_{provider_name}",
+                    status="success"
+                )
                 
                 jwt_token = create_access_token(data={"sub": user.username})
                 refresh_token_obj = create_refresh_token(db=db, user_id=user.id, request=None)
@@ -697,6 +711,13 @@ async def oauth_callback(
     )
     
     if user.is_verified and oauth_email:
+        log_login_sync(
+            user_id=user.id,
+            username=user.username,
+            login_type=f"oauth_{provider_name}",
+            status="success"
+        )
+        
         jwt_token = create_access_token(data={"sub": user.username})
         refresh_token_obj = create_refresh_token(db=db, user_id=user.id, request=None)
         
