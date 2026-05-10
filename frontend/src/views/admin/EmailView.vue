@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { emailApi, type EmailConfig, type EmailLog, type EmailStats, type EmailProvider, type ProviderStatus } from '@/api/email'
 import { useDialogStore } from '@/stores'
 import { useAdminCheck } from '@/composables/useAdminCheck'
@@ -123,9 +123,14 @@ onMounted(async () => {
       loadStats(),
       loadProviderStatus()
     ])
+    window.addEventListener('keydown', handleKeydown)
   } finally {
     isInitialLoading.value = false
   }
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
 })
 
 async function loadProviders() {
@@ -429,6 +434,16 @@ function formatDate(dateStr: string | null) {
 function changePage(page: number) {
   logsPage.value = page
   loadLogs()
+}
+
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key === 'ArrowLeft' && logsPage.value > 1) {
+    event.preventDefault()
+    changePage(logsPage.value - 1)
+  } else if (event.key === 'ArrowRight' && logsPage.value < totalPages.value) {
+    event.preventDefault()
+    changePage(logsPage.value + 1)
+  }
 }
 
 function getProviderName(provider: string): string {

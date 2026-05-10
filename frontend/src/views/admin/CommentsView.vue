@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { commentApi } from '@/api'
 import { notificationApi, type NotificationSettings } from '@/api/notifications'
 import type { AdminComment, CommentAuditLog, PaginatedResponse } from '@/types'
@@ -286,11 +286,26 @@ const toggleCommentAudit = async () => {
 
 const formatDate = (dateStr: string) => formatDateTime(dateStr)
 
+const handleKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'ArrowLeft' && currentPage.value > 1) {
+    event.preventDefault()
+    handlePageChange(currentPage.value - 1)
+  } else if (event.key === 'ArrowRight' && currentPage.value < totalPages.value) {
+    event.preventDefault()
+    handlePageChange(currentPage.value + 1)
+  }
+}
+
 onMounted(async () => {
   await authStore.waitForInit()
   if (!canViewComments.value) return
   fetchComments()
   loadAuditSettings()
+  window.addEventListener('keydown', handleKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
 })
 
 watch(() => userProfileStore.avatarUpdatedAt, () => {

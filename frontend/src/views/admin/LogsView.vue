@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { logsApi } from '@/api'
 import { useDialogStore, useUserProfileStore } from '@/stores'
 import { useAdminCheck } from '@/composables/useAdminCheck'
@@ -247,9 +247,26 @@ const getOperationLogAvatarStyle = (log: any) => {
 
 const totalPages = computed(() => Math.ceil(total.value / pageSize.value))
 
+const handleKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'ArrowLeft' && page.value > 1) {
+    event.preventDefault()
+    page.value--
+    fetchLogs()
+  } else if (event.key === 'ArrowRight' && page.value < totalPages.value) {
+    event.preventDefault()
+    page.value++
+    fetchLogs()
+  }
+}
+
 onMounted(() => {
   fetchStats()
   fetchLogs()
+  window.addEventListener('keydown', handleKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
 })
 
 watch(() => userProfileStore.avatarUpdatedAt, () => {

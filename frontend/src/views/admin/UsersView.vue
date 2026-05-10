@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick, watch } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { userApi, roleApi } from '@/api'
 import type { User, Role } from '@/types'
 import { useDialogStore, useUserProfileStore, useAuthStore } from '@/stores'
@@ -497,9 +497,24 @@ const nextPage = () => {
   }
 }
 
+const handleKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'ArrowLeft' && currentPage.value > 1) {
+    event.preventDefault()
+    prevPage()
+  } else if (event.key === 'ArrowRight' && currentPage.value < totalPages.value) {
+    event.preventDefault()
+    nextPage()
+  }
+}
+
 onMounted(() => {
   fetchUsers()
   fetchRoles()
+  window.addEventListener('keydown', handleKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
 })
 
 watch(() => userProfileStore.avatarUpdatedAt, () => {
