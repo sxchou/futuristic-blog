@@ -40,6 +40,12 @@ export const articleApi = {
   getAdminArticles: async (params: {
     page?: number
     page_size?: number
+    status?: 'draft' | 'published' | 'scheduled'
+    title?: string
+    category?: string
+    author?: string
+    start_date?: string
+    end_date?: string
   }): Promise<PaginatedResponse<ArticleListItem>> => {
     const response = await apiClient.get('/articles/admin', { params })
     return response.data

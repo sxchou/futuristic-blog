@@ -6,6 +6,7 @@ import { useAdminCheck } from '@/composables/useAdminCheck'
 import { useDeletionConfirm } from '@/composables/useDeletionConfirm'
 import DeletionConfirmDialog from '@/components/common/DeletionConfirmDialog.vue'
 import { formatDateTime } from '@/utils/date'
+import DateRangePicker from '@/components/common/DateRangePicker.vue'
 
 const dialog = useDialogStore()
 const { requirePermission, hasPermission } = useAdminCheck()
@@ -47,7 +48,10 @@ const logsTotal = ref(0)
 const logsPageSize = ref(10)
 const logsFilter = ref({
   email_type: '',
-  status: ''
+  status: '',
+  recipient_email: '',
+  start_date: '',
+  end_date: ''
 })
 
 const stats = ref<EmailStats>({
@@ -165,11 +169,17 @@ async function loadLogs() {
       page: logsPage.value,
       page_size: logsPageSize.value,
       email_type: logsFilter.value.email_type || undefined,
-      status: logsFilter.value.status || undefined
+      status: logsFilter.value.status || undefined,
+      recipient_email: logsFilter.value.recipient_email || undefined,
+      start_date: logsFilter.value.start_date || undefined,
+      end_date: logsFilter.value.end_date || undefined
     })
     logs.value = data.items
     logsTotal.value = data.total
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.isCancel) {
+      return
+    }
     console.error('Failed to load logs:', error)
   } finally {
     isLoading.value = false
@@ -427,6 +437,18 @@ async function switchToLogs() {
   loadLogs()
 }
 
+function clearLogsFilters() {
+  logsFilter.value = {
+    email_type: '',
+    status: '',
+    recipient_email: '',
+    start_date: '',
+    end_date: ''
+  }
+  logsPage.value = 1
+  loadLogs()
+}
+
 function formatDate(dateStr: string | null) {
   return formatDateTime(dateStr)
 }
@@ -443,6 +465,9 @@ function handleKeydown(event: KeyboardEvent) {
   } else if (event.key === 'ArrowRight' && logsPage.value < totalPages.value) {
     event.preventDefault()
     changePage(logsPage.value + 1)
+  } else if (event.key === 'Delete') {
+    event.preventDefault()
+    clearLogsFilters()
   }
 }
 
@@ -755,6 +780,14 @@ function getProviderBgColor(provider: string) {
       class="glass-card overflow-hidden"
     >
       <form class="px-4 py-2.5 border-b border-gray-200 dark:border-white/10 flex items-center gap-3" @submit.prevent>
+        <input
+          id="input-logsFilter-recipient_email"
+          v-model="logsFilter.recipient_email"
+          type="text"
+          placeholder="邮箱账号"
+          class="px-2 py-1 text-xs bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-md text-gray-900 dark:text-white"
+          @keyup.enter="logsPage = 1; loadLogs()"
+        >
         <select id="select-logsFilter-email_type"
           v-model="logsFilter.email_type"
           class="px-2 py-1 text-xs bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-md text-gray-900 dark:text-white"
@@ -815,6 +848,37 @@ function getProviderBgColor(provider: string) {
             待发送
           </option>
         </select>
+        <DateRangePicker
+          v-model:start-date="logsFilter.start_date"
+          v-model:end-date="logsFilter.end_date"
+        />
+        <button
+          type="button"
+          class="px-3 py-1.5 text-sm bg-red-500/10 text-red-500 dark:text-red-400 border border-red-500/20 dark:border-red-400/20 rounded-lg hover:bg-red-500/20 dark:hover:bg-red-400/20 transition-colors flex items-center gap-1.5"
+          @click="clearLogsFilters"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+          清除筛选
+        </button>
+        <button
+          type="button"
+          class="btn-primary text-sm px-4 py-1.5"
+          @click="logsPage = 1; loadLogs()"
+        >
+          搜索
+        </button>
       </form>
 
       <div

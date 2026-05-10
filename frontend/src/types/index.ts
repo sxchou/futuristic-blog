@@ -119,6 +119,7 @@ export interface ArticleListItem {
   bookmark_count: number
   reading_time: number
   created_at: string
+  updated_at?: string
   published_at?: string
   category?: Category
   tags: Tag[]

@@ -77,6 +77,11 @@ class LoginLogItem(BaseModel):
 class AccessLogItem(BaseModel):
     id: int
     username: Optional[str]
+    user_id: Optional[int]
+    avatar_type: Optional[str] = None
+    avatar_url: Optional[str] = None
+    avatar_gradient: Optional[list] = None
+    oauth_avatar_url: Optional[str] = None
     request_method: Optional[str]
     request_path: Optional[str]
     response_status: Optional[int]
@@ -128,6 +133,7 @@ async def get_operation_logs(
     page_size: int = Query(20, ge=1, le=100),
     module: Optional[str] = None,
     action: Optional[str] = None,
+    description: Optional[str] = None,
     status: Optional[str] = None,
     username: Optional[str] = None,
     start_date: Optional[str] = None,
@@ -141,6 +147,8 @@ async def get_operation_logs(
         query = query.filter(OperationLog.module.contains(module))
     if action:
         query = query.filter(OperationLog.action.contains(action))
+    if description:
+        query = query.filter(OperationLog.description.ilike(f"%{description}%"))
     if status:
         query = query.filter(OperationLog.status == status)
     if username:
@@ -285,10 +293,10 @@ async def get_login_logs(
 async def get_access_logs(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    request_method: Optional[str] = None,
     username: Optional[str] = None,
-    ip_address: Optional[str] = None,
+    request_method: Optional[str] = None,
     path: Optional[str] = None,
+    ip_address: Optional[str] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     db: Session = Depends(get_db),
@@ -296,14 +304,14 @@ async def get_access_logs(
 ):
     query = db.query(AccessLog)
     
-    if request_method:
-        query = query.filter(AccessLog.request_method.contains(request_method))
     if username:
         query = query.filter(AccessLog.username.contains(username))
-    if ip_address:
-        query = query.filter(AccessLog.ip_address.contains(ip_address))
+    if request_method:
+        query = query.filter(AccessLog.request_method.contains(request_method))
     if path:
         query = query.filter(AccessLog.request_path.contains(path))
+    if ip_address:
+        query = query.filter(AccessLog.ip_address.contains(ip_address))
     if start_date:
         query = query.filter(AccessLog.created_at >= datetime.fromisoformat(start_date))
     if end_date:
@@ -314,8 +322,43 @@ async def get_access_logs(
     total = query.count()
     logs = query.order_by(desc(AccessLog.created_at)).offset((page - 1) * page_size).limit(page_size).all()
     
+    user_avatar_cache = {}
+    items = []
+    for log in logs:
+        avatar_type = None
+        avatar_url = None
+        avatar_gradient = None
+        oauth_avatar_url = None
+        
+        if log.user_id:
+            if log.user_id not in user_avatar_cache:
+                profile = db.query(UserProfile).filter(UserProfile.user_id == log.user_id).first()
+                user_avatar_cache[log.user_id] = profile
+            profile = user_avatar_cache.get(log.user_id)
+            if profile:
+                avatar_type = profile.avatar_type.value if profile.avatar_type else None
+                avatar_url = profile.avatar_url
+                avatar_gradient = profile.default_avatar_gradient
+                oauth_avatar_url = profile.oauth_avatar_url
+        
+        items.append(AccessLogItem(
+            id=log.id,
+            username=log.username,
+            user_id=log.user_id,
+            avatar_type=avatar_type,
+            avatar_url=avatar_url,
+            avatar_gradient=avatar_gradient,
+            oauth_avatar_url=oauth_avatar_url,
+            request_method=log.request_method,
+            request_path=log.request_path,
+            response_status=log.response_status,
+            response_time=log.response_time,
+            ip_address=log.ip_address,
+            created_at=log.created_at
+        ))
+    
     return {
-        "items": [AccessLogItem.model_validate(log) for log in logs],
+        "items": items,
         "total": total,
         "page": page,
         "page_size": page_size

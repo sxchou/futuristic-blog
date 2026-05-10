@@ -572,7 +572,12 @@ async def get_admin_comments(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     status: Optional[str] = Query(None, pattern='^(pending|approved|rejected)$'),
+    content: Optional[str] = None,
+    article_title: Optional[str] = None,
+    author_name: Optional[str] = None,
     article_id: Optional[int] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("comment.view"))
 ):
@@ -585,8 +590,24 @@ async def get_admin_comments(
     if status:
         query = query.filter(Comment.status == status)
     
+    if content:
+        query = query.filter(Comment.content.ilike(f"%{content}%"))
+    
+    if article_title:
+        query = query.join(Article).filter(Article.title.ilike(f"%{article_title}%"))
+    
+    if author_name:
+        query = query.filter(Comment.author_name.ilike(f"%{author_name}%"))
+    
     if article_id:
         query = query.filter(Comment.article_id == article_id)
+    
+    if start_date:
+        query = query.filter(Comment.created_at >= datetime.fromisoformat(start_date))
+    if end_date:
+        end_datetime = datetime.fromisoformat(end_date)
+        end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
+        query = query.filter(Comment.created_at <= end_datetime)
     
     total = query.count()
     total_pages = (total + page_size - 1) // page_size

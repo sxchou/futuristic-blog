@@ -30,6 +30,9 @@ const oauthProviders = ref<OAuthProviderResponse[]>([])
 const oauthLoading = ref<string | null>(null)
 const activeTooltip = ref<number | null>(null)
 
+const OAUTH_CACHE_KEY = 'oauth_providers_cache'
+const OAUTH_CACHE_EXPIRY = 24 * 60 * 60 * 1000 // 24小时
+
 const showTooltip = (id: number) => {
   activeTooltip.value = id
 }
@@ -38,11 +41,54 @@ const hideTooltip = () => {
   activeTooltip.value = null
 }
 
-const fetchOAuthProviders = async () => {
+const getCachedProviders = (): OAuthProviderResponse[] | null => {
   try {
-    oauthProviders.value = await oauthApi.getLoginProviders()
+    const cached = localStorage.getItem(OAUTH_CACHE_KEY)
+    if (!cached) return null
+    
+    const { data, timestamp } = JSON.parse(cached)
+    const now = Date.now()
+    
+    if (now - timestamp > OAUTH_CACHE_EXPIRY) {
+      localStorage.removeItem(OAUTH_CACHE_KEY)
+      return null
+    }
+    
+    return data
+  } catch (e) {
+    return null
+  }
+}
+
+const cacheProviders = (providers: OAuthProviderResponse[]) => {
+  try {
+    localStorage.setItem(OAUTH_CACHE_KEY, JSON.stringify({
+      data: providers,
+      timestamp: Date.now()
+    }))
+  } catch (e) {
+    console.error('Failed to cache OAuth providers:', e)
+  }
+}
+
+const fetchOAuthProviders = async () => {
+  const cached = getCachedProviders()
+  if (cached && cached.length > 0) {
+    oauthProviders.value = cached
+    return
+  }
+  
+  oauthLoading.value = 'loading'
+  try {
+    const providers = await oauthApi.getLoginProviders()
+    oauthProviders.value = providers
+    if (providers.length > 0) {
+      cacheProviders(providers)
+    }
   } catch (error) {
     console.error('Failed to fetch OAuth providers:', error)
+  } finally {
+    oauthLoading.value = null
   }
 }
 
@@ -487,45 +533,64 @@ onMounted(fetchOAuthProviders)
           </p>
         </div>
 
-        <div
-          v-if="oauthProviders.length > 0"
-          class="mt-4"
-        >
-          <div class="flex items-center gap-[1px]">
-            <div class="flex-1 border-t border-gray-200 dark:border-white/10" />
-            <span class="px-[1px] bg-white dark:bg-dark-200 text-xs text-gray-500 dark:text-gray-400">或</span>
-            <div class="flex-1 border-t border-gray-200 dark:border-white/10" />
-          </div>
+        <div class="mt-4 min-h-[88px]">
+          <div
+            v-if="oauthLoading === 'loading' && oauthProviders.length === 0"
+            class="animate-pulse"
+          >
+            <div class="flex items-center gap-[1px]">
+              <div class="flex-1 border-t border-gray-200 dark:border-white/10" />
+              <span class="px-[1px] bg-white dark:bg-dark-200 text-xs text-gray-500 dark:text-gray-400">或</span>
+              <div class="flex-1 border-t border-gray-200 dark:border-white/10" />
+            </div>
 
-          <div class="mt-3 flex items-center justify-center gap-2 flex-wrap">
-            <div
-              v-for="provider in oauthProviders"
-              :key="provider.id"
-              class="relative"
-              @mouseenter="showTooltip(provider.id)"
-              @mouseleave="hideTooltip"
-            >
-              <button
-                type="button"
-                :disabled="oauthLoading === provider.name || (!provider.is_configured || !provider.is_enabled)"
-                :class="getProviderButtonClass(provider)"
-                @click="handleOAuthLogin(provider)"
-              >
-                <svg
-                  class="w-5 h-5"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                  v-html="getProviderIcon(provider.icon)"
-                />
-              </button>
-              <span
-                v-if="activeTooltip === provider.id"
-                class="oauth-btn-tooltip"
-              >
-                {{ provider.display_name }}{{ !provider.is_configured || !provider.is_enabled ? ' (当前不可用)' : '' }}
-              </span>
+            <div class="mt-3 flex items-center justify-center gap-2">
+              <div class="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700" />
+              <div class="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700" />
             </div>
           </div>
+
+          <template v-else-if="oauthProviders.length > 0">
+            <div class="flex items-center gap-[1px]">
+              <div class="flex-1 border-t border-gray-200 dark:border-white/10" />
+              <span class="px-[1px] bg-white dark:bg-dark-200 text-xs text-gray-500 dark:text-gray-400">或</span>
+              <div class="flex-1 border-t border-gray-200 dark:border-white/10" />
+            </div>
+
+            <div class="mt-3 flex items-center justify-center gap-2 flex-wrap">
+              <div
+                v-for="provider in oauthProviders"
+                :key="provider.id"
+                class="relative"
+                @mouseenter="showTooltip(provider.id)"
+                @mouseleave="hideTooltip"
+              >
+                <button
+                  type="button"
+                  :disabled="oauthLoading === provider.name || (!provider.is_configured || !provider.is_enabled)"
+                  :class="getProviderButtonClass(provider)"
+                  :aria-label="`使用${provider.display_name}登录`"
+                  @click="handleOAuthLogin(provider)"
+                >
+                  <svg
+                    class="w-5 h-5"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    role="img"
+                    :aria-label="provider.display_name"
+                    v-html="getProviderIcon(provider.icon)"
+                  />
+                </button>
+                <span
+                  v-if="activeTooltip === provider.id"
+                  class="oauth-btn-tooltip"
+                  role="tooltip"
+                >
+                  {{ provider.display_name }}{{ !provider.is_configured || !provider.is_enabled ? ' (当前不可用)' : '' }}
+                </span>
+              </div>
+            </div>
+          </template>
         </div>
       </div>
     </div>

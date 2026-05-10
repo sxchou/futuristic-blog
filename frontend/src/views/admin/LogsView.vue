@@ -4,6 +4,7 @@ import { logsApi } from '@/api'
 import { useDialogStore, useUserProfileStore } from '@/stores'
 import { useAdminCheck } from '@/composables/useAdminCheck'
 import { formatDateTime } from '@/utils/date'
+import DateRangePicker from '@/components/common/DateRangePicker.vue'
 
 const dialog = useDialogStore()
 const userProfileStore = useUserProfileStore()
@@ -42,6 +43,7 @@ const total = ref(0)
 const filters = ref({
   module: '',
   action: '',
+  description: '',
   status: '',
   username: '',
   login_type: '',
@@ -100,7 +102,10 @@ const fetchLogs = async () => {
     if (response) {
       total.value = response.data.total
     }
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.isCancel) {
+      return
+    }
     console.error('Failed to fetch logs:', error)
   } finally {
     loading.value = false
@@ -118,6 +123,7 @@ const resetFilters = () => {
   filters.value = {
     module: '',
     action: '',
+    description: '',
     status: '',
     username: '',
     login_type: '',
@@ -130,6 +136,12 @@ const resetFilters = () => {
 }
 
 const handleSearch = () => {
+  page.value = 1
+  fetchLogs()
+}
+
+const handleClearFilters = () => {
+  resetFilters()
   page.value = 1
   fetchLogs()
 }
@@ -249,6 +261,40 @@ const getOperationLogAvatarStyle = (log: any) => {
   }
 }
 
+const getAccessLogAvatarStyle = (log: any) => {
+  if (log.username && log.avatar_type === 'custom' && log.avatar_url) {
+    return {
+      backgroundImage: `url(${log.avatar_url})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }
+  }
+  
+  if (log.username && log.oauth_avatar_url) {
+    return {
+      backgroundImage: `url(${log.oauth_avatar_url})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }
+  }
+  
+  if (log.username && log.avatar_gradient && log.avatar_gradient.length >= 1) {
+    return {
+      backgroundColor: log.avatar_gradient[0]
+    }
+  }
+  
+  if (!log.username) {
+    return {
+      backgroundColor: '#9ca3af'
+    }
+  }
+  
+  return {
+    backgroundColor: '#667eea'
+  }
+}
+
 const totalPages = computed(() => Math.ceil(total.value / pageSize.value))
 
 const handleKeydown = (event: KeyboardEvent) => {
@@ -260,6 +306,9 @@ const handleKeydown = (event: KeyboardEvent) => {
     event.preventDefault()
     page.value++
     fetchLogs()
+  } else if (event.key === 'Delete') {
+    event.preventDefault()
+    handleClearFilters()
   }
 }
 
@@ -432,6 +481,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 name="ops-username"
                 placeholder="用户名"
                 class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
+                @keyup.enter="handleSearch"
               >
               <input id="input-ops-filters-module"
                 v-model="filters.module"
@@ -439,6 +489,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 name="ops-module"
                 placeholder="模块"
                 class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
+                @keyup.enter="handleSearch"
               >
               <input id="input-ops-filters-action"
                 v-model="filters.action"
@@ -446,11 +497,21 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 name="ops-action"
                 placeholder="操作"
                 class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
+                @keyup.enter="handleSearch"
+              >
+              <input id="input-ops-filters-description"
+                v-model="filters.description"
+                type="text"
+                name="ops-description"
+                placeholder="描述"
+                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-48"
+                @keyup.enter="handleSearch"
               >
               <select id="select-ops-filters-status"
                 v-model="filters.status"
                 name="ops-status"
                 class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
+                @change="handleSearch"
               >
                 <option value="">
                   全部状态
@@ -462,18 +523,30 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                   失败
                 </option>
               </select>
-              <input id="input-ops-filters-start-date"
-                v-model="filters.start_date"
-                type="date"
-                name="ops-start-date"
-                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none text-gray-900 dark:text-white"
+              <DateRangePicker
+                v-model:start-date="filters.start_date"
+                v-model:end-date="filters.end_date"
+              />
+              <button
+                type="button"
+                class="px-3 py-1.5 text-sm bg-red-500/10 text-red-500 dark:text-red-400 border border-red-500/20 dark:border-red-400/20 rounded-lg hover:bg-red-500/20 dark:hover:bg-red-400/20 transition-colors flex items-center gap-1.5"
+                @click="handleClearFilters"
               >
-              <input id="input-ops-filters-end-date"
-                v-model="filters.end_date"
-                type="date"
-                name="ops-end-date"
-                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none text-gray-900 dark:text-white"
-              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+                清除筛选
+              </button>
               <button
                 class="btn-primary text-sm px-4 py-1.5"
                 @click="handleSearch"
@@ -515,7 +588,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                     :key="log.id"
                     class="border-b border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5"
                   >
-                    <td class="py-2 px-3">
+                    <td class="py-2 px-3 w-32">
                       <div class="flex items-center gap-2">
                         <div
                           class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium overflow-hidden flex-shrink-0"
@@ -525,7 +598,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                             {{ (log.username || '?').charAt(0).toUpperCase() }}
                           </span>
                         </div>
-                        <span class="text-gray-900 dark:text-white">{{ log.username || '-' }}</span>
+                        <span class="text-gray-900 dark:text-white truncate">{{ log.username || '-' }}</span>
                       </div>
                     </td>
                     <td class="py-2 px-3 text-gray-600 dark:text-gray-300">
@@ -577,6 +650,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 v-model="filters.status"
                 name="logins-status"
                 class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
+                @change="handleSearch"
               >
                 <option value="">
                   全部状态
@@ -588,18 +662,30 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                   失败
                 </option>
               </select>
-              <input id="input-logins-filters-start-date"
-                v-model="filters.start_date"
-                type="date"
-                name="logins-start-date"
-                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none text-gray-900 dark:text-white"
+              <DateRangePicker
+                v-model:start-date="filters.start_date"
+                v-model:end-date="filters.end_date"
+              />
+              <button
+                type="button"
+                class="px-3 py-1.5 text-sm bg-red-500/10 text-red-500 dark:text-red-400 border border-red-500/20 dark:border-red-400/20 rounded-lg hover:bg-red-500/20 dark:hover:bg-red-400/20 transition-colors flex items-center gap-1.5"
+                @click="handleClearFilters"
               >
-              <input id="input-logins-filters-end-date"
-                v-model="filters.end_date"
-                type="date"
-                name="logins-end-date"
-                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none text-gray-900 dark:text-white"
-              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+                清除筛选
+              </button>
               <button
                 class="btn-primary text-sm px-4 py-1.5"
                 @click="handleSearch"
@@ -641,7 +727,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                     :key="log.id"
                     class="border-b border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5"
                   >
-                    <td class="py-2 px-3">
+                    <td class="py-2 px-3 w-32">
                       <div class="flex items-center gap-2">
                         <div
                           class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium overflow-hidden flex-shrink-0"
@@ -651,7 +737,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                             {{ (log.username || '?').charAt(0).toUpperCase() }}
                           </span>
                         </div>
-                        <span class="text-gray-900 dark:text-white">{{ log.username || '-' }}</span>
+                        <span class="text-gray-900 dark:text-white truncate">{{ log.username || '-' }}</span>
                       </div>
                     </td>
                     <td class="py-2 px-3 text-gray-600 dark:text-gray-300">
@@ -691,25 +777,13 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 name="access-username"
                 placeholder="用户名"
                 class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
-              >
-              <input id="input-access-filters-ip_address"
-                v-model="filters.ip_address"
-                type="text"
-                name="access-ip-address"
-                placeholder="IP地址"
-                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
-              >
-              <input id="input-access-filters-path"
-                v-model="filters.path"
-                type="text"
-                name="access-path"
-                placeholder="请求路径"
-                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
+                @keyup.enter="handleSearch"
               >
               <select id="select-filters-request_method"
                 v-model="filters.request_method"
                 name="access-request-method"
                 class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
+                @change="handleSearch"
               >
                 <option value="">
                   全部方法
@@ -727,18 +801,46 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                   DELETE
                 </option>
               </select>
-              <input id="input-access-filters-start-date"
-                v-model="filters.start_date"
-                type="date"
-                name="access-start-date"
-                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none text-gray-900 dark:text-white"
+              <input id="input-access-filters-path"
+                v-model="filters.path"
+                type="text"
+                name="access-path"
+                placeholder="请求路径"
+                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-48"
+                @keyup.enter="handleSearch"
               >
-              <input id="input-access-filters-end-date"
-                v-model="filters.end_date"
-                type="date"
-                name="access-end-date"
-                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none text-gray-900 dark:text-white"
+              <input id="input-access-filters-ip_address"
+                v-model="filters.ip_address"
+                type="text"
+                name="access-ip-address"
+                placeholder="IP地址"
+                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
+                @keyup.enter="handleSearch"
               >
+              <DateRangePicker
+                v-model:start-date="filters.start_date"
+                v-model:end-date="filters.end_date"
+              />
+              <button
+                type="button"
+                class="px-3 py-1.5 text-sm bg-red-500/10 text-red-500 dark:text-red-400 border border-red-500/20 dark:border-red-400/20 rounded-lg hover:bg-red-500/20 dark:hover:bg-red-400/20 transition-colors flex items-center gap-1.5"
+                @click="handleClearFilters"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+                清除筛选
+              </button>
               <button
                 class="btn-primary text-sm px-4 py-1.5"
                 @click="handleSearch"
@@ -780,8 +882,18 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                     :key="log.id"
                     class="border-b border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5"
                   >
-                    <td class="py-2 px-3 text-gray-900 dark:text-white">
-                      {{ log.username || '-' }}
+                    <td class="py-2 px-3 w-32">
+                      <div class="flex items-center gap-2">
+                        <div
+                          class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium overflow-hidden flex-shrink-0"
+                          :style="getAccessLogAvatarStyle(log)"
+                        >
+                          <span v-if="(!log.avatar_type || log.avatar_type === 'default') && !log.oauth_avatar_url">
+                            {{ log.username ? (log.username || '?').charAt(0).toUpperCase() : '游' }}
+                          </span>
+                        </div>
+                        <span class="text-gray-900 dark:text-white truncate">{{ log.username || '游客' }}</span>
+                      </div>
                     </td>
                     <td class="py-2 px-3">
                       <span

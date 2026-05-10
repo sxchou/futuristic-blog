@@ -50,7 +50,11 @@ def to_utc(dt: datetime) -> datetime:
         return None
     if isinstance(dt, str):
         try:
+            if dt.endswith('Z'):
+                dt = dt[:-1] + '+00:00'
             dt = datetime.fromisoformat(dt.replace('Z', '+00:00'))
+            if dt.tzinfo is not None:
+                return dt.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
         except (ValueError, AttributeError):
             return dt
     if ZoneInfo is None:

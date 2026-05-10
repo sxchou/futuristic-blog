@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import apiClient from '@/api/client'
 import { isCancelError } from '@/utils/error'
 import { dataPrefetch } from '@/utils/prefetch'
@@ -133,6 +133,13 @@ const clearFilters = () => {
   selectedYear.value = null
 }
 
+const handleKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Delete') {
+    event.preventDefault()
+    clearFilters()
+  }
+}
+
 const fetchArchive = async (force = false) => {
   if (!force) {
     const globalCache = dataPrefetch.get<YearData[]>('archive')
@@ -192,6 +199,11 @@ watch(selectedYear, () => {
 
 onMounted(() => {
   fetchArchive()
+  window.addEventListener('keydown', handleKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
 })
 </script>
 

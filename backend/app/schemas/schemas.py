@@ -180,6 +180,7 @@ class ArticleBase(BaseModel):
     is_pinned: bool = False
     pinned_order: int = 0
     category_id: int = Field(..., description="分类ID为必填项")
+    published_at: Optional[str] = None
 
 
 class ArticleCreate(ArticleBase):
@@ -198,6 +199,7 @@ class ArticleUpdate(BaseModel):
     pinned_order: Optional[int] = None
     category_id: Optional[int] = None
     tag_ids: Optional[List[int]] = Field(None, min_length=1, description="如果提供标签，至少需要选择一个")
+    published_at: Optional[str] = None
     
     @field_validator('tag_ids')
     @classmethod
@@ -251,6 +253,7 @@ class ArticleListItem(BaseModel):
     bookmark_count: int = 0
     reading_time: int
     created_at: Optional[str] = None
+    updated_at: Optional[str] = None
     published_at: Optional[str] = None
     category: Optional[CategoryResponse] = None
     tags: List[TagResponse] = []
@@ -265,7 +268,7 @@ class ArticleListItem(BaseModel):
     highlighted_summary: Optional[str] = None
     match_type: Optional[str] = None
     
-    @field_validator('created_at', 'published_at', 'liked_at', 'bookmarked_at', 'commented_at', mode='before')
+    @field_validator('created_at', 'updated_at', 'published_at', 'liked_at', 'bookmarked_at', 'commented_at', mode='before')
     @classmethod
     def serialize_datetime_field(cls, v):
         return serialize_datetime(v)

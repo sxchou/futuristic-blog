@@ -27,7 +27,12 @@ export const commentApi = {
     page?: number
     page_size?: number
     status?: 'pending' | 'approved' | 'rejected'
+    content?: string
+    article_title?: string
+    author_name?: string
     article_id?: number
+    start_date?: string
+    end_date?: string
   }): Promise<PaginatedResponse<AdminComment>> => {
     const response = await apiClient.get('/comments/admin', { params })
     return response.data

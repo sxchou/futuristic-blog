@@ -11,6 +11,8 @@ import { getMediaUrl } from '@/utils/media'
 import MarkdownEditor from '@/components/admin/MarkdownEditor.vue'
 import FilePreview from '@/components/FilePreview.vue'
 import ImageCropper from '@/components/common/ImageCropper.vue'
+import DateRangePicker from '@/components/common/DateRangePicker.vue'
+import DateTimePicker from '@/components/common/DateTimePicker.vue'
 
 const blogStore = useBlogStore()
 const dialog = useDialogStore()
@@ -25,6 +27,12 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 const totalArticles = ref(0)
 const totalPages = ref(0)
+const statusFilter = ref<string>('')
+const titleFilter = ref<string>('')
+const categoryFilter = ref<string>('')
+const authorFilter = ref<string>('')
+const startDateFilter = ref<string>('')
+const endDateFilter = ref<string>('')
 const showEditor = ref(false)
 const editingArticle = ref<ArticleListItem | null>(null)
 const articleFiles = ref<ArticleFile[]>([])
@@ -116,6 +124,14 @@ const canPublish = computed(() => {
   return permissionStore.hasPermission('article.publish')
 })
 
+const enableScheduledPublish = ref(false)
+
+const minPublishTime = computed(() => {
+  const now = new Date()
+  now.setMinutes(now.getMinutes() + 6)
+  return now.toISOString()
+})
+
 const canUploadImage = computed(() => {
   return permissionStore.hasPermission('article.upload_image')
 })
@@ -172,7 +188,8 @@ const form = ref({
   is_published: false,
   is_featured: false,
   is_pinned: false,
-  pinned_order: 0
+  pinned_order: 0,
+  published_at: undefined as string | undefined
 })
 
 const DRAFT_KEY = 'article_draft'
@@ -217,7 +234,8 @@ const loadFormDraft = () => {
         is_published: draft.is_published || false,
         is_featured: draft.is_featured || false,
         is_pinned: draft.is_pinned || false,
-        pinned_order: draft.pinned_order || 0
+        pinned_order: draft.pinned_order || 0,
+        published_at: draft.published_at || undefined
       }
       return true
     }
@@ -247,14 +265,36 @@ const scheduleDraftSave = () => {
 const fetchArticles = async () => {
   isLoading.value = true
   try {
-    const response = await articleApi.getAdminArticles({ 
-      page: currentPage.value, 
-      page_size: pageSize.value 
-    })
+    const params: Record<string, unknown> = {
+      page: currentPage.value,
+      page_size: pageSize.value
+    }
+    if (statusFilter.value) {
+      params.status = statusFilter.value
+    }
+    if (titleFilter.value) {
+      params.title = titleFilter.value
+    }
+    if (categoryFilter.value) {
+      params.category = categoryFilter.value
+    }
+    if (authorFilter.value) {
+      params.author = authorFilter.value
+    }
+    if (startDateFilter.value) {
+      params.start_date = startDateFilter.value
+    }
+    if (endDateFilter.value) {
+      params.end_date = endDateFilter.value
+    }
+    const response = await articleApi.getAdminArticles(params as Parameters<typeof articleApi.getAdminArticles>[0])
     articles.value = response.items
     totalArticles.value = response.total
     totalPages.value = response.total_pages
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.isCancel) {
+      return
+    }
     console.error('Failed to fetch articles:', error)
   } finally {
     isLoading.value = false
@@ -266,6 +306,22 @@ const handlePageChange = (page: number) => {
   fetchArticles()
 }
 
+const handleSearch = () => {
+  currentPage.value = 1
+  fetchArticles()
+}
+
+const clearFilters = () => {
+  statusFilter.value = ''
+  titleFilter.value = ''
+  categoryFilter.value = ''
+  authorFilter.value = ''
+  startDateFilter.value = ''
+  endDateFilter.value = ''
+  currentPage.value = 1
+  fetchArticles()
+}
+
 const handleKeydown = (event: KeyboardEvent) => {
   if (event.key === 'ArrowLeft' && currentPage.value > 1) {
     event.preventDefault()
@@ -273,6 +329,9 @@ const handleKeydown = (event: KeyboardEvent) => {
   } else if (event.key === 'ArrowRight' && currentPage.value < totalPages.value) {
     event.preventDefault()
     handlePageChange(currentPage.value + 1)
+  } else if (event.key === 'Delete') {
+    event.preventDefault()
+    clearFilters()
   }
 }
 
@@ -306,11 +365,19 @@ const handleEdit = async (article: ArticleListItem) => {
       cover_image: fullArticle.cover_image || undefined,
       category_id: fullArticle.category?.id || undefined,
       tag_ids: fullArticle.tags.map(t => t.id),
-      is_published: fullArticle.is_published,
+      is_published: fullArticle.is_published || !!(fullArticle.published_at && new Date(fullArticle.published_at) > new Date()),
       is_featured: fullArticle.is_featured,
       is_pinned: fullArticle.is_pinned || false,
-      pinned_order: fullArticle.pinned_order || 0
+      pinned_order: fullArticle.pinned_order || 0,
+      published_at: fullArticle.published_at || undefined
     }
+    
+    if (fullArticle.published_at && new Date(fullArticle.published_at) > new Date()) {
+      enableScheduledPublish.value = true
+    } else {
+      enableScheduledPublish.value = false
+    }
+    
     await fetchArticleFiles(article.id)
     showEditor.value = true
   } catch (error) {
@@ -444,12 +511,18 @@ const handleSubmit = async () => {
   
   isSubmitting.value = true
   try {
+    const submitData = { ...form.value }
+    
+    if (!enableScheduledPublish.value) {
+      submitData.published_at = undefined
+    }
+    
     let savedArticle: Article
     let response: any
     if (editingArticle.value) {
-      response = await articleApi.updateArticle(editingArticle.value.id, form.value)
+      response = await articleApi.updateArticle(editingArticle.value.id, submitData)
     } else {
-      response = await articleApi.createArticle(form.value)
+      response = await articleApi.createArticle(submitData)
     }
     
     savedArticle = response
@@ -470,6 +543,7 @@ const handleSubmit = async () => {
       bookmark_count: savedArticle.bookmark_count || 0,
       reading_time: savedArticle.reading_time,
       created_at: savedArticle.created_at,
+      updated_at: savedArticle.updated_at,
       published_at: savedArticle.published_at,
       category: savedArticle.category,
       tags: savedArticle.tags,
@@ -536,8 +610,10 @@ const resetForm = () => {
     is_published: false,
     is_featured: false,
     is_pinned: false,
-    pinned_order: 0
+    pinned_order: 0,
+    published_at: undefined
   }
+  enableScheduledPublish.value = false
   articleFiles.value = []
   selectedFileIds.value.clear()
   slugManuallyEdited.value = false
@@ -1616,6 +1692,22 @@ watch(showEditor, (newVal) => {
   }
 })
 
+watch(enableScheduledPublish, (newVal) => {
+  if (newVal && editingArticle.value) {
+    const article = articles.value.find(a => a.id === editingArticle.value?.id)
+    if (article) {
+      const shouldResetTime = article.is_published || 
+        (article.published_at && new Date(article.published_at) <= new Date())
+      
+      if (shouldResetTime) {
+        const now = new Date()
+        now.setMinutes(now.getMinutes() + 6)
+        form.value.published_at = now.toISOString()
+      }
+    }
+  }
+})
+
 onUnmounted(() => {
   document.body.style.overflow = ''
   if (draftSaveTimer) clearTimeout(draftSaveTimer)
@@ -1671,6 +1763,80 @@ watch(form, () => {
       v-else
       class="glass-card overflow-hidden"
     >
+      <div class="p-4 border-b border-gray-200 dark:border-white/10">
+        <form class="flex flex-wrap items-center gap-3" @submit.prevent="handleSearch">
+          <input
+            v-model="titleFilter"
+            type="text"
+            placeholder="标题"
+            class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-40"
+            @keyup.enter="handleSearch"
+          >
+          <input
+            v-model="categoryFilter"
+            type="text"
+            placeholder="分类"
+            class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-32"
+            @keyup.enter="handleSearch"
+          >
+          <input
+            v-model="authorFilter"
+            type="text"
+            placeholder="作者"
+            class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-32"
+            @keyup.enter="handleSearch"
+          >
+          <select
+            v-model="statusFilter"
+            class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
+            @change="handleSearch"
+          >
+            <option value="">
+              全部状态
+            </option>
+            <option value="draft">
+              未发布
+            </option>
+            <option value="published">
+              已发布
+            </option>
+            <option value="scheduled">
+              定时发布
+            </option>
+          </select>
+          <DateRangePicker
+            v-model:start-date="startDateFilter"
+            v-model:end-date="endDateFilter"
+          />
+          <button
+            type="button"
+            class="px-3 py-1.5 text-sm bg-red-500/10 text-red-500 dark:text-red-400 border border-red-500/20 dark:border-red-400/20 rounded-lg hover:bg-red-500/20 dark:hover:bg-red-400/20 transition-colors flex items-center gap-1.5"
+            @click="clearFilters"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+            清除筛选
+          </button>
+          <button
+            type="button"
+            class="btn-primary text-sm px-4 py-1.5"
+            @click="handleSearch"
+          >
+            搜索
+          </button>
+        </form>
+      </div>
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead class="bg-gray-100 dark:bg-dark-100">
@@ -1693,6 +1859,12 @@ watch(form, () => {
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                 创建时间
               </th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                发布时间
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                最后修改
+              </th>
               <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
                 操作
               </th>
@@ -1704,11 +1876,11 @@ watch(form, () => {
               :key="article.id"
               class="hover:bg-gray-50 dark:hover:bg-white/5"
             >
-              <td class="px-4 py-3 max-w-[280px]">
-                <div class="flex items-center gap-2 min-w-0">
+              <td class="px-4 py-3">
+                <div class="flex items-start gap-2">
                   <span
                     v-if="article.is_pinned"
-                    class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded border border-amber-500/30 flex-shrink-0"
+                    class="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded border border-amber-500/30 flex-shrink-0 mt-0.5"
                   >
                     <svg
                       class="w-3 h-3"
@@ -1721,9 +1893,9 @@ watch(form, () => {
                   </span>
                   <span
                     v-if="article.is_featured"
-                    class="px-2 py-0.5 text-xs font-medium bg-primary text-white rounded-full flex-shrink-0"
+                    class="px-2 py-0.5 text-xs font-medium bg-primary text-white rounded-full flex-shrink-0 mt-0.5"
                   >精选</span>
-                  <span class="text-gray-900 dark:text-white truncate">{{ article.title }}</span>
+                  <span class="text-gray-900 dark:text-white break-words">{{ article.title }}</span>
                 </div>
               </td>
               <td class="px-4 py-3">
@@ -1753,6 +1925,12 @@ watch(form, () => {
                   已发布
                 </span>
                 <span
+                  v-else-if="article.published_at && new Date(article.published_at) > new Date()"
+                  class="px-1.5 py-0.5 text-xs rounded bg-blue-500/20 text-blue-400"
+                >
+                  定时发布
+                </span>
+                <span
                   v-else
                   class="px-1.5 py-0.5 text-xs rounded bg-yellow-500/20 text-yellow-400"
                 >
@@ -1762,8 +1940,16 @@ watch(form, () => {
               <td class="px-4 py-3 text-gray-400">
                 {{ article.view_count }}
               </td>
-              <td class="px-4 py-3 text-gray-400">
+              <td class="px-4 py-3 text-gray-400 text-xs">
                 {{ formatDate(article.created_at) }}
+              </td>
+              <td class="px-4 py-3 text-gray-400 text-xs">
+                <span v-if="article.published_at">{{ formatDate(article.published_at) }}</span>
+                <span v-else class="text-gray-500">-</span>
+              </td>
+              <td class="px-4 py-3 text-gray-400 text-xs">
+                <span v-if="article.updated_at">{{ formatDate(article.updated_at) }}</span>
+                <span v-else class="text-gray-500">-</span>
               </td>
               <td class="px-4 py-3 text-right">
                 <button
@@ -2743,6 +2929,27 @@ watch(form, () => {
                 无发布文章权限，请联系管理员
               </p>
             </div>
+            
+            <div v-if="form.is_published && canPublish" class="ml-5">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input
+                  v-model="enableScheduledPublish"
+                  type="checkbox"
+                  class="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-100 text-primary focus:ring-primary"
+                >
+                <span class="text-gray-700 dark:text-gray-300 text-sm">定时发布</span>
+              </label>
+              <div v-if="enableScheduledPublish" class="mt-2">
+                <DateTimePicker
+                  v-model="form.published_at"
+                  :min="minPublishTime"
+                />
+                <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                  文章将在指定时间自动发布
+                </p>
+              </div>
+            </div>
+            
             <div class="flex flex-wrap items-center gap-3 sm:gap-4">
               <label class="flex items-center gap-1.5 cursor-pointer">
                 <input id="input-form-is_pinned"

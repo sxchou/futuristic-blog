@@ -8,6 +8,7 @@ import { useAdminCheck } from '@/composables/useAdminCheck'
 import { useDeletionConfirm } from '@/composables/useDeletionConfirm'
 import DeletionConfirmDialog from '@/components/common/DeletionConfirmDialog.vue'
 import { formatDateTime } from '@/utils/date'
+import DateRangePicker from '@/components/common/DateRangePicker.vue'
 
 const dialog = useDialogStore()
 const commentDeletion = useDeletionConfirm()
@@ -22,6 +23,11 @@ const pageSize = ref(20)
 const total = ref(0)
 const totalPages = ref(0)
 const statusFilter = ref<string>('')
+const contentFilter = ref<string>('')
+const articleTitleFilter = ref<string>('')
+const authorNameFilter = ref<string>('')
+const startDateFilter = ref<string>('')
+const endDateFilter = ref<string>('')
 const selectedComments = ref<number[]>([])
 const showAuditModal = ref(false)
 const showLogsModal = ref(false)
@@ -74,11 +80,29 @@ const fetchComments = async () => {
     if (statusFilter.value) {
       params.status = statusFilter.value
     }
+    if (contentFilter.value) {
+      params.content = contentFilter.value
+    }
+    if (articleTitleFilter.value) {
+      params.article_title = articleTitleFilter.value
+    }
+    if (authorNameFilter.value) {
+      params.author_name = authorNameFilter.value
+    }
+    if (startDateFilter.value) {
+      params.start_date = startDateFilter.value
+    }
+    if (endDateFilter.value) {
+      params.end_date = endDateFilter.value
+    }
     const response: PaginatedResponse<AdminComment> = await commentApi.getAdminComments(params as Parameters<typeof commentApi.getAdminComments>[0])
     comments.value = response.items
     total.value = response.total
     totalPages.value = response.total_pages
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.isCancel) {
+      return
+    }
     console.error('Failed to fetch comments:', error)
   } finally {
     loading.value = false
@@ -91,6 +115,17 @@ const handlePageChange = (page: number) => {
 }
 
 const handleStatusFilter = () => {
+  currentPage.value = 1
+  fetchComments()
+}
+
+const clearFilters = () => {
+  statusFilter.value = ''
+  contentFilter.value = ''
+  articleTitleFilter.value = ''
+  authorNameFilter.value = ''
+  startDateFilter.value = ''
+  endDateFilter.value = ''
   currentPage.value = 1
   fetchComments()
 }
@@ -293,6 +328,9 @@ const handleKeydown = (event: KeyboardEvent) => {
   } else if (event.key === 'ArrowRight' && currentPage.value < totalPages.value) {
     event.preventDefault()
     handlePageChange(currentPage.value + 1)
+  } else if (event.key === 'Delete') {
+    event.preventDefault()
+    clearFilters()
   }
 }
 
@@ -431,10 +469,31 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
 
       <div class="glass-card overflow-hidden">
       <div class="p-4 border-b border-gray-200 dark:border-white/10 flex flex-wrap items-center justify-between gap-4">
-        <form class="flex items-center gap-4" @submit.prevent>
+        <form class="flex flex-wrap items-center gap-3" @submit.prevent="handleStatusFilter">
+          <input
+            v-model="contentFilter"
+            type="text"
+            placeholder="内容"
+            class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-40"
+            @keyup.enter="handleStatusFilter"
+          >
+          <input
+            v-model="articleTitleFilter"
+            type="text"
+            placeholder="文章"
+            class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-32"
+            @keyup.enter="handleStatusFilter"
+          >
+          <input
+            v-model="authorNameFilter"
+            type="text"
+            placeholder="评论人"
+            class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-32"
+            @keyup.enter="handleStatusFilter"
+          >
           <select id="select-statusFilter"
             v-model="statusFilter"
-            class="px-3 py-2 bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg text-sm focus:outline-none focus:border-gray-300 dark:focus:border-white/20"
+            class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
             @change="handleStatusFilter"
           >
             <option
@@ -445,6 +504,37 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
               {{ option.label }}
             </option>
           </select>
+          <DateRangePicker
+            v-model:start-date="startDateFilter"
+            v-model:end-date="endDateFilter"
+          />
+          <button
+            type="button"
+            class="px-3 py-1.5 text-sm bg-red-500/10 text-red-500 dark:text-red-400 border border-red-500/20 dark:border-red-400/20 rounded-lg hover:bg-red-500/20 dark:hover:bg-red-400/20 transition-colors flex items-center gap-1.5"
+            @click="clearFilters"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+            清除筛选
+          </button>
+          <button
+            type="button"
+            class="btn-primary text-sm px-4 py-1.5"
+            @click="handleStatusFilter"
+          >
+            搜索
+          </button>
         </form>
 
         <div

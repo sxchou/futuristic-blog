@@ -128,6 +128,9 @@ export const emailApi = {
     page_size?: number
     email_type?: string
     status?: string
+    recipient_email?: string
+    start_date?: string
+    end_date?: string
   }): Promise<PaginatedResponse<EmailLog>> => {
     const response = await apiClient.get('/email/logs', { params })
     return response.data

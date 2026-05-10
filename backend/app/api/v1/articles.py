@@ -1,9 +1,14 @@
 from typing import Optional, List, Dict, Any
+from datetime import datetime
+import logging
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError
 from app.core.database import get_db
+from app.utils.timezone import to_utc, get_db_now
+
+logger = logging.getLogger(__name__)
 from app.models import Article, Category, Tag, Comment, ArticleLike, ArticleBookmark, ArticleFile, User, article_tags
 from app.schemas import (
     ArticleCreate, ArticleUpdate, ArticleResponse, ArticleListItem,
@@ -265,6 +270,7 @@ async def get_articles(
                 comment_count=comment_counts.get(article.id, 0),
                 reading_time=article.reading_time,
                 created_at=article.created_at,
+                updated_at=article.updated_at,
                 published_at=article.published_at,
                 category=CategoryResponse.model_validate(article.category) if article.category else None,
                 tags=[TagResponse.model_validate(tag) for tag in article.tags],
@@ -336,6 +342,7 @@ async def get_articles(
             comment_count=comment_counts.get(article.id, 0),
             reading_time=article.reading_time,
             created_at=article.created_at,
+            updated_at=article.updated_at,
             published_at=article.published_at,
             category=CategoryResponse.model_validate(article.category) if article.category else None,
             tags=[TagResponse.model_validate(tag) for tag in article.tags],
@@ -401,6 +408,7 @@ async def get_user_articles(
             comment_count=comment_counts.get(article.id, 0),
             reading_time=article.reading_time,
             created_at=article.created_at,
+            updated_at=article.updated_at,
             published_at=article.published_at,
             category=CategoryResponse.model_validate(article.category) if article.category else None,
             tags=[TagResponse.model_validate(tag) for tag in article.tags],
@@ -421,6 +429,12 @@ async def get_user_articles(
 async def get_admin_articles(
     page: int = Query(1, ge=1),
     page_size: int = Query(10, ge=1, le=100),
+    status: Optional[str] = Query(None, pattern='^(draft|published|scheduled)$'),
+    title: Optional[str] = None,
+    category: Optional[str] = None,
+    author: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user = Depends(require_permission("article.view"))
 ):
@@ -429,6 +443,37 @@ async def get_admin_articles(
         selectinload(Article.tags),
         joinedload(Article.author)
     )
+    
+    if status:
+        if status == 'draft':
+            query = query.filter(
+                Article.is_published == False,
+                (Article.published_at == None) | (Article.published_at <= get_db_now())
+            )
+        elif status == 'published':
+            query = query.filter(Article.is_published == True)
+        elif status == 'scheduled':
+            query = query.filter(
+                Article.is_published == False,
+                Article.published_at != None,
+                Article.published_at > get_db_now()
+            )
+    
+    if title:
+        query = query.filter(Article.title.ilike(f"%{title}%"))
+    
+    if category:
+        query = query.join(Article.category).filter(Category.name.contains(category))
+    
+    if author:
+        query = query.join(Article.author).filter(User.username.contains(author))
+    
+    if start_date:
+        query = query.filter(Article.created_at >= datetime.fromisoformat(start_date))
+    if end_date:
+        end_datetime = datetime.fromisoformat(end_date)
+        end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
+        query = query.filter(Article.created_at <= end_datetime)
     
     total = query.count()
     total_pages = (total + page_size - 1) // page_size
@@ -466,6 +511,7 @@ async def get_admin_articles(
             comment_count=comment_counts.get(article.id, 0),
             reading_time=article.reading_time,
             created_at=article.created_at,
+            updated_at=article.updated_at,
             published_at=article.published_at,
             category=CategoryResponse.model_validate(article.category) if article.category else None,
             tags=[TagResponse.model_validate(tag) for tag in article.tags],
@@ -607,6 +653,19 @@ async def create_article(
     was_publish_requested = article_data.is_published
     actual_is_published = article_data.is_published if can_publish else False
     
+    published_at = None
+    if article_data.published_at:
+        try:
+            published_at = to_utc(article_data.published_at)
+            if published_at and published_at > get_db_now():
+                actual_is_published = False
+        except Exception as e:
+            logger.error(f"Failed to parse published_at: {e}")
+            pass
+    
+    if actual_is_published and not published_at:
+        published_at = get_db_now()
+    
     new_article = Article(
         title=article_data.title,
         slug=slug,
@@ -620,7 +679,8 @@ async def create_article(
         category_id=article_data.category_id,
         author_id=current_user.id,
         author_name=current_user.username,
-        reading_time=reading_time
+        reading_time=reading_time,
+        published_at=published_at
     )
     
     if article_data.tag_ids:
@@ -705,6 +765,24 @@ async def update_article(
     
     if "is_published" in update_data and not can_publish:
         del update_data["is_published"]
+    
+    if "published_at" in update_data:
+        if update_data["published_at"]:
+            try:
+                published_at = to_utc(update_data["published_at"])
+                if published_at and published_at > get_db_now():
+                    if "is_published" not in update_data or update_data.get("is_published", True):
+                        update_data["is_published"] = False
+                update_data["published_at"] = published_at
+            except Exception as e:
+                logger.error(f"Failed to parse published_at: {e}")
+                pass
+        else:
+            update_data["published_at"] = None
+    
+    if "is_published" in update_data and update_data["is_published"] and not original_is_published:
+        if "published_at" not in update_data or not update_data.get("published_at"):
+            update_data["published_at"] = get_db_now()
     
     for field, value in update_data.items():
         setattr(article, field, value)

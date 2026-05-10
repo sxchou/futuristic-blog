@@ -516,6 +516,9 @@ async def get_email_logs(
     page_size: int = 20,
     email_type: Optional[str] = None,
     status: Optional[str] = None,
+    recipient_email: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("email.view_logs"))
 ):
@@ -525,6 +528,14 @@ async def get_email_logs(
         query = query.filter(EmailLog.email_type == email_type)
     if status:
         query = query.filter(EmailLog.status == status)
+    if recipient_email:
+        query = query.filter(EmailLog.recipient_email.ilike(f"%{recipient_email}%"))
+    if start_date:
+        query = query.filter(EmailLog.created_at >= datetime.fromisoformat(start_date))
+    if end_date:
+        end_datetime = datetime.fromisoformat(end_date)
+        end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
+        query = query.filter(EmailLog.created_at <= end_datetime)
     
     total = query.count()
     total_pages = (total + page_size - 1) // page_size

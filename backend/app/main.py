@@ -8,6 +8,7 @@ from app.core.database import engine, Base, SessionLocal, is_sqlite
 from app.api import router as api_router
 from app.services.init_data import init_database
 from app.services.log_service import LogService
+from app.services.scheduled_publish_service import scheduled_publish_service
 from app.utils import cleanup_expired_tokens
 from app.utils.cache import cache_manager
 from app.utils.performance import performance_metrics, performance_monitor
@@ -90,7 +91,13 @@ async def lifespan(app: FastAPI):
         logger.info("Running in local environment, executing asynchronous initialization...")
         asyncio.create_task(background_init())
     
+    await scheduled_publish_service.start()
+    logger.info("Scheduled publish service started")
+    
     yield
+    
+    await scheduled_publish_service.stop()
+    logger.info("Scheduled publish service stopped")
     
     logger.info("=== Application shutdown ===")
 
@@ -304,6 +311,29 @@ class AccessLogMiddleware:
         client = scope.get("client")
         client_host = client[0] if client else None
         status_code = 200
+        
+        user_id = None
+        username = None
+        auth_header = headers_dict.get('authorization', '')
+        if auth_header and auth_header.startswith('Bearer '):
+            token = auth_header.split(' ')[1]
+            try:
+                from app.utils.auth import decode_token
+                payload = decode_token(token)
+                if payload:
+                    username = payload.get('sub')
+                    if username:
+                        from app.core.database import SessionLocal
+                        from app.models import User
+                        db = SessionLocal()
+                        try:
+                            user = db.query(User).filter(User.username == username).first()
+                            if user:
+                                user_id = user.id
+                        finally:
+                            db.close()
+            except Exception as e:
+                logger.debug(f"Failed to decode token for access log: {e}")
 
         async def send_with_logging(message):
             nonlocal status_code
@@ -328,7 +358,9 @@ class AccessLogMiddleware:
                     'path': path,
                     'query_params': query_string,
                     'client_host': client_host,
-                    'user_agent': headers_dict.get('user-agent', '')
+                    'user_agent': headers_dict.get('user-agent', ''),
+                    'user_id': user_id,
+                    'username': username
                 }
                 loop = asyncio.get_running_loop()
                 loop.run_in_executor(
@@ -346,6 +378,8 @@ class AccessLogMiddleware:
         try:
             from app.models import AccessLog
             log_entry = AccessLog(
+                user_id=request_info.get('user_id'),
+                username=request_info.get('username'),
                 request_method=request_info.get('method', 'GET'),
                 request_path=request_info.get('path', '/'),
                 request_query=request_info.get('query_params', ''),
