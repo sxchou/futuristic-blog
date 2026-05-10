@@ -171,6 +171,24 @@ const getStatusClass = (status: string) => {
     : 'bg-red-500/20 text-red-400'
 }
 
+const formatLoginType = (loginType: string) => {
+  if (loginType === 'login') return '登录'
+  if (loginType === 'logout') return '登出'
+  if (loginType.startsWith('oauth_')) {
+    const provider = loginType.replace('oauth_', '')
+    const providerNames: Record<string, string> = {
+      google: 'Google',
+      github: 'GitHub',
+      twitter: 'Twitter',
+      x: 'X',
+      wechat: '微信',
+      qq: 'QQ'
+    }
+    return `${providerNames[provider] || provider} 登录`
+  }
+  return loginType
+}
+
 const getLoginLogAvatarStyle = (log: any) => {
   if (log.avatar_type === 'custom' && log.avatar_url) {
     return {
@@ -592,7 +610,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                       </div>
                     </td>
                     <td class="py-2 px-3 text-gray-600 dark:text-gray-300">
-                      {{ log.login_type === 'login' ? '登录' : '登出' }}
+                      {{ formatLoginType(log.login_type) }}
                     </td>
                     <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">
                       {{ log.ip_address || '-' }}

@@ -423,6 +423,7 @@ async def oauth_callback(
     provider_name: str,
     code: str,
     state: str,
+    request: Request,
     db: Session = Depends(get_db)
 ):
     provider = db.query(OAuthProvider).filter(
@@ -564,6 +565,7 @@ async def oauth_callback(
                 user_id=user.id,
                 username=user.username,
                 login_type=f"oauth_{provider_name}",
+                request=request,
                 status="success"
             )
             
@@ -595,6 +597,7 @@ async def oauth_callback(
                     user_id=user.id,
                     username=user.username,
                     login_type=f"oauth_{provider_name}",
+                    request=request,
                     status="success"
                 )
                 
@@ -715,6 +718,7 @@ async def oauth_callback(
             user_id=user.id,
             username=user.username,
             login_type=f"oauth_{provider_name}",
+            request=request,
             status="success"
         )
         
