@@ -47,7 +47,9 @@ const filters = ref({
   login_type: '',
   ip_address: '',
   request_method: '',
-  path: ''
+  path: '',
+  start_date: '',
+  end_date: ''
 })
 
 const tabs = [
@@ -121,7 +123,9 @@ const resetFilters = () => {
     login_type: '',
     ip_address: '',
     request_method: '',
-    path: ''
+    path: '',
+    start_date: '',
+    end_date: ''
   }
 }
 
@@ -458,6 +462,18 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                   失败
                 </option>
               </select>
+              <input id="input-ops-filters-start-date"
+                v-model="filters.start_date"
+                type="date"
+                name="ops-start-date"
+                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none text-gray-900 dark:text-white"
+              >
+              <input id="input-ops-filters-end-date"
+                v-model="filters.end_date"
+                type="date"
+                name="ops-end-date"
+                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none text-gray-900 dark:text-white"
+              >
               <button
                 class="btn-primary text-sm px-4 py-1.5"
                 @click="handleSearch"
@@ -572,6 +588,18 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                   失败
                 </option>
               </select>
+              <input id="input-logins-filters-start-date"
+                v-model="filters.start_date"
+                type="date"
+                name="logins-start-date"
+                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none text-gray-900 dark:text-white"
+              >
+              <input id="input-logins-filters-end-date"
+                v-model="filters.end_date"
+                type="date"
+                name="logins-end-date"
+                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none text-gray-900 dark:text-white"
+              >
               <button
                 class="btn-primary text-sm px-4 py-1.5"
                 @click="handleSearch"
@@ -699,6 +727,18 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                   DELETE
                 </option>
               </select>
+              <input id="input-access-filters-start-date"
+                v-model="filters.start_date"
+                type="date"
+                name="access-start-date"
+                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none text-gray-900 dark:text-white"
+              >
+              <input id="input-access-filters-end-date"
+                v-model="filters.end_date"
+                type="date"
+                name="access-end-date"
+                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none text-gray-900 dark:text-white"
+              >
               <button
                 class="btn-primary text-sm px-4 py-1.5"
                 @click="handleSearch"

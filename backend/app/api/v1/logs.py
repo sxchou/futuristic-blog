@@ -138,9 +138,9 @@ async def get_operation_logs(
     query = db.query(OperationLog)
     
     if module:
-        query = query.filter(OperationLog.module == module)
+        query = query.filter(OperationLog.module.contains(module))
     if action:
-        query = query.filter(OperationLog.action == action)
+        query = query.filter(OperationLog.action.contains(action))
     if status:
         query = query.filter(OperationLog.status == status)
     if username:
@@ -148,7 +148,9 @@ async def get_operation_logs(
     if start_date:
         query = query.filter(OperationLog.created_at >= datetime.fromisoformat(start_date))
     if end_date:
-        query = query.filter(OperationLog.created_at <= datetime.fromisoformat(end_date))
+        end_datetime = datetime.fromisoformat(end_date)
+        end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
+        query = query.filter(OperationLog.created_at <= end_datetime)
     
     total = query.count()
     logs = query.order_by(desc(OperationLog.created_at)).offset((page - 1) * page_size).limit(page_size).all()
@@ -216,7 +218,7 @@ async def get_login_logs(
     query = db.query(LoginLog)
     
     if login_type:
-        query = query.filter(LoginLog.login_type == login_type)
+        query = query.filter(LoginLog.login_type.contains(login_type))
     if status:
         query = query.filter(LoginLog.status == status)
     if username:
@@ -226,7 +228,9 @@ async def get_login_logs(
     if start_date:
         query = query.filter(LoginLog.created_at >= datetime.fromisoformat(start_date))
     if end_date:
-        query = query.filter(LoginLog.created_at <= datetime.fromisoformat(end_date))
+        end_datetime = datetime.fromisoformat(end_date)
+        end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
+        query = query.filter(LoginLog.created_at <= end_datetime)
     
     total = query.count()
     logs = query.order_by(desc(LoginLog.created_at)).offset((page - 1) * page_size).limit(page_size).all()
@@ -293,7 +297,7 @@ async def get_access_logs(
     query = db.query(AccessLog)
     
     if request_method:
-        query = query.filter(AccessLog.request_method == request_method)
+        query = query.filter(AccessLog.request_method.contains(request_method))
     if username:
         query = query.filter(AccessLog.username.contains(username))
     if ip_address:
@@ -303,7 +307,9 @@ async def get_access_logs(
     if start_date:
         query = query.filter(AccessLog.created_at >= datetime.fromisoformat(start_date))
     if end_date:
-        query = query.filter(AccessLog.created_at <= datetime.fromisoformat(end_date))
+        end_datetime = datetime.fromisoformat(end_date)
+        end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
+        query = query.filter(AccessLog.created_at <= end_datetime)
     
     total = query.count()
     logs = query.order_by(desc(AccessLog.created_at)).offset((page - 1) * page_size).limit(page_size).all()
