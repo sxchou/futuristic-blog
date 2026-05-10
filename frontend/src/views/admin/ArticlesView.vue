@@ -21,6 +21,10 @@ const fileDeletion = useDeletionConfirm()
 
 const articles = ref<ArticleListItem[]>([])
 const isLoading = ref(false)
+const currentPage = ref(1)
+const pageSize = ref(10)
+const totalArticles = ref(0)
+const totalPages = ref(0)
 const showEditor = ref(false)
 const editingArticle = ref<ArticleListItem | null>(null)
 const articleFiles = ref<ArticleFile[]>([])
@@ -243,12 +247,32 @@ const scheduleDraftSave = () => {
 const fetchArticles = async () => {
   isLoading.value = true
   try {
-    const response = await articleApi.getAdminArticles({ page: 1, page_size: 100 })
+    const response = await articleApi.getAdminArticles({ 
+      page: currentPage.value, 
+      page_size: pageSize.value 
+    })
     articles.value = response.items
+    totalArticles.value = response.total
+    totalPages.value = response.total_pages
   } catch (error) {
     console.error('Failed to fetch articles:', error)
   } finally {
     isLoading.value = false
+  }
+}
+
+const handlePageChange = (page: number) => {
+  currentPage.value = page
+  fetchArticles()
+}
+
+const handleKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'ArrowLeft' && currentPage.value > 1) {
+    event.preventDefault()
+    handlePageChange(currentPage.value - 1)
+  } else if (event.key === 'ArrowRight' && currentPage.value < totalPages.value) {
+    event.preventDefault()
+    handlePageChange(currentPage.value + 1)
   }
 }
 
@@ -311,6 +335,11 @@ const executeArticleDeletion = async () => {
     articles.value = articles.value.filter(a => a.id !== articleDeletion.currentItemId.value)
     articleDeletion.confirmDeletion()
     await dialog.showSuccess('文章已删除', '成功')
+    
+    if (articles.value.length === 0 && currentPage.value > 1) {
+      currentPage.value--
+      fetchArticles()
+    }
   } catch (error: any) {
     console.error('Failed to delete article:', error)
     articleDeletion.cancelDeletion()
@@ -1573,6 +1602,7 @@ onMounted(() => {
   fetchArticles()
   blogStore.fetchCategories()
   blogStore.fetchTags()
+  window.addEventListener('keydown', handleKeydown)
 })
 
 watch(showEditor, (newVal) => {
@@ -1589,6 +1619,7 @@ watch(showEditor, (newVal) => {
 onUnmounted(() => {
   document.body.style.overflow = ''
   if (draftSaveTimer) clearTimeout(draftSaveTimer)
+  window.removeEventListener('keydown', handleKeydown)
 })
 
 watch(form, () => {
@@ -1751,6 +1782,34 @@ watch(form, () => {
             </tr>
           </tbody>
         </table>
+      </div>
+      
+      <div
+        v-if="totalPages > 1"
+        class="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-white/10"
+      >
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          共 {{ totalArticles }} 篇文章
+        </p>
+        <div class="flex items-center gap-2">
+          <button
+            :disabled="currentPage === 1"
+            class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 dark:hover:bg-dark-50 transition-colors"
+            @click="handlePageChange(currentPage - 1)"
+          >
+            上一页
+          </button>
+          <span class="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300">
+            {{ currentPage }} / {{ totalPages }}
+          </span>
+          <button
+            :disabled="currentPage === totalPages"
+            class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 dark:hover:bg-dark-50 transition-colors"
+            @click="handlePageChange(currentPage + 1)"
+          >
+            下一页
+          </button>
+        </div>
       </div>
     </div>
 
