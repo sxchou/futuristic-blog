@@ -1,4 +1,4 @@
-import apiClient from './client'
+import apiClient, { clearCacheByPattern } from './client'
 
 export interface Announcement {
   id: number
@@ -42,15 +42,18 @@ export const announcementApi = {
 
   createAnnouncement: async (data: AnnouncementCreate): Promise<Announcement> => {
     const response = await apiClient.post('/announcements', data)
+    clearCacheByPattern('/announcements')
     return response.data
   },
 
   updateAnnouncement: async (id: number, data: AnnouncementUpdate): Promise<Announcement> => {
     const response = await apiClient.put(`/announcements/${id}`, data)
+    clearCacheByPattern('/announcements')
     return response.data
   },
 
   deleteAnnouncement: async (id: number): Promise<void> => {
     await apiClient.delete(`/announcements/${id}`)
+    clearCacheByPattern('/announcements')
   }
 }
