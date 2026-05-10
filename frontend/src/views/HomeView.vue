@@ -271,9 +271,12 @@ onMounted(async () => {
                     blogStore.currentFilter.tag_id || 
                     blogStore.currentFilter.search
   
-  if (hasFilter || 
-      blogStore.pagination.page !== pageFromUrl || 
-      blogStore.pagination.pageSize !== pageSize.value) {
+  const needsFetch = hasFilter || 
+                     blogStore.articles.length === 0 ||
+                     blogStore.pagination.page !== pageFromUrl || 
+                     blogStore.pagination.pageSize !== pageSize.value
+  
+  if (needsFetch) {
     await blogStore.fetchArticles({ page: pageFromUrl, page_size: pageSize.value })
   }
   
