@@ -47,13 +47,55 @@ async def check_unique(
 async def get_users(
     page: int = 1,
     page_size: int = 10,
+    username: Optional[str] = Query(None, description="Filter by username (fuzzy search)"),
+    email: Optional[str] = Query(None, description="Filter by email (fuzzy search)"),
+    role: Optional[str] = Query(None, description="Filter by role name (fuzzy search)"),
+    status: Optional[str] = Query(None, description="Filter by status: 'verified' or 'unverified'"),
+    start_date: Optional[str] = Query(None, description="Filter by start date (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="Filter by end date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("user.view"))
 ):
     
-    total = db.query(User).count()
+    query = db.query(User)
+    
+    if username:
+        query = query.filter(User.username.ilike(f"%{username}%"))
+    
+    if email:
+        query = query.filter(User.email.ilike(f"%{email}%"))
+    
+    if role:
+        role_ids_subquery = db.query(user_roles.c.user_id).join(
+            Role, user_roles.c.role_id == Role.id
+        ).filter(Role.name.ilike(f"%{role}%")).subquery()
+        query = query.filter(User.id.in_(role_ids_subquery))
+    
+    if status:
+        if status == "verified":
+            query = query.filter(User.is_verified == True)
+        elif status == "unverified":
+            query = query.filter(User.is_verified == False)
+    
+    if start_date:
+        try:
+            from datetime import datetime
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+            query = query.filter(User.created_at >= start_dt)
+        except ValueError:
+            pass
+    
+    if end_date:
+        try:
+            from datetime import datetime, timedelta
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)
+            query = query.filter(User.created_at < end_dt)
+        except ValueError:
+            pass
+    
+    total = query.count()
     total_pages = (total + page_size - 1) // page_size
-    users = db.query(User).order_by(User.created_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
+    users = query.order_by(User.created_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
     
     items = []
     for user in users:

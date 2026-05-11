@@ -78,7 +78,6 @@ const fetchOAuthProviders = async () => {
     return
   }
   
-  oauthLoading.value = 'loading'
   try {
     const providers = await oauthApi.getLoginProviders()
     oauthProviders.value = providers
@@ -87,8 +86,6 @@ const fetchOAuthProviders = async () => {
     }
   } catch (error) {
     console.error('Failed to fetch OAuth providers:', error)
-  } finally {
-    oauthLoading.value = null
   }
 }
 
@@ -534,23 +531,7 @@ onMounted(fetchOAuthProviders)
         </div>
 
         <div class="mt-4">
-          <div
-            v-if="oauthLoading === 'loading' && oauthProviders.length === 0"
-            class="animate-pulse"
-          >
-            <div class="flex items-center gap-[1px]">
-              <div class="flex-1 border-t border-gray-200 dark:border-white/10" />
-              <span class="px-[1px] bg-white dark:bg-dark-200 text-xs text-gray-500 dark:text-gray-400">或</span>
-              <div class="flex-1 border-t border-gray-200 dark:border-white/10" />
-            </div>
-
-            <div class="mt-3 flex items-center justify-center gap-2">
-              <div class="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700" />
-              <div class="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700" />
-            </div>
-          </div>
-
-          <template v-else-if="oauthProviders.length > 0">
+          <div v-if="oauthProviders.length > 0">
             <div class="flex items-center gap-[1px]">
               <div class="flex-1 border-t border-gray-200 dark:border-white/10" />
               <span class="px-[1px] bg-white dark:bg-dark-200 text-xs text-gray-500 dark:text-gray-400">或</span>
@@ -590,7 +571,7 @@ onMounted(fetchOAuthProviders)
                 </span>
               </div>
             </div>
-          </template>
+          </div>
         </div>
       </div>
     </div>

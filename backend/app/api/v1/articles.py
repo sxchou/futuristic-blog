@@ -434,6 +434,7 @@ async def get_admin_articles(
     title: Optional[str] = None,
     category: Optional[str] = None,
     author: Optional[str] = None,
+    date_type: Optional[str] = Query(None, pattern='^(created|published|updated)$'),
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     db: Session = Depends(get_db),
@@ -469,12 +470,18 @@ async def get_admin_articles(
     if author:
         query = query.join(Article.author).filter(User.username.contains(author))
     
+    date_field = Article.created_at
+    if date_type == 'published':
+        date_field = Article.published_at
+    elif date_type == 'updated':
+        date_field = Article.updated_at
+    
     if start_date:
-        query = query.filter(Article.created_at >= datetime.fromisoformat(start_date))
+        query = query.filter(date_field >= datetime.fromisoformat(start_date))
     if end_date:
         end_datetime = datetime.fromisoformat(end_date)
         end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
-        query = query.filter(Article.created_at <= end_datetime)
+        query = query.filter(date_field <= end_datetime)
     
     total = query.count()
     total_pages = (total + page_size - 1) // page_size

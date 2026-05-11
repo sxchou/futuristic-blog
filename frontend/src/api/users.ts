@@ -62,8 +62,17 @@ export const userApi = {
     return response.data
   },
 
-  getUsers: async (page: number = 1, pageSize: number = 10): Promise<PaginatedResponse<User>> => {
-    const response = await apiClient.get(`/users?page=${page}&page_size=${pageSize}`)
+  getUsers: async (params?: {
+    page?: number
+    page_size?: number
+    username?: string
+    email?: string
+    role?: string
+    status?: string
+    start_date?: string
+    end_date?: string
+  }): Promise<PaginatedResponse<User>> => {
+    const response = await apiClient.get('/users', { params })
     return response.data
   },
 

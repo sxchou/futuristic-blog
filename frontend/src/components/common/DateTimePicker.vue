@@ -287,8 +287,11 @@ const calendarDays = computed(() => {
     date.setHours(0, 0, 0, 0)
     
     const isToday = date.getTime() === today.getTime()
-    const isSelected = selectedDay.value === i
-    const isDisabled = minDate ? date < minDate : false
+    const isSelected = selectedYear.value === year && selectedMonth.value === month && selectedDay.value === i
+    
+    // 只禁用今天之前的日期，今天和未来的日期都可以选择
+    // 时间验证在confirmSelection时进行
+    const isDisabled = minDate ? date < today : false
     
     days.push({
       key: `current-${i}`,
@@ -335,7 +338,13 @@ const togglePicker = () => {
       selectedSecond.value = date.getSeconds()
     } else {
       const now = new Date()
-      now.setMinutes(now.getMinutes() + 6)
+      now.setMinutes(now.getMinutes() + 5)
+      if (now.getSeconds() > 0 || now.getMilliseconds() > 0) {
+        now.setMinutes(now.getMinutes() + 1)
+      }
+      now.setSeconds(0)
+      now.setMilliseconds(0)
+      
       selectedYear.value = now.getFullYear()
       selectedMonth.value = now.getMonth()
       selectedDay.value = now.getDate()

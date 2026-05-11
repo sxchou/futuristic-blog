@@ -31,6 +31,7 @@ const statusFilter = ref<string>('')
 const titleFilter = ref<string>('')
 const categoryFilter = ref<string>('')
 const authorFilter = ref<string>('')
+const dateTypeFilter = ref<string>('created')
 const startDateFilter = ref<string>('')
 const endDateFilter = ref<string>('')
 const showEditor = ref(false)
@@ -128,7 +129,12 @@ const enableScheduledPublish = ref(false)
 
 const minPublishTime = computed(() => {
   const now = new Date()
-  now.setMinutes(now.getMinutes() + 6)
+  now.setMinutes(now.getMinutes() + 5)
+  if (now.getSeconds() > 0 || now.getMilliseconds() > 0) {
+    now.setMinutes(now.getMinutes() + 1)
+  }
+  now.setSeconds(0)
+  now.setMilliseconds(0)
   return now.toISOString()
 })
 
@@ -280,6 +286,9 @@ const fetchArticles = async () => {
     }
     if (authorFilter.value) {
       params.author = authorFilter.value
+    }
+    if (dateTypeFilter.value) {
+      params.date_type = dateTypeFilter.value
     }
     if (startDateFilter.value) {
       params.start_date = startDateFilter.value
@@ -1701,7 +1710,12 @@ watch(enableScheduledPublish, (newVal) => {
       
       if (shouldResetTime) {
         const now = new Date()
-        now.setMinutes(now.getMinutes() + 6)
+        now.setMinutes(now.getMinutes() + 5)
+        if (now.getSeconds() > 0 || now.getMilliseconds() > 0) {
+          now.setMinutes(now.getMinutes() + 1)
+        }
+        now.setSeconds(0)
+        now.setMilliseconds(0)
         form.value.published_at = now.toISOString()
       }
     }
@@ -1804,6 +1818,20 @@ watch(form, () => {
               定时发布
             </option>
           </select>
+          <select
+            v-model="dateTypeFilter"
+            class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
+          >
+            <option value="created">
+              创建时间
+            </option>
+            <option value="published">
+              发布时间
+            </option>
+            <option value="updated">
+              修改时间
+            </option>
+          </select>
           <DateRangePicker
             v-model:start-date="startDateFilter"
             v-model:end-date="endDateFilter"
@@ -1830,10 +1858,23 @@ watch(form, () => {
           </button>
           <button
             type="button"
-            class="btn-primary text-sm px-4 py-1.5"
+            class="btn-primary text-sm px-4 py-1.5 flex items-center gap-1.5"
             @click="handleSearch"
           >
-            搜索
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+              />
+            </svg>
+            筛选
           </button>
         </form>
       </div>
@@ -2911,91 +2952,94 @@ watch(form, () => {
             </div>
           </div>
 
-          <div class="space-y-2">
-            <div>
-              <label class="flex items-center gap-1.5" :class="canPublish ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'">
-                <input id="input-form-is_published"
+          <div class="space-y-3">
+            <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+              <label class="flex items-center gap-2 cursor-pointer" :class="canPublish ? '' : 'opacity-50 cursor-not-allowed'">
+                <input
                   v-model="form.is_published"
                   type="checkbox"
                   :disabled="!canPublish"
-                  class="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-100 text-primary focus:ring-primary"
+                  class="w-4 h-4 rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-100 text-primary focus:ring-primary focus:ring-offset-0"
                 >
-                <span class="text-gray-700 dark:text-gray-300 text-sm">发布文章</span>
+                <span class="text-sm text-gray-700 dark:text-gray-300">发布文章</span>
               </label>
-              <p v-if="!canPublish" class="text-[10px] text-amber-500 flex items-center gap-1 mt-0.5 ml-5">
-                <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                无发布文章权限，请联系管理员
-              </p>
-            </div>
-            
-            <div v-if="form.is_published && canPublish" class="ml-5">
+              
+              <template v-if="form.is_published && canPublish">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input
+                    v-model="enableScheduledPublish"
+                    type="checkbox"
+                    class="w-4 h-4 rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-100 text-primary focus:ring-primary focus:ring-offset-0"
+                  >
+                  <span class="text-sm text-gray-700 dark:text-gray-300">定时发布</span>
+                </label>
+              </template>
+              
               <label class="flex items-center gap-2 cursor-pointer">
                 <input
-                  v-model="enableScheduledPublish"
-                  type="checkbox"
-                  class="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-100 text-primary focus:ring-primary"
-                >
-                <span class="text-gray-700 dark:text-gray-300 text-sm">定时发布</span>
-              </label>
-              <div v-if="enableScheduledPublish" class="mt-2">
-                <DateTimePicker
-                  v-model="form.published_at"
-                  :min="minPublishTime"
-                />
-                <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                  文章将在指定时间自动发布
-                </p>
-              </div>
-            </div>
-            
-            <div class="flex flex-wrap items-center gap-3 sm:gap-4">
-              <label class="flex items-center gap-1.5 cursor-pointer">
-                <input id="input-form-is_pinned"
                   v-model="form.is_pinned"
                   type="checkbox"
-                  class="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-100 text-primary focus:ring-primary"
+                  class="w-4 h-4 rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-100 text-primary focus:ring-primary focus:ring-offset-0"
                 >
-                <span class="text-gray-700 dark:text-gray-300 text-sm">置顶文章</span>
+                <span class="text-sm text-gray-700 dark:text-gray-300">置顶文章</span>
               </label>
-              <div v-if="form.is_pinned" class="flex items-center gap-1.5">
-                <label for="article-is-pinned" class="text-gray-700 dark:text-gray-300 text-sm whitespace-nowrap">排序:</label>
-                <input id="article-is-pinned"
-                  v-model.number="form.pinned_order"
-                  type="number"
-                  min="0"
-                  max="999"
-                  class="w-16 px-2 py-0.5 text-sm text-center rounded border border-gray-300 dark:border-white/20 bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary"
-                  placeholder="0"
-                >
-                <span class="text-xs text-gray-400 dark:text-gray-500">(数字越小越靠前)</span>
-              </div>
-              <label class="flex items-center gap-1.5 cursor-pointer">
-                <input id="input-form-is_featured"
+              
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input
                   v-model="form.is_featured"
                   type="checkbox"
-                  class="rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-100 text-primary focus:ring-primary"
+                  class="w-4 h-4 rounded border-gray-300 dark:border-white/20 bg-white dark:bg-dark-100 text-primary focus:ring-primary focus:ring-offset-0"
                 >
-                <span class="text-gray-700 dark:text-gray-300 text-sm">设为精选</span>
+                <span class="text-sm text-gray-700 dark:text-gray-300">设为精选</span>
               </label>
+            </div>
+            
+            <p v-if="!canPublish" class="text-xs text-amber-500 flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              无发布文章权限，请联系管理员
+            </p>
+            
+            <div class="min-h-[40px]">
+              <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+                <div v-if="enableScheduledPublish && form.is_published && canPublish" class="flex flex-wrap items-center gap-3">
+                  <DateTimePicker
+                    v-model="form.published_at"
+                    :min="minPublishTime"
+                  />
+                  <span class="text-xs text-gray-500 dark:text-gray-400">文章将在指定时间自动发布</span>
+                </div>
+                <div v-if="form.is_pinned" class="flex items-center gap-2">
+                  <span class="text-sm text-gray-600 dark:text-gray-400">置顶排序:</span>
+                  <input
+                    v-model.number="form.pinned_order"
+                    type="number"
+                    min="0"
+                    max="999"
+                    class="w-20 px-2 py-1 text-sm text-center rounded border border-gray-300 dark:border-white/20 bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary"
+                    placeholder="0"
+                  >
+                  <span class="text-xs text-gray-500 dark:text-gray-400">数字越小越靠前</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div class="flex justify-end gap-3 pt-2">
+          <div class="flex justify-end gap-2 pt-3 border-t border-gray-200 dark:border-white/10">
             <button
               type="button"
-              class="px-4 py-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              class="px-4 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
               @click="showEditor = false"
             >
               取消
             </button>
             <button
               type="submit"
-              class="btn-primary text-sm px-4 py-1.5"
+              class="btn-primary text-sm px-5 py-1.5"
               :disabled="isSubmitting"
             >
-              <span v-if="isSubmitting" class="flex items-center gap-2">
+              <span v-if="isSubmitting" class="flex items-center gap-1.5">
                 <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />

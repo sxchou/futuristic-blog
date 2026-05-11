@@ -7,6 +7,7 @@ import { useAdminCheck } from '@/composables/useAdminCheck'
 import { useRoleColor } from '@/composables/useRoleColor'
 import { useDeletionConfirm } from '@/composables/useDeletionConfirm'
 import DeletionConfirmDialog from '@/components/common/DeletionConfirmDialog.vue'
+import DateRangePicker from '@/components/common/DateRangePicker.vue'
 import { formatDateTime } from '@/utils/date'
 
 const { getRoleColorClasses } = useRoleColor()
@@ -22,6 +23,13 @@ const isLoading = ref(false)
 const currentPage = ref(1)
 const totalPages = ref(1)
 const pageSize = 10
+
+const usernameFilter = ref<string>('')
+const emailFilter = ref<string>('')
+const roleFilter = ref<string>('')
+const statusFilter = ref<string>('')
+const startDateFilter = ref<string>('')
+const endDateFilter = ref<string>('')
 
 const showEditor = ref(false)
 const isSubmitting = ref(false)
@@ -137,7 +145,29 @@ watch(() => createForm.value.email, (newEmail) => {
 const fetchUsers = async () => {
   isLoading.value = true
   try {
-    const response = await userApi.getUsers(currentPage.value, pageSize)
+    const params: Record<string, unknown> = {
+      page: currentPage.value,
+      page_size: pageSize
+    }
+    if (usernameFilter.value) {
+      params.username = usernameFilter.value
+    }
+    if (emailFilter.value) {
+      params.email = emailFilter.value
+    }
+    if (roleFilter.value) {
+      params.role = roleFilter.value
+    }
+    if (statusFilter.value) {
+      params.status = statusFilter.value
+    }
+    if (startDateFilter.value) {
+      params.start_date = startDateFilter.value
+    }
+    if (endDateFilter.value) {
+      params.end_date = endDateFilter.value
+    }
+    const response = await userApi.getUsers(params)
     users.value = response.items
     totalPages.value = response.total_pages
   } catch (error) {
@@ -497,8 +527,27 @@ const nextPage = () => {
   }
 }
 
+const handleSearch = () => {
+  currentPage.value = 1
+  fetchUsers()
+}
+
+const clearFilters = () => {
+  usernameFilter.value = ''
+  emailFilter.value = ''
+  roleFilter.value = ''
+  statusFilter.value = ''
+  startDateFilter.value = ''
+  endDateFilter.value = ''
+  currentPage.value = 1
+  fetchUsers()
+}
+
 const handleKeydown = (event: KeyboardEvent) => {
-  if (event.key === 'ArrowLeft' && currentPage.value > 1) {
+  if (event.key === 'Delete') {
+    event.preventDefault()
+    clearFilters()
+  } else if (event.key === 'ArrowLeft' && currentPage.value > 1) {
     event.preventDefault()
     prevPage()
   } else if (event.key === 'ArrowRight' && currentPage.value < totalPages.value) {
@@ -609,6 +658,99 @@ const clearEditError = (field: string) => {
         </svg>
         创建用户
       </button>
+    </div>
+
+    <div class="glass-card p-4 mb-4">
+      <div class="flex flex-wrap items-end gap-3">
+        <div class="flex-1 min-w-[150px]">
+          <input
+            v-model="usernameFilter"
+            type="text"
+            placeholder="用户名"
+            class="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/50 focus:border-primary"
+            @keyup.enter="handleSearch"
+          >
+        </div>
+        <div class="flex-1 min-w-[150px]">
+          <input
+            v-model="emailFilter"
+            type="text"
+            placeholder="邮箱"
+            class="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/50 focus:border-primary"
+            @keyup.enter="handleSearch"
+          >
+        </div>
+        <div class="flex-1 min-w-[150px]">
+          <input
+            v-model="roleFilter"
+            type="text"
+            placeholder="角色"
+            class="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/50 focus:border-primary"
+            @keyup.enter="handleSearch"
+          >
+        </div>
+        <div class="w-[120px]">
+          <select
+            v-model="statusFilter"
+            class="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/50 focus:border-primary"
+            @change="handleSearch"
+          >
+            <option value="">
+              全部状态
+            </option>
+            <option value="verified">
+              已验证
+            </option>
+            <option value="unverified">
+              未验证
+            </option>
+          </select>
+        </div>
+        <DateRangePicker
+          v-model:start-date="startDateFilter"
+          v-model:end-date="endDateFilter"
+        />
+        <button
+          type="button"
+          class="px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-1.5"
+          @click="handleSearch"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+            />
+          </svg>
+          筛选
+        </button>
+        <button
+          type="button"
+          class="px-3 py-1.5 text-sm bg-red-500/10 text-red-500 dark:text-red-400 border border-red-500/20 dark:border-red-400/20 rounded-lg hover:bg-red-500/20 dark:hover:bg-red-400/20 transition-colors flex items-center gap-1.5"
+          @click="clearFilters"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+          清除筛选
+        </button>
+      </div>
     </div>
 
     <div

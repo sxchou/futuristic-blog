@@ -44,6 +44,7 @@ export const articleApi = {
     title?: string
     category?: string
     author?: string
+    date_type?: 'created' | 'published' | 'updated'
     start_date?: string
     end_date?: string
   }): Promise<PaginatedResponse<ArticleListItem>> => {
