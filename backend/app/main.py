@@ -91,8 +91,8 @@ async def lifespan(app: FastAPI):
         logger.info("Running in local environment, executing asynchronous initialization...")
         asyncio.create_task(background_init())
     
-    await scheduled_publish_service.start()
-    logger.info("Scheduled publish service started")
+    await scheduled_publish_service.start_if_needed()
+    logger.info("Scheduled publish service initialized (started only if needed)")
     
     yield
     

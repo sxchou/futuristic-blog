@@ -38,6 +38,30 @@ class ScheduledPublishService:
                 pass
         logger.info("Scheduled publish service stopped")
     
+    def _has_scheduled_articles(self, db: Session) -> bool:
+        """检查是否有待发布的定时文章"""
+        now = get_db_now()
+        count = db.query(Article).filter(
+            Article.is_published == False,
+            Article.published_at != None,
+            Article.published_at > now
+        ).count()
+        return count > 0
+    
+    async def start_if_needed(self):
+        """智能启动：只有在有待发布文章时才启动服务"""
+        if self._running:
+            return
+        
+        db: Session = SessionLocal()
+        try:
+            has_scheduled = self._has_scheduled_articles(db)
+            if has_scheduled:
+                await self.start()
+                logger.info("Started scheduled publish service due to pending articles")
+        finally:
+            db.close()
+    
     def _has_upcoming_articles(self, db: Session) -> bool:
         now = get_db_now()
         one_minute_later = now + timedelta(minutes=1)
@@ -54,13 +78,20 @@ class ScheduledPublishService:
     async def _run_scheduler(self):
         while self._running:
             try:
+                await self._check_and_publish_scheduled_articles()
+                
                 db: Session = SessionLocal()
                 try:
+                    has_scheduled = self._has_scheduled_articles(db)
+                    
+                    if not has_scheduled:
+                        logger.info("No more scheduled articles, stopping service to save resources")
+                        self._running = False
+                        break
+                    
                     has_upcoming = self._has_upcoming_articles(db)
                 finally:
                     db.close()
-                
-                await self._check_and_publish_scheduled_articles()
                 
                 if has_upcoming:
                     await asyncio.sleep(1)

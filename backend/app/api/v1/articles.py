@@ -21,6 +21,7 @@ from app.utils.permissions import require_permission
 from app.services.log_service import LogService
 from app.services.baidu_push_service import baidu_push_service
 from app.services.permission_service import PermissionService
+from app.services.scheduled_publish_service import scheduled_publish_service
 from app.utils.cache import cache_manager
 import asyncio
 import os
@@ -727,6 +728,9 @@ async def create_article(
     if new_article.is_published:
         asyncio.create_task(baidu_push_service.push_article(new_article.slug))
     
+    if new_article.published_at and new_article.published_at > get_db_now():
+        asyncio.create_task(scheduled_publish_service.start_if_needed())
+    
     response = ArticleResponse.model_validate(new_article)
     response_dict = response.model_dump()
     
@@ -841,6 +845,9 @@ async def update_article(
     
     if article.is_published and article_data.is_published:
         asyncio.create_task(baidu_push_service.push_article(article.slug))
+    
+    if article.published_at and article.published_at > get_db_now():
+        asyncio.create_task(scheduled_publish_service.start_if_needed())
     
     response = ArticleResponse.model_validate(article)
     response_dict = response.model_dump()
