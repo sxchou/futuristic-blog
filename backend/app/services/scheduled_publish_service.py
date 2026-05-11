@@ -15,6 +15,8 @@ class ScheduledPublishService:
     def __init__(self):
         self._running = False
         self._task = None
+        self._checker_running = False
+        self._checker_task = None
     
     async def start(self):
         if self._running:
@@ -48,19 +50,96 @@ class ScheduledPublishService:
         ).count()
         return count > 0
     
+    def _get_nearest_scheduled_time(self, db: Session) -> datetime | None:
+        """获取最近的定时文章发布时间"""
+        now = get_db_now()
+        nearest = db.query(Article).filter(
+            Article.is_published == False,
+            Article.published_at != None,
+            Article.published_at > now
+        ).order_by(Article.published_at.asc()).first()
+        
+        return nearest.published_at if nearest else None
+    
+    def _should_start_publish_service(self, db: Session) -> bool:
+        """判断是否需要启动发布服务（最近时间距离当前时间 <= 5分钟）"""
+        nearest_time = self._get_nearest_scheduled_time(db)
+        if not nearest_time:
+            return False
+        
+        now = get_db_now()
+        time_diff = (nearest_time - now).total_seconds()
+        
+        # 如果最近时间距离当前时间 <= 5分钟，启动发布服务
+        return time_diff <= 300  # 5分钟 = 300秒
+    
     async def start_if_needed(self):
-        """智能启动：只有在有待发布文章时才启动服务"""
+        """智能启动：根据最近时间判断是否启动服务"""
         if self._running:
             return
+        
+        # 如果检查服务在运行，先停止它
+        if self._checker_running:
+            await self._stop_checker()
         
         db: Session = SessionLocal()
         try:
             has_scheduled = self._has_scheduled_articles(db)
-            if has_scheduled:
+            if not has_scheduled:
+                return
+            
+            if self._should_start_publish_service(db):
                 await self.start()
-                logger.info("Started scheduled publish service due to pending articles")
+                logger.info("Started publish service due to upcoming scheduled article within 5 minutes")
+            else:
+                # 启动轻量级检查服务
+                await self._start_checker()
+                logger.info("Started checker service to monitor scheduled articles")
         finally:
             db.close()
+    
+    async def _start_checker(self):
+        """启动轻量级检查服务"""
+        if self._checker_running:
+            return
+        
+        self._checker_running = True
+        self._checker_task = asyncio.create_task(self._run_checker())
+        logger.info("Checker service started")
+    
+    async def _stop_checker(self):
+        """停止轻量级检查服务"""
+        if not self._checker_running:
+            return
+        
+        self._checker_running = False
+        if self._checker_task:
+            self._checker_task.cancel()
+            try:
+                await self._checker_task
+            except asyncio.CancelledError:
+                pass
+        logger.info("Checker service stopped")
+    
+    async def _run_checker(self):
+        """轻量级检查服务，定期检查是否有定时文章即将到期"""
+        while self._checker_running:
+            try:
+                db: Session = SessionLocal()
+                try:
+                    if self._should_start_publish_service(db):
+                        logger.info("Found scheduled article within 5 minutes, starting publish service")
+                        self._checker_running = False
+                        await self.start()
+                        break
+                finally:
+                    db.close()
+                
+                # 每5分钟检查一次
+                await asyncio.sleep(300)
+            except Exception as e:
+                logger.error(f"Error in checker service: {e}", exc_info=True)
+                await asyncio.sleep(300)
     
     def _has_upcoming_articles(self, db: Session) -> bool:
         now = get_db_now()
@@ -87,6 +166,13 @@ class ScheduledPublishService:
                     if not has_scheduled:
                         logger.info("No more scheduled articles, stopping service to save resources")
                         self._running = False
+                        break
+                    
+                    # 检查是否还有即将到期的文章（5分钟内）
+                    if not self._should_start_publish_service(db):
+                        logger.info("No upcoming articles within 5 minutes, switching to checker mode")
+                        self._running = False
+                        await self._start_checker()
                         break
                     
                     has_upcoming = self._has_upcoming_articles(db)
