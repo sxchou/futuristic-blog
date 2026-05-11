@@ -155,10 +155,16 @@ class ScheduledPublishService:
                     await self.start()
                     break
                 
-                # 计算需要等待的时间（提前1分钟启动，确保准时）
-                wait_time = min(time_diff - 60, 300)  # 最多等待5分钟
+                # 计算需要等待的时间
+                # 策略：等待到距离发布时间5分钟时启动发布服务
+                # time_diff > 300，所以 wait_time = time_diff - 300
+                wait_time = time_diff - 300
+                
+                # 最多等待5分钟（避免等待时间过长）
+                wait_time = min(wait_time, 300)
+                
                 if wait_time > 0:
-                    logger.info(f"Waiting {wait_time:.0f} seconds before next check")
+                    logger.info(f"Waiting {wait_time:.0f} seconds before starting publish service (time_diff: {time_diff:.0f}s)")
                     await asyncio.sleep(wait_time)
                 else:
                     # 如果计算的时间已经过了，立即启动发布服务
