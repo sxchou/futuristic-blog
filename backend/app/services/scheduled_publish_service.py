@@ -17,6 +17,7 @@ class ScheduledPublishService:
         self._task = None
         self._checker_running = False
         self._checker_task = None
+        self._nearest_scheduled_time: datetime | None = None  # 内存中记录最近的定时时间
     
     async def start(self):
         if self._running:
@@ -73,6 +74,15 @@ class ScheduledPublishService:
         # 如果最近时间距离当前时间 <= 5分钟，启动发布服务
         return time_diff <= 300  # 5分钟 = 300秒
     
+    def update_nearest_time(self, db: Session):
+        """更新内存中的最近定时时间"""
+        nearest_time = self._get_nearest_scheduled_time(db)
+        self._nearest_scheduled_time = nearest_time
+        if nearest_time:
+            logger.info(f"Updated nearest scheduled time to {nearest_time}")
+        else:
+            logger.info("No scheduled articles found, cleared nearest scheduled time")
+    
     async def start_if_needed(self):
         """智能启动：根据最近时间判断是否启动服务"""
         if self._running:
@@ -86,7 +96,11 @@ class ScheduledPublishService:
         try:
             has_scheduled = self._has_scheduled_articles(db)
             if not has_scheduled:
+                self._nearest_scheduled_time = None
                 return
+            
+            # 更新内存中的最近定时时间
+            self.update_nearest_time(db)
             
             if self._should_start_publish_service(db):
                 await self.start()
@@ -122,21 +136,34 @@ class ScheduledPublishService:
         logger.info("Checker service stopped")
     
     async def _run_checker(self):
-        """轻量级检查服务，定期检查是否有定时文章即将到期"""
+        """轻量级检查服务，使用内存中的时间计算等待时间，不查询数据库"""
         while self._checker_running:
             try:
-                db: Session = SessionLocal()
-                try:
-                    if self._should_start_publish_service(db):
-                        logger.info("Found scheduled article within 5 minutes, starting publish service")
-                        self._checker_running = False
-                        await self.start()
-                        break
-                finally:
-                    db.close()
+                # 如果没有最近的定时时间，停止检查服务
+                if not self._nearest_scheduled_time:
+                    logger.info("No nearest scheduled time in memory, stopping checker service")
+                    self._checker_running = False
+                    break
                 
-                # 每5分钟检查一次
-                await asyncio.sleep(300)
+                now = get_db_now()
+                time_diff = (self._nearest_scheduled_time - now).total_seconds()
+                
+                # 如果最近时间距离当前时间 <= 5分钟，启动发布服务
+                if time_diff <= 300:
+                    logger.info("Nearest scheduled article within 5 minutes, starting publish service")
+                    self._checker_running = False
+                    await self.start()
+                    break
+                
+                # 计算需要等待的时间（提前1分钟启动，确保准时）
+                wait_time = min(time_diff - 60, 300)  # 最多等待5分钟
+                if wait_time > 0:
+                    logger.info(f"Waiting {wait_time:.0f} seconds before next check")
+                    await asyncio.sleep(wait_time)
+                else:
+                    # 如果计算的时间已经过了，立即启动发布服务
+                    await asyncio.sleep(1)
+                    
             except Exception as e:
                 logger.error(f"Error in checker service: {e}", exc_info=True)
                 await asyncio.sleep(300)
@@ -165,8 +192,12 @@ class ScheduledPublishService:
                     
                     if not has_scheduled:
                         logger.info("No more scheduled articles, stopping service to save resources")
+                        self._nearest_scheduled_time = None
                         self._running = False
                         break
+                    
+                    # 更新内存中的最近定时时间
+                    self.update_nearest_time(db)
                     
                     # 检查是否还有即将到期的文章（5分钟内）
                     if not self._should_start_publish_service(db):
