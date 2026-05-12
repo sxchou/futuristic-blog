@@ -85,7 +85,12 @@ const CACHE_CONFIG: Record<string, number> = {
   '/profile': 1800000,
   '/articles': 300000,
   '/dashboard': 120000,
-  '/announcements': 900000
+  '/announcements': 900000,
+  '/users': 300000,
+  '/roles': 600000,
+  '/permissions': 1800000,
+  '/logs/stats': 60000,
+  '/comments': 180000
 }
 
 const getCacheKey = (config: InternalAxiosRequestConfig): string => {
@@ -129,7 +134,12 @@ const cacheableEndpoints = [
   '/profile',
   '/articles',
   '/dashboard',
-  '/announcements'
+  '/announcements',
+  '/users',
+  '/roles',
+  '/permissions',
+  '/logs/stats',
+  '/comments'
 ]
 
 const shouldCache = (url: string | undefined): boolean => {

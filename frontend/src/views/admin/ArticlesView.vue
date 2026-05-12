@@ -34,6 +34,7 @@ const authorFilter = ref<string>('')
 const dateTypeFilter = ref<string>('created')
 const startDateFilter = ref<string>('')
 const endDateFilter = ref<string>('')
+const showFilters = ref(false)
 const showEditor = ref(false)
 const editingArticle = ref<ArticleListItem | null>(null)
 const articleFiles = ref<ArticleFile[]>([])
@@ -123,6 +124,11 @@ const validationErrors = ref<ValidationError[]>([])
 
 const canPublish = computed(() => {
   return permissionStore.hasPermission('article.publish')
+})
+
+const hasActiveFilters = computed(() => {
+  return !!(titleFilter.value || categoryFilter.value || authorFilter.value || 
+            statusFilter.value || startDateFilter.value || endDateFilter.value)
 })
 
 const enableScheduledPublish = ref(false)
@@ -265,7 +271,7 @@ const scheduleDraftSave = () => {
   if (draftSaveTimer) clearTimeout(draftSaveTimer)
   draftSaveTimer = setTimeout(() => {
     saveFormDraft()
-  }, 500)
+  }, 800)
 }
 
 const fetchArticles = async () => {
@@ -669,7 +675,7 @@ const handleSlugInput = () => {
   if (form.value.slug.trim()) {
     slugCheckTimer = setTimeout(() => {
       checkSlugUnique(form.value.slug)
-    }, 500)
+    }, 800)
   }
 }
 
@@ -696,7 +702,7 @@ const handleTitleInput = () => {
   if (form.value.title.trim()) {
     titleCheckTimer = setTimeout(() => {
       checkTitleUnique(form.value.title.trim())
-    }, 500)
+    }, 800)
   }
 }
 
@@ -1777,32 +1783,78 @@ watch(form, () => {
       v-else
       class="glass-card overflow-hidden"
     >
-      <div class="p-4 border-b border-gray-200 dark:border-white/10">
-        <form class="flex flex-wrap items-center gap-3" @submit.prevent="handleSearch">
+      <div class="p-3 border-b border-gray-200 dark:border-white/10">
+        <div class="flex items-center justify-between md:hidden mb-2">
+          <button
+            type="button"
+            class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-200 transition-colors"
+            @click="showFilters = !showFilters"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+              />
+            </svg>
+            筛选
+            <svg
+              class="w-3 h-3 transition-transform"
+              :class="{ 'rotate-180': showFilters }"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </button>
+          <div v-if="hasActiveFilters" class="flex items-center gap-1 flex-wrap">
+            <span v-if="titleFilter" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ titleFilter }}</span>
+            <span v-if="categoryFilter" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ categoryFilter }}</span>
+            <span v-if="authorFilter" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ authorFilter }}</span>
+            <span v-if="statusFilter" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ statusFilter === 'published' ? '已发布' : statusFilter === 'draft' ? '未发布' : '定时发布' }}</span>
+          </div>
+        </div>
+        <form 
+          class="flex flex-wrap items-center gap-2"
+          :class="{ 'hidden md:flex': !showFilters, 'md:flex': true }"
+          @submit.prevent="handleSearch"
+        >
           <input
             v-model="titleFilter"
             type="text"
             placeholder="标题"
-            class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-40"
+            class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-36"
             @keyup.enter="handleSearch"
           >
           <input
             v-model="categoryFilter"
             type="text"
             placeholder="分类"
-            class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-32"
+            class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-28"
             @keyup.enter="handleSearch"
           >
           <input
             v-model="authorFilter"
             type="text"
             placeholder="作者"
-            class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-32"
+            class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-28"
             @keyup.enter="handleSearch"
           >
           <select
             v-model="statusFilter"
-            class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
+            class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
             @change="handleSearch"
           >
             <option value="">
@@ -1820,7 +1872,7 @@ watch(form, () => {
           </select>
           <select
             v-model="dateTypeFilter"
-            class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
+            class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
           >
             <option value="created">
               创建时间
@@ -1838,11 +1890,11 @@ watch(form, () => {
           />
           <button
             type="button"
-            class="px-3 py-1.5 text-sm bg-red-500/10 text-red-500 dark:text-red-400 border border-red-500/20 dark:border-red-400/20 rounded-lg hover:bg-red-500/20 dark:hover:bg-red-400/20 transition-colors flex items-center gap-1.5"
+            class="px-2.5 py-1 text-xs bg-red-500/10 text-red-500 dark:text-red-400 border border-red-500/20 dark:border-red-400/20 rounded-lg hover:bg-red-500/20 dark:hover:bg-red-400/20 transition-colors flex items-center gap-1"
             @click="clearFilters"
           >
             <svg
-              class="w-4 h-4"
+              class="w-3.5 h-3.5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -1854,15 +1906,15 @@ watch(form, () => {
                 d="M6 18L18 6M6 6l12 12"
               />
             </svg>
-            清除筛选
+            清除
           </button>
           <button
             type="button"
-            class="btn-primary text-sm px-4 py-1.5 flex items-center gap-1.5"
+            class="btn-primary text-xs px-3 py-1 flex items-center gap-1"
             @click="handleSearch"
           >
             <svg
-              class="w-4 h-4"
+              class="w-3.5 h-3.5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -1898,15 +1950,9 @@ watch(form, () => {
                 浏览
               </th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                创建时间
+                时间
               </th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                发布时间
-              </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                最后修改
-              </th>
-              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
                 操作
               </th>
             </tr>
@@ -1982,17 +2028,24 @@ watch(form, () => {
                 {{ article.view_count }}
               </td>
               <td class="px-4 py-3 text-gray-400 text-xs">
-                {{ formatDate(article.created_at) }}
+                <div class="space-y-1">
+                  <div class="flex items-center gap-1">
+                    <span class="text-gray-500 dark:text-gray-400">创建:</span>
+                    <span>{{ formatDate(article.created_at) }}</span>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <span class="text-gray-500 dark:text-gray-400">发布:</span>
+                    <span v-if="article.published_at">{{ formatDate(article.published_at) }}</span>
+                    <span v-else class="text-gray-500">-</span>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <span class="text-gray-500 dark:text-gray-400">修改:</span>
+                    <span v-if="article.updated_at">{{ formatDate(article.updated_at) }}</span>
+                    <span v-else class="text-gray-500">-</span>
+                  </div>
+                </div>
               </td>
-              <td class="px-4 py-3 text-gray-400 text-xs">
-                <span v-if="article.published_at">{{ formatDate(article.published_at) }}</span>
-                <span v-else class="text-gray-500">-</span>
-              </td>
-              <td class="px-4 py-3 text-gray-400 text-xs">
-                <span v-if="article.updated_at">{{ formatDate(article.updated_at) }}</span>
-                <span v-else class="text-gray-500">-</span>
-              </td>
-              <td class="px-4 py-3 text-right">
+              <td class="px-4 py-3">
                 <button
                   class="text-primary hover:text-primary/80 mr-3 text-sm"
                   @click="handleEdit(article)"

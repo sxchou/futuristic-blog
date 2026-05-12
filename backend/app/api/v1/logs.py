@@ -1,16 +1,20 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from sqlalchemy import desc, func, text
 from datetime import datetime, timedelta
 from app.core.database import get_db
 from app.models import OperationLog, LoginLog, AccessLog, UserProfile
 from app.utils.permissions import require_permission
 from app.utils.timezone import get_db_now, get_today_start, to_local
 from app.services.log_service import LogService
+from app.utils.cache import cache_manager
 from pydantic import BaseModel, field_validator
 
 router = APIRouter(prefix="/logs", tags=["Logs"])
+
+CACHE_NAME = "logs"
+CACHE_TTL_STATS = 60
 
 
 class OperationLogItem(BaseModel):
@@ -115,16 +119,30 @@ async def get_log_stats(
     db: Session = Depends(get_db),
     _: dict = Depends(require_permission("log.view"))
 ):
+    cached = cache_manager.get(CACHE_NAME, "stats")
+    if cached:
+        return LogStats(**cached)
+    
     today_start = get_today_start()
     
-    return {
-        "total_operations": db.query(OperationLog).count(),
-        "total_logins": db.query(LoginLog).count(),
-        "total_access": db.query(AccessLog).count(),
-        "today_operations": db.query(OperationLog).filter(OperationLog.created_at >= today_start).count(),
-        "today_logins": db.query(LoginLog).filter(LoginLog.created_at >= today_start).count(),
-        "failed_logins": db.query(LoginLog).filter(LoginLog.status == 'failed').count(),
+    total_operations = db.query(func.count(OperationLog.id)).scalar() or 0
+    total_logins = db.query(func.count(LoginLog.id)).scalar() or 0
+    total_access = db.query(func.count(AccessLog.id)).scalar() or 0
+    today_operations = db.query(func.count(OperationLog.id)).filter(OperationLog.created_at >= today_start).scalar() or 0
+    today_logins = db.query(func.count(LoginLog.id)).filter(LoginLog.created_at >= today_start).scalar() or 0
+    failed_logins = db.query(func.count(LoginLog.id)).filter(LoginLog.status == 'failed').scalar() or 0
+    
+    result = {
+        "total_operations": total_operations,
+        "total_logins": total_logins,
+        "total_access": total_access,
+        "today_operations": today_operations,
+        "today_logins": today_logins,
+        "failed_logins": failed_logins,
     }
+    
+    cache_manager.set(CACHE_NAME, "stats", result, ttl=CACHE_TTL_STATS)
+    return LogStats(**result)
 
 
 @router.get("/operations", response_model=dict)
@@ -163,7 +181,16 @@ async def get_operation_logs(
     total = query.count()
     logs = query.order_by(desc(OperationLog.created_at)).offset((page - 1) * page_size).limit(page_size).all()
     
-    user_avatar_cache = {}
+    user_ids = set()
+    for log in logs:
+        if log.user_id:
+            user_ids.add(log.user_id)
+    
+    user_profiles = {}
+    if user_ids:
+        profiles = db.query(UserProfile).filter(UserProfile.user_id.in_(user_ids)).all()
+        user_profiles = {p.user_id: p for p in profiles}
+    
     items = []
     for log in logs:
         avatar_type = None
@@ -172,10 +199,7 @@ async def get_operation_logs(
         oauth_avatar_url = None
         
         if log.user_id:
-            if log.user_id not in user_avatar_cache:
-                profile = db.query(UserProfile).filter(UserProfile.user_id == log.user_id).first()
-                user_avatar_cache[log.user_id] = profile
-            profile = user_avatar_cache.get(log.user_id)
+            profile = user_profiles.get(log.user_id)
             if profile:
                 avatar_type = profile.avatar_type.value if profile.avatar_type else None
                 avatar_url = profile.avatar_url
@@ -243,7 +267,16 @@ async def get_login_logs(
     total = query.count()
     logs = query.order_by(desc(LoginLog.created_at)).offset((page - 1) * page_size).limit(page_size).all()
     
-    user_avatar_cache = {}
+    user_ids = set()
+    for log in logs:
+        if log.user_id:
+            user_ids.add(log.user_id)
+    
+    user_profiles = {}
+    if user_ids:
+        profiles = db.query(UserProfile).filter(UserProfile.user_id.in_(user_ids)).all()
+        user_profiles = {p.user_id: p for p in profiles}
+    
     items = []
     for log in logs:
         avatar_type = None
@@ -252,10 +285,7 @@ async def get_login_logs(
         oauth_avatar_url = None
         
         if log.user_id:
-            if log.user_id not in user_avatar_cache:
-                profile = db.query(UserProfile).filter(UserProfile.user_id == log.user_id).first()
-                user_avatar_cache[log.user_id] = profile
-            profile = user_avatar_cache.get(log.user_id)
+            profile = user_profiles.get(log.user_id)
             if profile:
                 avatar_type = profile.avatar_type.value if profile.avatar_type else None
                 avatar_url = profile.avatar_url
@@ -322,7 +352,16 @@ async def get_access_logs(
     total = query.count()
     logs = query.order_by(desc(AccessLog.created_at)).offset((page - 1) * page_size).limit(page_size).all()
     
-    user_avatar_cache = {}
+    user_ids = set()
+    for log in logs:
+        if log.user_id:
+            user_ids.add(log.user_id)
+    
+    user_profiles = {}
+    if user_ids:
+        profiles = db.query(UserProfile).filter(UserProfile.user_id.in_(user_ids)).all()
+        user_profiles = {p.user_id: p for p in profiles}
+    
     items = []
     for log in logs:
         avatar_type = None
@@ -331,10 +370,7 @@ async def get_access_logs(
         oauth_avatar_url = None
         
         if log.user_id:
-            if log.user_id not in user_avatar_cache:
-                profile = db.query(UserProfile).filter(UserProfile.user_id == log.user_id).first()
-                user_avatar_cache[log.user_id] = profile
-            profile = user_avatar_cache.get(log.user_id)
+            profile = user_profiles.get(log.user_id)
             if profile:
                 avatar_type = profile.avatar_type.value if profile.avatar_type else None
                 avatar_url = profile.avatar_url

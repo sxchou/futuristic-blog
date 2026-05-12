@@ -57,6 +57,34 @@ export interface AccessTrend {
   avg_response_time: number
 }
 
+export interface AllTrendsResponse {
+  views_trend: TrendData[]
+  articles_trend: TrendData[]
+  comment_trend: TrendData[]
+  access_trend: AccessTrend[]
+}
+
+export interface DashboardInitData {
+  overview: OverviewStats
+  category_stats: CategoryStats[]
+  tag_stats: TagStats[]
+  article_rank: ArticleViewsRank[]
+  trends: AllTrendsResponse
+}
+
+export interface TrendsParams {
+  trend_days?: number
+  access_days?: number
+}
+
+export interface DashboardInitParams {
+  trend_days?: number
+  access_days?: number
+  tag_limit?: number
+  rank_limit?: number
+  rank_sort_by?: 'views' | 'likes' | 'comments'
+}
+
 export const dashboardApi = {
   getPublicStats: () => 
     apiClient.get<PublicStats>('/dashboard/public-stats'),
@@ -86,5 +114,14 @@ export const dashboardApi = {
     apiClient.get<AccessTrend[]>('/dashboard/access-trend', { params: { days } }),
   
   getCommentTrend: (days: number = 30) => 
-    apiClient.get<TrendData[]>('/dashboard/comment-trend', { params: { days } })
+    apiClient.get<TrendData[]>('/dashboard/comment-trend', { params: { days } }),
+  
+  getTrends: (params: TrendsParams = {}) => 
+    apiClient.get<AllTrendsResponse>('/dashboard/trends', { params }),
+  
+  getInitData: (params: DashboardInitParams = {}) => 
+    apiClient.get<DashboardInitData>('/dashboard/init', { params }),
+  
+  clearCache: () => 
+    apiClient.post<{ success: boolean; message: string }>('/dashboard/clear-cache')
 }

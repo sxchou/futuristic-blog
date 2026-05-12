@@ -109,7 +109,7 @@ watch(() => resourceForm.value.title, (newTitle) => {
   if (newTitle.trim()) {
     titleCheckTimer = setTimeout(() => {
       checkTitleUnique(newTitle)
-    }, 500)
+    }, 800)
   }
 })
 
@@ -123,7 +123,7 @@ watch(() => resourceForm.value.url, (newUrl) => {
   if (newUrl.trim()) {
     urlCheckTimer = setTimeout(() => {
       checkUrlUnique(newUrl)
-    }, 500)
+    }, 800)
   }
 })
 

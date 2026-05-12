@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, watch, computed } from 'vue'
 import { userApi, roleApi } from '@/api'
 import type { User, Role } from '@/types'
 import { useDialogStore, useUserProfileStore, useAuthStore } from '@/stores'
@@ -28,6 +28,11 @@ const usernameFilter = ref<string>('')
 const emailFilter = ref<string>('')
 const roleFilter = ref<string>('')
 const statusFilter = ref<string>('')
+const showFilters = ref(false)
+
+const hasActiveFilters = computed(() => {
+  return !!(usernameFilter.value || emailFilter.value || roleFilter.value || statusFilter.value)
+})
 const startDateFilter = ref<string>('')
 const endDateFilter = ref<string>('')
 
@@ -124,7 +129,7 @@ watch(() => createForm.value.username, (newUsername) => {
   if (newUsername.trim()) {
     usernameCheckTimer = setTimeout(() => {
       checkUsernameUnique(newUsername)
-    }, 500)
+    }, 800)
   }
 })
 
@@ -138,7 +143,7 @@ watch(() => createForm.value.email, (newEmail) => {
   if (newEmail.trim()) {
     emailCheckTimer = setTimeout(() => {
       checkEmailUnique(newEmail)
-    }, 500)
+    }, 800)
   }
 })
 
@@ -660,39 +665,68 @@ const clearEditError = (field: string) => {
       </button>
     </div>
 
-    <div class="glass-card p-4 mb-4">
-      <div class="flex flex-wrap items-end gap-3">
-        <div class="flex-1 min-w-[150px]">
+    <div
+      v-if="isLoading"
+      class="flex justify-center py-16"
+    >
+      <div class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+    </div>
+
+    <div
+      v-else
+      class="glass-card overflow-hidden"
+    >
+      <div class="p-3 border-b border-gray-200 dark:border-white/10">
+        <div class="flex items-center justify-between md:hidden mb-2">
+          <button
+            type="button"
+            class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-200 transition-colors"
+            @click="showFilters = !showFilters"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+            筛选
+            <svg class="w-3 h-3 transition-transform" :class="{ 'rotate-180': showFilters }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <div v-if="hasActiveFilters" class="flex items-center gap-1 flex-wrap">
+            <span v-if="usernameFilter" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ usernameFilter }}</span>
+            <span v-if="emailFilter" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ emailFilter }}</span>
+            <span v-if="roleFilter" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ roleFilter }}</span>
+            <span v-if="statusFilter" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ statusFilter === 'verified' ? '已验证' : '未验证' }}</span>
+          </div>
+        </div>
+        <form 
+          class="flex flex-wrap items-center gap-2"
+          :class="{ 'hidden md:flex': !showFilters, 'md:flex': true }"
+          @submit.prevent="handleSearch"
+        >
           <input
             v-model="usernameFilter"
             type="text"
             placeholder="用户名"
-            class="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/50 focus:border-primary"
+            class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-32"
             @keyup.enter="handleSearch"
           >
-        </div>
-        <div class="flex-1 min-w-[150px]">
           <input
             v-model="emailFilter"
             type="text"
             placeholder="邮箱"
-            class="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/50 focus:border-primary"
+            class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-40"
             @keyup.enter="handleSearch"
           >
-        </div>
-        <div class="flex-1 min-w-[150px]">
           <input
             v-model="roleFilter"
             type="text"
             placeholder="角色"
-            class="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/50 focus:border-primary"
+            class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-28"
             @keyup.enter="handleSearch"
           >
-        </div>
-        <div class="w-[120px]">
           <select
             v-model="statusFilter"
-            class="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-dark-100 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/50 focus:border-primary"
+            class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
             @change="handleSearch"
           >
             <option value="">
@@ -705,65 +739,52 @@ const clearEditError = (field: string) => {
               未验证
             </option>
           </select>
-        </div>
-        <DateRangePicker
-          v-model:start-date="startDateFilter"
-          v-model:end-date="endDateFilter"
-        />
-        <button
-          type="button"
-          class="px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-1.5"
-          @click="handleSearch"
-        >
-          <svg
-            class="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+          <DateRangePicker
+            v-model:start-date="startDateFilter"
+            v-model:end-date="endDateFilter"
+          />
+          <button
+            type="button"
+            class="px-2.5 py-1 text-xs bg-red-500/10 text-red-500 dark:text-red-400 border border-red-500/20 dark:border-red-400/20 rounded-lg hover:bg-red-500/20 dark:hover:bg-red-400/20 transition-colors flex items-center gap-1"
+            @click="clearFilters"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-            />
-          </svg>
-          筛选
-        </button>
-        <button
-          type="button"
-          class="px-3 py-1.5 text-sm bg-red-500/10 text-red-500 dark:text-red-400 border border-red-500/20 dark:border-red-400/20 rounded-lg hover:bg-red-500/20 dark:hover:bg-red-400/20 transition-colors flex items-center gap-1.5"
-          @click="clearFilters"
-        >
-          <svg
-            class="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+            <svg
+              class="w-3.5 h-3.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+            清除
+          </button>
+          <button
+            type="button"
+            class="btn-primary text-xs px-3 py-1 flex items-center gap-1"
+            @click="handleSearch"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-          清除筛选
-        </button>
+            <svg
+              class="w-3.5 h-3.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+              />
+            </svg>
+            筛选
+          </button>
+        </form>
       </div>
-    </div>
-
-    <div
-      v-if="isLoading"
-      class="flex justify-center py-16"
-    >
-      <div class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-    </div>
-
-    <div
-      v-else
-      class="glass-card overflow-hidden"
-    >
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead class="bg-gray-100 dark:bg-dark-100">
@@ -783,7 +804,7 @@ const clearEditError = (field: string) => {
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                 注册时间
               </th>
-              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                 操作
               </th>
             </tr>
@@ -850,8 +871,8 @@ const clearEditError = (field: string) => {
               <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                 {{ formatDate(user.created_at) }}
               </td>
-              <td class="px-4 py-3 text-right">
-                <div class="flex items-center justify-end gap-2">
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2">
                   <button
                     class="text-primary hover:text-primary/80 text-xs"
                     @click="handleEdit(user)"

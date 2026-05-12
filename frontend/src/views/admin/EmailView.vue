@@ -54,6 +54,13 @@ const logsFilter = ref({
   end_date: ''
 })
 
+const showLogsFilters = ref(false)
+
+const hasActiveLogsFilters = computed(() => {
+  const f = logsFilter.value
+  return !!(f.email_type || f.status || f.recipient_email || f.start_date || f.end_date)
+})
+
 const stats = ref<EmailStats>({
   total_sent: 0,
   total_failed: 0,
@@ -779,18 +786,43 @@ function getProviderBgColor(provider: string) {
       v-else-if="activeTab === 'logs'"
       class="glass-card overflow-hidden"
     >
-      <form class="px-4 py-2.5 border-b border-gray-200 dark:border-white/10 flex items-center gap-3" @submit.prevent>
+      <div class="px-4 py-2.5 border-b border-gray-200 dark:border-white/10">
+        <div class="flex items-center justify-between md:hidden mb-2">
+          <button
+            type="button"
+            class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-200 transition-colors"
+            @click="showLogsFilters = !showLogsFilters"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+            筛选
+            <svg class="w-3 h-3 transition-transform" :class="{ 'rotate-180': showLogsFilters }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <div v-if="hasActiveLogsFilters" class="flex items-center gap-1 flex-wrap">
+            <span v-if="logsFilter.recipient_email" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ logsFilter.recipient_email }}</span>
+            <span v-if="logsFilter.email_type" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ logsFilter.email_type }}</span>
+            <span v-if="logsFilter.status" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ logsFilter.status === 'sent' ? '已发送' : logsFilter.status === 'failed' ? '发送失败' : '待发送' }}</span>
+          </div>
+        </div>
+        <form 
+          class="flex items-center gap-3 flex-wrap"
+          :class="{ 'hidden md:flex': !showLogsFilters, 'md:flex': true }"
+          @submit.prevent
+        >
         <input
           id="input-logsFilter-recipient_email"
           v-model="logsFilter.recipient_email"
           type="text"
           placeholder="邮箱账号"
-          class="px-2 py-1 text-xs bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-md text-gray-900 dark:text-white"
+          class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-40"
           @keyup.enter="logsPage = 1; loadLogs()"
         >
         <select id="select-logsFilter-email_type"
           v-model="logsFilter.email_type"
-          class="px-2 py-1 text-xs bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-md text-gray-900 dark:text-white"
+          class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
           @change="logsPage = 1; loadLogs()"
         >
           <option value="">
@@ -832,7 +864,7 @@ function getProviderBgColor(provider: string) {
         </select>
         <select id="select-logsFilter-status"
           v-model="logsFilter.status"
-          class="px-2 py-1 text-xs bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-md text-gray-900 dark:text-white"
+          class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
           @change="logsPage = 1; loadLogs()"
         >
           <option value="">
@@ -854,11 +886,11 @@ function getProviderBgColor(provider: string) {
         />
         <button
           type="button"
-          class="px-3 py-1.5 text-sm bg-red-500/10 text-red-500 dark:text-red-400 border border-red-500/20 dark:border-red-400/20 rounded-lg hover:bg-red-500/20 dark:hover:bg-red-400/20 transition-colors flex items-center gap-1.5"
+          class="px-2.5 py-1 text-xs bg-red-500/10 text-red-500 dark:text-red-400 border border-red-500/20 dark:border-red-400/20 rounded-lg hover:bg-red-500/20 dark:hover:bg-red-400/20 transition-colors flex items-center gap-1"
           @click="clearLogsFilters"
         >
           <svg
-            class="w-4 h-4"
+            class="w-3.5 h-3.5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -870,15 +902,15 @@ function getProviderBgColor(provider: string) {
               d="M6 18L18 6M6 6l12 12"
             />
           </svg>
-          清除筛选
+          清除
         </button>
         <button
           type="button"
-          class="btn-primary text-sm px-4 py-1.5 flex items-center gap-1.5"
+          class="btn-primary text-xs px-3 py-1 flex items-center gap-1"
           @click="logsPage = 1; loadLogs()"
         >
           <svg
-            class="w-4 h-4"
+            class="w-3.5 h-3.5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -893,6 +925,7 @@ function getProviderBgColor(provider: string) {
           筛选
         </button>
       </form>
+      </div>
 
       <div
         v-if="isLoading"

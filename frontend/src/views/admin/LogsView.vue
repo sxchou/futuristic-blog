@@ -54,6 +54,15 @@ const filters = ref({
   end_date: ''
 })
 
+const showFilters = ref(false)
+
+const hasActiveFilters = computed(() => {
+  const f = filters.value
+  return !!(f.module || f.action || f.description || f.status || f.username || 
+            f.login_type || f.ip_address || f.request_method || f.path || 
+            f.start_date || f.end_date)
+})
+
 const tabs = [
   { key: 'operations', label: '操作日志', icon: 'operation' },
   { key: 'logins', label: '登录日志', icon: 'login' },
@@ -469,18 +478,41 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
           </button>
         </div>
 
-        <div class="p-4">
-          <div
-            v-if="activeTab === 'operations'"
-            class="space-y-4"
+        <div class="p-3 border-b border-gray-200 dark:border-white/10">
+          <div class="flex items-center justify-between md:hidden mb-2">
+            <button
+              type="button"
+              class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-200 transition-colors"
+              @click="showFilters = !showFilters"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              筛选
+              <svg class="w-3 h-3 transition-transform" :class="{ 'rotate-180': showFilters }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div v-if="hasActiveFilters" class="flex items-center gap-1 flex-wrap">
+              <span v-if="filters.username" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ filters.username }}</span>
+              <span v-if="filters.module" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ filters.module }}</span>
+              <span v-if="filters.action" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ filters.action }}</span>
+              <span v-if="filters.ip_address" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ filters.ip_address }}</span>
+              <span v-if="filters.path" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ filters.path }}</span>
+            </div>
+          </div>
+          <form 
+            v-if="activeTab === 'operations'" 
+            class="flex flex-wrap items-center gap-2"
+            :class="{ 'hidden md:flex': !showFilters, 'md:flex': true }"
+            @submit.prevent="handleSearch"
           >
-            <form class="flex flex-wrap gap-2" @submit.prevent="handleSearch">
               <input id="input-ops-filters-username"
                 v-model="filters.username"
                 type="text"
                 name="ops-username"
                 placeholder="用户名"
-                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
+                class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-28"
                 @keyup.enter="handleSearch"
               >
               <input id="input-ops-filters-module"
@@ -488,7 +520,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 type="text"
                 name="ops-module"
                 placeholder="模块"
-                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
+                class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-24"
                 @keyup.enter="handleSearch"
               >
               <input id="input-ops-filters-action"
@@ -496,7 +528,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 type="text"
                 name="ops-action"
                 placeholder="操作"
-                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
+                class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-24"
                 @keyup.enter="handleSearch"
               >
               <input id="input-ops-filters-description"
@@ -504,13 +536,13 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 type="text"
                 name="ops-description"
                 placeholder="描述"
-                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-48"
+                class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-40"
                 @keyup.enter="handleSearch"
               >
               <select id="select-ops-filters-status"
                 v-model="filters.status"
                 name="ops-status"
-                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
+                class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
                 @change="handleSearch"
               >
                 <option value="">
@@ -529,11 +561,11 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
               />
               <button
                 type="button"
-                class="px-3 py-1.5 text-sm bg-red-500/10 text-red-500 dark:text-red-400 border border-red-500/20 dark:border-red-400/20 rounded-lg hover:bg-red-500/20 dark:hover:bg-red-400/20 transition-colors flex items-center gap-1.5"
+                class="px-2.5 py-1 text-xs bg-red-500/10 text-red-500 dark:text-red-400 border border-red-500/20 dark:border-red-400/20 rounded-lg hover:bg-red-500/20 dark:hover:bg-red-400/20 transition-colors flex items-center gap-1"
                 @click="handleClearFilters"
               >
                 <svg
-                  class="w-4 h-4"
+                  class="w-3.5 h-3.5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -545,14 +577,14 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                     d="M6 18L18 6M6 6l12 12"
                   />
                 </svg>
-                清除筛选
+                清除
               </button>
               <button
-                class="btn-primary text-sm px-4 py-1.5 flex items-center gap-1.5"
+                class="btn-primary text-xs px-3 py-1 flex items-center gap-1"
                 @click="handleSearch"
               >
                 <svg
-                  class="w-4 h-4"
+                  class="w-3.5 h-3.5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -568,101 +600,30 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
               </button>
             </form>
 
-            <div class="overflow-x-auto">
-              <table class="w-full text-sm">
-                <thead>
-                  <tr class="border-b border-gray-200 dark:border-white/10">
-                    <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
-                      用户
-                    </th>
-                    <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
-                      模块
-                    </th>
-                    <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
-                      操作
-                    </th>
-                    <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
-                      描述
-                    </th>
-                    <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
-                      IP
-                    </th>
-                    <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
-                      状态
-                    </th>
-                    <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
-                      时间
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr
-                    v-for="log in operationLogs"
-                    :key="log.id"
-                    class="border-b border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5"
-                  >
-                    <td class="py-2 px-3 w-32">
-                      <div class="flex items-center gap-2">
-                        <div
-                          class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium overflow-hidden flex-shrink-0"
-                          :style="getOperationLogAvatarStyle(log)"
-                        >
-                          <span v-if="(!log.avatar_type || log.avatar_type === 'default') && !log.oauth_avatar_url">
-                            {{ (log.username || '?').charAt(0).toUpperCase() }}
-                          </span>
-                        </div>
-                        <span class="text-gray-900 dark:text-white truncate">{{ log.username || '-' }}</span>
-                      </div>
-                    </td>
-                    <td class="py-2 px-3 text-gray-600 dark:text-gray-300">
-                      {{ log.module }}
-                    </td>
-                    <td class="py-2 px-3 text-gray-600 dark:text-gray-300">
-                      {{ log.action }}
-                    </td>
-                    <td class="py-2 px-3 text-gray-600 dark:text-gray-300 max-w-xs break-words whitespace-pre-wrap">
-                      {{ log.description || '-' }}
-                    </td>
-                    <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">
-                      {{ log.ip_address || '-' }}
-                    </td>
-                    <td class="py-2 px-3">
-                      <span :class="['px-2 py-0.5 rounded text-xs', getStatusClass(log.status)]">
-                        {{ log.status === 'success' ? '成功' : '失败' }}
-                      </span>
-                    </td>
-                    <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">
-                      {{ formatDate(log.created_at) }}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div
-            v-if="activeTab === 'logins'"
-            class="space-y-4"
-          >
-            <form class="flex flex-wrap gap-2" @submit.prevent="handleSearch">
+            <form 
+              v-if="activeTab === 'logins'" 
+              class="flex flex-wrap items-center gap-2"
+              :class="{ 'hidden md:flex': !showFilters, 'md:flex': true }"
+              @submit.prevent="handleSearch"
+            >
               <input id="input-logins-filters-username"
                 v-model="filters.username"
                 type="text"
                 name="logins-username"
                 placeholder="用户名"
-                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
+                class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-28"
               >
               <input id="input-logins-filters-ip_address"
                 v-model="filters.ip_address"
                 type="text"
                 name="logins-ip-address"
                 placeholder="IP地址"
-                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
+                class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-32"
               >
               <select id="select-logins-filters-status"
                 v-model="filters.status"
                 name="logins-status"
-                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
+                class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
                 @change="handleSearch"
               >
                 <option value="">
@@ -681,11 +642,11 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
               />
               <button
                 type="button"
-                class="px-3 py-1.5 text-sm bg-red-500/10 text-red-500 dark:text-red-400 border border-red-500/20 dark:border-red-400/20 rounded-lg hover:bg-red-500/20 dark:hover:bg-red-400/20 transition-colors flex items-center gap-1.5"
+                class="px-2.5 py-1 text-xs bg-red-500/10 text-red-500 dark:text-red-400 border border-red-500/20 dark:border-red-400/20 rounded-lg hover:bg-red-500/20 dark:hover:bg-red-400/20 transition-colors flex items-center gap-1"
                 @click="handleClearFilters"
               >
                 <svg
-                  class="w-4 h-4"
+                  class="w-3.5 h-3.5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -697,14 +658,14 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                     d="M6 18L18 6M6 6l12 12"
                   />
                 </svg>
-                清除筛选
+                清除
               </button>
               <button
-                class="btn-primary text-sm px-4 py-1.5 flex items-center gap-1.5"
+                class="btn-primary text-xs px-3 py-1 flex items-center gap-1"
                 @click="handleSearch"
               >
                 <svg
-                  class="w-4 h-4"
+                  class="w-3.5 h-3.5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -720,95 +681,24 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
               </button>
             </form>
 
-            <div class="overflow-x-auto">
-              <table class="w-full text-sm">
-                <thead>
-                  <tr class="border-b border-gray-200 dark:border-white/10">
-                    <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
-                      用户
-                    </th>
-                    <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
-                      类型
-                    </th>
-                    <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
-                      IP
-                    </th>
-                    <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
-                      浏览器
-                    </th>
-                    <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
-                      系统
-                    </th>
-                    <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
-                      状态
-                    </th>
-                    <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
-                      时间
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr
-                    v-for="log in loginLogs"
-                    :key="log.id"
-                    class="border-b border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5"
-                  >
-                    <td class="py-2 px-3 w-32">
-                      <div class="flex items-center gap-2">
-                        <div
-                          class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium overflow-hidden flex-shrink-0"
-                          :style="getLoginLogAvatarStyle(log)"
-                        >
-                          <span v-if="(!log.avatar_type || log.avatar_type === 'default') && !log.oauth_avatar_url">
-                            {{ (log.username || '?').charAt(0).toUpperCase() }}
-                          </span>
-                        </div>
-                        <span class="text-gray-900 dark:text-white truncate">{{ log.username || '-' }}</span>
-                      </div>
-                    </td>
-                    <td class="py-2 px-3 text-gray-600 dark:text-gray-300">
-                      {{ formatLoginType(log.login_type) }}
-                    </td>
-                    <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">
-                      {{ log.ip_address || '-' }}
-                    </td>
-                    <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">
-                      {{ log.browser || '-' }}
-                    </td>
-                    <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">
-                      {{ log.os || '-' }}
-                    </td>
-                    <td class="py-2 px-3">
-                      <span :class="['px-2 py-0.5 rounded text-xs', getStatusClass(log.status)]">
-                        {{ log.status === 'success' ? '成功' : '失败' }}
-                      </span>
-                    </td>
-                    <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">
-                      {{ formatDate(log.created_at) }}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div
-            v-if="activeTab === 'access'"
-            class="space-y-4"
-          >
-            <form class="flex flex-wrap gap-2" @submit.prevent="handleSearch">
+            <form 
+              v-if="activeTab === 'access'" 
+              class="flex flex-wrap items-center gap-2"
+              :class="{ 'hidden md:flex': !showFilters, 'md:flex': true }"
+              @submit.prevent="handleSearch"
+            >
               <input id="input-access-filters-username"
                 v-model="filters.username"
                 type="text"
                 name="access-username"
                 placeholder="用户名"
-                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
+                class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-28"
                 @keyup.enter="handleSearch"
               >
               <select id="select-filters-request_method"
                 v-model="filters.request_method"
                 name="access-request-method"
-                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
+                class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
                 @change="handleSearch"
               >
                 <option value="">
@@ -832,7 +722,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 type="text"
                 name="access-path"
                 placeholder="请求路径"
-                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-48"
+                class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-40"
                 @keyup.enter="handleSearch"
               >
               <input id="input-access-filters-ip_address"
@@ -840,7 +730,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 type="text"
                 name="access-ip-address"
                 placeholder="IP地址"
-                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
+                class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-32"
                 @keyup.enter="handleSearch"
               >
               <DateRangePicker
@@ -849,11 +739,11 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
               />
               <button
                 type="button"
-                class="px-3 py-1.5 text-sm bg-red-500/10 text-red-500 dark:text-red-400 border border-red-500/20 dark:border-red-400/20 rounded-lg hover:bg-red-500/20 dark:hover:bg-red-400/20 transition-colors flex items-center gap-1.5"
+                class="px-2.5 py-1 text-xs bg-red-500/10 text-red-500 dark:text-red-400 border border-red-500/20 dark:border-red-400/20 rounded-lg hover:bg-red-500/20 dark:hover:bg-red-400/20 transition-colors flex items-center gap-1"
                 @click="handleClearFilters"
               >
                 <svg
-                  class="w-4 h-4"
+                  class="w-3.5 h-3.5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -865,14 +755,14 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                     d="M6 18L18 6M6 6l12 12"
                   />
                 </svg>
-                清除筛选
+                清除
               </button>
               <button
-                class="btn-primary text-sm px-4 py-1.5 flex items-center gap-1.5"
+                class="btn-primary text-xs px-3 py-1 flex items-center gap-1"
                 @click="handleSearch"
               >
                 <svg
-                  class="w-4 h-4"
+                  class="w-3.5 h-3.5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -887,98 +777,240 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 筛选
               </button>
             </form>
+        </div>
 
-            <div class="overflow-x-auto">
-              <table class="w-full text-sm">
-                <thead>
-                  <tr class="border-b border-gray-200 dark:border-white/10">
-                    <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
-                      用户
-                    </th>
-                    <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
-                      方法
-                    </th>
-                    <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
-                      路径
-                    </th>
-                    <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
-                      状态码
-                    </th>
-                    <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
-                      响应时间
-                    </th>
-                    <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
-                      IP
-                    </th>
-                    <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
-                      时间
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr
-                    v-for="log in accessLogs"
-                    :key="log.id"
-                    class="border-b border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5"
+        <div class="overflow-x-auto" v-if="activeTab === 'operations'">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-gray-200 dark:border-white/10">
+                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                  用户
+                </th>
+                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                  模块
+                </th>
+                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                  操作
+                </th>
+                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                  描述
+                </th>
+                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                  IP
+                </th>
+                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                  状态
+                </th>
+                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                  时间
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="log in operationLogs"
+                :key="log.id"
+                class="border-b border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5"
+              >
+                <td class="py-2 px-3 w-32">
+                  <div class="flex items-center gap-2">
+                    <div
+                      class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium overflow-hidden flex-shrink-0"
+                      :style="getOperationLogAvatarStyle(log)"
+                    >
+                      <span v-if="(!log.avatar_type || log.avatar_type === 'default') && !log.oauth_avatar_url">
+                        {{ (log.username || '?').charAt(0).toUpperCase() }}
+                      </span>
+                    </div>
+                    <span class="text-gray-900 dark:text-white truncate">{{ log.username || '-' }}</span>
+                  </div>
+                </td>
+                <td class="py-2 px-3 text-gray-600 dark:text-gray-300">
+                  {{ log.module }}
+                </td>
+                <td class="py-2 px-3 text-gray-600 dark:text-gray-300">
+                  {{ log.action }}
+                </td>
+                <td class="py-2 px-3 text-gray-600 dark:text-gray-300 max-w-xs break-words whitespace-pre-wrap">
+                  {{ log.description || '-' }}
+                </td>
+                <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">
+                  {{ log.ip_address || '-' }}
+                </td>
+                <td class="py-2 px-3">
+                  <span :class="['px-2 py-0.5 rounded text-xs', getStatusClass(log.status)]">
+                    {{ log.status === 'success' ? '成功' : '失败' }}
+                  </span>
+                </td>
+                <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">
+                  {{ formatDate(log.created_at) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="overflow-x-auto" v-if="activeTab === 'logins'">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-gray-200 dark:border-white/10">
+                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                  用户
+                </th>
+                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                  类型
+                </th>
+                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                  IP
+                </th>
+                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                  浏览器
+                </th>
+                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                  系统
+                </th>
+                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                  状态
+                </th>
+                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                  时间
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="log in loginLogs"
+                :key="log.id"
+                class="border-b border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5"
+              >
+                <td class="py-2 px-3 w-32">
+                  <div class="flex items-center gap-2">
+                    <div
+                      class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium overflow-hidden flex-shrink-0"
+                      :style="getLoginLogAvatarStyle(log)"
+                    >
+                      <span v-if="(!log.avatar_type || log.avatar_type === 'default') && !log.oauth_avatar_url">
+                        {{ (log.username || '?').charAt(0).toUpperCase() }}
+                      </span>
+                    </div>
+                    <span class="text-gray-900 dark:text-white truncate">{{ log.username || '-' }}</span>
+                  </div>
+                </td>
+                <td class="py-2 px-3 text-gray-600 dark:text-gray-300">
+                  {{ formatLoginType(log.login_type) }}
+                </td>
+                <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">
+                  {{ log.ip_address || '-' }}
+                </td>
+                <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">
+                  {{ log.browser || '-' }}
+                </td>
+                <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">
+                  {{ log.os || '-' }}
+                </td>
+                <td class="py-2 px-3">
+                  <span :class="['px-2 py-0.5 rounded text-xs', getStatusClass(log.status)]">
+                    {{ log.status === 'success' ? '成功' : '失败' }}
+                  </span>
+                </td>
+                <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">
+                  {{ formatDate(log.created_at) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="overflow-x-auto" v-if="activeTab === 'access'">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-gray-200 dark:border-white/10">
+                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                  用户
+                </th>
+                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                  方法
+                </th>
+                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                  路径
+                </th>
+                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                  状态码
+                </th>
+                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                  响应时间
+                </th>
+                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                  IP
+                </th>
+                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                  时间
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="log in accessLogs"
+                :key="log.id"
+                class="border-b border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5"
+              >
+                <td class="py-2 px-3 w-32">
+                  <div class="flex items-center gap-2">
+                    <div
+                      class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium overflow-hidden flex-shrink-0"
+                      :style="getAccessLogAvatarStyle(log)"
+                    >
+                      <span v-if="(!log.avatar_type || log.avatar_type === 'default') && !log.oauth_avatar_url">
+                        {{ log.username ? (log.username || '?').charAt(0).toUpperCase() : '游' }}
+                      </span>
+                    </div>
+                    <span class="text-gray-900 dark:text-white truncate">{{ log.username || '游客' }}</span>
+                  </div>
+                </td>
+                <td class="py-2 px-3">
+                  <span
+                    :class="[
+                      'px-2 py-0.5 rounded text-xs',
+                      log.request_method === 'GET' ? 'bg-blue-500/20 text-blue-400' :
+                      log.request_method === 'POST' ? 'bg-green-500/20 text-green-400' :
+                      log.request_method === 'PUT' ? 'bg-yellow-500/20 text-yellow-400' :
+                      'bg-red-500/20 text-red-400'
+                    ]"
                   >
-                    <td class="py-2 px-3 w-32">
-                      <div class="flex items-center gap-2">
-                        <div
-                          class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium overflow-hidden flex-shrink-0"
-                          :style="getAccessLogAvatarStyle(log)"
-                        >
-                          <span v-if="(!log.avatar_type || log.avatar_type === 'default') && !log.oauth_avatar_url">
-                            {{ log.username ? (log.username || '?').charAt(0).toUpperCase() : '游' }}
-                          </span>
-                        </div>
-                        <span class="text-gray-900 dark:text-white truncate">{{ log.username || '游客' }}</span>
-                      </div>
-                    </td>
-                    <td class="py-2 px-3">
-                      <span
-                        :class="[
-                          'px-2 py-0.5 rounded text-xs',
-                          log.request_method === 'GET' ? 'bg-blue-500/20 text-blue-400' :
-                          log.request_method === 'POST' ? 'bg-green-500/20 text-green-400' :
-                          log.request_method === 'PUT' ? 'bg-yellow-500/20 text-yellow-400' :
-                          'bg-red-500/20 text-red-400'
-                        ]"
-                      >
-                        {{ log.request_method }}
-                      </span>
-                    </td>
-                    <td class="py-2 px-3 text-gray-600 dark:text-gray-300 max-w-xs truncate">
-                      {{ log.request_path }}
-                    </td>
-                    <td class="py-2 px-3">
-                      <span
-                        :class="[
-                          'px-2 py-0.5 rounded text-xs',
-                          log.response_status < 400 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
-                        ]"
-                      >
-                        {{ log.response_status }}
-                      </span>
-                    </td>
-                    <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">
-                      {{ log.response_time ? log.response_time.toFixed(2) + 'ms' : '-' }}
-                    </td>
-                    <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">
-                      {{ log.ip_address || '-' }}
-                    </td>
-                    <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">
-                      {{ formatDate(log.created_at) }}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+                    {{ log.request_method }}
+                  </span>
+                </td>
+                <td class="py-2 px-3 text-gray-600 dark:text-gray-300 max-w-xs truncate">
+                  {{ log.request_path }}
+                </td>
+                <td class="py-2 px-3">
+                  <span
+                    :class="[
+                      'px-2 py-0.5 rounded text-xs',
+                      log.response_status < 400 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                    ]"
+                  >
+                    {{ log.response_status }}
+                  </span>
+                </td>
+                <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">
+                  {{ log.response_time ? log.response_time.toFixed(2) + 'ms' : '-' }}
+                </td>
+                <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">
+                  {{ log.ip_address || '-' }}
+                </td>
+                <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">
+                  {{ formatDate(log.created_at) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-          <div
-            v-if="totalPages > 1"
-            class="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-white/10"
-          >
+        <div
+          v-if="totalPages > 1"
+          class="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-white/10"
+        >
             <p class="text-sm text-gray-500 dark:text-gray-400">
               共 {{ total }} 条记录
             </p>
@@ -1004,5 +1036,4 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
           </div>
       </div>
     </div>
-  </div>
 </template>

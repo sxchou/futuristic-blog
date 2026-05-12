@@ -1,14 +1,14 @@
 <template>
   <div class="date-range-picker">
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-1.5">
       <div class="relative">
         <button
           type="button"
-          class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none text-gray-900 dark:text-white flex items-center gap-2 min-w-[140px]"
+          class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none text-gray-900 dark:text-white flex items-center gap-1.5 min-w-[110px]"
           @click="toggleCalendar('start', $event)"
         >
           <svg
-            class="w-4 h-4 text-gray-500 dark:text-gray-400"
+            class="w-3.5 h-3.5 text-gray-500 dark:text-gray-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -24,16 +24,16 @@
         </button>
       </div>
 
-      <span class="text-gray-500 dark:text-gray-400">至</span>
+      <span class="text-gray-500 dark:text-gray-400 text-xs">至</span>
 
       <div class="relative">
         <button
           type="button"
-          class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none text-gray-900 dark:text-white flex items-center gap-2 min-w-[140px]"
+          class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none text-gray-900 dark:text-white flex items-center gap-1.5 min-w-[110px]"
           @click="toggleCalendar('end', $event)"
         >
           <svg
-            class="w-4 h-4 text-gray-500 dark:text-gray-400"
+            class="w-3.5 h-3.5 text-gray-500 dark:text-gray-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

@@ -1,6 +1,6 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy.exc import IntegrityError
 from datetime import timedelta
 import random
@@ -16,8 +16,17 @@ from app.services.avatar_service import AvatarFileService
 from app.services.email_service import EmailService
 from app.services.permission_service import PermissionService
 from app.utils.timezone import get_db_now
+from app.utils.cache import cache_manager
 
 router = APIRouter(prefix="/users", tags=["Users"])
+
+CACHE_NAME = "users"
+CACHE_TTL_UNIQUE = 60
+CACHE_TTL_LIST = 300
+
+
+def invalidate_users_cache():
+    cache_manager.clear_cache(CACHE_NAME)
 
 
 @router.get("/check-unique")
@@ -30,6 +39,11 @@ async def check_unique(
     if field not in ["username", "email"]:
         raise HTTPException(status_code=400, detail="Invalid field. Must be 'username' or 'email'")
     
+    cache_key = f"unique_{field}_{value}_{exclude_id or 0}"
+    cached = cache_manager.get(CACHE_NAME, cache_key)
+    if cached is not None:
+        return cached
+    
     query = db.query(User)
     if field == "username":
         query = query.filter(User.username == value)
@@ -40,7 +54,10 @@ async def check_unique(
         query = query.filter(User.id != exclude_id)
     
     exists = query.first() is not None
-    return {"exists": exists, "field": field, "value": value}
+    result = {"exists": exists, "field": field, "value": value}
+    
+    cache_manager.set(CACHE_NAME, cache_key, result, ttl=CACHE_TTL_UNIQUE)
+    return result
 
 
 @router.get("", response_model=PaginatedResponse)
@@ -97,9 +114,49 @@ async def get_users(
     total_pages = (total + page_size - 1) // page_size
     users = query.order_by(User.created_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
     
+    if not users:
+        return PaginatedResponse(
+            items=[],
+            total=total,
+            page=page,
+            page_size=page_size,
+            total_pages=total_pages
+        )
+    
+    user_ids = [u.id for u in users]
+    
+    profiles = db.query(UserProfile).filter(UserProfile.user_id.in_(user_ids)).all()
+    profile_map = {p.user_id: p for p in profiles}
+    
+    user_role_records = db.query(user_roles).filter(user_roles.c.user_id.in_(user_ids)).all()
+    role_ids = list(set([r.role_id for r in user_role_records]))
+    
+    roles_data = {}
+    if role_ids:
+        roles = db.query(Role).filter(Role.id.in_(role_ids)).all()
+        roles_map = {r.id: r for r in roles}
+        
+        user_roles_map = {}
+        for ur in user_role_records:
+            if ur.user_id not in user_roles_map:
+                user_roles_map[ur.user_id] = []
+            if ur.role_id in roles_map:
+                user_roles_map[ur.user_id].append({
+                    "id": roles_map[ur.role_id].id,
+                    "name": roles_map[ur.role_id].name,
+                    "code": roles_map[ur.role_id].code
+                })
+        roles_data = user_roles_map
+    
+    admin_user_ids = set()
+    if role_ids:
+        admin_role = db.query(Role).filter(Role.code == 'admin').first()
+        if admin_role:
+            admin_user_ids = set([ur.user_id for ur in user_role_records if ur.role_id == admin_role.id])
+    
     items = []
     for user in users:
-        profile = db.query(UserProfile).filter(UserProfile.user_id == user.id).first()
+        profile = profile_map.get(user.id)
         
         avatar_url = None
         avatar_type = "default"
@@ -112,8 +169,7 @@ async def get_users(
                 avatar_url = profile.oauth_avatar_url
                 avatar_type = "oauth"
         
-        roles = PermissionService.get_user_roles(db, user.id)
-        roles_data = [{"id": r.id, "name": r.name, "code": r.code} for r in roles] if roles else []
+        user_roles_list = roles_data.get(user.id, [])
         
         item = UserListItem(
             id=user.id,
@@ -125,10 +181,10 @@ async def get_users(
             oauth_avatar_url=profile.oauth_avatar_url if profile else None,
             avatar_gradient=profile.default_avatar_gradient if profile else None,
             bio=user.bio,
-            is_admin=PermissionService.is_admin_user(db, user.id),
+            is_admin=user.id in admin_user_ids,
             is_verified=user.is_verified,
             created_at=user.created_at,
-            roles=roles_data
+            roles=user_roles_list
         )
         items.append(item)
     
@@ -338,19 +394,17 @@ async def delete_user(
     user_liked_article_ids = db.query(ArticleLike.article_id).filter(ArticleLike.user_id == user_id).all()
     liked_article_ids = [aid[0] for aid in user_liked_article_ids]
     if liked_article_ids:
-        for aid in liked_article_ids:
-            article = db.query(Article).filter(Article.id == aid).first()
-            if article:
-                article.like_count = max(0, (article.like_count or 0) - 1)
+        articles_to_update = db.query(Article).filter(Article.id.in_(liked_article_ids)).all()
+        for article in articles_to_update:
+            article.like_count = max(0, (article.like_count or 0) - 1)
     db.query(ArticleLike).filter(ArticleLike.user_id == user_id).delete()
     
     user_bookmarked_article_ids = db.query(ArticleBookmark.article_id).filter(ArticleBookmark.user_id == user_id).all()
     bookmarked_article_ids = [aid[0] for aid in user_bookmarked_article_ids]
     if bookmarked_article_ids:
-        for aid in bookmarked_article_ids:
-            article = db.query(Article).filter(Article.id == aid).first()
-            if article:
-                article.bookmark_count = max(0, (article.bookmark_count or 0) - 1)
+        articles_to_update = db.query(Article).filter(Article.id.in_(bookmarked_article_ids)).all()
+        for article in articles_to_update:
+            article.bookmark_count = max(0, (article.bookmark_count or 0) - 1)
     db.query(ArticleBookmark).filter(ArticleBookmark.user_id == user_id).delete()
     
     db.query(EmailChangeVerification).filter(EmailChangeVerification.user_id == user_id).delete()

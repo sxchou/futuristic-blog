@@ -383,7 +383,7 @@ watch(() => form.value.name, (newName) => {
   if (newName.trim()) {
     nameCheckTimer = setTimeout(() => {
       checkNameUnique(newName)
-    }, 500)
+    }, 800)
   }
 })
 
@@ -398,7 +398,7 @@ watch(() => form.value.code, (newCode) => {
   if (newCode.trim()) {
     codeCheckTimer = setTimeout(() => {
       checkCodeUnique(newCode)
-    }, 500)
+    }, 800)
   }
 })
 </script>

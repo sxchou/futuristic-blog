@@ -62,19 +62,37 @@ async def get_roles(
     
     roles = query.order_by(Role.priority.desc()).all()
     
-    result = []
-    for role in roles:
-        role_perms = db.execute(
-            role_permissions.select().where(
-                role_permissions.c.role_id == role.id
-            )
-        ).fetchall()
-        
-        perm_ids = [rp.permission_id for rp in role_perms]
+    if not roles:
+        return []
+    
+    role_ids = [r.id for r in roles]
+    
+    all_role_perms = db.execute(
+        role_permissions.select().where(
+            role_permissions.c.role_id.in_(role_ids)
+        )
+    ).fetchall()
+    
+    role_perm_map = {}
+    all_perm_ids = set()
+    for rp in all_role_perms:
+        if rp.role_id not in role_perm_map:
+            role_perm_map[rp.role_id] = []
+        role_perm_map[rp.role_id].append(rp.permission_id)
+        all_perm_ids.add(rp.permission_id)
+    
+    perms_map = {}
+    if all_perm_ids:
         perms = db.query(Permission).filter(
-            Permission.id.in_(perm_ids),
+            Permission.id.in_(all_perm_ids),
             Permission.module != 'permission'
         ).all()
+        perms_map = {p.id: p for p in perms}
+    
+    result = []
+    for role in roles:
+        role_perm_ids = role_perm_map.get(role.id, [])
+        role_perms = [perms_map[pid] for pid in role_perm_ids if pid in perms_map]
         
         role_dict = {
             'id': role.id,
@@ -84,7 +102,7 @@ async def get_roles(
             'is_system': role.is_system,
             'is_active': role.is_active,
             'priority': role.priority,
-            'permissions': perms,
+            'permissions': role_perms,
             'created_at': role.created_at,
             'updated_at': role.updated_at
         }

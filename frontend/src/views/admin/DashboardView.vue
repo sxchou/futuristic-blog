@@ -92,34 +92,23 @@ const fetchAllData = async () => {
   loadingAccessTrend.value = true
   
   try {
-    const [
-      overviewRes,
-      viewsTrendRes,
-      articlesTrendRes,
-      commentTrendRes,
-      categoryStatsRes,
-      tagStatsRes,
-      articleRankRes,
-      accessTrendRes
-    ] = await Promise.all([
-      dashboardApi.getOverview(),
-      dashboardApi.getViewsTrend(trendDays.value),
-      dashboardApi.getArticlesTrend(trendDays.value),
-      dashboardApi.getCommentTrend(trendDays.value),
-      dashboardApi.getCategoryStats(),
-      dashboardApi.getTagStats(10),
-      dashboardApi.getArticleRank(rankLimit.value, rankSortBy.value),
-      dashboardApi.getAccessTrend(7)
-    ])
+    const res = await dashboardApi.getInitData({
+      trend_days: trendDays.value,
+      access_days: 7,
+      tag_limit: 10,
+      rank_limit: rankLimit.value,
+      rank_sort_by: rankSortBy.value
+    })
     
-    overview.value = overviewRes.data
-    viewsTrend.value = viewsTrendRes.data
-    articlesTrend.value = articlesTrendRes.data
-    commentTrend.value = commentTrendRes.data
-    categoryStats.value = categoryStatsRes.data
-    tagStats.value = tagStatsRes.data
-    articleRank.value = articleRankRes.data
-    accessTrend.value = accessTrendRes.data
+    const data = res.data
+    overview.value = data.overview
+    viewsTrend.value = data.trends.views_trend
+    articlesTrend.value = data.trends.articles_trend
+    commentTrend.value = data.trends.comment_trend
+    accessTrend.value = data.trends.access_trend
+    categoryStats.value = data.category_stats
+    tagStats.value = data.tag_stats
+    articleRank.value = data.article_rank
   } catch (error: unknown) {
     if (isCancelError(error)) {
       return
@@ -383,7 +372,12 @@ onMounted(() => {
           </div>
           <template v-else>
             <div v-for="(article, index) in articleRank" :key="article.id" class="rank-item">
-              <span class="rank-number" :class="{ top: index < 3 }">{{ index + 1 }}</span>
+              <span v-if="index < 3" class="rank-number top">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="white">
+                  <path d="M12 2C12 2 8 6 8 10C8 12 9 13 9 13C9 13 7 11 7 8C7 8 4 12 4 15C4 19 7 22 12 22C17 22 20 19 20 15C20 11 17 7 17 7C17 7 18 9 18 11C18 11 16 9 16 7C16 5 14 3 14 3C14 3 15 5 15 7C15 9 13 11 13 11C13 11 14 9 14 7C14 5 12 2 12 2Z"/>
+                </svg>
+              </span>
+              <span v-else class="rank-number">{{ index + 1 }}</span>
               <div class="rank-content">
                 <span class="rank-name">{{ article.title }}</span>
                 <div class="rank-stats">
@@ -549,30 +543,34 @@ onMounted(() => {
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+  gap: 8px;
   margin-bottom: 12px;
 }
 
 @media (min-width: 640px) {
   .stats-grid {
     grid-template-columns: repeat(6, 1fr);
-    gap: 8px;
-    margin-bottom: 12px;
+    gap: 12px;
+    margin-bottom: 16px;
   }
 }
 
 .stat-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 8px 6px;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
   border-radius: 8px;
-  backdrop-filter: blur(10px);
-  transition: transform 0.2s, box-shadow 0.2s;
-  text-align: center;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+@media (min-width: 640px) {
+  .stat-card {
+    padding: 12px;
+    gap: 10px;
+  }
 }
 
 .dark .stat-card {
@@ -586,19 +584,25 @@ onMounted(() => {
 }
 
 .stat-icon {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
   flex-shrink: 0;
+}
+
+@media (min-width: 640px) {
+  .stat-icon {
+    width: 36px;
+    height: 36px;
+  }
 }
 
 .stat-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
   min-width: 0;
 }
 
@@ -608,6 +612,12 @@ onMounted(() => {
   white-space: nowrap;
 }
 
+@media (min-width: 640px) {
+  .stat-label {
+    font-size: 11px;
+  }
+}
+
 .dark .stat-label {
   color: #9ca3af;
 }
@@ -615,8 +625,8 @@ onMounted(() => {
 .stat-value {
   font-size: 14px;
   font-weight: 700;
-  color: #1f2937;
-  line-height: 1;
+  color: #111827;
+  white-space: nowrap;
 }
 
 @media (min-width: 640px) {
@@ -632,14 +642,15 @@ onMounted(() => {
 .charts-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 8px;
+  gap: 12px;
   margin-bottom: 12px;
 }
 
 @media (min-width: 768px) {
   .charts-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    gap: 16px;
+    margin-bottom: 16px;
   }
 }
 
@@ -651,19 +662,16 @@ onMounted(() => {
 
 .chart-card {
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  padding: 10px;
-  backdrop-filter: blur(10px);
-  overflow: hidden;
-  cursor: pointer;
-  position: relative;
-  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  padding: 12px;
+  transition: all 0.2s;
 }
 
-.chart-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+@media (min-width: 640px) {
+  .chart-card {
+    padding: 16px;
+  }
 }
 
 .dark .chart-card {
@@ -671,19 +679,25 @@ onMounted(() => {
   border-color: rgba(255, 255, 255, 0.05);
 }
 
+.chart-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
 .rank-section {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .rank-card {
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  padding: 10px;
-  backdrop-filter: blur(10px);
-  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+@media (min-width: 640px) {
+  .rank-card {
+    padding: 16px;
+  }
 }
 
 .dark .rank-card {
@@ -695,16 +709,21 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
-  gap: 8px;
+  margin-bottom: 12px;
   flex-wrap: wrap;
+  gap: 8px;
 }
 
 .rank-title {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
-  color: #1f2937;
-  margin: 0;
+  color: #111827;
+}
+
+@media (min-width: 640px) {
+  .rank-title {
+    font-size: 16px;
+  }
 }
 
 .dark .rank-title {
@@ -717,46 +736,87 @@ onMounted(() => {
 }
 
 .rank-tab {
-  padding: 3px 8px;
-  font-size: 10px;
-  color: #6b7280;
-  background: transparent;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 4px 10px;
+  font-size: 11px;
+  border: none;
   border-radius: 4px;
+  background: rgba(0, 0, 0, 0.05);
+  color: #6b7280;
   cursor: pointer;
   transition: all 0.2s;
 }
 
+@media (min-width: 640px) {
+  .rank-tab {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}
+
 .dark .rank-tab {
-  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
   color: #9ca3af;
 }
 
 .rank-tab:hover {
-  border-color: #00d4ff;
+  background: rgba(0, 212, 255, 0.1);
   color: #00d4ff;
 }
 
 .rank-tab.active {
   background: #00d4ff;
-  border-color: transparent;
   color: white;
 }
 
 .rank-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
+}
+
+.rank-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px;
+  color: #6b7280;
+}
+
+.dark .rank-loading {
+  color: #9ca3af;
+}
+
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(0, 212, 255, 0.2);
+  border-top-color: #00d4ff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .rank-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
-  background: rgba(0, 0, 0, 0.02);
+  gap: 10px;
+  padding: 8px;
   border-radius: 6px;
-  transition: background 0.2s;
+  background: rgba(0, 0, 0, 0.02);
+  transition: all 0.2s;
+}
+
+@media (min-width: 640px) {
+  .rank-item {
+    padding: 10px;
+    gap: 12px;
+  }
 }
 
 .dark .rank-item {
@@ -764,35 +824,39 @@ onMounted(() => {
 }
 
 .rank-item:hover {
-  background: rgba(0, 0, 0, 0.05);
-}
-
-.dark .rank-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 212, 255, 0.05);
 }
 
 .rank-number {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
-  color: #6b7280;
-  background: rgba(0, 0, 0, 0.05);
   border-radius: 4px;
-  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.05);
+  color: #6b7280;
+}
+
+@media (min-width: 640px) {
+  .rank-number {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+  }
 }
 
 .dark .rank-number {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
   color: #9ca3af;
 }
 
 .rank-number.top {
-  background: linear-gradient(135deg, #00d4ff, #7c3aed);
+  background: linear-gradient(135deg, #f97316, #ea580c);
   color: white;
+  box-shadow: 0 0 8px rgba(249, 115, 22, 0.4);
 }
 
 .rank-content {
@@ -805,16 +869,21 @@ onMounted(() => {
 }
 
 .rank-name {
-  font-size: 11px;
+  font-size: 12px;
   color: #374151;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  flex: 1;
+}
+
+@media (min-width: 640px) {
+  .rank-name {
+    font-size: 13px;
+  }
 }
 
 .dark .rank-name {
-  color: #d1d5db;
+  color: #e5e7eb;
 }
 
 .rank-stats {
@@ -831,43 +900,24 @@ onMounted(() => {
   color: #6b7280;
 }
 
+@media (min-width: 640px) {
+  .rank-stats span {
+    font-size: 11px;
+    gap: 3px;
+  }
+}
+
 .dark .rank-stats span {
   color: #9ca3af;
 }
 
-.rank-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 20px;
-  color: #6b7280;
-  font-size: 12px;
-}
-
-.dark .rank-loading {
-  color: #9ca3af;
-}
-
-.loading-spinner {
-  width: 20px;
-  height: 20px;
-  border: 2px solid rgba(0, 212, 255, 0.2);
-  border-top-color: #00d4ff;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+.rank-stats svg {
+  opacity: 0.6;
 }
 
 .rank-empty {
   text-align: center;
-  padding: 16px;
+  padding: 20px;
   color: #6b7280;
   font-size: 12px;
 }
@@ -878,9 +928,11 @@ onMounted(() => {
 
 .chart-modal-overlay {
   position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -890,12 +942,13 @@ onMounted(() => {
 
 .chart-modal {
   background: white;
-  border-radius: 16px;
+  border-radius: 12px;
   width: 100%;
-  max-width: 900px;
+  max-width: 800px;
   max-height: 90vh;
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
 }
 
 .dark .chart-modal {
@@ -907,18 +960,17 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .dark .chart-modal-header {
-  border-bottom-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.05);
 }
 
 .chart-modal-title {
   font-size: 16px;
   font-weight: 600;
-  color: #1f2937;
-  margin: 0;
+  color: #111827;
 }
 
 .dark .chart-modal-title {
@@ -926,18 +978,27 @@ onMounted(() => {
 }
 
 .chart-modal-close {
-  padding: 6px;
-  background: transparent;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: none;
-  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
   color: #6b7280;
   cursor: pointer;
   transition: all 0.2s;
 }
 
+.dark .chart-modal-close {
+  background: rgba(255, 255, 255, 0.05);
+  color: #9ca3af;
+}
+
 .chart-modal-close:hover {
-  background: rgba(0, 0, 0, 0.05);
-  color: #1f2937;
+  background: rgba(0, 0, 0, 0.1);
+  color: #111827;
 }
 
 .dark .chart-modal-close:hover {
@@ -952,17 +1013,12 @@ onMounted(() => {
 
 .modal-enter-active,
 .modal-leave-active {
-  transition: opacity 0.2s ease;
+  transition: all 0.3s ease;
 }
 
 .modal-enter-from,
 .modal-leave-to {
   opacity: 0;
-}
-
-.modal-enter-active .chart-modal,
-.modal-leave-active .chart-modal {
-  transition: transform 0.2s ease;
 }
 
 .modal-enter-from .chart-modal,

@@ -331,7 +331,7 @@
           <button
             type="button"
             :disabled="!cropperReady || isProcessing"
-            class="px-6 py-2 text-sm bg-gradient-to-r from-primary to-accent text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            class="px-6 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             @click="handleConfirm"
           >
             <svg
