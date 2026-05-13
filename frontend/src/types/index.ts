@@ -101,6 +101,7 @@ export interface Article {
   tags: Tag[]
   author?: User
   is_liked?: boolean
+  files?: ArticleFile[]
 }
 
 export interface ArticleListItem {

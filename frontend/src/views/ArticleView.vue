@@ -532,15 +532,18 @@ const loadArticle = async (slug: string) => {
     likeCount.value = article.value?.like_count || 0
     isLiked.value = article.value?.is_liked || false
     if (article.value?.id) {
-      fetchArticleFiles(article.value.id)
+      if (article.value.files && article.value.files.length > 0) {
+        articleFiles.value = [...article.value.files].sort((a, b) => (a.order || 0) - (b.order || 0))
+      } else {
+        fetchArticleFiles(article.value.id)
+      }
       if (authStore.isAuthenticated) {
-        try {
-          const bookmarkStatus = await bookmarkApi.getStatus(article.value.id)
+        bookmarkApi.getStatus(article.value.id).then(bookmarkStatus => {
           isBookmarked.value = bookmarkStatus.is_bookmarked
           bookmarkCount.value = bookmarkStatus.bookmark_count || 0
-        } catch (error) {
+        }).catch(error => {
           console.error('Failed to fetch bookmark status:', error)
-        }
+        })
       }
     }
   } catch (err: unknown) {
