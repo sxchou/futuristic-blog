@@ -685,13 +685,13 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                   class="text-sm text-primary hover:underline block max-w-xs line-clamp-2"
                   title="点击查看评论"
                 >
-                  {{ comment.content }}
+                  <span v-if="comment.reply_to_user_name" class="text-gray-500 dark:text-gray-400">@{{ comment.reply_to_user_name }} </span>{{ comment.content }}
                 </router-link>
                 <div
                   v-else
                   class="text-sm text-gray-900 dark:text-white max-w-xs line-clamp-2"
                 >
-                  {{ comment.content }}
+                  <span v-if="comment.reply_to_user_name" class="text-gray-500 dark:text-gray-400">@{{ comment.reply_to_user_name }} </span>{{ comment.content }}
                 </div>
               </td>
               <td class="px-4 py-3 text-sm">
