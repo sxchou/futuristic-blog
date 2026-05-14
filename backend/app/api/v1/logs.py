@@ -558,43 +558,64 @@ async def export_operation_logs(
         end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
         query = query.filter(OperationLog.created_at <= end_datetime)
     
-    logs = query.order_by(desc(OperationLog.created_at)).all()
+    total_count = query.count()
+    batch_size = 1000
     
-    wb, ws, header_font, header_fill, header_alignment, cell_alignment, thin_border = create_excel_workbook()
-    ws.title = "操作日志"
-    
-    headers = ["日志ID", "发生时间", "操作人", "模块", "操作", "描述", "IP地址", "状态"]
-    apply_header_style(ws, headers, 1, header_font, header_fill, header_alignment, thin_border)
-    
-    for idx, log in enumerate(logs, 2):
-        created_at_str = to_local(log.created_at).strftime("%Y-%m-%d %H:%M:%S") if log.created_at else ""
-        status_str = "成功" if log.status == "success" else "失败"
-        row_data = [
-            log.id,
-            created_at_str,
-            log.username or "-",
-            log.module,
-            log.action,
-            log.description or "-",
-            log.ip_address or "-",
-            status_str
-        ]
-        apply_cell_style(ws, row_data, idx, cell_alignment, thin_border)
-    
-    auto_adjust_column_width(ws, len(headers))
-    
-    output = BytesIO()
-    wb.save(output)
-    output.seek(0)
+    def generate_excel():
+        wb, ws, header_font, header_fill, header_alignment, cell_alignment, thin_border = create_excel_workbook()
+        ws.title = "操作日志"
+        
+        headers = ["日志ID", "发生时间", "操作人", "模块", "操作", "描述", "IP地址", "状态"]
+        apply_header_style(ws, headers, 1, header_font, header_fill, header_alignment, thin_border)
+        
+        current_row = 2
+        offset = 0
+        
+        while offset < total_count:
+            batch_logs = query.order_by(desc(OperationLog.created_at)).offset(offset).limit(batch_size).all()
+            
+            for log in batch_logs:
+                created_at_str = to_local(log.created_at).strftime("%Y-%m-%d %H:%M:%S") if log.created_at else ""
+                status_str = "成功" if log.status == "success" else "失败"
+                row_data = [
+                    log.id,
+                    created_at_str,
+                    log.username or "-",
+                    log.module,
+                    log.action,
+                    log.description or "-",
+                    log.ip_address or "-",
+                    status_str
+                ]
+                apply_cell_style(ws, row_data, current_row, cell_alignment, thin_border)
+                current_row += 1
+            
+            offset += batch_size
+        
+        auto_adjust_column_width(ws, len(headers))
+        
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        chunk_size = 8192
+        while True:
+            chunk = output.read(chunk_size)
+            if not chunk:
+                break
+            yield chunk
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"操作日志_{timestamp}.xlsx"
     encoded_filename = quote(filename)
     
     return StreamingResponse(
-        output,
+        generate_excel(),
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"}
+        headers={
+            "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}",
+            "X-Total-Count": str(total_count)
+        }
     )
 
 
@@ -626,44 +647,65 @@ async def export_login_logs(
         end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
         query = query.filter(LoginLog.created_at <= end_datetime)
     
-    logs = query.order_by(desc(LoginLog.created_at)).all()
+    total_count = query.count()
+    batch_size = 1000
     
-    wb, ws, header_font, header_fill, header_alignment, cell_alignment, thin_border = create_excel_workbook()
-    ws.title = "登录日志"
-    
-    headers = ["日志ID", "发生时间", "用户", "登录类型", "IP地址", "浏览器", "操作系统", "状态", "失败原因"]
-    apply_header_style(ws, headers, 1, header_font, header_fill, header_alignment, thin_border)
-    
-    for idx, log in enumerate(logs, 2):
-        created_at_str = to_local(log.created_at).strftime("%Y-%m-%d %H:%M:%S") if log.created_at else ""
-        status_str = "成功" if log.status == "success" else "失败"
-        row_data = [
-            log.id,
-            created_at_str,
-            log.username or "-",
-            log.login_type,
-            log.ip_address or "-",
-            log.browser or "-",
-            log.os or "-",
-            status_str,
-            log.fail_reason or "-"
-        ]
-        apply_cell_style(ws, row_data, idx, cell_alignment, thin_border)
-    
-    auto_adjust_column_width(ws, len(headers))
-    
-    output = BytesIO()
-    wb.save(output)
-    output.seek(0)
+    def generate_excel():
+        wb, ws, header_font, header_fill, header_alignment, cell_alignment, thin_border = create_excel_workbook()
+        ws.title = "登录日志"
+        
+        headers = ["日志ID", "发生时间", "用户", "登录类型", "IP地址", "浏览器", "操作系统", "状态", "失败原因"]
+        apply_header_style(ws, headers, 1, header_font, header_fill, header_alignment, thin_border)
+        
+        current_row = 2
+        offset = 0
+        
+        while offset < total_count:
+            batch_logs = query.order_by(desc(LoginLog.created_at)).offset(offset).limit(batch_size).all()
+            
+            for log in batch_logs:
+                created_at_str = to_local(log.created_at).strftime("%Y-%m-%d %H:%M:%S") if log.created_at else ""
+                status_str = "成功" if log.status == "success" else "失败"
+                row_data = [
+                    log.id,
+                    created_at_str,
+                    log.username or "-",
+                    log.login_type,
+                    log.ip_address or "-",
+                    log.browser or "-",
+                    log.os or "-",
+                    status_str,
+                    log.fail_reason or "-"
+                ]
+                apply_cell_style(ws, row_data, current_row, cell_alignment, thin_border)
+                current_row += 1
+            
+            offset += batch_size
+        
+        auto_adjust_column_width(ws, len(headers))
+        
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        chunk_size = 8192
+        while True:
+            chunk = output.read(chunk_size)
+            if not chunk:
+                break
+            yield chunk
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"登录日志_{timestamp}.xlsx"
     encoded_filename = quote(filename)
     
     return StreamingResponse(
-        output,
+        generate_excel(),
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"}
+        headers={
+            "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}",
+            "X-Total-Count": str(total_count)
+        }
     )
 
 
@@ -695,40 +737,61 @@ async def export_access_logs(
         end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
         query = query.filter(AccessLog.created_at <= end_datetime)
     
-    logs = query.order_by(desc(AccessLog.created_at)).all()
+    total_count = query.count()
+    batch_size = 1000
     
-    wb, ws, header_font, header_fill, header_alignment, cell_alignment, thin_border = create_excel_workbook()
-    ws.title = "访问日志"
-    
-    headers = ["日志ID", "发生时间", "用户", "请求方法", "请求路径", "状态码", "响应时间(ms)", "IP地址"]
-    apply_header_style(ws, headers, 1, header_font, header_fill, header_alignment, thin_border)
-    
-    for idx, log in enumerate(logs, 2):
-        created_at_str = to_local(log.created_at).strftime("%Y-%m-%d %H:%M:%S") if log.created_at else ""
-        row_data = [
-            log.id,
-            created_at_str,
-            log.username or "游客",
-            log.request_method or "-",
-            log.request_path or "-",
-            log.response_status or "-",
-            f"{log.response_time:.2f}" if log.response_time else "-",
-            log.ip_address or "-"
-        ]
-        apply_cell_style(ws, row_data, idx, cell_alignment, thin_border)
-    
-    auto_adjust_column_width(ws, len(headers))
-    
-    output = BytesIO()
-    wb.save(output)
-    output.seek(0)
+    def generate_excel():
+        wb, ws, header_font, header_fill, header_alignment, cell_alignment, thin_border = create_excel_workbook()
+        ws.title = "访问日志"
+        
+        headers = ["日志ID", "发生时间", "用户", "请求方法", "请求路径", "状态码", "响应时间(ms)", "IP地址"]
+        apply_header_style(ws, headers, 1, header_font, header_fill, header_alignment, thin_border)
+        
+        current_row = 2
+        offset = 0
+        
+        while offset < total_count:
+            batch_logs = query.order_by(desc(AccessLog.created_at)).offset(offset).limit(batch_size).all()
+            
+            for log in batch_logs:
+                created_at_str = to_local(log.created_at).strftime("%Y-%m-%d %H:%M:%S") if log.created_at else ""
+                row_data = [
+                    log.id,
+                    created_at_str,
+                    log.username or "游客",
+                    log.request_method or "-",
+                    log.request_path or "-",
+                    log.response_status or "-",
+                    f"{log.response_time:.2f}" if log.response_time else "-",
+                    log.ip_address or "-"
+                ]
+                apply_cell_style(ws, row_data, current_row, cell_alignment, thin_border)
+                current_row += 1
+            
+            offset += batch_size
+        
+        auto_adjust_column_width(ws, len(headers))
+        
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        chunk_size = 8192
+        while True:
+            chunk = output.read(chunk_size)
+            if not chunk:
+                break
+            yield chunk
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"访问日志_{timestamp}.xlsx"
     encoded_filename = quote(filename)
     
     return StreamingResponse(
-        output,
+        generate_excel(),
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"}
+        headers={
+            "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}",
+            "X-Total-Count": str(total_count)
+        }
     )

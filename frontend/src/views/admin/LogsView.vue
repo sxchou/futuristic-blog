@@ -189,9 +189,15 @@ const handleClearLogs = async () => {
 }
 
 const exporting = ref(false)
+const exportProgress = ref(0)
+const exportTotal = ref(0)
+const exportStatus = ref('')
 
 const handleExport = async () => {
   exporting.value = true
+  exportProgress.value = 0
+  exportTotal.value = 0
+  exportStatus.value = '准备导出...'
   
   try {
     const params: Record<string, any> = {}
@@ -204,6 +210,8 @@ const handleExport = async () => {
     
     let response: any
     let filename: string
+    
+    exportStatus.value = '正在查询数据...'
     
     switch (activeTab.value) {
       case 'operations':
@@ -222,6 +230,11 @@ const handleExport = async () => {
         throw new Error('Unknown log type')
     }
     
+    const totalCount = parseInt(response.headers['x-total-count'] || '0')
+    exportTotal.value = totalCount
+    exportStatus.value = `正在生成Excel文件（共 ${totalCount.toLocaleString()} 条记录）...`
+    exportProgress.value = 50
+    
     const contentDisposition = response.headers['content-disposition']
     if (contentDisposition) {
       const filenameMatch = contentDisposition.match(/filename\*=UTF-8''(.+)/)
@@ -235,6 +248,9 @@ const handleExport = async () => {
       filename = `${filename}_${timestamp}.xlsx`
     }
     
+    exportStatus.value = '正在下载文件...'
+    exportProgress.value = 80
+    
     const blob = new Blob([response.data], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     })
@@ -247,13 +263,21 @@ const handleExport = async () => {
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
     
-    await dialog.showSuccess(`成功导出 ${filename}`, '导出成功')
+    exportProgress.value = 100
+    exportStatus.value = '导出完成'
+    
+    await dialog.showSuccess(`成功导出 ${filename}（共 ${totalCount.toLocaleString()} 条记录）`, '导出成功')
   } catch (error: any) {
     console.error('Export failed:', error)
     const errorMsg = error?.response?.data?.message || error?.message || '导出失败，请重试'
     await dialog.showError(errorMsg, '导出失败')
   } finally {
     exporting.value = false
+    setTimeout(() => {
+      exportProgress.value = 0
+      exportTotal.value = 0
+      exportStatus.value = ''
+    }, 2000)
   }
 }
 
@@ -693,6 +717,24 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 </svg>
                 {{ exporting ? '导出中...' : '导出' }}
               </button>
+              
+              <div
+                v-if="exporting && exportStatus"
+                class="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-lg"
+              >
+                <div class="flex-1 min-w-[200px]">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-xs text-blue-600 dark:text-blue-400">{{ exportStatus }}</span>
+                    <span class="text-xs text-blue-600 dark:text-blue-400">{{ exportProgress }}%</span>
+                  </div>
+                  <div class="w-full bg-blue-500/20 rounded-full h-1.5">
+                    <div
+                      class="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
+                      :style="{ width: `${exportProgress}%` }"
+                    ></div>
+                  </div>
+                </div>
+              </div>
             </form>
 
             <form 
@@ -800,6 +842,24 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 </svg>
                 {{ exporting ? '导出中...' : '导出' }}
               </button>
+              
+              <div
+                v-if="exporting && exportStatus"
+                class="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-lg"
+              >
+                <div class="flex-1 min-w-[200px]">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-xs text-blue-600 dark:text-blue-400">{{ exportStatus }}</span>
+                    <span class="text-xs text-blue-600 dark:text-blue-400">{{ exportProgress }}%</span>
+                  </div>
+                  <div class="w-full bg-blue-500/20 rounded-full h-1.5">
+                    <div
+                      class="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
+                      :style="{ width: `${exportProgress}%` }"
+                    ></div>
+                  </div>
+                </div>
+              </div>
             </form>
 
             <form 
@@ -923,6 +983,24 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 </svg>
                 {{ exporting ? '导出中...' : '导出' }}
               </button>
+              
+              <div
+                v-if="exporting && exportStatus"
+                class="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-lg"
+              >
+                <div class="flex-1 min-w-[200px]">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-xs text-blue-600 dark:text-blue-400">{{ exportStatus }}</span>
+                    <span class="text-xs text-blue-600 dark:text-blue-400">{{ exportProgress }}%</span>
+                  </div>
+                  <div class="w-full bg-blue-500/20 rounded-full h-1.5">
+                    <div
+                      class="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
+                      :style="{ width: `${exportProgress}%` }"
+                    ></div>
+                  </div>
+                </div>
+              </div>
             </form>
         </div>
 
