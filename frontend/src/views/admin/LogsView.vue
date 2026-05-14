@@ -12,6 +12,10 @@ const { hasPermission } = useAdminCheck()
 
 const canClearLogs = computed(() => hasPermission('log.clear'))
 
+const generateTaskId = () => {
+  return 'export-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9)
+}
+
 interface LogStats {
   total_operations: number
   total_logins: number
@@ -228,8 +232,11 @@ const handleExport = async (logType: string) => {
   state.status = '准备导出...'
   state.abortController = new AbortController()
   
+  const taskId = generateTaskId()
+  let progressInterval: any = null
+  
   try {
-    const params: Record<string, any> = {}
+    const params: Record<string, any> = { task_id: taskId }
     Object.keys(filters.value).forEach(key => {
       const value = filters.value[key as keyof typeof filters.value]
       if (value) {
@@ -273,6 +280,21 @@ const handleExport = async (logType: string) => {
       return
     }
     
+    progressInterval = setInterval(async () => {
+      try {
+        const progressResponse = await logsApi.getExportProgress(taskId)
+        const { current, total } = progressResponse.data
+        if (total > 0) {
+          state.total = total
+          const progressPercent = Math.round((current / total) * 85) + 15
+          state.progress = Math.min(progressPercent, 99)
+          state.status = `正在生成Excel（${current.toLocaleString()}/${total.toLocaleString()}）...`
+        }
+      } catch (error) {
+        console.error('Failed to fetch progress:', error)
+      }
+    }, 500)
+    
     let response: any
     let filename: string
     
@@ -281,17 +303,7 @@ const handleExport = async (logType: string) => {
     
     const config = {
       signal: state.abortController?.signal,
-      responseType: 'blob' as const,
-      onDownloadProgress: (progressEvent: any) => {
-        if (progressEvent.lengthComputable && totalCount > 0) {
-          const percentCompleted = Math.round((progressEvent.loaded / progressEvent.total) * 100)
-          const progressRange = 85
-          const baseProgress = 15
-          const currentProgress = baseProgress + (percentCompleted * progressRange / 100)
-          state.progress = Math.min(currentProgress, 99)
-          state.status = `正在下载文件（${state.progress.toFixed(0)}%）...`
-        }
-      }
+      responseType: 'blob' as const
     }
     
     switch (logType) {
@@ -309,6 +321,11 @@ const handleExport = async (logType: string) => {
         break
       default:
         throw new Error('Unknown log type')
+    }
+    
+    if (progressInterval) {
+      clearInterval(progressInterval)
+      progressInterval = null
     }
     
     state.status = '正在处理文件...'
@@ -353,7 +370,16 @@ const handleExport = async (logType: string) => {
     const errorMsg = error?.response?.data?.message || error?.message || '导出失败，请重试'
     await dialog.showError(errorMsg, '导出失败')
   } finally {
+    if (progressInterval) {
+      clearInterval(progressInterval)
+      progressInterval = null
+    }
     state.isExporting = false
+    try {
+      await logsApi.clearExportProgress(taskId)
+    } catch (error) {
+      console.error('Failed to clear progress:', error)
+    }
     setTimeout(() => {
       state.progress = 0
       state.total = 0

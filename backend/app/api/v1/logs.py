@@ -16,11 +16,15 @@ from app.utils.timezone import get_db_now, get_today_start, to_local
 from app.services.log_service import LogService
 from app.utils.cache import cache_manager
 from pydantic import BaseModel, field_validator
+import uuid
+from typing import Dict
 
 router = APIRouter(prefix="/logs", tags=["Logs"])
 
 CACHE_NAME = "logs"
 CACHE_TTL_STATS = 60
+
+export_progress: Dict[str, Dict[str, int]] = {}
 
 
 class OperationLogItem(BaseModel):
@@ -530,6 +534,25 @@ def auto_adjust_column_width(ws, column_count):
         ws.column_dimensions[column_letter].width = max(adjusted_width, 10)
 
 
+@router.get("/export/progress/{task_id}")
+async def get_export_progress(
+    task_id: str,
+    _: dict = Depends(require_permission("log.view"))
+):
+    progress = export_progress.get(task_id, {"current": 0, "total": 0})
+    return progress
+
+
+@router.delete("/export/progress/{task_id}")
+async def clear_export_progress(
+    task_id: str,
+    _: dict = Depends(require_permission("log.view"))
+):
+    if task_id in export_progress:
+        del export_progress[task_id]
+    return {"message": "Progress cleared"}
+
+
 @router.get("/export/operations/count")
 async def get_operation_logs_export_count(
     module: Optional[str] = None,
@@ -564,6 +587,7 @@ async def get_operation_logs_export_count(
 
 @router.get("/export/operations")
 async def export_operation_logs(
+    task_id: Optional[str] = None,
     module: Optional[str] = None,
     action: Optional[str] = None,
     status: Optional[str] = None,
@@ -593,6 +617,9 @@ async def export_operation_logs(
     total_count = query.count()
     batch_size = 5000
     
+    if task_id:
+        export_progress[task_id] = {"current": 0, "total": total_count}
+    
     def generate_excel():
         wb, ws, header_font, header_fill, header_alignment, cell_alignment, thin_border = create_excel_workbook()
         ws.title = "操作日志"
@@ -602,6 +629,7 @@ async def export_operation_logs(
         
         current_row = 2
         offset = 0
+        processed_count = 0
         
         while offset < total_count:
             batch_logs = query.order_by(desc(OperationLog.created_at)).offset(offset).limit(batch_size).all()
@@ -621,6 +649,10 @@ async def export_operation_logs(
                 ]
                 apply_cell_style(ws, row_data, current_row, cell_alignment, thin_border)
                 current_row += 1
+                processed_count += 1
+            
+            if task_id and task_id in export_progress:
+                export_progress[task_id]["current"] = processed_count
             
             offset += batch_size
         
@@ -685,6 +717,7 @@ async def get_login_logs_export_count(
 
 @router.get("/export/logins")
 async def export_login_logs(
+    task_id: Optional[str] = None,
     login_type: Optional[str] = None,
     status: Optional[str] = None,
     username: Optional[str] = None,
@@ -714,6 +747,9 @@ async def export_login_logs(
     total_count = query.count()
     batch_size = 5000
     
+    if task_id:
+        export_progress[task_id] = {"current": 0, "total": total_count}
+    
     def generate_excel():
         wb, ws, header_font, header_fill, header_alignment, cell_alignment, thin_border = create_excel_workbook()
         ws.title = "登录日志"
@@ -723,6 +759,7 @@ async def export_login_logs(
         
         current_row = 2
         offset = 0
+        processed_count = 0
         
         while offset < total_count:
             batch_logs = query.order_by(desc(LoginLog.created_at)).offset(offset).limit(batch_size).all()
@@ -743,6 +780,10 @@ async def export_login_logs(
                 ]
                 apply_cell_style(ws, row_data, current_row, cell_alignment, thin_border)
                 current_row += 1
+                processed_count += 1
+            
+            if task_id and task_id in export_progress:
+                export_progress[task_id]["current"] = processed_count
             
             offset += batch_size
         
@@ -807,6 +848,7 @@ async def get_access_logs_export_count(
 
 @router.get("/export/access")
 async def export_access_logs(
+    task_id: Optional[str] = None,
     username: Optional[str] = None,
     request_method: Optional[str] = None,
     path: Optional[str] = None,
@@ -836,6 +878,9 @@ async def export_access_logs(
     total_count = query.count()
     batch_size = 5000
     
+    if task_id:
+        export_progress[task_id] = {"current": 0, "total": total_count}
+    
     def generate_excel():
         wb, ws, header_font, header_fill, header_alignment, cell_alignment, thin_border = create_excel_workbook()
         ws.title = "访问日志"
@@ -845,6 +890,7 @@ async def export_access_logs(
         
         current_row = 2
         offset = 0
+        processed_count = 0
         
         while offset < total_count:
             batch_logs = query.order_by(desc(AccessLog.created_at)).offset(offset).limit(batch_size).all()
@@ -863,6 +909,10 @@ async def export_access_logs(
                 ]
                 apply_cell_style(ws, row_data, current_row, cell_alignment, thin_border)
                 current_row += 1
+                processed_count += 1
+            
+            if task_id and task_id in export_progress:
+                export_progress[task_id]["current"] = processed_count
             
             offset += batch_size
         

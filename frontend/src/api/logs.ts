@@ -15,6 +15,9 @@ export const logsApi = {
   getExportLoginsCount: (params?: any) => apiClient.get('/logs/export/logins/count', { params }),
   getExportAccessCount: (params?: any) => apiClient.get('/logs/export/access/count', { params }),
   
+  getExportProgress: (taskId: string) => apiClient.get(`/logs/export/progress/${taskId}`),
+  clearExportProgress: (taskId: string) => apiClient.delete(`/logs/export/progress/${taskId}`),
+  
   exportOperations: (params?: any, config?: any) => apiClient.get('/logs/export/operations', { 
     params, 
     responseType: 'blob',
