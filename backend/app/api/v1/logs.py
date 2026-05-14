@@ -530,6 +530,38 @@ def auto_adjust_column_width(ws, column_count):
         ws.column_dimensions[column_letter].width = max(adjusted_width, 10)
 
 
+@router.get("/export/operations/count")
+async def get_operation_logs_export_count(
+    module: Optional[str] = None,
+    action: Optional[str] = None,
+    status: Optional[str] = None,
+    username: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permission("log.view"))
+):
+    query = db.query(OperationLog)
+    
+    if module:
+        query = query.filter(OperationLog.module.contains(module))
+    if action:
+        query = query.filter(OperationLog.action.contains(action))
+    if status:
+        query = query.filter(OperationLog.status == status)
+    if username:
+        query = query.filter(OperationLog.username.contains(username))
+    if start_date:
+        query = query.filter(OperationLog.created_at >= datetime.fromisoformat(start_date))
+    if end_date:
+        end_datetime = datetime.fromisoformat(end_date)
+        end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
+        query = query.filter(OperationLog.created_at <= end_datetime)
+    
+    total_count = query.count()
+    return {"total": total_count}
+
+
 @router.get("/export/operations")
 async def export_operation_logs(
     module: Optional[str] = None,
@@ -617,6 +649,38 @@ async def export_operation_logs(
             "X-Total-Count": str(total_count)
         }
     )
+
+
+@router.get("/export/logins/count")
+async def get_login_logs_export_count(
+    login_type: Optional[str] = None,
+    status: Optional[str] = None,
+    username: Optional[str] = None,
+    ip_address: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permission("log.view"))
+):
+    query = db.query(LoginLog)
+    
+    if login_type:
+        query = query.filter(LoginLog.login_type.contains(login_type))
+    if status:
+        query = query.filter(LoginLog.status == status)
+    if username:
+        query = query.filter(LoginLog.username.contains(username))
+    if ip_address:
+        query = query.filter(LoginLog.ip_address.contains(ip_address))
+    if start_date:
+        query = query.filter(LoginLog.created_at >= datetime.fromisoformat(start_date))
+    if end_date:
+        end_datetime = datetime.fromisoformat(end_date)
+        end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
+        query = query.filter(LoginLog.created_at <= end_datetime)
+    
+    total_count = query.count()
+    return {"total": total_count}
 
 
 @router.get("/export/logins")
@@ -707,6 +771,38 @@ async def export_login_logs(
             "X-Total-Count": str(total_count)
         }
     )
+
+
+@router.get("/export/access/count")
+async def get_access_logs_export_count(
+    username: Optional[str] = None,
+    request_method: Optional[str] = None,
+    path: Optional[str] = None,
+    ip_address: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permission("log.view"))
+):
+    query = db.query(AccessLog)
+    
+    if username:
+        query = query.filter(AccessLog.username.contains(username))
+    if request_method:
+        query = query.filter(AccessLog.request_method.contains(request_method))
+    if path:
+        query = query.filter(AccessLog.request_path.contains(path))
+    if ip_address:
+        query = query.filter(AccessLog.ip_address.contains(ip_address))
+    if start_date:
+        query = query.filter(AccessLog.created_at >= datetime.fromisoformat(start_date))
+    if end_date:
+        end_datetime = datetime.fromisoformat(end_date)
+        end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
+        query = query.filter(AccessLog.created_at <= end_datetime)
+    
+    total_count = query.count()
+    return {"total": total_count}
 
 
 @router.get("/export/access")

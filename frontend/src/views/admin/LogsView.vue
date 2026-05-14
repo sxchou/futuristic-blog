@@ -237,14 +237,61 @@ const handleExport = async (logType: string) => {
       }
     })
     
+    state.status = '正在查询数据总数...'
+    state.progress = 5
+    
+    let countResponse: any
+    switch (logType) {
+      case 'operations':
+        countResponse = await logsApi.getExportOperationsCount(params)
+        break
+      case 'logins':
+        countResponse = await logsApi.getExportLoginsCount(params)
+        break
+      case 'access':
+        countResponse = await logsApi.getExportAccessCount(params)
+        break
+      default:
+        throw new Error('Unknown log type')
+    }
+    
+    const totalCount = countResponse.data.total
+    state.total = totalCount
+    
+    if (totalCount === 0) {
+      state.status = '没有符合条件的记录'
+      await dialog.showWarning('没有找到符合条件的日志记录', '导出提示')
+      return
+    }
+    
+    state.status = `准备导出 ${totalCount.toLocaleString()} 条记录...`
+    state.progress = 10
+    
+    await new Promise(resolve => setTimeout(resolve, 300))
+    
+    if (state.abortController?.signal.aborted) {
+      return
+    }
+    
     let response: any
     let filename: string
     
-    state.status = '正在查询数据总数...'
+    state.status = `正在生成Excel（0/${totalCount.toLocaleString()}）...`
+    state.progress = 15
     
     const config = {
       signal: state.abortController?.signal,
-      responseType: 'blob' as const
+      responseType: 'blob' as const,
+      onDownloadProgress: (progressEvent: any) => {
+        if (progressEvent.lengthComputable && totalCount > 0) {
+          const percentCompleted = Math.round((progressEvent.loaded / progressEvent.total) * 100)
+          const progressRange = 85
+          const baseProgress = 15
+          const currentProgress = baseProgress + (percentCompleted * progressRange / 100)
+          state.progress = Math.min(currentProgress, 99)
+          state.status = `正在下载文件（${state.progress.toFixed(0)}%）...`
+        }
+      }
     }
     
     switch (logType) {
@@ -264,17 +311,8 @@ const handleExport = async (logType: string) => {
         throw new Error('Unknown log type')
     }
     
-    const totalCount = parseInt(response.headers['x-total-count'] || '0')
-    state.total = totalCount
-    
-    if (totalCount === 0) {
-      state.status = '没有符合条件的记录'
-      await dialog.showWarning('没有找到符合条件的日志记录', '导出提示')
-      return
-    }
-    
-    state.status = `正在生成Excel（共 ${totalCount.toLocaleString()} 条）...`
-    state.progress = 30
+    state.status = '正在处理文件...'
+    state.progress = 95
     
     const contentDisposition = response.headers['content-disposition']
     if (contentDisposition) {
@@ -288,9 +326,6 @@ const handleExport = async (logType: string) => {
       const timestamp = new Date().toISOString().replace(/[\-:T]/g, '').slice(0, 15)
       filename = `${filename}_${timestamp}.xlsx`
     }
-    
-    state.status = '正在下载文件...'
-    state.progress = 60
     
     const blob = new Blob([response.data], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
