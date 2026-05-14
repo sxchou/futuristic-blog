@@ -231,7 +231,7 @@ const handleExport = async () => {
     }
     
     if (!filename.endsWith('.xlsx')) {
-      const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 15)
+      const timestamp = new Date().toISOString().replace(/[\-:T]/g, '').slice(0, 15)
       filename = `${filename}_${timestamp}.xlsx`
     }
     
