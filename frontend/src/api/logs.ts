@@ -11,19 +11,22 @@ export const logsApi = {
   clearLogins: (days: number = 30) => apiClient.delete(`/logs/logins/clear?days=${days}`),
   clearAccess: (days: number = 30) => apiClient.delete(`/logs/access/clear?days=${days}`),
   
-  exportOperations: (params?: any) => apiClient.get('/logs/export/operations', { 
+  exportOperations: (params?: any, config?: any) => apiClient.get('/logs/export/operations', { 
     params, 
     responseType: 'blob',
-    timeout: 300000
+    timeout: 300000,
+    ...config
   }),
-  exportLogins: (params?: any) => apiClient.get('/logs/export/logins', { 
+  exportLogins: (params?: any, config?: any) => apiClient.get('/logs/export/logins', { 
     params, 
     responseType: 'blob',
-    timeout: 300000
+    timeout: 300000,
+    ...config
   }),
-  exportAccess: (params?: any) => apiClient.get('/logs/export/access', { 
+  exportAccess: (params?: any, config?: any) => apiClient.get('/logs/export/access', { 
     params, 
     responseType: 'blob',
-    timeout: 300000
+    timeout: 300000,
+    ...config
   }),
 }

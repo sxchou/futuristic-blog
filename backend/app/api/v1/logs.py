@@ -559,7 +559,7 @@ async def export_operation_logs(
         query = query.filter(OperationLog.created_at <= end_datetime)
     
     total_count = query.count()
-    batch_size = 1000
+    batch_size = 5000
     
     def generate_excel():
         wb, ws, header_font, header_fill, header_alignment, cell_alignment, thin_border = create_excel_workbook()
@@ -598,7 +598,7 @@ async def export_operation_logs(
         wb.save(output)
         output.seek(0)
         
-        chunk_size = 8192
+        chunk_size = 65536
         while True:
             chunk = output.read(chunk_size)
             if not chunk:
@@ -648,7 +648,7 @@ async def export_login_logs(
         query = query.filter(LoginLog.created_at <= end_datetime)
     
     total_count = query.count()
-    batch_size = 1000
+    batch_size = 5000
     
     def generate_excel():
         wb, ws, header_font, header_fill, header_alignment, cell_alignment, thin_border = create_excel_workbook()
@@ -688,7 +688,7 @@ async def export_login_logs(
         wb.save(output)
         output.seek(0)
         
-        chunk_size = 8192
+        chunk_size = 65536
         while True:
             chunk = output.read(chunk_size)
             if not chunk:
@@ -738,7 +738,7 @@ async def export_access_logs(
         query = query.filter(AccessLog.created_at <= end_datetime)
     
     total_count = query.count()
-    batch_size = 1000
+    batch_size = 5000
     
     def generate_excel():
         wb, ws, header_font, header_fill, header_alignment, cell_alignment, thin_border = create_excel_workbook()
@@ -776,7 +776,7 @@ async def export_access_logs(
         wb.save(output)
         output.seek(0)
         
-        chunk_size = 8192
+        chunk_size = 65536
         while True:
             chunk = output.read(chunk_size)
             if not chunk:

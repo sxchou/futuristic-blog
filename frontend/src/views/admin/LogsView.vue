@@ -188,16 +188,45 @@ const handleClearLogs = async () => {
   }
 }
 
-const exporting = ref(false)
-const exportProgress = ref(0)
-const exportTotal = ref(0)
-const exportStatus = ref('')
+interface ExportState {
+  isExporting: boolean
+  progress: number
+  total: number
+  status: string
+  abortController: AbortController | null
+}
 
-const handleExport = async () => {
-  exporting.value = true
-  exportProgress.value = 0
-  exportTotal.value = 0
-  exportStatus.value = '准备导出...'
+const exportStates = ref<Record<string, ExportState>>({
+  operations: {
+    isExporting: false,
+    progress: 0,
+    total: 0,
+    status: '',
+    abortController: null
+  },
+  logins: {
+    isExporting: false,
+    progress: 0,
+    total: 0,
+    status: '',
+    abortController: null
+  },
+  access: {
+    isExporting: false,
+    progress: 0,
+    total: 0,
+    status: '',
+    abortController: null
+  }
+})
+
+const handleExport = async (logType: string) => {
+  const state = exportStates.value[logType]
+  state.isExporting = true
+  state.progress = 0
+  state.total = 0
+  state.status = '准备导出...'
+  state.abortController = new AbortController()
   
   try {
     const params: Record<string, any> = {}
@@ -211,19 +240,24 @@ const handleExport = async () => {
     let response: any
     let filename: string
     
-    exportStatus.value = '正在查询数据...'
+    state.status = '正在查询数据总数...'
     
-    switch (activeTab.value) {
+    const config = {
+      signal: state.abortController?.signal,
+      responseType: 'blob' as const
+    }
+    
+    switch (logType) {
       case 'operations':
-        response = await logsApi.exportOperations(params)
+        response = await logsApi.exportOperations(params, config)
         filename = '操作日志'
         break
       case 'logins':
-        response = await logsApi.exportLogins(params)
+        response = await logsApi.exportLogins(params, config)
         filename = '登录日志'
         break
       case 'access':
-        response = await logsApi.exportAccess(params)
+        response = await logsApi.exportAccess(params, config)
         filename = '访问日志'
         break
       default:
@@ -231,9 +265,16 @@ const handleExport = async () => {
     }
     
     const totalCount = parseInt(response.headers['x-total-count'] || '0')
-    exportTotal.value = totalCount
-    exportStatus.value = `正在生成Excel文件（共 ${totalCount.toLocaleString()} 条记录）...`
-    exportProgress.value = 50
+    state.total = totalCount
+    
+    if (totalCount === 0) {
+      state.status = '没有符合条件的记录'
+      await dialog.showWarning('没有找到符合条件的日志记录', '导出提示')
+      return
+    }
+    
+    state.status = `正在生成Excel（共 ${totalCount.toLocaleString()} 条）...`
+    state.progress = 30
     
     const contentDisposition = response.headers['content-disposition']
     if (contentDisposition) {
@@ -248,8 +289,8 @@ const handleExport = async () => {
       filename = `${filename}_${timestamp}.xlsx`
     }
     
-    exportStatus.value = '正在下载文件...'
-    exportProgress.value = 80
+    state.status = '正在下载文件...'
+    state.progress = 60
     
     const blob = new Blob([response.data], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -263,21 +304,36 @@ const handleExport = async () => {
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
     
-    exportProgress.value = 100
-    exportStatus.value = '导出完成'
+    state.progress = 100
+    state.status = '导出完成'
     
     await dialog.showSuccess(`成功导出 ${filename}（共 ${totalCount.toLocaleString()} 条记录）`, '导出成功')
   } catch (error: any) {
+    if (error.name === 'AbortError' || error.code === 'ERR_CANCELED') {
+      state.status = '导出已取消'
+      await dialog.showWarning('导出操作已取消', '已取消')
+      return
+    }
     console.error('Export failed:', error)
     const errorMsg = error?.response?.data?.message || error?.message || '导出失败，请重试'
     await dialog.showError(errorMsg, '导出失败')
   } finally {
-    exporting.value = false
+    state.isExporting = false
     setTimeout(() => {
-      exportProgress.value = 0
-      exportTotal.value = 0
-      exportStatus.value = ''
+      state.progress = 0
+      state.total = 0
+      state.status = ''
+      state.abortController = null
     }, 2000)
+  }
+}
+
+const cancelExport = (logType: string) => {
+  const state = exportStates.value[logType]
+  if (state.abortController) {
+    state.abortController.abort()
+    state.isExporting = false
+    state.status = '正在取消...'
   }
 }
 
@@ -693,14 +749,14 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
               </button>
               <button
                 type="button"
-                :disabled="exporting"
+                :disabled="exportStates.operations.isExporting"
                 :class="[
                   'px-2.5 py-1 text-xs border rounded-lg transition-colors flex items-center gap-1',
-                  exporting 
+                  exportStates.operations.isExporting 
                     ? 'bg-gray-100 dark:bg-dark-100 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-white/10 cursor-not-allowed'
                     : 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 dark:border-green-400/20 hover:bg-green-500/20 dark:hover:bg-green-400/20'
                 ]"
-                @click="handleExport"
+                @click="handleExport('operations')"
               >
                 <svg
                   class="w-3.5 h-3.5"
@@ -715,25 +771,32 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                     d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                   />
                 </svg>
-                {{ exporting ? '导出中...' : '导出' }}
+                {{ exportStates.operations.isExporting ? '导出中...' : '导出' }}
               </button>
               
               <div
-                v-if="exporting && exportStatus"
+                v-if="exportStates.operations.isExporting && exportStates.operations.status"
                 class="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-lg"
               >
                 <div class="flex-1 min-w-[200px]">
                   <div class="flex items-center justify-between mb-1">
-                    <span class="text-xs text-blue-600 dark:text-blue-400">{{ exportStatus }}</span>
-                    <span class="text-xs text-blue-600 dark:text-blue-400">{{ exportProgress }}%</span>
+                    <span class="text-xs text-blue-600 dark:text-blue-400">{{ exportStates.operations.status }}</span>
+                    <span class="text-xs text-blue-600 dark:text-blue-400">{{ exportStates.operations.progress }}%</span>
                   </div>
                   <div class="w-full bg-blue-500/20 rounded-full h-1.5">
                     <div
                       class="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
-                      :style="{ width: `${exportProgress}%` }"
+                      :style="{ width: `${exportStates.operations.progress}%` }"
                     ></div>
                   </div>
                 </div>
+                <button
+                  type="button"
+                  class="px-2 py-1 text-xs bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 rounded hover:bg-red-500/20"
+                  @click="cancelExport('operations')"
+                >
+                  取消
+                </button>
               </div>
             </form>
 
@@ -818,14 +881,14 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
               </button>
               <button
                 type="button"
-                :disabled="exporting"
+                :disabled="exportStates.logins.isExporting"
                 :class="[
                   'px-2.5 py-1 text-xs border rounded-lg transition-colors flex items-center gap-1',
-                  exporting 
+                  exportStates.logins.isExporting 
                     ? 'bg-gray-100 dark:bg-dark-100 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-white/10 cursor-not-allowed'
                     : 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 dark:border-green-400/20 hover:bg-green-500/20 dark:hover:bg-green-400/20'
                 ]"
-                @click="handleExport"
+                @click="handleExport('logins')"
               >
                 <svg
                   class="w-3.5 h-3.5"
@@ -840,25 +903,32 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                     d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                   />
                 </svg>
-                {{ exporting ? '导出中...' : '导出' }}
+                {{ exportStates.logins.isExporting ? '导出中...' : '导出' }}
               </button>
               
               <div
-                v-if="exporting && exportStatus"
+                v-if="exportStates.logins.isExporting && exportStates.logins.status"
                 class="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-lg"
               >
                 <div class="flex-1 min-w-[200px]">
                   <div class="flex items-center justify-between mb-1">
-                    <span class="text-xs text-blue-600 dark:text-blue-400">{{ exportStatus }}</span>
-                    <span class="text-xs text-blue-600 dark:text-blue-400">{{ exportProgress }}%</span>
+                    <span class="text-xs text-blue-600 dark:text-blue-400">{{ exportStates.logins.status }}</span>
+                    <span class="text-xs text-blue-600 dark:text-blue-400">{{ exportStates.logins.progress }}%</span>
                   </div>
                   <div class="w-full bg-blue-500/20 rounded-full h-1.5">
                     <div
                       class="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
-                      :style="{ width: `${exportProgress}%` }"
+                      :style="{ width: `${exportStates.logins.progress}%` }"
                     ></div>
                   </div>
                 </div>
+                <button
+                  type="button"
+                  class="px-2 py-1 text-xs bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 rounded hover:bg-red-500/20"
+                  @click="cancelExport('logins')"
+                >
+                  取消
+                </button>
               </div>
             </form>
 
@@ -959,14 +1029,14 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
               </button>
               <button
                 type="button"
-                :disabled="exporting"
+                :disabled="exportStates.access.isExporting"
                 :class="[
                   'px-2.5 py-1 text-xs border rounded-lg transition-colors flex items-center gap-1',
-                  exporting 
+                  exportStates.access.isExporting 
                     ? 'bg-gray-100 dark:bg-dark-100 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-white/10 cursor-not-allowed'
                     : 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 dark:border-green-400/20 hover:bg-green-500/20 dark:hover:bg-green-400/20'
                 ]"
-                @click="handleExport"
+                @click="handleExport('access')"
               >
                 <svg
                   class="w-3.5 h-3.5"
@@ -981,25 +1051,32 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                     d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                   />
                 </svg>
-                {{ exporting ? '导出中...' : '导出' }}
+                {{ exportStates.access.isExporting ? '导出中...' : '导出' }}
               </button>
               
               <div
-                v-if="exporting && exportStatus"
+                v-if="exportStates.access.isExporting && exportStates.access.status"
                 class="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-lg"
               >
                 <div class="flex-1 min-w-[200px]">
                   <div class="flex items-center justify-between mb-1">
-                    <span class="text-xs text-blue-600 dark:text-blue-400">{{ exportStatus }}</span>
-                    <span class="text-xs text-blue-600 dark:text-blue-400">{{ exportProgress }}%</span>
+                    <span class="text-xs text-blue-600 dark:text-blue-400">{{ exportStates.access.status }}</span>
+                    <span class="text-xs text-blue-600 dark:text-blue-400">{{ exportStates.access.progress }}%</span>
                   </div>
                   <div class="w-full bg-blue-500/20 rounded-full h-1.5">
                     <div
                       class="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
-                      :style="{ width: `${exportProgress}%` }"
+                      :style="{ width: `${exportStates.access.progress}%` }"
                     ></div>
                   </div>
                 </div>
+                <button
+                  type="button"
+                  class="px-2 py-1 text-xs bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 rounded hover:bg-red-500/20"
+                  @click="cancelExport('access')"
+                >
+                  取消
+                </button>
               </div>
             </form>
         </div>
