@@ -539,8 +539,18 @@ async def get_export_progress(
     task_id: str,
     _: dict = Depends(require_permission("log.view"))
 ):
-    progress = export_progress.get(task_id, {"current": 0, "total": 0})
+    progress = export_progress.get(task_id, {"current": 0, "total": 0, "cancelled": False})
     return progress
+
+
+@router.post("/export/cancel/{task_id}")
+async def cancel_export_task(
+    task_id: str,
+    _: dict = Depends(require_permission("log.view"))
+):
+    if task_id in export_progress:
+        export_progress[task_id]["cancelled"] = True
+    return {"message": "Export cancelled"}
 
 
 @router.delete("/export/progress/{task_id}")
@@ -618,7 +628,7 @@ async def export_operation_logs(
     batch_size = 5000
     
     if task_id:
-        export_progress[task_id] = {"current": 0, "total": total_count}
+        export_progress[task_id] = {"current": 0, "total": total_count, "cancelled": False}
     
     def generate_excel():
         wb, ws, header_font, header_fill, header_alignment, cell_alignment, thin_border = create_excel_workbook()
@@ -632,6 +642,9 @@ async def export_operation_logs(
         processed_count = 0
         
         while offset < total_count:
+            if task_id and task_id in export_progress and export_progress[task_id].get("cancelled", False):
+                return
+            
             batch_logs = query.order_by(desc(OperationLog.created_at)).offset(offset).limit(batch_size).all()
             
             for log in batch_logs:
@@ -748,7 +761,7 @@ async def export_login_logs(
     batch_size = 5000
     
     if task_id:
-        export_progress[task_id] = {"current": 0, "total": total_count}
+        export_progress[task_id] = {"current": 0, "total": total_count, "cancelled": False}
     
     def generate_excel():
         wb, ws, header_font, header_fill, header_alignment, cell_alignment, thin_border = create_excel_workbook()
@@ -762,6 +775,9 @@ async def export_login_logs(
         processed_count = 0
         
         while offset < total_count:
+            if task_id and task_id in export_progress and export_progress[task_id].get("cancelled", False):
+                return
+            
             batch_logs = query.order_by(desc(LoginLog.created_at)).offset(offset).limit(batch_size).all()
             
             for log in batch_logs:
@@ -879,7 +895,7 @@ async def export_access_logs(
     batch_size = 5000
     
     if task_id:
-        export_progress[task_id] = {"current": 0, "total": total_count}
+        export_progress[task_id] = {"current": 0, "total": total_count, "cancelled": False}
     
     def generate_excel():
         wb, ws, header_font, header_fill, header_alignment, cell_alignment, thin_border = create_excel_workbook()
@@ -893,6 +909,9 @@ async def export_access_logs(
         processed_count = 0
         
         while offset < total_count:
+            if task_id and task_id in export_progress and export_progress[task_id].get("cancelled", False):
+                return
+            
             batch_logs = query.order_by(desc(AccessLog.created_at)).offset(offset).limit(batch_size).all()
             
             for log in batch_logs:

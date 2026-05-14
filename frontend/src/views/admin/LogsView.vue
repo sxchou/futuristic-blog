@@ -198,6 +198,7 @@ interface ExportState {
   total: number
   status: string
   abortController: AbortController | null
+  taskId: string | null
 }
 
 const exportStates = ref<Record<string, ExportState>>({
@@ -206,21 +207,24 @@ const exportStates = ref<Record<string, ExportState>>({
     progress: 0,
     total: 0,
     status: '',
-    abortController: null
+    abortController: null,
+    taskId: null
   },
   logins: {
     isExporting: false,
     progress: 0,
     total: 0,
     status: '',
-    abortController: null
+    abortController: null,
+    taskId: null
   },
   access: {
     isExporting: false,
     progress: 0,
     total: 0,
     status: '',
-    abortController: null
+    abortController: null,
+    taskId: null
   }
 })
 
@@ -233,6 +237,7 @@ const handleExport = async (logType: string) => {
   state.abortController = new AbortController()
   
   const taskId = generateTaskId()
+  state.taskId = taskId
   let progressInterval: any = null
   
   try {
@@ -385,16 +390,28 @@ const handleExport = async (logType: string) => {
       state.total = 0
       state.status = ''
       state.abortController = null
+      state.taskId = null
     }, 2000)
   }
 }
 
-const cancelExport = (logType: string) => {
+const cancelExport = async (logType: string) => {
   const state = exportStates.value[logType]
   if (state.abortController) {
     state.abortController.abort()
-    state.isExporting = false
     state.status = '正在取消...'
+    
+    if (state.taskId) {
+      try {
+        await logsApi.cancelExport(state.taskId)
+      } catch (error) {
+        console.error('Failed to cancel export:', error)
+      }
+    }
+    
+    state.isExporting = false
+    state.status = '导出已取消'
+    await dialog.showWarning('导出操作已取消', '已取消')
   }
 }
 

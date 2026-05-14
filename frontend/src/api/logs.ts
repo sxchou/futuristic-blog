@@ -16,6 +16,7 @@ export const logsApi = {
   getExportAccessCount: (params?: any) => apiClient.get('/logs/export/access/count', { params }),
   
   getExportProgress: (taskId: string) => apiClient.get(`/logs/export/progress/${taskId}`),
+  cancelExport: (taskId: string) => apiClient.post(`/logs/export/cancel/${taskId}`),
   clearExportProgress: (taskId: string) => apiClient.delete(`/logs/export/progress/${taskId}`),
   
   exportOperations: (params?: any, config?: any) => apiClient.get('/logs/export/operations', { 
