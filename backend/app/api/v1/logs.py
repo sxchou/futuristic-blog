@@ -1,5 +1,5 @@
 from typing import Optional
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query, Request, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, func, text
@@ -643,7 +643,7 @@ async def export_operation_logs(
         
         while offset < total_count:
             if task_id and task_id in export_progress and export_progress[task_id].get("cancelled", False):
-                return
+                raise StopIteration
             
             batch_logs = query.order_by(desc(OperationLog.created_at)).offset(offset).limit(batch_size).all()
             
@@ -776,7 +776,7 @@ async def export_login_logs(
         
         while offset < total_count:
             if task_id and task_id in export_progress and export_progress[task_id].get("cancelled", False):
-                return
+                raise StopIteration
             
             batch_logs = query.order_by(desc(LoginLog.created_at)).offset(offset).limit(batch_size).all()
             
@@ -910,7 +910,7 @@ async def export_access_logs(
         
         while offset < total_count:
             if task_id and task_id in export_progress and export_progress[task_id].get("cancelled", False):
-                return
+                raise StopIteration
             
             batch_logs = query.order_by(desc(AccessLog.created_at)).offset(offset).limit(batch_size).all()
             

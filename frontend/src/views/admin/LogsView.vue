@@ -333,6 +333,12 @@ const handleExport = async (logType: string) => {
       progressInterval = null
     }
     
+    if (!response.data || response.data.size === 0) {
+      state.status = '导出已取消'
+      await dialog.showWarning('导出操作已取消', '已取消')
+      return
+    }
+    
     state.status = '正在处理文件...'
     state.progress = 95
     
