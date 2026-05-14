@@ -37,7 +37,7 @@ const defaultConfigs: Record<string, { authorize_url: string; token_url: string;
     authorize_url: 'https://accounts.google.com/o/oauth2/v2/auth',
     token_url: 'https://oauth2.googleapis.com/token',
     userinfo_url: 'https://www.googleapis.com/oauth2/v2/userinfo',
-    scope: 'openid profile'
+    scope: 'openid email profile'
   },
   github: {
     authorize_url: 'https://github.com/login/oauth/authorize',
@@ -67,8 +67,8 @@ const defaultConfigs: Record<string, { authorize_url: string; token_url: string;
 
 const scopeOptions: Record<string, { label: string; value: string }[]> = {
   google: [
-    { label: 'openid profile（默认）', value: 'openid profile' },
-    { label: 'openid email profile', value: 'openid email profile' },
+    { label: 'openid email profile（默认）', value: 'openid email profile' },
+    { label: 'openid profile', value: 'openid profile' },
     { label: 'openid email', value: 'openid email' },
   ],
   github: [

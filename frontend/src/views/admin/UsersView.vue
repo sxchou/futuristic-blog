@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick, watch, computed } from 'vue'
 import { userApi, roleApi } from '@/api'
+import { clearCacheByPattern } from '@/api/client'
 import type { User, Role } from '@/types'
 import { useDialogStore, useUserProfileStore, useAuthStore } from '@/stores'
 import { useAdminCheck } from '@/composables/useAdminCheck'
@@ -276,6 +277,7 @@ const handleCreateSubmit = async () => {
       password: createForm.value.password,
       role_ids: createForm.value.roleIds
     })
+    clearCacheByPattern('/users')
     showCreateModal.value = false
     await fetchUsers()
     await dialog.showSuccess('用户创建成功', '成功')
@@ -316,6 +318,9 @@ const executeDeletion = async () => {
     deletionLoading.value = true
     await userApi.deleteUser(deletion.currentItemId.value)
     deletion.confirmDeletion()
+    clearCacheByPattern('/users')
+    clearCacheByPattern('/articles')
+    clearCacheByPattern('/comments')
     await fetchUsers()
     await dialog.showSuccess('用户已删除', '成功')
   } catch (error: any) {
@@ -360,6 +365,9 @@ const handleSubmit = async () => {
     if (editingUser.value) {
       await userApi.updateUser(editingUser.value.id, form.value)
     }
+    clearCacheByPattern('/users')
+    clearCacheByPattern('/articles')
+    clearCacheByPattern('/comments')
     showEditor.value = false
     editingUser.value = null
     await fetchUsers()
@@ -417,6 +425,7 @@ const handleRoleAssign = async () => {
       })
     }
     
+    clearCacheByPattern('/users')
     showRoleModal.value = false
     roleAssignUser.value = null
     await fetchUsers()
@@ -786,25 +795,25 @@ const clearEditError = (field: string) => {
         </form>
       </div>
       <div class="overflow-x-auto">
-        <table class="w-full text-sm">
+        <table class="w-full text-sm table-fixed">
           <thead class="bg-gray-100 dark:bg-dark-100">
             <tr>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+              <th class="w-48 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                 用户
               </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+              <th class="w-48 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                 邮箱
               </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+              <th class="w-32 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                 角色
               </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+              <th class="w-20 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                 状态
               </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+              <th class="w-28 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                 注册时间
               </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+              <th class="w-44 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                 操作
               </th>
             </tr>
@@ -815,7 +824,7 @@ const clearEditError = (field: string) => {
               :key="user.id"
               class="hover:bg-gray-50 dark:hover:bg-white/5"
             >
-              <td class="px-4 py-3 max-w-[200px]">
+              <td class="px-4 py-3">
                 <div class="flex items-center gap-3 min-w-0">
                   <div
                     class="w-8 h-8 rounded-full flex items-center justify-center text-white font-medium overflow-hidden flex-shrink-0"
@@ -825,7 +834,7 @@ const clearEditError = (field: string) => {
                       {{ user.username.charAt(0).toUpperCase() }}
                     </span>
                   </div>
-                  <div class="min-w-0">
+                  <div class="min-w-0 flex-1">
                     <p class="text-gray-900 dark:text-white font-medium truncate">
                       {{ user.username }}
                     </p>
@@ -835,8 +844,8 @@ const clearEditError = (field: string) => {
                   </div>
                 </div>
               </td>
-              <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                {{ user.email }}
+              <td class="px-4 py-3 text-gray-500 dark:text-gray-400">
+                <span class="line-clamp-2">{{ user.email }}</span>
               </td>
               <td class="px-4 py-3">
                 <div class="flex flex-wrap gap-1">

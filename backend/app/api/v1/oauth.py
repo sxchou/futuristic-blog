@@ -403,7 +403,7 @@ def oauth_login(provider_name: str, db: Session = Depends(get_db)):
     params = {
         "client_id": provider.client_id,
         "redirect_uri": provider.redirect_uri,
-        "scope": provider.scope or "openid profile email",
+        "scope": provider.scope or "openid email profile",
         "response_type": "code",
         "state": state
     }
@@ -421,21 +421,30 @@ def oauth_login(provider_name: str, db: Session = Depends(get_db)):
 @router.get("/callback/{provider_name}")
 async def oauth_callback(
     provider_name: str,
-    code: str,
-    state: str,
     request: Request,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    code: Optional[str] = None,
+    state: Optional[str] = None,
+    error: Optional[str] = None,
+    error_description: Optional[str] = None
 ):
+    from fastapi.responses import RedirectResponse
+    from urllib.parse import urlencode
+    
+    if error:
+        error_msg = error_description or error
+        return RedirectResponse(url=f"{settings.FRONTEND_URL}/login?error={urlencode({'message': error_msg})}")
+    
+    if not code or not state:
+        return RedirectResponse(url=f"{settings.FRONTEND_URL}/login?error=Missing required parameters")
     provider = db.query(OAuthProvider).filter(
         OAuthProvider.name == provider_name
     ).first()
     
     if not provider:
-        from fastapi.responses import RedirectResponse
         return RedirectResponse(url=f"{settings.FRONTEND_URL}/login?error=Provider not found")
     
     if not check_provider_configured(provider):
-        from fastapi.responses import RedirectResponse
         return RedirectResponse(url=f"{settings.FRONTEND_URL}/login?error=Provider not properly configured")
     
     async with httpx.AsyncClient() as client:
@@ -528,9 +537,6 @@ async def oauth_callback(
         OAuthConnection.provider_id == provider.id,
         OAuthConnection.provider_user_id == provider_user_id
     ).first()
-    
-    from fastapi.responses import RedirectResponse
-    from urllib.parse import urlencode
     
     if connection:
         user = connection.user

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, nextTick } from 'vue'
 import { announcementApi, type Announcement, type AnnouncementCreate, type AnnouncementUpdate } from '@/api'
+import { clearCacheByPattern } from '@/api/client'
 import { useAdminCheck } from '@/composables/useAdminCheck'
 import { useDialogStore } from '@/stores'
 import { useDeletionConfirm } from '@/composables/useDeletionConfirm'
@@ -154,6 +155,7 @@ const handleSave = async () => {
     }
     
     closeEditor()
+    clearCacheByPattern('/announcements')
     fetchAnnouncements()
   } catch (error: any) {
     console.error('Failed to save announcement:', error)
@@ -175,6 +177,7 @@ const executeDeletion = async () => {
     deletionLoading.value = true
     await announcementApi.deleteAnnouncement(deletion.currentItemId.value)
     deletion.confirmDeletion()
+    clearCacheByPattern('/announcements')
     await dialog.showSuccess('公告删除成功', '成功')
     fetchAnnouncements()
   } catch (error: any) {
@@ -195,6 +198,7 @@ const toggleActive = async (announcement: Announcement) => {
     await announcementApi.updateAnnouncement(announcement.id, {
       is_active: !previousState
     })
+    clearCacheByPattern('/announcements')
     dialog.showSuccess(previousState ? '公告已禁用' : '公告已启用', '成功')
   } catch (error: any) {
     announcement.is_active = previousState

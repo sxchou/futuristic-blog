@@ -188,6 +188,75 @@ const handleClearLogs = async () => {
   }
 }
 
+const exporting = ref(false)
+
+const handleExport = async () => {
+  exporting.value = true
+  
+  try {
+    const params: Record<string, any> = {}
+    Object.keys(filters.value).forEach(key => {
+      const value = filters.value[key as keyof typeof filters.value]
+      if (value) {
+        params[key] = value
+      }
+    })
+    
+    let response: any
+    let filename: string
+    
+    switch (activeTab.value) {
+      case 'operations':
+        response = await logsApi.exportOperations(params)
+        filename = '操作日志'
+        break
+      case 'logins':
+        response = await logsApi.exportLogins(params)
+        filename = '登录日志'
+        break
+      case 'access':
+        response = await logsApi.exportAccess(params)
+        filename = '访问日志'
+        break
+      default:
+        throw new Error('Unknown log type')
+    }
+    
+    const contentDisposition = response.headers['content-disposition']
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename\*=UTF-8''(.+)/)
+      if (filenameMatch) {
+        filename = decodeURIComponent(filenameMatch[1])
+      }
+    }
+    
+    if (!filename.endsWith('.xlsx')) {
+      const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 15)
+      filename = `${filename}_${timestamp}.xlsx`
+    }
+    
+    const blob = new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    
+    await dialog.showSuccess(`成功导出 ${filename}`, '导出成功')
+  } catch (error: any) {
+    console.error('Export failed:', error)
+    const errorMsg = error?.response?.data?.message || error?.message || '导出失败，请重试'
+    await dialog.showError(errorMsg, '导出失败')
+  } finally {
+    exporting.value = false
+  }
+}
+
 const formatDate = (date: string) => formatDateTime(date)
 
 const getStatusClass = (status: string) => {
@@ -598,6 +667,32 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 </svg>
                 筛选
               </button>
+              <button
+                type="button"
+                :disabled="exporting"
+                :class="[
+                  'px-2.5 py-1 text-xs border rounded-lg transition-colors flex items-center gap-1',
+                  exporting 
+                    ? 'bg-gray-100 dark:bg-dark-100 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-white/10 cursor-not-allowed'
+                    : 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 dark:border-green-400/20 hover:bg-green-500/20 dark:hover:bg-green-400/20'
+                ]"
+                @click="handleExport"
+              >
+                <svg
+                  class="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+                {{ exporting ? '导出中...' : '导出' }}
+              </button>
             </form>
 
             <form 
@@ -678,6 +773,32 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                   />
                 </svg>
                 筛选
+              </button>
+              <button
+                type="button"
+                :disabled="exporting"
+                :class="[
+                  'px-2.5 py-1 text-xs border rounded-lg transition-colors flex items-center gap-1',
+                  exporting 
+                    ? 'bg-gray-100 dark:bg-dark-100 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-white/10 cursor-not-allowed'
+                    : 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 dark:border-green-400/20 hover:bg-green-500/20 dark:hover:bg-green-400/20'
+                ]"
+                @click="handleExport"
+              >
+                <svg
+                  class="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+                {{ exporting ? '导出中...' : '导出' }}
               </button>
             </form>
 
@@ -776,32 +897,58 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 </svg>
                 筛选
               </button>
+              <button
+                type="button"
+                :disabled="exporting"
+                :class="[
+                  'px-2.5 py-1 text-xs border rounded-lg transition-colors flex items-center gap-1',
+                  exporting 
+                    ? 'bg-gray-100 dark:bg-dark-100 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-white/10 cursor-not-allowed'
+                    : 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 dark:border-green-400/20 hover:bg-green-500/20 dark:hover:bg-green-400/20'
+                ]"
+                @click="handleExport"
+              >
+                <svg
+                  class="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+                {{ exporting ? '导出中...' : '导出' }}
+              </button>
             </form>
         </div>
 
         <div class="overflow-x-auto" v-if="activeTab === 'operations'">
-          <table class="w-full text-sm">
+          <table class="w-full text-sm table-fixed">
             <thead>
               <tr class="border-b border-gray-200 dark:border-white/10">
-                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                <th class="w-32 text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
                   用户
                 </th>
-                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                <th class="w-24 text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
                   模块
                 </th>
-                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                <th class="w-24 text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
                   操作
                 </th>
-                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                <th class="w-32 text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
                   描述
                 </th>
-                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                <th class="w-24 text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
                   IP
                 </th>
-                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                <th class="w-20 text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
                   状态
                 </th>
-                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                <th class="w-36 text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
                   时间
                 </th>
               </tr>
@@ -812,7 +959,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 :key="log.id"
                 class="border-b border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5"
               >
-                <td class="py-2 px-3 w-32">
+                <td class="py-2 px-3">
                   <div class="flex items-center gap-2">
                     <div
                       class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium overflow-hidden flex-shrink-0"
@@ -825,16 +972,16 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                     <span class="text-gray-900 dark:text-white truncate">{{ log.username || '-' }}</span>
                   </div>
                 </td>
-                <td class="py-2 px-3 text-gray-600 dark:text-gray-300">
+                <td class="py-2 px-3 text-gray-600 dark:text-gray-300 truncate">
                   {{ log.module }}
                 </td>
-                <td class="py-2 px-3 text-gray-600 dark:text-gray-300">
+                <td class="py-2 px-3 text-gray-600 dark:text-gray-300 truncate">
                   {{ log.action }}
                 </td>
-                <td class="py-2 px-3 text-gray-600 dark:text-gray-300 max-w-xs break-words whitespace-pre-wrap">
+                <td class="py-2 px-3 text-gray-600 dark:text-gray-300 truncate">
                   {{ log.description || '-' }}
                 </td>
-                <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">
+                <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs truncate">
                   {{ log.ip_address || '-' }}
                 </td>
                 <td class="py-2 px-3">
@@ -851,28 +998,28 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
         </div>
 
         <div class="overflow-x-auto" v-if="activeTab === 'logins'">
-          <table class="w-full text-sm">
+          <table class="w-full text-sm table-fixed">
             <thead>
               <tr class="border-b border-gray-200 dark:border-white/10">
-                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                <th class="w-32 text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
                   用户
                 </th>
-                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                <th class="w-24 text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
                   类型
                 </th>
-                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
-                  IP
-                </th>
-                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                <th class="w-24 text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
                   浏览器
                 </th>
-                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                <th class="w-32 text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
                   系统
                 </th>
-                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                <th class="w-24 text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                  IP
+                </th>
+                <th class="w-20 text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
                   状态
                 </th>
-                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                <th class="w-36 text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
                   时间
                 </th>
               </tr>
@@ -883,7 +1030,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 :key="log.id"
                 class="border-b border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5"
               >
-                <td class="py-2 px-3 w-32">
+                <td class="py-2 px-3">
                   <div class="flex items-center gap-2">
                     <div
                       class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium overflow-hidden flex-shrink-0"
@@ -896,17 +1043,17 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                     <span class="text-gray-900 dark:text-white truncate">{{ log.username || '-' }}</span>
                   </div>
                 </td>
-                <td class="py-2 px-3 text-gray-600 dark:text-gray-300">
+                <td class="py-2 px-3 text-gray-600 dark:text-gray-300 truncate">
                   {{ formatLoginType(log.login_type) }}
                 </td>
-                <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">
-                  {{ log.ip_address || '-' }}
-                </td>
-                <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">
+                <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs truncate">
                   {{ log.browser || '-' }}
                 </td>
-                <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">
+                <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs truncate">
                   {{ log.os || '-' }}
+                </td>
+                <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs truncate">
+                  {{ log.ip_address || '-' }}
                 </td>
                 <td class="py-2 px-3">
                   <span :class="['px-2 py-0.5 rounded text-xs', getStatusClass(log.status)]">
@@ -922,28 +1069,28 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
         </div>
 
         <div class="overflow-x-auto" v-if="activeTab === 'access'">
-          <table class="w-full text-sm">
+          <table class="w-full text-sm table-fixed">
             <thead>
               <tr class="border-b border-gray-200 dark:border-white/10">
-                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                <th class="w-32 text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
                   用户
                 </th>
-                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                <th class="w-24 text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
                   方法
                 </th>
-                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
-                  路径
-                </th>
-                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
-                  状态码
-                </th>
-                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                <th class="w-24 text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
                   响应时间
                 </th>
-                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                <th class="w-32 text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                  路径
+                </th>
+                <th class="w-24 text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
                   IP
                 </th>
-                <th class="text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                <th class="w-20 text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
+                  状态码
+                </th>
+                <th class="w-36 text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
                   时间
                 </th>
               </tr>
@@ -954,7 +1101,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 :key="log.id"
                 class="border-b border-gray-200 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5"
               >
-                <td class="py-2 px-3 w-32">
+                <td class="py-2 px-3">
                   <div class="flex items-center gap-2">
                     <div
                       class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium overflow-hidden flex-shrink-0"
@@ -980,8 +1127,14 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                     {{ log.request_method }}
                   </span>
                 </td>
-                <td class="py-2 px-3 text-gray-600 dark:text-gray-300 max-w-xs truncate">
+                <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">
+                  {{ log.response_time ? log.response_time.toFixed(2) + 'ms' : '-' }}
+                </td>
+                <td class="py-2 px-3 text-gray-600 dark:text-gray-300 truncate">
                   {{ log.request_path }}
+                </td>
+                <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs truncate">
+                  {{ log.ip_address || '-' }}
                 </td>
                 <td class="py-2 px-3">
                   <span
@@ -992,12 +1145,6 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                   >
                     {{ log.response_status }}
                   </span>
-                </td>
-                <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">
-                  {{ log.response_time ? log.response_time.toFixed(2) + 'ms' : '-' }}
-                </td>
-                <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">
-                  {{ log.ip_address || '-' }}
                 </td>
                 <td class="py-2 px-3 text-gray-500 dark:text-gray-400 text-xs">
                   {{ formatDate(log.created_at) }}

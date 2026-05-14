@@ -7,6 +7,7 @@ import gzip
 import httpx
 from datetime import datetime
 from typing import Optional, List, Dict, Any
+from urllib.parse import quote
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query, Request
 from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy.orm import Session
@@ -463,6 +464,7 @@ async def get_file_content(
                 break
         
         cache_policy = get_cache_policy(storage_key) if storage_key else "public, max-age=86400"
+        encoded_filename = quote(db_file.original_filename)
         
         async def stream_from_supabase():
             async with httpx.AsyncClient(timeout=120.0) as client:
@@ -476,7 +478,7 @@ async def get_file_content(
             stream_from_supabase(),
             media_type=db_file.mime_type,
             headers={
-                "Content-Disposition": f'inline; filename="{db_file.original_filename}"',
+                "Content-Disposition": f"inline; filename*=UTF-8''{encoded_filename}",
                 "Cache-Control": cache_policy,
                 "Access-Control-Allow-Origin": "*"
             }

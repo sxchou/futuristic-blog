@@ -514,14 +514,14 @@ def init_database():
                     db.add(resource)
                     db.flush()
                     created_count += 1
-                    print(f"✓ Created resource: {res_data['title']} (Category: {res_data.get('category_id')})")
+                    print(f"[OK] Created resource: {res_data['title']} (Category: {res_data.get('category_id')})")
                 else:
                     if existing.category_id is None and res_data.get("category_id"):
                         existing.category_id = res_data["category_id"]
                         if res_data.get("icon"):
                             existing.icon = res_data["icon"]
                         updated_count += 1
-                        print(f"✓ Updated resource: {res_data['title']}")
+                        print(f"[OK] Updated resource: {res_data['title']}")
             except Exception as e:
                 error_count += 1
                 print(f"✗ Error creating resource {res_data['title']}: {e}")
@@ -1514,7 +1514,7 @@ OpenAI API 为开发者提供了强大的 AI 能力，合理使用可以构建�
                 "authorize_url": "https://accounts.google.com/o/oauth2/v2/auth",
                 "token_url": "https://oauth2.googleapis.com/token",
                 "userinfo_url": "https://www.googleapis.com/oauth2/v2/userinfo",
-                "scope": "openid profile",
+                "scope": "openid email profile",
                 "order": 1
             },
             {
@@ -1670,10 +1670,10 @@ def init_permissions_and_roles(db, admin):
             db.add(permission)
             db.flush()
             created_permissions[perm_data["code"]] = permission
-            print(f"✓ Created permission: {perm_data['code']}")
+            print(f"[OK] Created permission: {perm_data['code']}")
         else:
             created_permissions[perm_data["code"]] = existing
-            print(f"✓ Found existing permission: {perm_data['code']}")
+            print(f"[OK] Found existing permission: {perm_data['code']}")
     
     db.commit()
     
@@ -1791,7 +1791,7 @@ def init_permissions_and_roles(db, admin):
                         )
                     )
             
-            print(f"✓ Created role: {role_data['code']} with {len(role_data['permissions'])} permissions")
+            print(f"[OK] Created role: {role_data['code']} with {len(role_data['permissions'])} permissions")
         else:
             if role_data["code"] == "super_admin":
                 db.execute(
@@ -1810,9 +1810,9 @@ def init_permissions_and_roles(db, admin):
                             )
                         )
                         all_perm_count += 1
-                print(f"✓ Synced super_admin role with {all_perm_count} permissions")
+                print(f"[OK] Synced super_admin role with {all_perm_count} permissions")
             else:
-                print(f"✓ Found existing role: {role_data['code']}")
+                print(f"[OK] Found existing role: {role_data['code']}")
     
     db.commit()
     
@@ -1832,7 +1832,7 @@ def init_permissions_and_roles(db, admin):
                     assigned_by=admin.id
                 )
             )
-            print(f"✓ Assigned super_admin role to admin user")
+            print(f"[OK] Assigned super_admin role to admin user")
     
     db.commit()
     print("=== Permissions and roles initialization completed ===\n")

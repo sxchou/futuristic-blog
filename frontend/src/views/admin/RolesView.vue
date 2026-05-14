@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick, watch } from 'vue'
 import { roleApi, permissionApi } from '@/api'
+import { clearCacheByPattern } from '@/api/client'
 import type { Role, Permission, PermissionTree } from '@/api'
 import { useDialogStore, usePermissionStore } from '@/stores'
 import { useAdminCheck } from '@/composables/useAdminCheck'
@@ -213,7 +214,6 @@ const handleSave = async () => {
         priority: form.value.priority,
         permission_ids: form.value.permission_ids
       })
-      dialog.showSuccess('角色创建成功')
     } else if (editingRole.value) {
       await roleApi.updateRole(editingRole.value.id, {
         name: form.value.name,
@@ -221,10 +221,14 @@ const handleSave = async () => {
         priority: form.value.priority,
         permission_ids: form.value.permission_ids
       })
-      dialog.showSuccess('角色更新成功')
+    }
+    clearCacheByPattern('/roles')
+    if (!isCreating.value) {
+      clearCacheByPattern('/users')
     }
     showEditor.value = false
     await fetchRoles()
+    dialog.showSuccess(isCreating.value ? '角色创建成功' : '角色更新成功')
   } catch (error: any) {
     console.error('Failed to save role:', error)
   } finally {
@@ -237,9 +241,10 @@ const handleSavePermissions = async () => {
 
   try {
     await roleApi.updateRolePermissions(editingRole.value.id, form.value.permission_ids)
-    dialog.showSuccess('权限更新成功')
+    clearCacheByPattern('/roles')
     showPermissionEditor.value = false
     await fetchRoles()
+    dialog.showSuccess('权限更新成功')
   } catch (error: any) {
     console.error('Failed to update permissions:', error)
     dialog.showError(error.response?.data?.detail || '操作失败')
@@ -257,9 +262,10 @@ const handleResetPermissions = async () => {
 
   try {
     const result = await roleApi.resetRolePermissions(editingRole.value.id)
-    dialog.showSuccess(`权限初始化成功，已恢复 ${result.permission_count} 个权限`)
+    clearCacheByPattern('/roles')
     showPermissionEditor.value = false
     await fetchRoles()
+    dialog.showSuccess(`权限初始化成功，已恢复 ${result.permission_count} 个权限`)
   } catch (error: any) {
     console.error('Failed to reset permissions:', error)
     dialog.showError(error.response?.data?.detail || '权限初始化失败')
@@ -283,8 +289,10 @@ const executeDeletion = async () => {
     deletionLoading.value = true
     await roleApi.deleteRole(deletion.currentItemId.value)
     deletion.confirmDeletion()
-    dialog.showSuccess('角色已删除')
+    clearCacheByPattern('/roles')
+    clearCacheByPattern('/users')
     await fetchRoles()
+    dialog.showSuccess('角色已删除')
   } catch (error: any) {
     console.error('Failed to delete role:', error)
     deletion.cancelDeletion()
@@ -639,6 +647,7 @@ watch(() => form.value.code, (newCode) => {
             <label for="role-code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
               角色代码 <span class="text-red-500">*</span>
               <span v-if="codeChecking" class="ml-2 text-gray-400">检查中...</span>
+              <span class="ml-2 text-xs text-gray-400">(创建后不可修改)</span>
             </label>
             <input id="role-code"
               v-model="form.code"

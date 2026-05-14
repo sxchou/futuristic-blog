@@ -1,8 +1,14 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, Query, Request
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, func, text
 from datetime import datetime, timedelta
+from io import BytesIO
+from urllib.parse import quote
+import openpyxl
+from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
+from openpyxl.utils import get_column_letter
 from app.core.database import get_db
 from app.models import OperationLog, LoginLog, AccessLog, UserProfile
 from app.utils.permissions import require_permission
@@ -471,3 +477,258 @@ async def clear_access_logs(
     )
     
     return {"message": f"已删除 {deleted} 条访问日志"}
+
+
+def create_excel_workbook():
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "系统日志"
+    
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+    header_alignment = Alignment(horizontal="center", vertical="center")
+    cell_alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
+    thin_border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+    
+    return wb, ws, header_font, header_fill, header_alignment, cell_alignment, thin_border
+
+
+def apply_header_style(ws, headers, row_num, header_font, header_fill, header_alignment, thin_border):
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=row_num, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+        cell.border = thin_border
+
+
+def apply_cell_style(ws, row_data, row_num, cell_alignment, thin_border):
+    for col, value in enumerate(row_data, 1):
+        cell = ws.cell(row=row_num, column=col, value=value)
+        cell.alignment = cell_alignment
+        cell.border = thin_border
+
+
+def auto_adjust_column_width(ws, column_count):
+    for col in range(1, column_count + 1):
+        max_length = 0
+        column_letter = get_column_letter(col)
+        for cell in ws[column_letter]:
+            try:
+                if cell.value:
+                    cell_length = len(str(cell.value))
+                    if cell_length > max_length:
+                        max_length = min(cell_length, 50)
+            except:
+                pass
+        adjusted_width = max_length + 2
+        ws.column_dimensions[column_letter].width = max(adjusted_width, 10)
+
+
+@router.get("/export/operations")
+async def export_operation_logs(
+    module: Optional[str] = None,
+    action: Optional[str] = None,
+    status: Optional[str] = None,
+    username: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permission("log.view"))
+):
+    query = db.query(OperationLog)
+    
+    if module:
+        query = query.filter(OperationLog.module.contains(module))
+    if action:
+        query = query.filter(OperationLog.action.contains(action))
+    if status:
+        query = query.filter(OperationLog.status == status)
+    if username:
+        query = query.filter(OperationLog.username.contains(username))
+    if start_date:
+        query = query.filter(OperationLog.created_at >= datetime.fromisoformat(start_date))
+    if end_date:
+        end_datetime = datetime.fromisoformat(end_date)
+        end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
+        query = query.filter(OperationLog.created_at <= end_datetime)
+    
+    logs = query.order_by(desc(OperationLog.created_at)).all()
+    
+    wb, ws, header_font, header_fill, header_alignment, cell_alignment, thin_border = create_excel_workbook()
+    ws.title = "操作日志"
+    
+    headers = ["日志ID", "发生时间", "操作人", "模块", "操作", "描述", "IP地址", "状态"]
+    apply_header_style(ws, headers, 1, header_font, header_fill, header_alignment, thin_border)
+    
+    for idx, log in enumerate(logs, 2):
+        created_at_str = to_local(log.created_at).strftime("%Y-%m-%d %H:%M:%S") if log.created_at else ""
+        status_str = "成功" if log.status == "success" else "失败"
+        row_data = [
+            log.id,
+            created_at_str,
+            log.username or "-",
+            log.module,
+            log.action,
+            log.description or "-",
+            log.ip_address or "-",
+            status_str
+        ]
+        apply_cell_style(ws, row_data, idx, cell_alignment, thin_border)
+    
+    auto_adjust_column_width(ws, len(headers))
+    
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"操作日志_{timestamp}.xlsx"
+    encoded_filename = quote(filename)
+    
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"}
+    )
+
+
+@router.get("/export/logins")
+async def export_login_logs(
+    login_type: Optional[str] = None,
+    status: Optional[str] = None,
+    username: Optional[str] = None,
+    ip_address: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permission("log.view"))
+):
+    query = db.query(LoginLog)
+    
+    if login_type:
+        query = query.filter(LoginLog.login_type.contains(login_type))
+    if status:
+        query = query.filter(LoginLog.status == status)
+    if username:
+        query = query.filter(LoginLog.username.contains(username))
+    if ip_address:
+        query = query.filter(LoginLog.ip_address.contains(ip_address))
+    if start_date:
+        query = query.filter(LoginLog.created_at >= datetime.fromisoformat(start_date))
+    if end_date:
+        end_datetime = datetime.fromisoformat(end_date)
+        end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
+        query = query.filter(LoginLog.created_at <= end_datetime)
+    
+    logs = query.order_by(desc(LoginLog.created_at)).all()
+    
+    wb, ws, header_font, header_fill, header_alignment, cell_alignment, thin_border = create_excel_workbook()
+    ws.title = "登录日志"
+    
+    headers = ["日志ID", "发生时间", "用户", "登录类型", "IP地址", "浏览器", "操作系统", "状态", "失败原因"]
+    apply_header_style(ws, headers, 1, header_font, header_fill, header_alignment, thin_border)
+    
+    for idx, log in enumerate(logs, 2):
+        created_at_str = to_local(log.created_at).strftime("%Y-%m-%d %H:%M:%S") if log.created_at else ""
+        status_str = "成功" if log.status == "success" else "失败"
+        row_data = [
+            log.id,
+            created_at_str,
+            log.username or "-",
+            log.login_type,
+            log.ip_address or "-",
+            log.browser or "-",
+            log.os or "-",
+            status_str,
+            log.fail_reason or "-"
+        ]
+        apply_cell_style(ws, row_data, idx, cell_alignment, thin_border)
+    
+    auto_adjust_column_width(ws, len(headers))
+    
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"登录日志_{timestamp}.xlsx"
+    encoded_filename = quote(filename)
+    
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"}
+    )
+
+
+@router.get("/export/access")
+async def export_access_logs(
+    username: Optional[str] = None,
+    request_method: Optional[str] = None,
+    path: Optional[str] = None,
+    ip_address: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    db: Session = Depends(get_db),
+    _: dict = Depends(require_permission("log.view"))
+):
+    query = db.query(AccessLog)
+    
+    if username:
+        query = query.filter(AccessLog.username.contains(username))
+    if request_method:
+        query = query.filter(AccessLog.request_method.contains(request_method))
+    if path:
+        query = query.filter(AccessLog.request_path.contains(path))
+    if ip_address:
+        query = query.filter(AccessLog.ip_address.contains(ip_address))
+    if start_date:
+        query = query.filter(AccessLog.created_at >= datetime.fromisoformat(start_date))
+    if end_date:
+        end_datetime = datetime.fromisoformat(end_date)
+        end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
+        query = query.filter(AccessLog.created_at <= end_datetime)
+    
+    logs = query.order_by(desc(AccessLog.created_at)).all()
+    
+    wb, ws, header_font, header_fill, header_alignment, cell_alignment, thin_border = create_excel_workbook()
+    ws.title = "访问日志"
+    
+    headers = ["日志ID", "发生时间", "用户", "请求方法", "请求路径", "状态码", "响应时间(ms)", "IP地址"]
+    apply_header_style(ws, headers, 1, header_font, header_fill, header_alignment, thin_border)
+    
+    for idx, log in enumerate(logs, 2):
+        created_at_str = to_local(log.created_at).strftime("%Y-%m-%d %H:%M:%S") if log.created_at else ""
+        row_data = [
+            log.id,
+            created_at_str,
+            log.username or "游客",
+            log.request_method or "-",
+            log.request_path or "-",
+            log.response_status or "-",
+            f"{log.response_time:.2f}" if log.response_time else "-",
+            log.ip_address or "-"
+        ]
+        apply_cell_style(ws, row_data, idx, cell_alignment, thin_border)
+    
+    auto_adjust_column_width(ws, len(headers))
+    
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"访问日志_{timestamp}.xlsx"
+    encoded_filename = quote(filename)
+    
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"}
+    )

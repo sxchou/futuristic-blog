@@ -2,6 +2,7 @@
 import { ref, onMounted, watch, onUnmounted, nextTick, computed } from 'vue'
 import { useBlogStore, useDialogStore, usePermissionStore } from '@/stores'
 import { articleApi, fileApi, categoryApi, tagApi, utilsApi, parseUploadError } from '@/api'
+import { clearCacheByPattern } from '@/api/client'
 import type { ArticleListItem, Article, ArticleFile } from '@/types'
 import { useAdminCheck } from '@/composables/useAdminCheck'
 import { useDeletionConfirm } from '@/composables/useDeletionConfirm'
@@ -416,6 +417,8 @@ const executeArticleDeletion = async () => {
     blogStore.removeArticle(articleDeletion.currentItemId.value)
     articles.value = articles.value.filter(a => a.id !== articleDeletion.currentItemId.value)
     articleDeletion.confirmDeletion()
+    clearCacheByPattern('/comments')
+    clearCacheByPattern('/dashboard')
     await dialog.showSuccess('文章已删除', '成功')
     
     if (articles.value.length === 0 && currentPage.value > 1) {
@@ -574,6 +577,7 @@ const handleSubmit = async () => {
     }
     markdownEditorRef.value?.markAsSaved()
     showEditor.value = false
+    clearCacheByPattern('/dashboard')
     
     await dialog.showSuccess(
       editingArticle.value ? '文章更新成功' : '文章创建成功',
@@ -1931,28 +1935,28 @@ watch(form, () => {
         </form>
       </div>
       <div class="overflow-x-auto">
-        <table class="w-full text-sm">
+        <table class="w-full text-sm table-fixed">
           <thead class="bg-gray-100 dark:bg-dark-100">
             <tr>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 w-[280px]">
+              <th class="w-56 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                 标题
               </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+              <th class="w-24 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                 分类
               </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+              <th class="w-24 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                 作者
               </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+              <th class="w-20 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                 状态
               </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+              <th class="w-16 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                 浏览
               </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+              <th class="w-44 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                 时间
               </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+              <th class="w-24 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                 操作
               </th>
             </tr>
@@ -1982,13 +1986,14 @@ watch(form, () => {
                     v-if="article.is_featured"
                     class="px-2 py-0.5 text-xs font-medium bg-primary text-white rounded-full flex-shrink-0 mt-0.5"
                   >精选</span>
-                  <span class="text-gray-900 dark:text-white break-words">{{ article.title }}</span>
+                  <span class="text-gray-900 dark:text-white line-clamp-2">{{ article.title }}</span>
                 </div>
               </td>
               <td class="px-4 py-3">
                 <span
                   v-if="article.category"
                   :style="{ color: article.category.color }"
+                  class="line-clamp-2"
                 >
                   {{ article.category.name }}
                 </span>
@@ -1998,7 +2003,7 @@ watch(form, () => {
                 >未分类</span>
               </td>
               <td class="px-4 py-3 text-gray-400">
-                <span v-if="article.author || article.author_name">{{ article.author?.username || article.author_name || '已注销用户' }}</span>
+                <span v-if="article.author || article.author_name" class="line-clamp-2">{{ article.author?.username || article.author_name || '已注销用户' }}</span>
                 <span
                   v-else
                   class="text-gray-500"

@@ -627,10 +627,10 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
         v-else
         class="overflow-x-auto"
       >
-        <table class="w-full">
+        <table class="w-full table-fixed">
           <thead class="bg-gray-50 dark:bg-dark-100">
             <tr>
-              <th class="px-4 py-3 text-left">
+              <th class="w-12 px-4 py-3 text-left">
                 <input id="comment-search-input"
                   type="checkbox"
                   :checked="selectedComments.length === comments.length && comments.length > 0"
@@ -638,25 +638,25 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                   @change="toggleSelectAll"
                 >
               </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+              <th class="w-16 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                 ID
               </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+              <th class="w-56 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                 内容
               </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+              <th class="w-56 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                 文章
               </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+              <th class="w-28 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                 评论人
               </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+              <th class="w-28 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                 状态
               </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+              <th class="w-36 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                 时间
               </th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+              <th class="w-44 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                 操作
               </th>
             </tr>
@@ -682,34 +682,35 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 <router-link
                   v-if="comment.article_slug"
                   :to="`/article/${comment.article_slug}#comment-${comment.id}`"
-                  class="text-sm text-primary hover:underline block max-w-xs line-clamp-2"
+                  class="text-sm text-primary hover:underline block line-clamp-2"
                   title="点击查看评论"
                 >
-                  <span v-if="comment.reply_to_user_name" class="text-gray-500 dark:text-gray-400">@{{ comment.reply_to_user_name }} </span>{{ comment.content }}
+                  <span v-if="comment.reply_to_user_name" class="text-gray-500 dark:text-gray-400">@{{ comment.reply_to_user_name }}</span> {{ comment.content }}
                 </router-link>
                 <div
                   v-else
-                  class="text-sm text-gray-900 dark:text-white max-w-xs line-clamp-2"
+                  class="text-sm text-gray-900 dark:text-white line-clamp-2"
                 >
-                  <span v-if="comment.reply_to_user_name" class="text-gray-500 dark:text-gray-400">@{{ comment.reply_to_user_name }} </span>{{ comment.content }}
+                  <span v-if="comment.reply_to_user_name" class="text-gray-500 dark:text-gray-400">@{{ comment.reply_to_user_name }}</span> {{ comment.content }}
                 </div>
               </td>
               <td class="px-4 py-3 text-sm">
                 <router-link
                   v-if="comment.article_slug"
                   :to="`/article/${comment.article_slug}`"
-                  class="text-primary hover:underline"
+                  class="text-primary hover:underline line-clamp-2"
+                  title="点击查看文章"
                 >
                   {{ comment.article_title || `文章 #${comment.article_id}` }}
                 </router-link>
                 <span
                   v-else
-                  class="text-gray-500"
+                  class="text-gray-500 line-clamp-2"
                 >
                   {{ comment.article_title || `文章 #${comment.article_id}` }}
                 </span>
               </td>
-              <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
+              <td class="px-4 py-3 text-sm text-gray-900 dark:text-white line-clamp-2">
                 {{ comment.author_name || '匿名用户' }}
               </td>
               <td class="px-4 py-3">
