@@ -1,5 +1,6 @@
 import axios, { AxiosError } from 'axios'
 import type { AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
+import { cacheManager } from './cacheManager'
 
 const getBaseURL = (): string => {
   const apiUrl = import.meta.env.VITE_API_URL
@@ -68,85 +69,6 @@ const addPendingRequest = (config: InternalAxiosRequestConfig) => {
   pendingRequests.set(key, { controller, timestamp: Date.now() })
 }
 
-interface CacheEntry {
-  data: unknown
-  timestamp: number
-  etag?: string
-}
-
-const responseCache = new Map<string, CacheEntry>()
-
-const CACHE_CONFIG: Record<string, number> = {
-  '/categories': 1800000,
-  '/tags': 1800000,
-  '/resources': 900000,
-  '/resource-categories': 900000,
-  '/site-config': 1800000,
-  '/profile': 1800000,
-  '/articles': 300000,
-  '/dashboard': 120000,
-  '/announcements': 900000,
-  '/users': 300000,
-  '/roles': 600000,
-  '/permissions': 1800000,
-  '/logs/stats': 60000,
-  '/comments': 180000
-}
-
-const getCacheKey = (config: InternalAxiosRequestConfig): string => {
-  return `${config.method}-${config.url}-${JSON.stringify(config.params)}`
-}
-
-const getCacheTTL = (url: string | undefined): number => {
-  if (!url) return 60000
-  for (const [endpoint, ttl] of Object.entries(CACHE_CONFIG)) {
-    if (url === endpoint || url.startsWith(endpoint + '?') || url.startsWith(endpoint + '/')) {
-      return ttl
-    }
-  }
-  return 60000
-}
-
-const getCachedResponse = (config: InternalAxiosRequestConfig): unknown | null => {
-  const key = getCacheKey(config)
-  const cached = responseCache.get(key)
-  const ttl = getCacheTTL(config.url)
-  
-  if (cached && Date.now() - cached.timestamp < ttl) {
-    return cached.data
-  }
-  
-  responseCache.delete(key)
-  return null
-}
-
-const setCachedResponse = (config: InternalAxiosRequestConfig, data: unknown) => {
-  const key = getCacheKey(config)
-  responseCache.set(key, { data, timestamp: Date.now() })
-}
-
-const cacheableEndpoints = [
-  '/categories',
-  '/tags',
-  '/resources',
-  '/resource-categories',
-  '/site-config',
-  '/profile',
-  '/articles',
-  '/dashboard',
-  '/announcements',
-  '/users',
-  '/roles',
-  '/permissions',
-  '/logs/stats',
-  '/comments'
-]
-
-const shouldCache = (url: string | undefined): boolean => {
-  if (!url) return false
-  return cacheableEndpoints.some(endpoint => url === endpoint || url.startsWith(endpoint + '?') || url.startsWith(endpoint + '/'))
-}
-
 const nonCacheablePatterns = [
   /\/auth\//,
   /\/comments\//,
@@ -200,8 +122,10 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`
     }
     
-    if (config.method?.toLowerCase() === 'get' && shouldCache(config.url) && !isNonCacheable(config.url)) {
-      const cached = getCachedResponse(config)
+    if (config.method?.toLowerCase() === 'get' && cacheManager.shouldCache(config.url) && !isNonCacheable(config.url)) {
+      const cacheKey = cacheManager.getCacheKey(config.method!, config.url!, config.params)
+      const cached = cacheManager.get(cacheKey)
+      
       if (cached) {
         config.adapter = () => Promise.resolve({
           data: cached,
@@ -232,8 +156,9 @@ apiClient.interceptors.response.use(
       removePendingRequest(response.config)
     }
     
-    if (response.config.method?.toLowerCase() === 'get' && shouldCache(response.config.url) && !isNonCacheable(response.config.url)) {
-      setCachedResponse(response.config, response.data)
+    if (response.config.method?.toLowerCase() === 'get' && cacheManager.shouldCache(response.config.url) && !isNonCacheable(response.config.url)) {
+      const cacheKey = cacheManager.getCacheKey(response.config.method!, response.config.url!, response.config.params)
+      cacheManager.set(cacheKey, response.data)
     }
     
     return response
@@ -256,7 +181,7 @@ apiClient.interceptors.response.use(
         localStorage.removeItem('token')
         localStorage.removeItem('refresh_token')
         localStorage.removeItem('token_expiry')
-        responseCache.clear()
+        cacheManager.clear()
         
         if (!window.location.pathname.includes('/login') && 
             !window.location.pathname.includes('/register') &&
@@ -291,7 +216,7 @@ apiClient.interceptors.response.use(
           localStorage.removeItem('token')
           localStorage.removeItem('refresh_token')
           localStorage.removeItem('token_expiry')
-          responseCache.clear()
+          cacheManager.clear()
           
           if (!window.location.pathname.includes('/login') && 
               !window.location.pathname.includes('/register') &&
@@ -306,7 +231,7 @@ apiClient.interceptors.response.use(
         localStorage.removeItem('token')
         localStorage.removeItem('refresh_token')
         localStorage.removeItem('token_expiry')
-        responseCache.clear()
+        cacheManager.clear()
         
         if (!window.location.pathname.includes('/login') && 
             !window.location.pathname.includes('/register') &&
@@ -326,15 +251,19 @@ apiClient.interceptors.response.use(
 )
 
 export const clearCache = () => {
-  responseCache.clear()
+  cacheManager.clear()
 }
 
 export const clearCacheByPattern = (pattern: string) => {
-  for (const key of responseCache.keys()) {
-    if (key.includes(pattern)) {
-      responseCache.delete(key)
-    }
-  }
+  cacheManager.clearByPattern(pattern)
+}
+
+export const clearCacheByEndpoint = (endpoint: string) => {
+  cacheManager.clearByEndpoint(endpoint)
+}
+
+export const clearCacheByRegex = (regex: RegExp) => {
+  cacheManager.clearByRegex(regex)
 }
 
 export const cancelAllRequests = () => {
@@ -343,10 +272,7 @@ export const cancelAllRequests = () => {
 }
 
 export const getCacheStats = () => {
-  return {
-    size: responseCache.size,
-    keys: Array.from(responseCache.keys())
-  }
+  return cacheManager.getStats()
 }
 
 export const checkServerHealth = async (maxRetries = 2): Promise<boolean> => {
