@@ -230,6 +230,12 @@ const exportStates = ref<Record<string, ExportState>>({
 
 const handleExport = async (logType: string) => {
   const state = exportStates.value[logType]
+  
+  if (state.isExporting) {
+    await dialog.showWarning('当前正在导出中，请稍候再试', '导出提示')
+    return
+  }
+  
   state.isExporting = true
   state.progress = 0
   state.total = 0
@@ -287,6 +293,10 @@ const handleExport = async (logType: string) => {
     
     progressInterval = setInterval(async () => {
       try {
+        if (state.abortController?.signal.aborted) {
+          return
+        }
+        
         const progressResponse = await logsApi.getExportProgress(taskId)
         const { current, total } = progressResponse.data
         if (total > 0) {
@@ -301,7 +311,7 @@ const handleExport = async (logType: string) => {
       } catch (error) {
         console.error('Failed to fetch progress:', error)
       }
-    }, 500)
+    }, 2000)
     
     let response: any
     let filename: string

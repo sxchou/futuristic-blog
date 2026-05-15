@@ -25,6 +25,8 @@ CACHE_NAME = "logs"
 CACHE_TTL_STATS = 60
 
 export_progress: Dict[str, Dict[str, int]] = {}
+active_exports = 0
+MAX_CONCURRENT_EXPORTS = 3
 
 
 class OperationLogItem(BaseModel):
@@ -536,8 +538,7 @@ def auto_adjust_column_width(ws, column_count):
 
 @router.get("/export/progress/{task_id}")
 async def get_export_progress(
-    task_id: str,
-    _: dict = Depends(require_permission("log.view"))
+    task_id: str
 ):
     progress = export_progress.get(task_id, {"current": 0, "total": 0, "cancelled": False})
     return progress
@@ -545,8 +546,7 @@ async def get_export_progress(
 
 @router.post("/export/cancel/{task_id}")
 async def cancel_export_task(
-    task_id: str,
-    _: dict = Depends(require_permission("log.view"))
+    task_id: str
 ):
     if task_id in export_progress:
         export_progress[task_id]["cancelled"] = True
@@ -555,8 +555,7 @@ async def cancel_export_task(
 
 @router.delete("/export/progress/{task_id}")
 async def clear_export_progress(
-    task_id: str,
-    _: dict = Depends(require_permission("log.view"))
+    task_id: str
 ):
     if task_id in export_progress:
         del export_progress[task_id]
@@ -607,6 +606,13 @@ async def export_operation_logs(
     db: Session = Depends(get_db),
     _: dict = Depends(require_permission("log.view"))
 ):
+    global active_exports
+    
+    if active_exports >= MAX_CONCURRENT_EXPORTS:
+        raise HTTPException(status_code=429, detail="Too many concurrent exports. Please try again later.")
+    
+    active_exports += 1
+    
     query = db.query(OperationLog)
     
     if module:
@@ -631,77 +637,81 @@ async def export_operation_logs(
         export_progress[task_id] = {"current": 0, "total": total_count, "cancelled": False}
     
     def generate_excel():
-        wb, ws, header_font, header_fill, header_alignment, cell_alignment, thin_border = create_excel_workbook()
-        ws.title = "操作日志"
-        
-        headers = ["日志ID", "发生时间", "操作人", "模块", "操作", "描述", "IP地址", "状态"]
-        apply_header_style(ws, headers, 1, header_font, header_fill, header_alignment, thin_border)
-        
-        current_row = 2
-        offset = 0
-        processed_count = 0
-        
-        while offset < total_count:
-            if task_id and task_id in export_progress and export_progress[task_id].get("cancelled", False):
-                raise StopIteration
+        global active_exports
+        try:
+            wb, ws, header_font, header_fill, header_alignment, cell_alignment, thin_border = create_excel_workbook()
+            ws.title = "操作日志"
             
-            session = SessionLocal()
-            try:
-                batch_query = session.query(OperationLog)
-                
-                if module:
-                    batch_query = batch_query.filter(OperationLog.module.contains(module))
-                if action:
-                    batch_query = batch_query.filter(OperationLog.action.contains(action))
-                if status:
-                    batch_query = batch_query.filter(OperationLog.status == status)
-                if username:
-                    batch_query = batch_query.filter(OperationLog.username.contains(username))
-                if start_date:
-                    batch_query = batch_query.filter(OperationLog.created_at >= datetime.fromisoformat(start_date))
-                if end_date:
-                    end_datetime = datetime.fromisoformat(end_date)
-                    end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
-                    batch_query = batch_query.filter(OperationLog.created_at <= end_datetime)
-                
-                batch_logs = batch_query.order_by(desc(OperationLog.created_at)).offset(offset).limit(batch_size).all()
-                
-                for log in batch_logs:
-                    created_at_str = to_local(log.created_at).strftime("%Y-%m-%d %H:%M:%S") if log.created_at else ""
-                    status_str = "成功" if log.status == "success" else "失败"
-                    row_data = [
-                        log.id,
-                        created_at_str,
-                        log.username or "-",
-                        log.module,
-                        log.action,
-                        log.description or "-",
-                        log.ip_address or "-",
-                        status_str
-                    ]
-                    apply_cell_style(ws, row_data, current_row, cell_alignment, thin_border)
-                    current_row += 1
-                    processed_count += 1
-            finally:
-                session.close()
+            headers = ["日志ID", "发生时间", "操作人", "模块", "操作", "描述", "IP地址", "状态"]
+            apply_header_style(ws, headers, 1, header_font, header_fill, header_alignment, thin_border)
             
-            if task_id and task_id in export_progress:
-                export_progress[task_id]["current"] = processed_count
+            current_row = 2
+            offset = 0
+            processed_count = 0
             
-            offset += batch_size
-        
-        auto_adjust_column_width(ws, len(headers))
-        
-        output = BytesIO()
-        wb.save(output)
-        output.seek(0)
-        
-        chunk_size = 65536
-        while True:
-            chunk = output.read(chunk_size)
-            if not chunk:
-                break
-            yield chunk
+            while offset < total_count:
+                if task_id and task_id in export_progress and export_progress[task_id].get("cancelled", False):
+                    raise StopIteration
+                
+                session = SessionLocal()
+                try:
+                    batch_query = session.query(OperationLog)
+                    
+                    if module:
+                        batch_query = batch_query.filter(OperationLog.module.contains(module))
+                    if action:
+                        batch_query = batch_query.filter(OperationLog.action.contains(action))
+                    if status:
+                        batch_query = batch_query.filter(OperationLog.status == status)
+                    if username:
+                        batch_query = batch_query.filter(OperationLog.username.contains(username))
+                    if start_date:
+                        batch_query = batch_query.filter(OperationLog.created_at >= datetime.fromisoformat(start_date))
+                    if end_date:
+                        end_datetime = datetime.fromisoformat(end_date)
+                        end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
+                        batch_query = batch_query.filter(OperationLog.created_at <= end_datetime)
+                    
+                    batch_logs = batch_query.order_by(desc(OperationLog.created_at)).offset(offset).limit(batch_size).all()
+                    
+                    for log in batch_logs:
+                        created_at_str = to_local(log.created_at).strftime("%Y-%m-%d %H:%M:%S") if log.created_at else ""
+                        status_str = "成功" if log.status == "success" else "失败"
+                        row_data = [
+                            log.id,
+                            created_at_str,
+                            log.username or "-",
+                            log.module,
+                            log.action,
+                            log.description or "-",
+                            log.ip_address or "-",
+                            status_str
+                        ]
+                        apply_cell_style(ws, row_data, current_row, cell_alignment, thin_border)
+                        current_row += 1
+                        processed_count += 1
+                finally:
+                    session.close()
+                
+                if task_id and task_id in export_progress:
+                    export_progress[task_id]["current"] = processed_count
+                
+                offset += batch_size
+            
+            auto_adjust_column_width(ws, len(headers))
+            
+            output = BytesIO()
+            wb.save(output)
+            output.seek(0)
+            
+            chunk_size = 65536
+            while True:
+                chunk = output.read(chunk_size)
+                if not chunk:
+                    break
+                yield chunk
+        finally:
+            active_exports -= 1
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"操作日志_{timestamp}.xlsx"
