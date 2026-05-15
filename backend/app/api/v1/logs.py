@@ -651,7 +651,7 @@ async def export_operation_logs(
             
             while offset < total_count:
                 if task_id and task_id in export_progress and export_progress[task_id].get("cancelled", False):
-                    raise StopIteration
+                    return
                 
                 session = SessionLocal()
                 try:
@@ -813,7 +813,7 @@ async def export_login_logs(
         
         while offset < total_count:
             if task_id and task_id in export_progress and export_progress[task_id].get("cancelled", False):
-                raise StopIteration
+                return
             
             session = SessionLocal()
             try:
@@ -974,7 +974,7 @@ async def export_access_logs(
         
         while offset < total_count:
             if task_id and task_id in export_progress and export_progress[task_id].get("cancelled", False):
-                raise StopIteration
+                return
             
             session = SessionLocal()
             try:
