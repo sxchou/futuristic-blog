@@ -9,7 +9,7 @@ from urllib.parse import quote
 import openpyxl
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from openpyxl.utils import get_column_letter
-from app.core.database import get_db
+from app.core.database import get_db, SessionLocal
 from app.models import OperationLog, LoginLog, AccessLog, UserProfile
 from app.utils.permissions import require_permission
 from app.utils.timezone import get_db_now, get_today_start, to_local
@@ -645,24 +645,45 @@ async def export_operation_logs(
             if task_id and task_id in export_progress and export_progress[task_id].get("cancelled", False):
                 raise StopIteration
             
-            batch_logs = query.order_by(desc(OperationLog.created_at)).offset(offset).limit(batch_size).all()
-            
-            for log in batch_logs:
-                created_at_str = to_local(log.created_at).strftime("%Y-%m-%d %H:%M:%S") if log.created_at else ""
-                status_str = "成功" if log.status == "success" else "失败"
-                row_data = [
-                    log.id,
-                    created_at_str,
-                    log.username or "-",
-                    log.module,
-                    log.action,
-                    log.description or "-",
-                    log.ip_address or "-",
-                    status_str
-                ]
-                apply_cell_style(ws, row_data, current_row, cell_alignment, thin_border)
-                current_row += 1
-                processed_count += 1
+            session = SessionLocal()
+            try:
+                batch_query = session.query(OperationLog)
+                
+                if module:
+                    batch_query = batch_query.filter(OperationLog.module.contains(module))
+                if action:
+                    batch_query = batch_query.filter(OperationLog.action.contains(action))
+                if status:
+                    batch_query = batch_query.filter(OperationLog.status == status)
+                if username:
+                    batch_query = batch_query.filter(OperationLog.username.contains(username))
+                if start_date:
+                    batch_query = batch_query.filter(OperationLog.created_at >= datetime.fromisoformat(start_date))
+                if end_date:
+                    end_datetime = datetime.fromisoformat(end_date)
+                    end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
+                    batch_query = batch_query.filter(OperationLog.created_at <= end_datetime)
+                
+                batch_logs = batch_query.order_by(desc(OperationLog.created_at)).offset(offset).limit(batch_size).all()
+                
+                for log in batch_logs:
+                    created_at_str = to_local(log.created_at).strftime("%Y-%m-%d %H:%M:%S") if log.created_at else ""
+                    status_str = "成功" if log.status == "success" else "失败"
+                    row_data = [
+                        log.id,
+                        created_at_str,
+                        log.username or "-",
+                        log.module,
+                        log.action,
+                        log.description or "-",
+                        log.ip_address or "-",
+                        status_str
+                    ]
+                    apply_cell_style(ws, row_data, current_row, cell_alignment, thin_border)
+                    current_row += 1
+                    processed_count += 1
+            finally:
+                session.close()
             
             if task_id and task_id in export_progress:
                 export_progress[task_id]["current"] = processed_count
@@ -778,25 +799,46 @@ async def export_login_logs(
             if task_id and task_id in export_progress and export_progress[task_id].get("cancelled", False):
                 raise StopIteration
             
-            batch_logs = query.order_by(desc(LoginLog.created_at)).offset(offset).limit(batch_size).all()
-            
-            for log in batch_logs:
-                created_at_str = to_local(log.created_at).strftime("%Y-%m-%d %H:%M:%S") if log.created_at else ""
-                status_str = "成功" if log.status == "success" else "失败"
-                row_data = [
-                    log.id,
-                    created_at_str,
-                    log.username or "-",
-                    log.login_type,
-                    log.ip_address or "-",
-                    log.browser or "-",
-                    log.os or "-",
-                    status_str,
-                    log.fail_reason or "-"
-                ]
-                apply_cell_style(ws, row_data, current_row, cell_alignment, thin_border)
-                current_row += 1
-                processed_count += 1
+            session = SessionLocal()
+            try:
+                batch_query = session.query(LoginLog)
+                
+                if login_type:
+                    batch_query = batch_query.filter(LoginLog.login_type.contains(login_type))
+                if status:
+                    batch_query = batch_query.filter(LoginLog.status == status)
+                if username:
+                    batch_query = batch_query.filter(LoginLog.username.contains(username))
+                if ip_address:
+                    batch_query = batch_query.filter(LoginLog.ip_address.contains(ip_address))
+                if start_date:
+                    batch_query = batch_query.filter(LoginLog.created_at >= datetime.fromisoformat(start_date))
+                if end_date:
+                    end_datetime = datetime.fromisoformat(end_date)
+                    end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
+                    batch_query = batch_query.filter(LoginLog.created_at <= end_datetime)
+                
+                batch_logs = batch_query.order_by(desc(LoginLog.created_at)).offset(offset).limit(batch_size).all()
+                
+                for log in batch_logs:
+                    created_at_str = to_local(log.created_at).strftime("%Y-%m-%d %H:%M:%S") if log.created_at else ""
+                    status_str = "成功" if log.status == "success" else "失败"
+                    row_data = [
+                        log.id,
+                        created_at_str,
+                        log.username or "-",
+                        log.login_type,
+                        log.ip_address or "-",
+                        log.browser or "-",
+                        log.os or "-",
+                        status_str,
+                        log.fail_reason or "-"
+                    ]
+                    apply_cell_style(ws, row_data, current_row, cell_alignment, thin_border)
+                    current_row += 1
+                    processed_count += 1
+            finally:
+                session.close()
             
             if task_id and task_id in export_progress:
                 export_progress[task_id]["current"] = processed_count
@@ -912,23 +954,44 @@ async def export_access_logs(
             if task_id and task_id in export_progress and export_progress[task_id].get("cancelled", False):
                 raise StopIteration
             
-            batch_logs = query.order_by(desc(AccessLog.created_at)).offset(offset).limit(batch_size).all()
-            
-            for log in batch_logs:
-                created_at_str = to_local(log.created_at).strftime("%Y-%m-%d %H:%M:%S") if log.created_at else ""
-                row_data = [
-                    log.id,
-                    created_at_str,
-                    log.username or "游客",
-                    log.request_method or "-",
-                    log.request_path or "-",
-                    log.response_status or "-",
-                    f"{log.response_time:.2f}" if log.response_time else "-",
-                    log.ip_address or "-"
-                ]
-                apply_cell_style(ws, row_data, current_row, cell_alignment, thin_border)
-                current_row += 1
-                processed_count += 1
+            session = SessionLocal()
+            try:
+                batch_query = session.query(AccessLog)
+                
+                if username:
+                    batch_query = batch_query.filter(AccessLog.username.contains(username))
+                if request_method:
+                    batch_query = batch_query.filter(AccessLog.request_method.contains(request_method))
+                if path:
+                    batch_query = batch_query.filter(AccessLog.request_path.contains(path))
+                if ip_address:
+                    batch_query = batch_query.filter(AccessLog.ip_address.contains(ip_address))
+                if start_date:
+                    batch_query = batch_query.filter(AccessLog.created_at >= datetime.fromisoformat(start_date))
+                if end_date:
+                    end_datetime = datetime.fromisoformat(end_date)
+                    end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
+                    batch_query = batch_query.filter(AccessLog.created_at <= end_datetime)
+                
+                batch_logs = batch_query.order_by(desc(AccessLog.created_at)).offset(offset).limit(batch_size).all()
+                
+                for log in batch_logs:
+                    created_at_str = to_local(log.created_at).strftime("%Y-%m-%d %H:%M:%S") if log.created_at else ""
+                    row_data = [
+                        log.id,
+                        created_at_str,
+                        log.username or "游客",
+                        log.request_method or "-",
+                        log.request_path or "-",
+                        log.response_status or "-",
+                        f"{log.response_time:.2f}" if log.response_time else "-",
+                        log.ip_address or "-"
+                    ]
+                    apply_cell_style(ws, row_data, current_row, cell_alignment, thin_border)
+                    current_row += 1
+                    processed_count += 1
+            finally:
+                session.close()
             
             if task_id and task_id in export_progress:
                 export_progress[task_id]["current"] = processed_count

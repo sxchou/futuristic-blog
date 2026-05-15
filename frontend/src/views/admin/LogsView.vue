@@ -292,7 +292,10 @@ const handleExport = async (logType: string) => {
         if (total > 0) {
           state.total = total
           const progressPercent = Math.round((current / total) * 85) + 15
-          state.progress = Math.min(progressPercent, 99)
+          const newProgress = Math.min(progressPercent, 99)
+          if (newProgress > state.progress) {
+            state.progress = newProgress
+          }
           state.status = `正在生成Excel（${current.toLocaleString()}/${total.toLocaleString()}）...`
         }
       } catch (error) {
