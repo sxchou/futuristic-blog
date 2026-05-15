@@ -16,7 +16,7 @@
 | 后端 | Render | Docker 支持 | 750h/月 |
 | 数据库 | Neon | Serverless | 0.5GB |
 | 存储 | Supabase | S3 兼容 | 5GB |
-| 邮件 | Gmail SMTP | 稳定可靠 | 100封/天 |
+| 邮件 | Resend | 现代 API | 3000封/月 |
 
 ### 架构优势
 
