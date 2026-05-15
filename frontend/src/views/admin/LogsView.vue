@@ -298,15 +298,26 @@ const handleExport = async (logType: string) => {
         }
         
         const progressResponse = await logsApi.getExportProgress(taskId)
-        const { current, total } = progressResponse.data
+        const { current, total, stage } = progressResponse.data
         if (total > 0) {
           state.total = total
-          const progressPercent = Math.round((current / total) * 85) + 15
-          const newProgress = Math.min(progressPercent, 99)
+          
+          let newProgress = state.progress
+          if (stage === 'generating') {
+            newProgress = 85
+            state.status = '正在生成Excel文件...'
+          } else if (stage === 'streaming') {
+            newProgress = 90
+            state.status = '正在传输文件...'
+          } else {
+            const progressPercent = Math.round((current / total) * 70) + 10
+            newProgress = Math.min(progressPercent, 80)
+            state.status = `正在生成Excel（${current.toLocaleString()}/${total.toLocaleString()}）...`
+          }
+          
           if (newProgress > state.progress) {
             state.progress = newProgress
           }
-          state.status = `正在生成Excel（${current.toLocaleString()}/${total.toLocaleString()}）...`
         }
       } catch (error) {
         console.error('Failed to fetch progress:', error)

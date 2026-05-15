@@ -24,7 +24,7 @@ router = APIRouter(prefix="/logs", tags=["Logs"])
 CACHE_NAME = "logs"
 CACHE_TTL_STATS = 60
 
-export_progress: Dict[str, Dict[str, int]] = {}
+export_progress: Dict[str, Dict] = {}
 active_exports = 0
 MAX_CONCURRENT_EXPORTS = 3
 
@@ -634,7 +634,7 @@ async def export_operation_logs(
     batch_size = 5000
     
     if task_id:
-        export_progress[task_id] = {"current": 0, "total": total_count, "cancelled": False}
+        export_progress[task_id] = {"current": 0, "total": total_count, "cancelled": False, "stage": "processing"}
     
     def generate_excel():
         global active_exports
@@ -700,9 +700,15 @@ async def export_operation_logs(
             
             auto_adjust_column_width(ws, len(headers))
             
+            if task_id and task_id in export_progress:
+                export_progress[task_id]["stage"] = "generating"
+            
             output = BytesIO()
             wb.save(output)
             output.seek(0)
+            
+            if task_id and task_id in export_progress:
+                export_progress[task_id]["stage"] = "streaming"
             
             chunk_size = 65536
             while True:
@@ -792,7 +798,7 @@ async def export_login_logs(
     batch_size = 5000
     
     if task_id:
-        export_progress[task_id] = {"current": 0, "total": total_count, "cancelled": False}
+        export_progress[task_id] = {"current": 0, "total": total_count, "cancelled": False, "stage": "processing"}
     
     def generate_excel():
         wb, ws, header_font, header_fill, header_alignment, cell_alignment, thin_border = create_excel_workbook()
@@ -857,9 +863,15 @@ async def export_login_logs(
         
         auto_adjust_column_width(ws, len(headers))
         
+        if task_id and task_id in export_progress:
+            export_progress[task_id]["stage"] = "generating"
+        
         output = BytesIO()
         wb.save(output)
         output.seek(0)
+        
+        if task_id and task_id in export_progress:
+            export_progress[task_id]["stage"] = "streaming"
         
         chunk_size = 65536
         while True:
@@ -947,7 +959,7 @@ async def export_access_logs(
     batch_size = 5000
     
     if task_id:
-        export_progress[task_id] = {"current": 0, "total": total_count, "cancelled": False}
+        export_progress[task_id] = {"current": 0, "total": total_count, "cancelled": False, "stage": "processing"}
     
     def generate_excel():
         wb, ws, header_font, header_fill, header_alignment, cell_alignment, thin_border = create_excel_workbook()
@@ -1010,9 +1022,15 @@ async def export_access_logs(
         
         auto_adjust_column_width(ws, len(headers))
         
+        if task_id and task_id in export_progress:
+            export_progress[task_id]["stage"] = "generating"
+        
         output = BytesIO()
         wb.save(output)
         output.seek(0)
+        
+        if task_id and task_id in export_progress:
+            export_progress[task_id]["stage"] = "streaming"
         
         chunk_size = 65536
         while True:
