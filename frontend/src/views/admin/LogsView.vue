@@ -1046,11 +1046,24 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
               :class="{ 'hidden md:flex': !showFilters, 'md:flex': true }"
               @submit.prevent="handleSearch"
             >
-              <input id="input-access-filters-username"
+              <select id="select-access-filters-username"
+                v-model="filters.username"
+                name="access-username"
+                class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
+                @change="handleSearch"
+              >
+                <option value="">
+                  全部用户
+                </option>
+                <option value="__guest__">
+                  游客
+                </option>
+              </select>
+              <input id="input-access-filters-username-custom"
                 v-model="filters.username"
                 type="text"
-                name="access-username"
-                placeholder="用户名"
+                name="access-username-custom"
+                placeholder="或输入用户名"
                 class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-28"
                 @keyup.enter="handleSearch"
               >

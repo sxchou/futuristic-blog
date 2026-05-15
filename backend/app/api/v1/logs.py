@@ -347,7 +347,10 @@ async def get_access_logs(
     query = db.query(AccessLog)
     
     if username:
-        query = query.filter(AccessLog.username.contains(username))
+        if username == "__guest__":
+            query = query.filter(AccessLog.username.is_(None) | (AccessLog.username == ""))
+        else:
+            query = query.filter(AccessLog.username.contains(username))
     if request_method:
         query = query.filter(AccessLog.request_method.contains(request_method))
     if path:
@@ -931,7 +934,10 @@ async def get_access_logs_export_count(
     query = db.query(AccessLog)
     
     if username:
-        query = query.filter(AccessLog.username.contains(username))
+        if username == "__guest__":
+            query = query.filter(AccessLog.username.is_(None) | (AccessLog.username == ""))
+        else:
+            query = query.filter(AccessLog.username.contains(username))
     if request_method:
         query = query.filter(AccessLog.request_method.contains(request_method))
     if path:
@@ -968,7 +974,10 @@ async def export_access_logs(
     query = db.query(AccessLog)
     
     if username:
-        query = query.filter(AccessLog.username.contains(username))
+        if username == "__guest__":
+            query = query.filter(AccessLog.username.is_(None) | (AccessLog.username == ""))
+        else:
+            query = query.filter(AccessLog.username.contains(username))
     if request_method:
         query = query.filter(AccessLog.request_method.contains(request_method))
     if path:
@@ -1014,7 +1023,10 @@ async def export_access_logs(
                 batch_query = session.query(AccessLog)
                 
                 if username:
-                    batch_query = batch_query.filter(AccessLog.username.contains(username))
+                    if username == "__guest__":
+                        batch_query = batch_query.filter(AccessLog.username.is_(None) | (AccessLog.username == ""))
+                    else:
+                        batch_query = batch_query.filter(AccessLog.username.contains(username))
                 if request_method:
                     batch_query = batch_query.filter(AccessLog.request_method.contains(request_method))
                 if path:
