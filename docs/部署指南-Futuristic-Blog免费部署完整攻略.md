@@ -30,7 +30,6 @@
 在开始部署之前，请确保你拥有以下条件：
 
 - 一个 GitHub 账户
-- 一个 Gmail 邮箱（用于 SMTP 邮件服务）
 - 基本的 Git 操作知识
 - 大约 30 分钟的时间
 
@@ -130,16 +129,17 @@ CORS_ORIGINS=["https://your-frontend.vercel.app"]
 # 时区设置
 TIMEZONE=Asia/Shanghai
 
-# Gmail SMTP 邮件配置（推荐）
+# Resend 邮件服务（推荐）
+RESEND_API_KEY=re_xxxxxxxxxxxx
+RESEND_FROM_EMAIL=noreply@yourdomain.com
+EMAIL_PROVIDER=resend
+
+# Gmail SMTP 邮件配置（备选，需要自定义域名）
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASSWORD=your-app-password
 SMTP_FROM_EMAIL=your-email@gmail.com
-
-# Resend 邮件服务（需要自定义域名）
-RESEND_API_KEY=re_xxxxxxxxxxxx
-RESEND_FROM_EMAIL=noreply@yourdomain.com
 EMAIL_PROVIDER=smtp
 
 # Supabase 文件存储（如需文件上传功能）
@@ -217,18 +217,12 @@ VITE_API_BASE_URL=https://your-backend.onrender.com
 ### 4.2 创建存储桶
 
 1. 进入项目后，点击左侧 **Storage**
-2. 点击 **New bucket** 创建以下存储桶：
+2. 点击 **New bucket** 创建存储桶：
+   - 名称：`attachments`（或自定义名称）
+   - 开启 **Public bucket** 选项
+   - 点击 **Create bucket**
 
-| 名称 | 用途 | 公开 |
-|------|------|------|
-| avatars | 用户头像 | ✅ |
-| covers | 文章封面 | ✅ |
-| attachments | 文章附件 | ✅ |
-
-### 4.3 配置公开访问
-
-1. 点击每个存储桶 → **Configuration** → **Public bucket**
-2. 开启 **Public bucket** 选项
+> **说明**：系统使用单一存储桶存储所有文件（头像、封面、附件），通过文件路径区分不同类型。
 
 ### 4.4 获取 API 密钥
 
@@ -345,11 +339,63 @@ CORS_ORIGINS=["https://your-frontend.vercel.app","http://localhost:3000"]
 
 ## 邮件配置避坑
 
-### Gmail SMTP 配置（推荐）
+### Resend 邮件服务（强烈推荐）
 
-Gmail SMTP 是最稳定的免费邮件发送方案，强烈推荐使用。
+Resend 是现代化的邮件 API 服务，免费版提供每月 3000 封邮件额度，完全满足个人博客需求。
+
+**优势**：
+- 🚀 现代 API，集成简单
+- 📊 完善的发送日志和统计
+- 🔒 高送达率，不易进垃圾箱
+- 💰 免费额度充足（3000封/月）
 
 **配置步骤**：
+
+1. **注册 Resend 账户**
+   - 访问 [Resend 官网](https://resend.com/)
+   - 点击 **Sign Up** 使用 GitHub 账户登录
+   - 验证邮箱地址
+
+2. **获取 API 密钥**
+   - 登录后点击 **API Keys**
+   - 点击 **Create API Key**
+   - 输入名称：`futuristic-blog`
+   - 复制生成的 API 密钥（格式：`re_xxxxxxxxxxxx`）
+
+3. **配置环境变量**：
+
+```bash
+RESEND_API_KEY=re_xxxxxxxxxxxx
+RESEND_FROM_EMAIL=onboarding@resend.dev
+EMAIL_PROVIDER=resend
+```
+
+> **重要提示**：Resend 免费版默认使用 `onboarding@resend.dev` 作为发件人，只能发送给注册时验证的邮箱地址。
+
+**如需发送给任意邮箱**：
+
+1. 添加自定义域名
+   - 在 Resend 控制台点击 **Domains**
+   - 点击 **Add Domain** 添加你的域名
+   - 配置 DNS 记录（MX、SPF、DKIM）
+   - 等待验证通过
+
+2. 更新环境变量：
+```bash
+RESEND_FROM_EMAIL=noreply@yourdomain.com
+```
+
+### Gmail SMTP 配置（不推荐）
+
+**重要限制**：Gmail SMTP 免费计划已无法用于应用邮件发送！
+
+**原因**：
+- Google 于 2022 年 5 月关闭了"低安全性应用访问"功能
+- 必须使用 OAuth 2.0 或应用专用密码
+- 应用专用密码需要开启两步验证
+- 免费 Gmail 账户有严格的发送限制
+
+**如果坚持使用 Gmail SMTP**：
 
 1. **开启两步验证**
    - 访问 [Google 账户安全设置](https://myaccount.google.com/security)
@@ -372,21 +418,14 @@ SMTP_FROM_EMAIL=your-email@gmail.com
 EMAIL_PROVIDER=smtp
 ```
 
-> **重要提示**：不要使用 Gmail 账户密码，必须使用应用专用密码！
-
-### Resend 邮件服务
-
-**重要限制**：Resend 免费版只能发送邮件给自己注册时的邮箱！
-
-**如需发送给任意邮箱**：
-1. 必须拥有自定义域名
-2. 在 Resend 中验证域名所有权
-3. 配置 DNS 记录（MX、SPF、DKIM）
-4. 使用域名邮箱作为发件人
+**常见问题**：
+- ❌ 报错 "Username and Password not accepted" - 需要使用应用专用密码
+- ❌ 报错 "Less secure app access" - Google 已关闭此功能
+- ❌ 邮件进入垃圾箱 - Gmail SMTP 送达率较低
 
 **推荐方案**：
-- 如果没有自定义域名，使用 Gmail SMTP
-- 如果有自定义域名，Resend 是更好的选择
+- ✅ 使用 Resend（免费、稳定、送达率高）
+- ✅ 如有自定义域名，配置 Resend 域名验证
 
 ## 安全配置避坑
 
@@ -441,6 +480,9 @@ openssl rand -hex 32
 | 变量 | 说明 | 用途 |
 |------|------|------|
 | TIMEZONE | 时区 | Asia/Shanghai |
+| RESEND_API_KEY | Resend API 密钥 | 邮件发送（推荐） |
+| RESEND_FROM_EMAIL | Resend 发件人 | onboarding@resend.dev |
+| EMAIL_PROVIDER | 邮件服务商 | resend（推荐）或 smtp |
 | SMTP_HOST | SMTP 地址 | smtp.gmail.com |
 | SMTP_PORT | SMTP 端口 | 587 |
 | SMTP_USER | SMTP 用户 | your@gmail.com |
@@ -448,11 +490,6 @@ openssl rand -hex 32
 | SUPABASE_URL | 项目 URL | 文件存储 |
 | SUPABASE_KEY | anon 密钥 | 文件存储 |
 | SUPABASE_BUCKET | 存储桶 | attachments |
-
-邮件服务可选：
-- `RESEND_API_KEY`: Resend API 密钥
-- `RESEND_FROM_EMAIL`: Resend 发件人
-- `EMAIL_PROVIDER`: `smtp` 或 `resend`
 
 ## 总结
 
@@ -462,7 +499,7 @@ openssl rand -hex 32
 2. **Render**：部署 FastAPI 后端服务
 3. **Vercel**：部署 Vue 3 前端应用
 4. **Supabase**：配置文件存储服务
-5. **Gmail SMTP**：配置邮件发送服务
+5. **Resend**：配置邮件发送服务（推荐）
 
 这套方案的优势在于：
 
