@@ -564,6 +564,7 @@ async def clear_export_progress(
 
 @router.get("/export/operations/count")
 async def get_operation_logs_export_count(
+    task_id: Optional[str] = None,
     module: Optional[str] = None,
     action: Optional[str] = None,
     status: Optional[str] = None,
@@ -591,6 +592,10 @@ async def get_operation_logs_export_count(
         query = query.filter(OperationLog.created_at <= end_datetime)
     
     total_count = query.count()
+    
+    if task_id:
+        export_progress[task_id] = {"current": 0, "total": total_count, "cancelled": False, "stage": "pending"}
+    
     return {"total": total_count}
 
 
@@ -630,11 +635,17 @@ async def export_operation_logs(
         end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
         query = query.filter(OperationLog.created_at <= end_datetime)
     
-    total_count = query.count()
+    if task_id and task_id in export_progress:
+        total_count = export_progress[task_id]["total"]
+    else:
+        total_count = query.count()
+        if task_id:
+            export_progress[task_id] = {"current": 0, "total": total_count, "cancelled": False, "stage": "processing"}
+    
     batch_size = 5000
     
-    if task_id:
-        export_progress[task_id] = {"current": 0, "total": total_count, "cancelled": False, "stage": "processing"}
+    if task_id and task_id in export_progress:
+        export_progress[task_id]["stage"] = "processing"
     
     def generate_excel():
         global active_exports
@@ -735,6 +746,7 @@ async def export_operation_logs(
 
 @router.get("/export/logins/count")
 async def get_login_logs_export_count(
+    task_id: Optional[str] = None,
     login_type: Optional[str] = None,
     status: Optional[str] = None,
     username: Optional[str] = None,
@@ -762,6 +774,10 @@ async def get_login_logs_export_count(
         query = query.filter(LoginLog.created_at <= end_datetime)
     
     total_count = query.count()
+    
+    if task_id:
+        export_progress[task_id] = {"current": 0, "total": total_count, "cancelled": False, "stage": "pending"}
+    
     return {"total": total_count}
 
 
@@ -794,11 +810,17 @@ async def export_login_logs(
         end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
         query = query.filter(LoginLog.created_at <= end_datetime)
     
-    total_count = query.count()
+    if task_id and task_id in export_progress:
+        total_count = export_progress[task_id]["total"]
+    else:
+        total_count = query.count()
+        if task_id:
+            export_progress[task_id] = {"current": 0, "total": total_count, "cancelled": False, "stage": "processing"}
+    
     batch_size = 5000
     
-    if task_id:
-        export_progress[task_id] = {"current": 0, "total": total_count, "cancelled": False, "stage": "processing"}
+    if task_id and task_id in export_progress:
+        export_progress[task_id]["stage"] = "processing"
     
     def generate_excel():
         wb, ws, header_font, header_fill, header_alignment, cell_alignment, thin_border = create_excel_workbook()
@@ -896,6 +918,7 @@ async def export_login_logs(
 
 @router.get("/export/access/count")
 async def get_access_logs_export_count(
+    task_id: Optional[str] = None,
     username: Optional[str] = None,
     request_method: Optional[str] = None,
     path: Optional[str] = None,
@@ -923,6 +946,10 @@ async def get_access_logs_export_count(
         query = query.filter(AccessLog.created_at <= end_datetime)
     
     total_count = query.count()
+    
+    if task_id:
+        export_progress[task_id] = {"current": 0, "total": total_count, "cancelled": False, "stage": "pending"}
+    
     return {"total": total_count}
 
 
@@ -955,11 +982,17 @@ async def export_access_logs(
         end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
         query = query.filter(AccessLog.created_at <= end_datetime)
     
-    total_count = query.count()
+    if task_id and task_id in export_progress:
+        total_count = export_progress[task_id]["total"]
+    else:
+        total_count = query.count()
+        if task_id:
+            export_progress[task_id] = {"current": 0, "total": total_count, "cancelled": False, "stage": "processing"}
+    
     batch_size = 5000
     
-    if task_id:
-        export_progress[task_id] = {"current": 0, "total": total_count, "cancelled": False, "stage": "processing"}
+    if task_id and task_id in export_progress:
+        export_progress[task_id]["stage"] = "processing"
     
     def generate_excel():
         wb, ws, header_font, header_fill, header_alignment, cell_alignment, thin_border = create_excel_workbook()
