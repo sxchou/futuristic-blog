@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, watch, computed } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { userApi, roleApi } from '@/api'
 import { clearCacheByPattern } from '@/api/client'
 import type { User, Role } from '@/types'
@@ -29,11 +29,7 @@ const usernameFilter = ref<string>('')
 const emailFilter = ref<string>('')
 const roleFilter = ref<string>('')
 const statusFilter = ref<string>('')
-const showFilters = ref(false)
 
-const hasActiveFilters = computed(() => {
-  return !!(usernameFilter.value || emailFilter.value || roleFilter.value || statusFilter.value)
-})
 const startDateFilter = ref<string>('')
 const endDateFilter = ref<string>('')
 
@@ -686,30 +682,8 @@ const clearEditError = (field: string) => {
       class="glass-card overflow-hidden"
     >
       <div class="p-3 border-b border-gray-200 dark:border-white/10">
-        <div class="flex items-center justify-between md:hidden mb-2">
-          <button
-            type="button"
-            class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-200 transition-colors"
-            @click="showFilters = !showFilters"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-            </svg>
-            筛选
-            <svg class="w-3 h-3 transition-transform" :class="{ 'rotate-180': showFilters }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-          <div v-if="hasActiveFilters" class="flex items-center gap-1 flex-wrap">
-            <span v-if="usernameFilter" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ usernameFilter }}</span>
-            <span v-if="emailFilter" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ emailFilter }}</span>
-            <span v-if="roleFilter" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ roleFilter }}</span>
-            <span v-if="statusFilter" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ statusFilter === 'verified' ? '已验证' : '未验证' }}</span>
-          </div>
-        </div>
         <form 
           class="flex flex-wrap items-center gap-2"
-          :class="{ 'hidden md:flex': !showFilters, 'md:flex': true }"
           @submit.prevent="handleSearch"
         >
           <input

@@ -23,17 +23,13 @@ const pageSize = ref(20)
 const total = ref(0)
 const totalPages = ref(0)
 const statusFilter = ref<string>('')
+const idFilter = ref<string>('')
 const contentFilter = ref<string>('')
 const articleTitleFilter = ref<string>('')
 const authorNameFilter = ref<string>('')
 const startDateFilter = ref<string>('')
 const endDateFilter = ref<string>('')
-const showFilters = ref(false)
 
-const hasActiveFilters = computed(() => {
-  return !!(statusFilter.value || contentFilter.value || articleTitleFilter.value || 
-            authorNameFilter.value || startDateFilter.value || endDateFilter.value)
-})
 const selectedComments = ref<number[]>([])
 const showAuditModal = ref(false)
 const showLogsModal = ref(false)
@@ -86,6 +82,9 @@ const fetchComments = async () => {
     if (statusFilter.value) {
       params.status = statusFilter.value
     }
+    if (idFilter.value) {
+      params.id = parseInt(idFilter.value)
+    }
     if (contentFilter.value) {
       params.content = contentFilter.value
     }
@@ -127,6 +126,7 @@ const handleStatusFilter = () => {
 
 const clearFilters = () => {
   statusFilter.value = ''
+  idFilter.value = ''
   contentFilter.value = ''
   articleTitleFilter.value = ''
   authorNameFilter.value = ''
@@ -475,32 +475,18 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
 
       <div class="glass-card overflow-hidden">
       <div class="p-3 border-b border-gray-200 dark:border-white/10">
-        <div class="flex items-center justify-between md:hidden mb-2">
-          <button
-            type="button"
-            class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-200 transition-colors"
-            @click="showFilters = !showFilters"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-            </svg>
-            筛选
-            <svg class="w-3 h-3 transition-transform" :class="{ 'rotate-180': showFilters }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-          <div v-if="hasActiveFilters" class="flex items-center gap-1 flex-wrap">
-            <span v-if="contentFilter" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ contentFilter }}</span>
-            <span v-if="articleTitleFilter" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ articleTitleFilter }}</span>
-            <span v-if="authorNameFilter" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ authorNameFilter }}</span>
-            <span v-if="statusFilter" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ statusFilter === 'approved' ? '已通过' : statusFilter === 'rejected' ? '已拒绝' : '待审核' }}</span>
-          </div>
-        </div>
         <form 
           class="flex flex-wrap items-center gap-2"
-          :class="{ 'hidden md:flex': !showFilters, 'md:flex': true }"
           @submit.prevent="handleStatusFilter"
         >
+          <input
+            v-model="idFilter"
+            type="number"
+            placeholder="ID"
+            min="1"
+            class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-20"
+            @keyup.enter="handleStatusFilter"
+          >
           <input
             v-model="contentFilter"
             type="text"

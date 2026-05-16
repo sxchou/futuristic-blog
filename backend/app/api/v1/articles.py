@@ -434,6 +434,8 @@ async def get_admin_articles(
     title: Optional[str] = None,
     category: Optional[str] = None,
     author: Optional[str] = None,
+    min_views: Optional[int] = Query(None, ge=0),
+    max_views: Optional[int] = Query(None, ge=0),
     date_type: Optional[str] = Query(None, pattern='^(created|published|updated)$'),
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
@@ -469,6 +471,12 @@ async def get_admin_articles(
     
     if author:
         query = query.join(Article.author).filter(User.username.contains(author))
+    
+    if min_views is not None:
+        query = query.filter(Article.view_count >= min_views)
+    
+    if max_views is not None:
+        query = query.filter(Article.view_count <= max_views)
     
     date_field = Article.created_at
     if date_type == 'published':

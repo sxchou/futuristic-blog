@@ -571,6 +571,7 @@ async def delete_comment(
 async def get_admin_comments(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
+    id: Optional[int] = Query(None, ge=1),
     status: Optional[str] = Query(None, pattern='^(pending|approved|rejected)$'),
     content: Optional[str] = None,
     article_title: Optional[str] = None,
@@ -586,6 +587,9 @@ async def get_admin_comments(
         joinedload(Comment.user),
         joinedload(Comment.reply_to_user)
     )
+    
+    if id:
+        query = query.filter(Comment.id == id)
     
     if status:
         query = query.filter(Comment.status == status)

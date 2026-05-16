@@ -32,10 +32,11 @@ const statusFilter = ref<string>('')
 const titleFilter = ref<string>('')
 const categoryFilter = ref<string>('')
 const authorFilter = ref<string>('')
+const minViewsFilter = ref<string>('')
+const maxViewsFilter = ref<string>('')
 const dateTypeFilter = ref<string>('created')
 const startDateFilter = ref<string>('')
 const endDateFilter = ref<string>('')
-const showFilters = ref(false)
 const showEditor = ref(false)
 const editingArticle = ref<ArticleListItem | null>(null)
 const articleFiles = ref<ArticleFile[]>([])
@@ -125,11 +126,6 @@ const validationErrors = ref<ValidationError[]>([])
 
 const canPublish = computed(() => {
   return permissionStore.hasPermission('article.publish')
-})
-
-const hasActiveFilters = computed(() => {
-  return !!(titleFilter.value || categoryFilter.value || authorFilter.value || 
-            statusFilter.value || startDateFilter.value || endDateFilter.value)
 })
 
 const enableScheduledPublish = ref(false)
@@ -294,6 +290,12 @@ const fetchArticles = async () => {
     if (authorFilter.value) {
       params.author = authorFilter.value
     }
+    if (minViewsFilter.value) {
+      params.min_views = parseInt(minViewsFilter.value)
+    }
+    if (maxViewsFilter.value) {
+      params.max_views = parseInt(maxViewsFilter.value)
+    }
     if (dateTypeFilter.value) {
       params.date_type = dateTypeFilter.value
     }
@@ -332,6 +334,8 @@ const clearFilters = () => {
   titleFilter.value = ''
   categoryFilter.value = ''
   authorFilter.value = ''
+  minViewsFilter.value = ''
+  maxViewsFilter.value = ''
   startDateFilter.value = ''
   endDateFilter.value = ''
   currentPage.value = 1
@@ -1788,51 +1792,8 @@ watch(form, () => {
       class="glass-card overflow-hidden"
     >
       <div class="p-3 border-b border-gray-200 dark:border-white/10">
-        <div class="flex items-center justify-between md:hidden mb-2">
-          <button
-            type="button"
-            class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-200 transition-colors"
-            @click="showFilters = !showFilters"
-          >
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-              />
-            </svg>
-            筛选
-            <svg
-              class="w-3 h-3 transition-transform"
-              :class="{ 'rotate-180': showFilters }"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </button>
-          <div v-if="hasActiveFilters" class="flex items-center gap-1 flex-wrap">
-            <span v-if="titleFilter" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ titleFilter }}</span>
-            <span v-if="categoryFilter" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ categoryFilter }}</span>
-            <span v-if="authorFilter" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ authorFilter }}</span>
-            <span v-if="statusFilter" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ statusFilter === 'published' ? '已发布' : statusFilter === 'draft' ? '未发布' : '定时发布' }}</span>
-          </div>
-        </div>
         <form 
           class="flex flex-wrap items-center gap-2"
-          :class="{ 'hidden md:flex': !showFilters, 'md:flex': true }"
           @submit.prevent="handleSearch"
         >
           <input
@@ -1874,6 +1835,25 @@ watch(form, () => {
               定时发布
             </option>
           </select>
+          <div class="flex items-center gap-1">
+            <input
+              v-model="minViewsFilter"
+              type="number"
+              placeholder="最小浏览"
+              min="0"
+              class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-20"
+              @keyup.enter="handleSearch"
+            >
+            <span class="text-xs text-gray-500">-</span>
+            <input
+              v-model="maxViewsFilter"
+              type="number"
+              placeholder="最大浏览"
+              min="0"
+              class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-20"
+              @keyup.enter="handleSearch"
+            >
+          </div>
           <select
             v-model="dateTypeFilter"
             class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"

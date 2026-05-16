@@ -51,23 +51,20 @@ const filters = ref({
   status: '',
   username: '',
   login_type: '',
+  browser: '',
+  os: '',
   ip_address: '',
   request_method: '',
   path: '',
+  min_response_time: '',
+  max_response_time: '',
+  min_status_code: '',
+  max_status_code: '',
   start_date: '',
   end_date: ''
 })
 
-const customUsername = ref('')
-
-const showFilters = ref(false)
-
-const hasActiveFilters = computed(() => {
-  const f = filters.value
-  return !!(f.module || f.action || f.description || f.status || f.username || 
-            f.login_type || f.ip_address || f.request_method || f.path || 
-            f.start_date || f.end_date)
-})
+const userType = ref('')
 
 const tabs = [
   { key: 'operations', label: '操作日志', icon: 'operation' },
@@ -142,41 +139,45 @@ const resetFilters = () => {
     status: '',
     username: '',
     login_type: '',
+    browser: '',
+    os: '',
     ip_address: '',
     request_method: '',
     path: '',
+    min_response_time: '',
+    max_response_time: '',
+    min_status_code: '',
+    max_status_code: '',
     start_date: '',
     end_date: ''
   }
 }
 
 const handleSearch = () => {
-  if (customUsername.value.trim() && activeTab.value === 'access') {
-    filters.value.username = customUsername.value.trim()
-  } else if (filters.value.username === '__guest__' || filters.value.username === '') {
-    customUsername.value = ''
+  page.value = 1
+  fetchLogs()
+}
+
+const handleUserTypeChange = () => {
+  if (userType.value === '__guest__') {
+    filters.value.username = '__guest__'
+  } else {
+    filters.value.username = ''
   }
-  page.value = 1
-  fetchLogs()
+  handleSearch()
 }
 
-const handleUsernameSelectChange = () => {
-  customUsername.value = ''
-  page.value = 1
-  fetchLogs()
-}
-
-const handleCustomUsernameSearch = () => {
-  if (customUsername.value.trim()) {
-    filters.value.username = customUsername.value.trim()
-    page.value = 1
-    fetchLogs()
+const handleUsernameChange = () => {
+  if (filters.value.username === '__guest__') {
+    userType.value = '__guest__'
+  } else {
+    userType.value = ''
   }
 }
 
 const handleClearFilters = () => {
   resetFilters()
-  customUsername.value = ''
+  userType.value = ''
   page.value = 1
   fetchLogs()
 }
@@ -758,32 +759,9 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
         </div>
 
         <div class="p-3 border-b border-gray-200 dark:border-white/10">
-          <div class="flex items-center justify-between md:hidden mb-2">
-            <button
-              type="button"
-              class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-200 transition-colors"
-              @click="showFilters = !showFilters"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-              </svg>
-              筛选
-              <svg class="w-3 h-3 transition-transform" :class="{ 'rotate-180': showFilters }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            <div v-if="hasActiveFilters" class="flex items-center gap-1 flex-wrap">
-              <span v-if="filters.username" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ filters.username }}</span>
-              <span v-if="filters.module" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ filters.module }}</span>
-              <span v-if="filters.action" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ filters.action }}</span>
-              <span v-if="filters.ip_address" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ filters.ip_address }}</span>
-              <span v-if="filters.path" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ filters.path }}</span>
-            </div>
-          </div>
           <form 
             v-if="activeTab === 'operations'" 
             class="flex flex-wrap items-center gap-2"
-            :class="{ 'hidden md:flex': !showFilters, 'md:flex': true }"
             @submit.prevent="handleSearch"
           >
               <input id="input-ops-filters-username"
@@ -816,6 +794,14 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 name="ops-description"
                 placeholder="描述"
                 class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-40"
+                @keyup.enter="handleSearch"
+              >
+              <input id="input-ops-filters-ip_address"
+                v-model="filters.ip_address"
+                type="text"
+                name="ops-ip-address"
+                placeholder="IP地址"
+                class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-32"
                 @keyup.enter="handleSearch"
               >
               <select id="select-ops-filters-status"
@@ -933,7 +919,6 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
             <form 
               v-if="activeTab === 'logins'" 
               class="flex flex-wrap items-center gap-2"
-              :class="{ 'hidden md:flex': !showFilters, 'md:flex': true }"
               @submit.prevent="handleSearch"
             >
               <input id="input-logins-filters-username"
@@ -942,6 +927,38 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 name="logins-username"
                 placeholder="用户名"
                 class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-28"
+              >
+              <select id="select-logins-filters-login_type"
+                v-model="filters.login_type"
+                name="logins-login-type"
+                class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
+                @change="handleSearch"
+              >
+                <option value="">
+                  全部类型
+                </option>
+                <option value="password">
+                  密码登录
+                </option>
+                <option value="oauth">
+                  OAuth登录
+                </option>
+              </select>
+              <input id="input-logins-filters-browser"
+                v-model="filters.browser"
+                type="text"
+                name="logins-browser"
+                placeholder="浏览器"
+                class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-28"
+                @keyup.enter="handleSearch"
+              >
+              <input id="input-logins-filters-os"
+                v-model="filters.os"
+                type="text"
+                name="logins-os"
+                placeholder="操作系统"
+                class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-28"
+                @keyup.enter="handleSearch"
               >
               <input id="input-logins-filters-ip_address"
                 v-model="filters.ip_address"
@@ -1065,32 +1082,30 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
             <form 
               v-if="activeTab === 'access'" 
               class="flex flex-wrap items-center gap-2"
-              :class="{ 'hidden md:flex': !showFilters, 'md:flex': true }"
               @submit.prevent="handleSearch"
             >
-              <div class="flex items-center gap-2">
-                <select id="select-access-filters-username"
-                  v-model="filters.username"
-                  name="access-username"
-                  class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
-                  @change="handleUsernameSelectChange"
-                >
-                  <option value="">
-                    全部用户
-                  </option>
-                  <option value="__guest__">
-                    游客
-                  </option>
-                </select>
-                <input id="input-access-filters-username-custom"
-                  v-model="customUsername"
-                  type="text"
-                  name="access-username-custom"
-                  placeholder="输入用户名筛选"
-                  class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-32"
-                  @keydown.enter.prevent="handleCustomUsernameSearch"
-                >
-              </div>
+              <input id="input-access-filters-username"
+                v-model="filters.username"
+                type="text"
+                name="access-username"
+                placeholder="用户名"
+                class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-28"
+                @input="handleUsernameChange"
+                @keyup.enter="handleSearch"
+              >
+              <select id="select-access-filters-user_type"
+                v-model="userType"
+                name="access-user-type"
+                class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
+                @change="handleUserTypeChange"
+              >
+                <option value="">
+                  全部
+                </option>
+                <option value="__guest__">
+                  游客
+                </option>
+              </select>
               <select id="select-filters-request_method"
                 v-model="filters.request_method"
                 name="access-request-method"
@@ -1113,6 +1128,26 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                   DELETE
                 </option>
               </select>
+              <div class="flex items-center gap-1">
+                <input
+                  v-model="filters.min_response_time"
+                  type="number"
+                  placeholder="最小响应"
+                  min="0"
+                  class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-20"
+                  @keyup.enter="handleSearch"
+                >
+                <span class="text-xs text-gray-500">-</span>
+                <input
+                  v-model="filters.max_response_time"
+                  type="number"
+                  placeholder="最大响应"
+                  min="0"
+                  class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-20"
+                  @keyup.enter="handleSearch"
+                >
+                <span class="text-xs text-gray-500">ms</span>
+              </div>
               <input id="input-access-filters-path"
                 v-model="filters.path"
                 type="text"
@@ -1129,6 +1164,27 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-32"
                 @keyup.enter="handleSearch"
               >
+              <div class="flex items-center gap-1">
+                <input
+                  v-model="filters.min_status_code"
+                  type="number"
+                  placeholder="最小状态码"
+                  min="100"
+                  max="599"
+                  class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-24"
+                  @keyup.enter="handleSearch"
+                >
+                <span class="text-xs text-gray-500">-</span>
+                <input
+                  v-model="filters.max_status_code"
+                  type="number"
+                  placeholder="最大状态码"
+                  min="100"
+                  max="599"
+                  class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-24"
+                  @keyup.enter="handleSearch"
+                >
+              </div>
               <DateRangePicker
                 v-model:start-date="filters.start_date"
                 v-model:end-date="filters.end_date"

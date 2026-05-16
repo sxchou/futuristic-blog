@@ -54,13 +54,6 @@ const logsFilter = ref({
   end_date: ''
 })
 
-const showLogsFilters = ref(false)
-
-const hasActiveLogsFilters = computed(() => {
-  const f = logsFilter.value
-  return !!(f.email_type || f.status || f.recipient_email || f.start_date || f.end_date)
-})
-
 const stats = ref<EmailStats>({
   total_sent: 0,
   total_failed: 0,
@@ -103,9 +96,12 @@ const emailTypeLabels: Record<string, string> = {
   test: '测试邮件',
   new_comment: '新评论通知',
   new_like: '新点赞通知',
-  new_register: '新用户注册通知',
+  new_user: '新用户注册通知',
   reply_notification: '评论回复通知',
   comment_approved: '评论审核通过',
+  comment_rejected: '评论审核拒绝',
+  pending_comment: '待审核评论',
+  article_published: '文章发布通知',
   password_reset: '密码重置',
   email_change: '邮箱更改',
   oauth_verification: 'OAuth验证',
@@ -787,29 +783,8 @@ function getProviderBgColor(provider: string) {
       class="glass-card overflow-hidden"
     >
       <div class="px-4 py-2.5 border-b border-gray-200 dark:border-white/10">
-        <div class="flex items-center justify-between md:hidden mb-2">
-          <button
-            type="button"
-            class="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-200 transition-colors"
-            @click="showLogsFilters = !showLogsFilters"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-            </svg>
-            筛选
-            <svg class="w-3 h-3 transition-transform" :class="{ 'rotate-180': showLogsFilters }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-          <div v-if="hasActiveLogsFilters" class="flex items-center gap-1 flex-wrap">
-            <span v-if="logsFilter.recipient_email" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ logsFilter.recipient_email }}</span>
-            <span v-if="logsFilter.email_type" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ logsFilter.email_type }}</span>
-            <span v-if="logsFilter.status" class="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">{{ logsFilter.status === 'sent' ? '已发送' : logsFilter.status === 'failed' ? '发送失败' : '待发送' }}</span>
-          </div>
-        </div>
         <form 
           class="flex items-center gap-3 flex-wrap"
-          :class="{ 'hidden md:flex': !showLogsFilters, 'md:flex': true }"
           @submit.prevent
         >
         <input
@@ -820,6 +795,24 @@ function getProviderBgColor(provider: string) {
           class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-40"
           @keyup.enter="logsPage = 1; loadLogs()"
         >
+        <select id="select-logsFilter-status"
+          v-model="logsFilter.status"
+          class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
+          @change="logsPage = 1; loadLogs()"
+        >
+          <option value="">
+            全部状态
+          </option>
+          <option value="sent">
+            已发送
+          </option>
+          <option value="failed">
+            发送失败
+          </option>
+          <option value="pending">
+            待发送
+          </option>
+        </select>
         <select id="select-logsFilter-email_type"
           v-model="logsFilter.email_type"
           class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
@@ -840,7 +833,7 @@ function getProviderBgColor(provider: string) {
           <option value="new_like">
             新点赞通知
           </option>
-          <option value="new_register">
+          <option value="new_user">
             新用户注册通知
           </option>
           <option value="reply_notification">
@@ -848,6 +841,15 @@ function getProviderBgColor(provider: string) {
           </option>
           <option value="comment_approved">
             评论审核通过
+          </option>
+          <option value="comment_rejected">
+            评论审核拒绝
+          </option>
+          <option value="pending_comment">
+            待审核评论
+          </option>
+          <option value="article_published">
+            文章发布通知
           </option>
           <option value="password_reset">
             密码重置
@@ -860,24 +862,6 @@ function getProviderBgColor(provider: string) {
           </option>
           <option value="error_log">
             错误日志
-          </option>
-        </select>
-        <select id="select-logsFilter-status"
-          v-model="logsFilter.status"
-          class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
-          @change="logsPage = 1; loadLogs()"
-        >
-          <option value="">
-            全部状态
-          </option>
-          <option value="sent">
-            已发送
-          </option>
-          <option value="failed">
-            发送失败
-          </option>
-          <option value="pending">
-            待发送
           </option>
         </select>
         <DateRangePicker

@@ -166,6 +166,7 @@ async def get_operation_logs(
     description: Optional[str] = None,
     status: Optional[str] = None,
     username: Optional[str] = None,
+    ip_address: Optional[str] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     db: Session = Depends(get_db),
@@ -183,6 +184,8 @@ async def get_operation_logs(
         query = query.filter(OperationLog.status == status)
     if username:
         query = query.filter(OperationLog.username.contains(username))
+    if ip_address:
+        query = query.filter(OperationLog.ip_address.contains(ip_address))
     if start_date:
         query = query.filter(OperationLog.created_at >= datetime.fromisoformat(start_date))
     if end_date:
@@ -251,6 +254,8 @@ async def get_login_logs(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     login_type: Optional[str] = None,
+    browser: Optional[str] = None,
+    os: Optional[str] = None,
     status: Optional[str] = None,
     username: Optional[str] = None,
     ip_address: Optional[str] = None,
@@ -263,6 +268,10 @@ async def get_login_logs(
     
     if login_type:
         query = query.filter(LoginLog.login_type.contains(login_type))
+    if browser:
+        query = query.filter(LoginLog.browser.contains(browser))
+    if os:
+        query = query.filter(LoginLog.os.contains(os))
     if status:
         query = query.filter(LoginLog.status == status)
     if username:
@@ -339,6 +348,10 @@ async def get_access_logs(
     request_method: Optional[str] = None,
     path: Optional[str] = None,
     ip_address: Optional[str] = None,
+    min_response_time: Optional[float] = Query(None, ge=0),
+    max_response_time: Optional[float] = Query(None, ge=0),
+    min_status_code: Optional[int] = Query(None, ge=100, le=599),
+    max_status_code: Optional[int] = Query(None, ge=100, le=599),
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     db: Session = Depends(get_db),
@@ -357,6 +370,14 @@ async def get_access_logs(
         query = query.filter(AccessLog.request_path.contains(path))
     if ip_address:
         query = query.filter(AccessLog.ip_address.contains(ip_address))
+    if min_response_time is not None:
+        query = query.filter(AccessLog.response_time >= min_response_time)
+    if max_response_time is not None:
+        query = query.filter(AccessLog.response_time <= max_response_time)
+    if min_status_code is not None:
+        query = query.filter(AccessLog.response_status >= min_status_code)
+    if max_status_code is not None:
+        query = query.filter(AccessLog.response_status <= max_status_code)
     if start_date:
         query = query.filter(AccessLog.created_at >= datetime.fromisoformat(start_date))
     if end_date:
