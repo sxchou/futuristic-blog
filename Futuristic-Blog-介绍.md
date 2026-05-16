@@ -708,16 +708,16 @@ cd frontend && npm run build
 cd backend && uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-> 📖 **详细部署教程**：[查看完整部署文档](#)（待补充）
+<br />
 
 ### 推荐部署平台
 
-| 组件 | 推荐平台 | 特点 |
-|------|----------|------|
-| 前端 | Vercel / Netlify | 免费、自动部署、CDN 加速 |
-| 后端 | Render / Railway | 免费、支持 Docker、自动扩容 |
-| 数据库 | Neon | 免费、Serverless、自动扩容 |
-| 存储 | Supabase | 免费 5GB、CDN 加速 |
+| 组件  | 推荐平台             | 特点                 |
+| --- | ---------------- | ------------------ |
+| 前端  | Vercel / Netlify | 免费、自动部署、CDN 加速     |
+| 后端  | Render / Railway | 免费、支持 Docker、自动扩容  |
+| 数据库 | Neon             | 免费、Serverless、自动扩容 |
+| 存储  | Supabase         | 免费 5GB、CDN 加速      |
 
 ***
 
