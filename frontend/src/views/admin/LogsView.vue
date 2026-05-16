@@ -151,9 +151,17 @@ const resetFilters = () => {
 }
 
 const handleSearch = () => {
-  if (filters.value.username === '__guest__' || filters.value.username === '') {
+  if (customUsername.value.trim() && activeTab.value === 'access') {
+    filters.value.username = customUsername.value.trim()
+  } else if (filters.value.username === '__guest__' || filters.value.username === '') {
     customUsername.value = ''
   }
+  page.value = 1
+  fetchLogs()
+}
+
+const handleUsernameSelectChange = () => {
+  customUsername.value = ''
   page.value = 1
   fetchLogs()
 }
@@ -1065,7 +1073,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                   v-model="filters.username"
                   name="access-username"
                   class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
-                  @change="handleSearch"
+                  @change="handleUsernameSelectChange"
                 >
                   <option value="">
                     全部用户
@@ -1080,7 +1088,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                   name="access-username-custom"
                   placeholder="输入用户名筛选"
                   class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-32"
-                  @keyup.enter="handleCustomUsernameSearch"
+                  @keydown.enter.prevent="handleCustomUsernameSearch"
                 >
               </div>
               <select id="select-filters-request_method"
