@@ -46,6 +46,26 @@
 
 Futuristic Blog 是一个具有未来感设计风格的现代化个人博客系统，采用前后端分离架构，提供完整的博客管理功能和极佳的用户体验。
 
+### 📸 项目截图
+
+<div align="center">
+
+| 首页 | 文章详情 |
+|:---:|:---:|
+| ![首页](screenshots/home.png) | ![文章详情](screenshots/article.png) |
+
+| 管理后台 | 文章编辑 |
+|:---:|:---:|
+| ![管理后台](screenshots/admin.png) | ![文章编辑](screenshots/editor.png) |
+
+| 暗黑模式 | 移动端适配 |
+|:---:|:---:|
+| ![暗黑模式](screenshots/dark.png) | ![移动端](screenshots/mobile.png) |
+
+</div>
+
+> 💡 **提示**：截图需要您手动添加。请将截图保存到 `screenshots/` 目录，然后更新 README 中的图片路径。
+
 ### 🎯 目标用户
 
 - 个人博主和内容创作者
