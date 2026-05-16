@@ -710,7 +710,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                   {{ comment.article_title || `文章 #${comment.article_id}` }}
                 </span>
               </td>
-              <td class="px-4 py-3 text-sm text-gray-900 dark:text-white line-clamp-2">
+              <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
                 {{ comment.author_name || '匿名用户' }}
               </td>
               <td class="px-4 py-3">
