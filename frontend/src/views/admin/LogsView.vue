@@ -58,6 +58,8 @@ const filters = ref({
   end_date: ''
 })
 
+const customUsername = ref('')
+
 const showFilters = ref(false)
 
 const hasActiveFilters = computed(() => {
@@ -149,12 +151,24 @@ const resetFilters = () => {
 }
 
 const handleSearch = () => {
+  if (filters.value.username === '__guest__' || filters.value.username === '') {
+    customUsername.value = ''
+  }
   page.value = 1
   fetchLogs()
 }
 
+const handleCustomUsernameSearch = () => {
+  if (customUsername.value.trim()) {
+    filters.value.username = customUsername.value.trim()
+    page.value = 1
+    fetchLogs()
+  }
+}
+
 const handleClearFilters = () => {
   resetFilters()
+  customUsername.value = ''
   page.value = 1
   fetchLogs()
 }
@@ -1046,27 +1060,29 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
               :class="{ 'hidden md:flex': !showFilters, 'md:flex': true }"
               @submit.prevent="handleSearch"
             >
-              <select id="select-access-filters-username"
-                v-model="filters.username"
-                name="access-username"
-                class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
-                @change="handleSearch"
-              >
-                <option value="">
-                  全部用户
-                </option>
-                <option value="__guest__">
-                  游客
-                </option>
-              </select>
-              <input id="input-access-filters-username-custom"
-                v-model="filters.username"
-                type="text"
-                name="access-username-custom"
-                placeholder="或输入用户名"
-                class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-28"
-                @keyup.enter="handleSearch"
-              >
+              <div class="flex items-center gap-2">
+                <select id="select-access-filters-username"
+                  v-model="filters.username"
+                  name="access-username"
+                  class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
+                  @change="handleSearch"
+                >
+                  <option value="">
+                    全部用户
+                  </option>
+                  <option value="__guest__">
+                    游客
+                  </option>
+                </select>
+                <input id="input-access-filters-username-custom"
+                  v-model="customUsername"
+                  type="text"
+                  name="access-username-custom"
+                  placeholder="输入用户名筛选"
+                  class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-32"
+                  @keyup.enter="handleCustomUsernameSearch"
+                >
+              </div>
               <select id="select-filters-request_method"
                 v-model="filters.request_method"
                 name="access-request-method"
