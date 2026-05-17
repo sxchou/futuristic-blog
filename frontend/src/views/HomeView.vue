@@ -84,10 +84,12 @@ const isTouching = ref(false)
 
 const handleTouchStart = (e: TouchEvent) => {
   touchStartX.value = e.touches[0].clientX
+  touchEndX.value = e.touches[0].clientX
   isSwiping.value = true
   hasSwiped.value = false
   isTouching.value = true
   pauseAutoPlay()
+  console.log('touchstart:', touchStartX.value)
 }
 
 const handleTouchMove = (e: TouchEvent) => {
@@ -102,6 +104,15 @@ const handleTouchEnd = () => {
   
   const swipeThreshold = 50
   const diff = touchStartX.value - touchEndX.value
+  
+  console.log('touchend:', {
+    touchStartX: touchStartX.value,
+    touchEndX: touchEndX.value,
+    diff,
+    absDiff: Math.abs(diff),
+    threshold: swipeThreshold,
+    isSwipe: Math.abs(diff) > swipeThreshold
+  })
   
   if (Math.abs(diff) > swipeThreshold) {
     hasSwiped.value = true
