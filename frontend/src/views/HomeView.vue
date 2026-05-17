@@ -58,6 +58,19 @@ const prevSlide = () => {
   }
 }
 
+const pauseAutoPlay = () => {
+  if (slideInterval) {
+    clearInterval(slideInterval)
+    slideInterval = null
+  }
+}
+
+const resumeAutoPlay = () => {
+  if (featuredArticles.value.length > 1 && !slideInterval) {
+    slideInterval = setInterval(nextSlide, 6000)
+  }
+}
+
 const touchStartX = ref(0)
 const touchEndX = ref(0)
 const isSwiping = ref(false)
@@ -70,6 +83,7 @@ const handleTouchStart = (e: TouchEvent) => {
   isSwiping.value = true
   hasSwiped.value = false
   isTouching.value = true
+  pauseAutoPlay()
 }
 
 const handleTouchMove = (e: TouchEvent) => {
@@ -97,6 +111,10 @@ const handleTouchEnd = () => {
   
   touchStartX.value = 0
   touchEndX.value = 0
+  
+  setTimeout(() => {
+    resumeAutoPlay()
+  }, 1000)
 }
 
 const handleCarouselClick = (e: MouseEvent) => {
@@ -326,6 +344,8 @@ const handlePageChange = (page: number) => {
             @touchstart="handleTouchStart"
             @touchmove="handleTouchMove"
             @touchend="handleTouchEnd"
+            @mouseenter="pauseAutoPlay"
+            @mouseleave="resumeAutoPlay"
           >
             <router-link
               :to="`/article/${currentFeatured?.slug}`"
