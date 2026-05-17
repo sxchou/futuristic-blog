@@ -62,11 +62,14 @@ const touchStartX = ref(0)
 const touchEndX = ref(0)
 const isSwiping = ref(false)
 const hasSwiped = ref(false)
+const swipeEndTime = ref(0)
+const isTouching = ref(false)
 
 const handleTouchStart = (e: TouchEvent) => {
   touchStartX.value = e.touches[0].clientX
   isSwiping.value = true
   hasSwiped.value = false
+  isTouching.value = true
 }
 
 const handleTouchMove = (e: TouchEvent) => {
@@ -77,12 +80,14 @@ const handleTouchMove = (e: TouchEvent) => {
 const handleTouchEnd = () => {
   if (!isSwiping.value) return
   isSwiping.value = false
+  isTouching.value = false
   
   const swipeThreshold = 50
   const diff = touchStartX.value - touchEndX.value
   
   if (Math.abs(diff) > swipeThreshold) {
     hasSwiped.value = true
+    swipeEndTime.value = Date.now()
     if (diff > 0) {
       nextSlide()
     } else {
@@ -95,11 +100,12 @@ const handleTouchEnd = () => {
 }
 
 const handleCarouselClick = (e: MouseEvent) => {
-  if (hasSwiped.value) {
+  if (hasSwiped.value || isTouching.value || Date.now() - swipeEndTime.value < 500) {
     e.preventDefault()
     e.stopPropagation()
-    hasSwiped.value = false
+    return
   }
+  hasSwiped.value = false
 }
 
 const formatDate = (date: string) => formatDateShort(date)
