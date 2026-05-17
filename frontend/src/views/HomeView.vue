@@ -48,17 +48,13 @@ const currentFeatured = computed(() => featuredArticles.value[currentSlide.value
 
 const nextSlide = () => {
   if (featuredArticles.value.length > 0) {
-    const prevSlide = currentSlide.value
     currentSlide.value = (currentSlide.value + 1) % featuredArticles.value.length
-    console.log(`nextSlide: ${prevSlide} -> ${currentSlide.value}`)
   }
 }
 
 const prevSlide = () => {
   if (featuredArticles.value.length > 0) {
-    const prevSlide = currentSlide.value
     currentSlide.value = currentSlide.value === 0 ? featuredArticles.value.length - 1 : currentSlide.value - 1
-    console.log(`prevSlide: ${prevSlide} -> ${currentSlide.value}`)
   }
 }
 
@@ -89,7 +85,6 @@ const handleTouchStart = (e: TouchEvent) => {
   hasSwiped.value = false
   isTouching.value = true
   pauseAutoPlay()
-  console.log('touchstart:', touchStartX.value)
 }
 
 const handleTouchMove = (e: TouchEvent) => {
@@ -104,15 +99,6 @@ const handleTouchEnd = () => {
   
   const swipeThreshold = 50
   const diff = touchStartX.value - touchEndX.value
-  
-  console.log('touchend:', {
-    touchStartX: touchStartX.value,
-    touchEndX: touchEndX.value,
-    diff,
-    absDiff: Math.abs(diff),
-    threshold: swipeThreshold,
-    isSwipe: Math.abs(diff) > swipeThreshold
-  })
   
   if (Math.abs(diff) > swipeThreshold) {
     hasSwiped.value = true
@@ -133,15 +119,6 @@ const handleTouchEnd = () => {
 }
 
 const handleCarouselClick = (e: MouseEvent) => {
-  console.log('=== Carousel Click Debug ===')
-  console.log('currentSlide:', currentSlide.value)
-  console.log('currentFeatured:', currentFeatured.value)
-  console.log('currentFeatured?.slug:', currentFeatured.value?.slug)
-  console.log('featuredArticles:', featuredArticles.value.map(a => ({ id: a.id, title: a.title, slug: a.slug })))
-  console.log('hasSwiped:', hasSwiped.value)
-  console.log('isTouching:', isTouching.value)
-  console.log('time since swipe:', Date.now() - swipeEndTime.value)
-  
   if (hasSwiped.value || isTouching.value || Date.now() - swipeEndTime.value < 500) {
     e.preventDefault()
     e.stopPropagation()
