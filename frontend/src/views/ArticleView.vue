@@ -1856,6 +1856,8 @@ watch(article, async (newVal) => {
 
 .article-content :deep(.mermaid svg) {
   height: auto;
+  display: block;
+  margin: 0 auto;
 }
 
 .mobile-toc-drawer {

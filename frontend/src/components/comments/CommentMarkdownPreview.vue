@@ -330,5 +330,7 @@ watch(() => themeStore.isDark, async (isDark) => {
 
 .comment-markdown-preview :deep(.mermaid svg) {
   height: auto;
+  display: block;
+  margin: 0 auto;
 }
 </style>
