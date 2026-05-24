@@ -591,12 +591,11 @@ const loadArticle = async (slug: string) => {
     }
   } finally {
     loading.value = false
-    nextTick(async () => {
-      const articleContent = document.querySelector('.article-content')
-      if (articleContent) {
-        await renderMermaidDiagrams(articleContent as HTMLElement, '.mermaid', themeStore.isDark)
-      }
-    })
+    await nextTick()
+    const articleContent = document.querySelector('.article-content')
+    if (articleContent) {
+      await renderMermaidDiagrams(articleContent as HTMLElement, '.mermaid', themeStore.isDark)
+    }
   }
 }
 
@@ -626,7 +625,7 @@ onMounted(async () => {
             behavior: 'smooth'
           })
         }
-      }, 500)
+      }, 100)
     } else if (route.hash.startsWith('#comment-')) {
       const commentId = parseInt(route.hash.replace('#comment-', ''), 10)
       if (!isNaN(commentId)) {
@@ -652,7 +651,7 @@ onMounted(async () => {
               })
             }
           }
-        }, 500)
+        }, 100)
       }
     }
   }

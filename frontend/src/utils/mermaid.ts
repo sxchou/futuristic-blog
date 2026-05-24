@@ -28,6 +28,19 @@ export const initMermaid = async (isDark: boolean) => {
   return m
 }
 
+const yieldToBrowser = () => new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
+
+const handleError = (htmlEl: HTMLElement, id: string) => {
+  const errorEl = document.getElementById('d' + id) || document.getElementById(id)
+  if (errorEl) {
+    htmlEl.innerHTML = ''
+    htmlEl.appendChild(errorEl)
+    errorEl.style.display = 'block'
+  } else {
+    htmlEl.innerHTML = `<div style="color:#ef4444;font-size:12px;padding:8px;">Mermaid 语法错误</div>`
+  }
+}
+
 export const renderMermaidDiagrams = async (
   container: HTMLElement,
   selector: string,
@@ -41,28 +54,23 @@ export const renderMermaidDiagrams = async (
 
   if (unrendered.length === 0) return
 
-  await Promise.all(
-    unrendered.map(async (el, i) => {
-      const htmlEl = el as HTMLElement
-      htmlEl.setAttribute('data-rendered', 'true')
+  for (let i = 0; i < unrendered.length; i++) {
+    const htmlEl = unrendered[i] as HTMLElement
+    htmlEl.setAttribute('data-rendered', 'true')
 
-      const id = `mermaid-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 9)}`
+    const id = `mermaid-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 9)}`
 
-      try {
-        const { svg } = await m.render(id, htmlEl.textContent || '')
-        htmlEl.innerHTML = svg
-      } catch {
-        const errorEl = document.getElementById('d' + id) || document.getElementById(id)
-        if (errorEl) {
-          htmlEl.innerHTML = ''
-          htmlEl.appendChild(errorEl)
-          errorEl.style.display = 'block'
-        } else {
-          htmlEl.innerHTML = `<div style="color:#ef4444;font-size:12px;padding:8px;">Mermaid 语法错误</div>`
-        }
-      }
-    })
-  )
+    try {
+      const { svg } = await m.render(id, htmlEl.textContent || '')
+      htmlEl.innerHTML = svg
+    } catch {
+      handleError(htmlEl, id)
+    }
+
+    if (i < unrendered.length - 1) {
+      await yieldToBrowser()
+    }
+  }
 }
 
 export const rerenderMermaidOnThemeChange = async (
@@ -75,30 +83,26 @@ export const rerenderMermaidOnThemeChange = async (
 
   if (mermaidElements.length === 0) return
 
-  await Promise.all(
-    Array.from(mermaidElements).map(async (el) => {
-      const pre = el as HTMLElement
-      const encodedCode = pre.getAttribute('data-mermaid-code')
+  for (let i = 0; i < mermaidElements.length; i++) {
+    const pre = mermaidElements[i] as HTMLElement
+    if (!document.contains(pre)) break
 
-      if (encodedCode) {
-        const id = `mermaid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    const encodedCode = pre.getAttribute('data-mermaid-code')
+    if (!encodedCode) continue
 
-        try {
-          const { svg } = await m.render(id, decodeURIComponent(encodedCode))
-          pre.innerHTML = svg
-        } catch {
-          const errorEl = document.getElementById('d' + id) || document.getElementById(id)
-          if (errorEl) {
-            pre.innerHTML = ''
-            pre.appendChild(errorEl)
-            errorEl.style.display = 'block'
-          } else {
-            pre.innerHTML = `<div style="color:#ef4444;font-size:12px;padding:8px;">Mermaid 语法错误</div>`
-          }
-        }
-      }
-    })
-  )
+    const id = `mermaid-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 9)}`
+
+    try {
+      const { svg } = await m.render(id, decodeURIComponent(encodedCode))
+      pre.innerHTML = svg
+    } catch {
+      handleError(pre, id)
+    }
+
+    if (i < mermaidElements.length - 1) {
+      await yieldToBrowser()
+    }
+  }
 }
 
 export const debounce = <T extends (...args: unknown[]) => void>(fn: T, delay: number) => {
