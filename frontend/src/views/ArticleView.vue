@@ -1752,13 +1752,13 @@ watch(article, async (newVal) => {
   @apply px-1.5 py-0.5 bg-gray-100 dark:bg-dark-300 rounded text-sm text-primary;
 }
 
-.article-content :deep(.overflow-x-auto) {
+.article-content :deep(.overflow-x-auto:not(.mermaid)) {
   @apply my-4 -mx-4 px-4;
   max-width: calc(100vw - 2rem);
 }
 
 @media (min-width: 1024px) {
-  .article-content :deep(.overflow-x-auto) {
+  .article-content :deep(.overflow-x-auto:not(.mermaid)) {
     @apply mx-0 px-0;
     max-width: 100%;
   }
@@ -1856,14 +1856,6 @@ watch(article, async (newVal) => {
 
 .article-content :deep(.mermaid svg) {
   height: auto;
-  min-width: max-content;
-  zoom: 0.3;
-}
-
-@media (min-width: 768px) {
-  .article-content :deep(.mermaid svg) {
-    zoom: 0.4;
-  }
 }
 
 .mobile-toc-drawer {

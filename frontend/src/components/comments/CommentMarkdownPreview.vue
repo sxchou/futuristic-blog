@@ -330,13 +330,5 @@ watch(() => themeStore.isDark, async (isDark) => {
 
 .comment-markdown-preview :deep(.mermaid svg) {
   height: auto;
-  min-width: max-content;
-  zoom: 0.3;
-}
-
-@media (min-width: 768px) {
-  .comment-markdown-preview :deep(.mermaid svg) {
-    zoom: 0.4;
-  }
 }
 </style>

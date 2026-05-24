@@ -383,14 +383,6 @@ defineExpose({
 
 .preview-content :deep(.mermaid svg) {
   height: auto;
-  min-width: max-content;
-  zoom: 0.3;
-}
-
-@media (min-width: 768px) {
-  .preview-content :deep(.mermaid svg) {
-    zoom: 0.4;
-  }
 }
 
 .preview-content :deep(.hljs) {
