@@ -5,6 +5,7 @@ import hljs from '@/utils/hljs'
 import DOMPurify from 'dompurify'
 import { initMermaid, renderMermaidDiagrams, rerenderMermaidOnThemeChange, debounce } from '@/utils/mermaid'
 import { useThemeStore } from '@/stores'
+import MermaidFullscreen from '@/components/common/MermaidFullscreen.vue'
 
 const props = defineProps<{
   content: string
@@ -18,6 +19,7 @@ const themeStore = useThemeStore()
 const previewRef = ref<HTMLElement | null>(null)
 const isRendering = ref(false)
 const renderedHtml = ref('')
+const mermaidFullscreen = ref<InstanceType<typeof MermaidFullscreen>>()
 
 const renderer = new marked.Renderer()
 
@@ -25,11 +27,15 @@ renderer.code = (code: string, infostring: string | undefined, _escaped: boolean
   if (infostring === 'mermaid') {
     const encodedCode = encodeURIComponent(code)
     const copyIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>`
+    const fullscreenIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>`
     const langIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>`
     return `<div class="code-block-wrapper relative group mermaid-wrapper" data-mermaid="${encodedCode}">
       <div class="absolute top-2 left-4 right-2 flex justify-between items-center z-20">
         <span class="text-sm text-gray-500 dark:text-gray-400">${langIcon}mermaid</span>
-        <button class="copy-code-btn flex items-center justify-center w-8 h-8 rounded text-gray-500 hover:text-primary transition-colors" data-code="${encodedCode}">${copyIcon}</button>
+        <div class="flex items-center gap-1">
+          <button class="mermaid-fullscreen-btn flex items-center justify-center w-8 h-8 rounded text-gray-500 hover:text-primary transition-colors" data-code="${encodedCode}">${fullscreenIcon}</button>
+          <button class="copy-code-btn flex items-center justify-center w-8 h-8 rounded text-gray-500 hover:text-primary transition-colors" data-code="${encodedCode}">${copyIcon}</button>
+        </div>
       </div>
       <pre class="mermaid" data-mermaid-code="${encodedCode}">${code}</pre>
     </div>`
@@ -193,11 +199,28 @@ const handleCopyCode = (e: MouseEvent) => {
   }
 }
 
+const handleMermaidFullscreen = (e: MouseEvent) => {
+  const target = e.target as HTMLElement
+  const btn = target.closest('.mermaid-fullscreen-btn') as HTMLElement
+  if (btn) {
+    const wrapper = btn.closest('.mermaid-wrapper')
+    if (wrapper) {
+      const pre = wrapper.querySelector('.mermaid') as HTMLElement
+      const encodedCode = btn.getAttribute('data-code') || pre?.getAttribute('data-mermaid-code') || ''
+      const svg = pre?.querySelector('svg')
+      if (svg && mermaidFullscreen.value) {
+        mermaidFullscreen.value.open(svg.outerHTML, encodedCode)
+      }
+    }
+  }
+}
+
 onMounted(async () => {
   await initMermaid(themeStore.isDark)
   
   if (previewRef.value) {
     previewRef.value.addEventListener('click', handleCopyCode)
+    previewRef.value.addEventListener('click', handleMermaidFullscreen)
   }
 })
 
@@ -211,6 +234,7 @@ watch(() => themeStore.isDark, async (isDark) => {
 onUnmounted(() => {
   if (previewRef.value) {
     previewRef.value.removeEventListener('click', handleCopyCode)
+    previewRef.value.removeEventListener('click', handleMermaidFullscreen)
   }
 })
 
@@ -257,6 +281,7 @@ defineExpose({
       @scroll="handleScroll"
       v-html="renderedHtml"
     />
+    <MermaidFullscreen ref="mermaidFullscreen" />
   </div>
 </template>
 
