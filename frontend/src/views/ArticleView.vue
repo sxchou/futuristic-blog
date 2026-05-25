@@ -38,20 +38,6 @@ const showPreview = ref(false)
 const selectedFileIds = ref<Set<number>>(new Set())
 const highlightKeyword = ref('')
 
-const activeTooltip = ref<string | null>(null)
-
-const showTooltip = (action: string) => {
-  activeTooltip.value = action
-}
-
-const hideTooltip = () => {
-  activeTooltip.value = null
-}
-
-const isTooltipVisible = (action: string) => {
-  return activeTooltip.value === action
-}
-
 const coverImageUrl = computed(() => getMediaUrl(article.value?.cover_image))
 const activeHeading = ref('')
 const showToc = ref(false)
@@ -102,8 +88,8 @@ renderer.code = (code: string, infostring: string | undefined, _escaped: boolean
       <div class="absolute top-2 left-4 right-2 flex justify-between items-center z-20">
         <span class="text-sm text-gray-500 dark:text-gray-400">${langIcon}mermaid</span>
         <div class="flex items-center gap-1">
-          <button class="mermaid-fullscreen-btn flex items-center justify-center w-8 h-8 rounded text-gray-500 hover:text-primary transition-colors" data-code="${encodedCode}">${fullscreenIcon}</button>
-          <button class="copy-code-btn flex items-center justify-center w-8 h-8 rounded text-gray-500 hover:text-primary transition-colors" data-code="${encodedCode}">${copyIcon}</button>
+          <button class="mermaid-fullscreen-btn flex items-center justify-center w-8 h-8 rounded text-gray-500 hover:text-primary transition-colors" data-code="${encodedCode}" data-tooltip="全屏查看">${fullscreenIcon}</button>
+          <button class="copy-code-btn flex items-center justify-center w-8 h-8 rounded text-gray-500 hover:text-primary transition-colors" data-code="${encodedCode}" data-tooltip="复制代码">${copyIcon}</button>
         </div>
       </div>
       <pre class="mermaid" data-mermaid-code="${encodedCode}">${code}</pre>
@@ -117,7 +103,7 @@ renderer.code = (code: string, infostring: string | undefined, _escaped: boolean
   return `<div class="code-block-wrapper relative group">
     <div class="absolute top-2 left-4 right-2 flex justify-between items-center z-20">
       <span class="text-sm text-gray-500 dark:text-gray-400">${langIcon}${validLang}</span>
-      <button class="copy-code-btn flex items-center justify-center w-8 h-8 rounded text-gray-500 hover:text-primary transition-colors" data-code="${encodedCode}">${copyIcon}</button>
+      <button class="copy-code-btn flex items-center justify-center w-8 h-8 rounded text-gray-500 hover:text-primary transition-colors" data-code="${encodedCode}" data-tooltip="复制代码">${copyIcon}</button>
     </div>
     <pre><code class="hljs language-${validLang}">${highlighted}</code></pre>
   </div>`
@@ -449,16 +435,18 @@ const handleCopyCode = (e: Event) => {
     const encodedCode = btn.getAttribute('data-code')
     if (encodedCode) {
       const code = decodeURIComponent(encodedCode)
-      const originalHTML = btn.innerHTML
-      const originalClass = btn.className
-      navigator.clipboard.writeText(code).then(() => {
-        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`
-        btn.className = originalClass + ' text-green-400'
-        setTimeout(() => {
-          btn.innerHTML = originalHTML
-          btn.className = originalClass
-        }, 2000)
-      })
+      const svg = btn.querySelector('svg')
+      if (!svg) return
+      
+      const originalSvg = svg.outerHTML
+      svg.outerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`
+      
+      setTimeout(() => {
+        const newSvg = btn.querySelector('svg')
+        if (newSvg) newSvg.outerHTML = originalSvg
+      }, 2000)
+      
+      navigator.clipboard.writeText(code)
     }
   }
 }
@@ -1268,9 +1256,8 @@ watch(article, async (newVal) => {
               <div class="flex items-center gap-1 flex-shrink-0 ml-2">
                 <button
                   class="w-7 h-7 flex items-center justify-center text-emerald-500 hover:bg-emerald-500/10 rounded transition-colors relative"
+                  data-tooltip="预览"
                   @click="openPreview(file)"
-                  @mouseenter="showTooltip('preview-' + file.id)"
-                  @mouseleave="hideTooltip"
                 >
                   <svg
                     class="w-4 h-4"
@@ -1288,18 +1275,11 @@ watch(article, async (newVal) => {
                     stroke-width="2"
                     d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                   /></svg>
-                  <span
-                    v-if="isTooltipVisible('preview-' + file.id)"
-                    class="action-tooltip"
-                  >
-                    预览
-                  </span>
                 </button>
                 <button
                   class="w-7 h-7 flex items-center justify-center text-primary hover:bg-primary/10 rounded transition-colors relative"
+                  data-tooltip="下载"
                   @click="downloadFile(file)"
-                  @mouseenter="showTooltip('download-' + file.id)"
-                  @mouseleave="hideTooltip"
                 >
                   <svg
                     class="w-4 h-4"
@@ -1312,12 +1292,6 @@ watch(article, async (newVal) => {
                     stroke-width="2"
                     d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
                   /></svg>
-                  <span
-                    v-if="isTooltipVisible('download-' + file.id)"
-                    class="action-tooltip"
-                  >
-                    下载
-                  </span>
                 </button>
               </div>
             </div>
@@ -1338,9 +1312,8 @@ watch(article, async (newVal) => {
               :class="isLiked 
                 ? 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-500 hover:bg-red-100 dark:hover:bg-red-500/20' 
                 : 'bg-gray-50 dark:bg-dark-300 border-gray-200 dark:border-white/5 text-gray-500 hover:text-red-500 hover:border-red-200 hover:bg-red-50 dark:hover:bg-red-500/10'"
+              :data-tooltip="isLiked ? '取消点赞' : '点赞'"
               @click="handleLike"
-              @mouseenter="showTooltip('like')"
-              @mouseleave="hideTooltip"
             >
               <svg
                 class="w-4 h-4 transition-transform duration-200"
@@ -1355,12 +1328,6 @@ watch(article, async (newVal) => {
                 d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
               /></svg>
               <span class="text-sm">{{ likeCount }}</span>
-              <span
-                v-if="isTooltipVisible('like')"
-                class="action-tooltip"
-              >
-                {{ isLiked ? '取消点赞' : '点赞' }}
-              </span>
             </button>
             <button
               :disabled="isBookmarking"
@@ -1368,9 +1335,8 @@ watch(article, async (newVal) => {
               :class="isBookmarked 
                 ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20 text-amber-500 hover:bg-amber-100 dark:hover:bg-amber-500/20' 
                 : 'bg-gray-50 dark:bg-dark-300 border-gray-200 dark:border-white/5 text-gray-500 hover:text-amber-500 hover:border-amber-200 hover:bg-amber-50 dark:hover:bg-amber-500/10'"
+              :data-tooltip="isBookmarked ? '取消收藏' : '收藏'"
               @click="handleBookmark"
-              @mouseenter="showTooltip('bookmark')"
-              @mouseleave="hideTooltip"
             >
               <svg
                 class="w-4 h-4 transition-transform duration-200"
@@ -1386,18 +1352,11 @@ watch(article, async (newVal) => {
               /></svg>
               <span class="text-sm">{{ isBookmarked ? '已收藏' : '收藏' }}</span>
               <span class="text-sm ml-0.5">{{ bookmarkCount }}</span>
-              <span
-                v-if="isTooltipVisible('bookmark')"
-                class="action-tooltip"
-              >
-                {{ isBookmarked ? '取消收藏' : '收藏' }}
-              </span>
             </button>
             <button
               class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 text-gray-500 hover:text-primary hover:border-primary/30 transition-colors relative"
+              data-tooltip="复制链接"
               @click="copyLink"
-              @mouseenter="showTooltip('copy')"
-              @mouseleave="hideTooltip"
             >
               <svg
                 class="w-4 h-4"
@@ -1415,36 +1374,22 @@ watch(article, async (newVal) => {
                 v-if="showCopySuccess"
                 class="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-cyber-green text-white text-xs rounded"
               >已复制!</span>
-              <span
-                v-if="isTooltipVisible('copy') && !showCopySuccess"
-                class="action-tooltip"
-              >
-                复制链接
-              </span>
             </button>
             <button
               class="p-1.5 rounded-lg bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 text-gray-400 hover:text-primary hover:border-primary/30 transition-colors relative"
+              data-tooltip="分享到 X"
               @click="shareArticle('twitter')"
-              @mouseenter="showTooltip('twitter')"
-              @mouseleave="hideTooltip"
             >
               <svg
                 class="w-4 h-4"
                 fill="currentColor"
                 viewBox="0 0 24 24"
               ><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
-              <span
-                v-if="isTooltipVisible('twitter')"
-                class="action-tooltip"
-              >
-                分享到 X
-              </span>
             </button>
             <button
               class="p-1.5 rounded-lg bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 text-gray-400 hover:text-[#E6162D] hover:border-[#E6162D]/30 hover:bg-[#E6162D]/5 dark:hover:bg-[#E6162D]/10 transition-all duration-200 relative"
+              data-tooltip="分享到微博"
               @click="shareArticle('weibo')"
-              @mouseenter="showTooltip('weibo')"
-              @mouseleave="hideTooltip"
             >
               <svg
                 class="w-4 h-4"
@@ -1479,12 +1424,6 @@ watch(article, async (newVal) => {
                   fill="none"
                 />
               </svg>
-              <span
-                v-if="isTooltipVisible('weibo')"
-                class="action-tooltip"
-              >
-                分享到微博
-              </span>
             </button>
           </div>
           <router-link
@@ -1831,40 +1770,6 @@ watch(article, async (newVal) => {
 @keyframes file-highlight-pulse {
   0%, 100% { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2), 0 4px 12px rgba(59, 130, 246, 0.15); }
   50% { box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.3), 0 6px 16px rgba(59, 130, 246, 0.25); }
-}
-
-.action-tooltip {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 4px 8px;
-  background: #ffffff;
-  color: #1a1a2e;
-  font-size: 12px;
-  font-weight: normal;
-  border-radius: 4px;
-  white-space: nowrap;
-  pointer-events: none;
-  z-index: 9999;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  animation: tooltip-fade-in 0.15s ease;
-}
-
-.dark .action-tooltip {
-  background: #0f0f1a;
-  color: #f1f5f9;
-}
-
-@keyframes tooltip-fade-in {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
 }
 
 .article-content :deep(.mermaid-wrapper) {

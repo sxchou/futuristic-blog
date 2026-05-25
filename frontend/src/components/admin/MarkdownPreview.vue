@@ -33,8 +33,8 @@ renderer.code = (code: string, infostring: string | undefined, _escaped: boolean
       <div class="absolute top-2 left-4 right-2 flex justify-between items-center z-20">
         <span class="text-sm text-gray-500 dark:text-gray-400">${langIcon}mermaid</span>
         <div class="flex items-center gap-1">
-          <button class="mermaid-fullscreen-btn flex items-center justify-center w-8 h-8 rounded text-gray-500 hover:text-primary transition-colors" data-code="${encodedCode}">${fullscreenIcon}</button>
-          <button class="copy-code-btn flex items-center justify-center w-8 h-8 rounded text-gray-500 hover:text-primary transition-colors" data-code="${encodedCode}">${copyIcon}</button>
+          <button class="mermaid-fullscreen-btn flex items-center justify-center w-8 h-8 rounded text-gray-500 hover:text-primary transition-colors" data-code="${encodedCode}" data-tooltip="全屏查看">${fullscreenIcon}</button>
+          <button class="copy-code-btn flex items-center justify-center w-8 h-8 rounded text-gray-500 hover:text-primary transition-colors" data-code="${encodedCode}" data-tooltip="复制代码">${copyIcon}</button>
         </div>
       </div>
       <pre class="mermaid" data-mermaid-code="${encodedCode}">${code}</pre>
@@ -73,7 +73,7 @@ renderer.code = (code: string, infostring: string | undefined, _escaped: boolean
   return `<div class="code-block-wrapper relative group">
     <div class="absolute top-2 left-4 right-2 flex justify-between items-center z-20">
       <span class="text-sm text-gray-500 dark:text-gray-400">${langIcon}${validLang}</span>
-      <button class="copy-code-btn flex items-center justify-center w-8 h-8 rounded text-gray-500 hover:text-primary transition-colors" data-code="${encodedCode}">${copyIcon}</button>
+      <button class="copy-code-btn flex items-center justify-center w-8 h-8 rounded text-gray-500 hover:text-primary transition-colors" data-code="${encodedCode}" data-tooltip="复制代码">${copyIcon}</button>
     </div>
     <pre><code class="hljs language-${validLang}">${highlighted}</code></pre>
   </div>`
@@ -185,16 +185,21 @@ const handleCopyCode = (e: MouseEvent) => {
     const encodedCode = btn.getAttribute('data-code')
     if (encodedCode) {
       const code = decodeURIComponent(encodedCode)
-      const originalHTML = btn.innerHTML
-      const originalClass = btn.className
-      navigator.clipboard.writeText(code).then(() => {
-        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`
-        btn.className = originalClass + ' text-green-400'
-        setTimeout(() => {
-          btn.innerHTML = originalHTML
-          btn.className = originalClass
-        }, 2000)
-      })
+      const svg = btn.querySelector('svg')
+      if (!svg) return
+      
+      const tooltip = btn.querySelector('.action-tooltip') as HTMLElement
+      if (tooltip) tooltip.style.opacity = '0'
+      
+      const originalSvg = svg.outerHTML
+      svg.outerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`
+      
+      setTimeout(() => {
+        const newSvg = btn.querySelector('svg')
+        if (newSvg) newSvg.outerHTML = originalSvg
+      }, 2000)
+      
+      navigator.clipboard.writeText(code)
     }
   }
 }

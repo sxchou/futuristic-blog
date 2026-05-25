@@ -13,7 +13,7 @@
         <button
           v-if="showRefresh"
           class="chart-action-btn"
-          title="刷新数据"
+          data-tooltip="刷新数据"
           @click="handleRefresh"
         >
           <svg
@@ -37,7 +37,7 @@
         >
           <button
             class="chart-action-btn"
-            title="导出图表"
+            data-tooltip="导出图表"
             @click="handleExportClick"
           >
             <svg
@@ -78,7 +78,7 @@
         <button
           v-if="showExpand"
           class="chart-action-btn"
-          title="展开图表"
+          data-tooltip="展开图表"
           @click="emit('expand')"
         >
           <svg

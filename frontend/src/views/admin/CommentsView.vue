@@ -664,12 +664,11 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
               <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
                 {{ comment.id }}
               </td>
-              <td class="px-4 py-3">
+              <td class="px-4 py-3" :data-tooltip="comment.article_slug ? '点击查看评论' : undefined">
                 <router-link
                   v-if="comment.article_slug"
                   :to="`/article/${comment.article_slug}#comment-${comment.id}`"
                   class="text-sm text-primary hover:underline block line-clamp-2"
-                  title="点击查看评论"
                 >
                   <span v-if="comment.reply_to_user_name" class="text-gray-500 dark:text-gray-400">@{{ comment.reply_to_user_name }}</span> {{ comment.content }}
                 </router-link>
@@ -680,12 +679,11 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                   <span v-if="comment.reply_to_user_name" class="text-gray-500 dark:text-gray-400">@{{ comment.reply_to_user_name }}</span> {{ comment.content }}
                 </div>
               </td>
-              <td class="px-4 py-3 text-sm">
+              <td class="px-4 py-3 text-sm" :data-tooltip="comment.article_slug ? '点击查看文章' : undefined">
                 <router-link
                   v-if="comment.article_slug"
                   :to="`/article/${comment.article_slug}`"
                   class="text-primary hover:underline line-clamp-2"
-                  title="点击查看文章"
                 >
                   {{ comment.article_title || `文章 #${comment.article_id}` }}
                 </router-link>

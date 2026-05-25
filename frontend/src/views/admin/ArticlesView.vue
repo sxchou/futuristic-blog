@@ -2690,7 +2690,7 @@ watch(form, () => {
                   <button
                     type="button"
                     class="px-2 py-0.5 text-xs text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors flex items-center gap-1"
-                    title="按名称升序 (A-Z)"
+                    data-tooltip="按名称升序 (A-Z)"
                     @click="sortFilesAsc"
                   >
                     <svg
@@ -2711,7 +2711,7 @@ watch(form, () => {
                   <button
                     type="button"
                     class="px-2 py-0.5 text-xs text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors flex items-center gap-1"
-                    title="按名称降序 (Z-A)"
+                    data-tooltip="按名称降序 (Z-A)"
                     @click="sortFilesDesc"
                   >
                     <svg
@@ -2773,21 +2773,22 @@ watch(form, () => {
                   </div>
                 </div>
                 <div class="flex items-center gap-0.5 flex-shrink-0 ml-2">
-                  <input :id="'article-file-sort-' + file.id"
-                    type="number"
-                    :value="index + 1"
-                    min="1"
-                    :max="articleFiles.length"
-                    class="w-10 px-1 py-0.5 text-xs text-center bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    title="输入序号排序"
-                    @change="(e) => updateFileOrderNumber(file.id, parseInt((e.target as HTMLInputElement).value) - 1)"
-                  >
+                  <span data-tooltip="输入序号排序" class="relative">
+                    <input :id="'article-file-sort-' + file.id"
+                      type="number"
+                      :value="index + 1"
+                      min="1"
+                      :max="articleFiles.length"
+                      class="w-10 px-1 py-0.5 text-xs text-center bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded text-gray-900 dark:text-white focus:border-primary focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      @change="(e) => updateFileOrderNumber(file.id, parseInt((e.target as HTMLInputElement).value) - 1)"
+                    >
+                  </span>
                   <div class="flex flex-col gap-0.5">
                     <button
                       type="button"
                       :disabled="index === 0"
                       class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                      title="上移"
+                      data-tooltip="上移"
                       @click="moveFileUp(index)"
                     >
                       <svg
@@ -2807,8 +2808,8 @@ watch(form, () => {
                     <button
                       type="button"
                       :disabled="index === articleFiles.length - 1"
-                      class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                      title="下移"
+                      class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed tooltip-below"
+                      data-tooltip="下移"
                       @click="moveFileDown(index)"
                     >
                       <svg
@@ -2830,7 +2831,7 @@ watch(form, () => {
                   <button
                     type="button"
                     class="w-6 h-6 flex items-center justify-center text-emerald-500 hover:bg-emerald-500/10 rounded transition-colors"
-                    title="预览"
+                    data-tooltip="预览"
                     @click="openPreview(file)"
                   >
                     <svg
@@ -2856,7 +2857,7 @@ watch(form, () => {
                   <button
                     type="button"
                     class="w-6 h-6 flex items-center justify-center text-primary hover:bg-primary/10 rounded transition-colors"
-                    title="下载"
+                    data-tooltip="下载"
                     @click="downloadFile(file)"
                   >
                     <svg
@@ -2876,7 +2877,7 @@ watch(form, () => {
                   <button
                     type="button"
                     class="w-6 h-6 flex items-center justify-center text-red-400 hover:bg-red-500/10 rounded transition-colors"
-                    title="删除"
+                    data-tooltip="删除"
                     @click="handleDeleteFile(file.id)"
                   >
                     <svg

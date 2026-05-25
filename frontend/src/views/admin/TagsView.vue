@@ -372,7 +372,7 @@ watch(() => form.value.slug, (newSlug) => {
       <div
         v-for="tag in blogStore.tags"
         :key="tag.id"
-        class="group glass-card overflow-hidden hover:border-primary/30 transition-colors h-full min-h-[120px]"
+        class="group glass-card hover:border-primary/30 transition-colors h-full min-h-[120px]"
       >
         <div class="p-3 flex flex-col h-full">
           <div class="flex items-start gap-2">
@@ -408,7 +408,7 @@ watch(() => form.value.slug, (newSlug) => {
             <div class="flex items-center gap-1">
               <button
                 class="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-dark-200 rounded transition-colors"
-                title="编辑标签"
+                data-tooltip="编辑标签"
                 @click="handleEdit(tag)"
               >
                 <svg
@@ -427,7 +427,7 @@ watch(() => form.value.slug, (newSlug) => {
               </button>
               <button
                 class="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                title="删除标签"
+                data-tooltip="删除标签"
                 @click="handleDelete(tag)"
               >
                 <svg

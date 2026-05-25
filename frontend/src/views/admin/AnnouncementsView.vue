@@ -624,7 +624,7 @@ const getTypeStyles = (type: string) => {
         <div
           v-for="announcement in announcements"
           :key="announcement.id"
-          class="glass-card overflow-hidden hover:shadow-xl transition-all group"
+          class="glass-card hover:shadow-xl transition-all group"
         >
           <div class="p-4">
             <div class="flex items-start justify-between gap-3">
@@ -727,7 +727,7 @@ const getTypeStyles = (type: string) => {
                       ? 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/10'
                       : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5'
                   ]"
-                  :title="announcement.is_active ? '点击禁用' : '点击启用'"
+                  :data-tooltip="announcement.is_active ? '点击禁用' : '点击启用'"
                   @click="toggleActive(announcement)"
                 >
                   <svg
@@ -755,7 +755,7 @@ const getTypeStyles = (type: string) => {
                 <button
                   type="button"
                   class="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-all"
-                  title="编辑"
+                  data-tooltip="编辑"
                   @click="openEditor(announcement)"
                 >
                   <svg
@@ -775,7 +775,7 @@ const getTypeStyles = (type: string) => {
                 <button
                   type="button"
                   class="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"
-                  title="删除"
+                  data-tooltip="删除"
                   @click="handleDelete(announcement.id)"
                 >
                   <svg

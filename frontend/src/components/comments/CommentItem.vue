@@ -61,7 +61,7 @@
           <div 
             ref="contentRef"
             class="relative"
-            :class="{ 'max-h-[240px] overflow-hidden': !isExpanded && shouldShowExpand }"
+            :class="{ 'collapsed-content tooltip-below': !isExpanded && shouldShowExpand }"
           >
             <CommentMarkdownPreview :content="comment.content" />
             <div 
@@ -330,7 +330,13 @@ const formatDate = (date: string) => formatDateTime(date)
 const checkContentHeight = () => {
   if (contentRef.value) {
     const maxHeight = 240
-    shouldShowExpand.value = contentRef.value.scrollHeight > maxHeight + 10
+    const markdownEl = contentRef.value.querySelector('.comment-markdown-preview')
+    if (markdownEl) {
+      const height = markdownEl.scrollHeight
+      shouldShowExpand.value = height > maxHeight + 10
+    } else {
+      shouldShowExpand.value = contentRef.value.scrollHeight > maxHeight + 10
+    }
   }
 }
 
@@ -349,7 +355,17 @@ onMounted(() => {
       checkContentHeight()
     })
     resizeObserver.observe(contentRef.value)
+    
+    const markdownEl = contentRef.value.querySelector('.comment-markdown-preview')
+    if (markdownEl) {
+      resizeObserver.observe(markdownEl)
+    }
   }
+  
+  setTimeout(checkContentHeight, 100)
+  setTimeout(checkContentHeight, 300)
+  setTimeout(checkContentHeight, 500)
+  setTimeout(checkContentHeight, 1000)
 })
 
 onUnmounted(() => {
@@ -392,6 +408,11 @@ const submitReply = async () => {
     background-color: transparent;
     box-shadow: none;
   }
+}
+
+.collapsed-content :deep(.comment-markdown-preview) {
+  max-height: 240px;
+  overflow: hidden;
 }
 
 .replies-enter-active,

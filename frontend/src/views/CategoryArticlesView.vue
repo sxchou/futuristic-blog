@@ -19,20 +19,6 @@ const articlesRef = ref<HTMLElement | null>(null)
 
 const { pageSize } = usePageSize()
 
-const activeTooltip = ref<{ articleId: number; action: string } | null>(null)
-
-const showTooltip = (articleId: number, action: string) => {
-  activeTooltip.value = { articleId, action }
-}
-
-const hideTooltip = () => {
-  activeTooltip.value = null
-}
-
-const isTooltipVisible = (articleId: number, action: string) => {
-  return activeTooltip.value?.articleId === articleId && activeTooltip.value?.action === action
-}
-
 const formatDate = (date: string) => formatDateShort(date)
 
 const scrollToArticles = () => {
@@ -301,7 +287,7 @@ const handlePageChange = async (page: number) => {
         <article
           v-for="article in blogStore.articles"
           :key="article.id"
-          class="article-card group relative overflow-hidden"
+          class="article-card group relative"
         >
           <router-link
             :to="`/article/${article.slug}`"
@@ -426,8 +412,7 @@ const handlePageChange = async (page: number) => {
                   </span>
                   <span 
                     class="article-meta-item relative text-inherit"
-                    @mouseenter="showTooltip(article.id, 'view')"
-                    @mouseleave="hideTooltip"
+                    data-tooltip="浏览量"
                   >
                     <svg
                       class="w-3.5 h-3.5"
@@ -449,18 +434,11 @@ const handlePageChange = async (page: number) => {
                       />
                     </svg>
                     {{ article.view_count }}
-                    <span
-                      v-if="isTooltipVisible(article.id, 'view')"
-                      class="action-tooltip"
-                    >
-                      浏览量
-                    </span>
                   </span>
                   <button
                     class="article-meta-item article-action-btn relative text-inherit"
+                    :data-tooltip="article.is_liked ? '取消点赞' : '点赞'"
                     @click="handleLike($event, article)"
-                    @mouseenter="showTooltip(article.id, 'like')"
-                    @mouseleave="hideTooltip"
                   >
                     <svg
                       class="w-3.5 h-3.5"
@@ -476,18 +454,11 @@ const handlePageChange = async (page: number) => {
                       />
                     </svg>
                     {{ article.like_count }}
-                    <span
-                      v-if="isTooltipVisible(article.id, 'like')"
-                      class="action-tooltip"
-                    >
-                      {{ article.is_liked ? '取消点赞' : '点赞' }}
-                    </span>
                   </button>
                   <button
                     class="article-meta-item article-action-btn relative text-inherit"
+                    data-tooltip="评论"
                     @click="goToComments($event, article.slug)"
-                    @mouseenter="showTooltip(article.id, 'comment')"
-                    @mouseleave="hideTooltip"
                   >
                     <svg
                       class="w-3.5 h-3.5"
@@ -503,21 +474,14 @@ const handlePageChange = async (page: number) => {
                       />
                     </svg>
                     {{ article.comment_count || 0 }}
-                    <span
-                      v-if="isTooltipVisible(article.id, 'comment')"
-                      class="action-tooltip"
-                    >
-                      评论
-                    </span>
                   </button>
                   <button
                     :class="[
                       'article-meta-item article-action-btn relative text-inherit',
                       { 'text-amber-500': article.is_bookmarked }
                     ]"
+                    :data-tooltip="article.is_bookmarked ? '取消收藏' : '收藏'"
                     @click="handleBookmark($event, article)"
-                    @mouseenter="showTooltip(article.id, 'bookmark')"
-                    @mouseleave="hideTooltip"
                   >
                     <svg
                       class="w-3.5 h-3.5"
@@ -533,12 +497,6 @@ const handlePageChange = async (page: number) => {
                       />
                     </svg>
                     {{ article.bookmark_count || 0 }}
-                    <span
-                      v-if="isTooltipVisible(article.id, 'bookmark')"
-                      class="action-tooltip"
-                    >
-                      {{ article.is_bookmarked ? '取消收藏' : '收藏' }}
-                    </span>
                   </button>
                 </div>
               </div>
@@ -573,39 +531,3 @@ const handlePageChange = async (page: number) => {
     </aside>
   </div>
 </template>
-
-<style scoped>
-.action-tooltip {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 4px 8px;
-  background: #ffffff;
-  color: #1a1a2e;
-  font-size: 12px;
-  font-weight: normal;
-  border-radius: 4px;
-  white-space: nowrap;
-  pointer-events: none;
-  z-index: 9999;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  animation: tooltip-fade-in 0.15s ease;
-}
-
-.dark .action-tooltip {
-  background: #0f0f1a;
-  color: #f1f5f9;
-}
-
-@keyframes tooltip-fade-in {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-}
-</style>

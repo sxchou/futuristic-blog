@@ -469,7 +469,7 @@ watch(() => form.value.code, (newCode) => {
       <div
         v-for="role in roles"
         :key="role.id"
-        class="group glass-card overflow-hidden hover:border-primary/30 transition-colors"
+        class="group glass-card hover:border-primary/30 transition-colors"
       >
         <div class="p-4">
           <div class="flex items-start gap-3">
@@ -540,7 +540,7 @@ watch(() => form.value.code, (newCode) => {
             <div class="flex items-center gap-1">
               <button
                 class="p-1.5 text-primary hover:bg-primary/10 rounded transition-colors"
-                :title="role.code === 'super_admin' && !permissionStore.isSuperAdmin ? '超级管理员权限仅超级管理员可编辑' : '配置权限'"
+                :data-tooltip="role.code === 'super_admin' && !permissionStore.isSuperAdmin ? '超级管理员权限仅超级管理员可编辑' : '配置权限'"
                 @click="openPermissionEditor(role)"
               >
                 <svg
@@ -559,7 +559,7 @@ watch(() => form.value.code, (newCode) => {
               </button>
               <button
                 :class="['p-1.5 rounded transition-colors', role.is_system ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-dark-200']"
-                :title="role.is_system ? '系统角色不可编辑' : '编辑角色'"
+                :data-tooltip="role.is_system ? '系统角色不可编辑' : '编辑角色'"
                 @click="openEditDialog(role)"
               >
                 <svg
@@ -578,7 +578,7 @@ watch(() => form.value.code, (newCode) => {
               </button>
               <button
                 :class="['p-1.5 rounded transition-colors', role.is_system ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed' : 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20']"
-                :title="role.is_system ? '系统角色不可删除' : '删除角色'"
+                :data-tooltip="role.is_system ? '系统角色不可删除' : '删除角色'"
                 @click="handleDelete(role)"
               >
                 <svg

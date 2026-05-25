@@ -399,7 +399,7 @@ onMounted(async () => {
         <div
           v-for="resource in resources"
           :key="resource.id"
-          class="group glass-card overflow-hidden hover:border-primary/30 transition-colors h-full min-h-[120px]"
+          class="group glass-card hover:border-primary/30 transition-colors h-full min-h-[120px]"
           :class="resource.is_active ? '' : 'opacity-60'"
         >
           <div class="p-3 flex flex-col h-full">
@@ -450,6 +450,7 @@ onMounted(async () => {
               <button
                 class="flex items-center gap-1.5 text-xs transition-colors"
                 :class="resource.is_active ? 'text-green-500' : 'text-gray-400'"
+                :data-tooltip="resource.is_active ? '点击禁用' : '点击启用'"
                 @click="handleToggleResourceStatus(resource)"
               >
                 <span
@@ -461,7 +462,7 @@ onMounted(async () => {
               <div class="flex items-center gap-1">
                 <button
                   class="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-dark-200 rounded transition-colors"
-                  title="编辑资源"
+                  data-tooltip="编辑资源"
                   @click="handleEditResource(resource)"
                 >
                   <svg
@@ -480,7 +481,7 @@ onMounted(async () => {
                 </button>
                 <button
                   class="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                  title="删除资源"
+                  data-tooltip="删除资源"
                   @click="handleDeleteResource(resource)"
                 >
                   <svg
