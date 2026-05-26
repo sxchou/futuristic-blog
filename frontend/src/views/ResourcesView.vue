@@ -183,6 +183,14 @@ onMounted(async () => {
         </div>
 
         <div
+          v-if="loading"
+          class="flex justify-center py-20"
+        >
+          <div class="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+        </div>
+
+        <div
+          v-else
           class="space-y-10"
         >
           <div
