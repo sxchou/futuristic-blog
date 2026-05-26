@@ -53,18 +53,27 @@ const handleFileChange = async (event: Event) => {
   if (!file) return
   
   const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml', 'image/x-icon']
-  if (!allowedTypes.includes(file.type)) {
+  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.svg', '.ico']
+  const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'))
+  
+  if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
     dialogStore.showError('仅支持 JPG、PNG、WebP、SVG、ICO 格式的图片')
+    target.value = ''
     return
   }
   
   if (file.size > 2 * 1024 * 1024) {
     dialogStore.showError('文件大小不能超过 2MB')
+    target.value = ''
     return
   }
   
-  if (file.type === 'image/svg+xml' || file.type === 'image/x-icon') {
+  const isSvgOrIco = file.type === 'image/svg+xml' || file.type === 'image/x-icon' || 
+                     fileExtension === '.svg' || fileExtension === '.ico'
+  
+  if (isSvgOrIco) {
     await uploadDirectly(file)
+    target.value = ''
     return
   }
   

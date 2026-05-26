@@ -385,7 +385,7 @@ defineExpose({
     :class="{ 'fixed inset-4 z-50 bg-gray-900 dark:bg-dark-100': isFullscreen }"
     @submit.prevent
   >
-    <div class="flex flex-wrap items-center gap-1 px-3 py-2 bg-gray-100 dark:bg-dark-100 border-b border-gray-200 dark:border-white/10">
+    <div class="flex flex-wrap items-center gap-1 px-3 py-2 bg-gray-100 dark:bg-dark-100 border-b border-gray-200 dark:border-white/10 tooltip-below">
       <template
         v-for="(item, index) in toolbarActions"
         :key="index"
@@ -496,7 +496,7 @@ defineExpose({
           </svg>
         </button>
       </div>
-      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-2">
+      <div class="grid gap-x-4 gap-y-2" style="grid-template-columns: repeat(auto-fill, minmax(140px, 1fr))">
         <div class="flex items-center gap-1.5">
           <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">**粗体**</code>
           <span class="text-gray-400">→</span>
@@ -520,7 +520,7 @@ defineExpose({
         <div class="flex items-center gap-1.5">
           <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">[文字](url)</code>
           <span class="text-gray-400">→</span>
-          <span class="text-primary truncate">链接</span>
+          <span class="truncate">链接</span>
         </div>
         <div class="flex items-center gap-1.5">
           <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">![图片](url)</code>

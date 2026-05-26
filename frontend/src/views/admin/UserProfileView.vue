@@ -148,7 +148,10 @@ const handleFileChange = async (event: Event) => {
   if (!file) return
   
   const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
-  if (!allowedTypes.includes(file.type)) {
+  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp']
+  const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'))
+  
+  if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
     dialogStore.showError('仅支持 JPG、PNG、WebP 格式的图片')
     return
   }

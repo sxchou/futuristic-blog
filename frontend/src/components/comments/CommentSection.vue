@@ -40,16 +40,6 @@
       class="comment-form mb-8"
     >
       <div class="bg-gray-100 dark:bg-dark-100/50 border border-gray-200 dark:border-white/10 rounded-lg p-4">
-        <div class="flex justify-between items-center mb-1">
-          <span class="text-xs text-gray-500">支持 Markdown 格式</span>
-          <a 
-            href="https://markdown.com.cn/basic-syntax/" 
-            target="_blank" 
-            class="text-xs text-primary hover:text-primary/80 transition-colors"
-          >
-            Markdown 语法帮助
-          </a>
-        </div>
         <CommentEditor
           ref="commentEditorRef"
           v-model="newComment"

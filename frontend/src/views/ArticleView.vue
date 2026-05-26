@@ -439,11 +439,14 @@ const handleCopyCode = (e: Event) => {
       if (!svg) return
       
       const originalSvg = svg.outerHTML
+      const originalTooltip = btn.getAttribute('data-tooltip')
       svg.outerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`
+      btn.setAttribute('data-tooltip', '已复制')
       
       setTimeout(() => {
         const newSvg = btn.querySelector('svg')
         if (newSvg) newSvg.outerHTML = originalSvg
+        if (originalTooltip) btn.setAttribute('data-tooltip', originalTooltip)
       }, 2000)
       
       navigator.clipboard.writeText(code)
@@ -1190,8 +1193,8 @@ watch(article, async (newVal) => {
           v-if="articleFiles.length > 0"
           class="mt-8 p-4 glass-card"
         >
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <div class="mb-3">
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-2">
               <svg
                 class="w-4 h-4 text-primary"
                 fill="none"
@@ -1205,21 +1208,38 @@ watch(article, async (newVal) => {
               /></svg>
               附件下载
             </h3>
-            <div class="flex items-center gap-2">
-              <label class="flex items-center gap-1.5 cursor-pointer text-xs text-gray-500">
-                <input id="article-select-all-files"
-                  type="checkbox"
-                  :checked="selectedFileIds.size === articleFiles.length && articleFiles.length > 0"
-                  class="w-3.5 h-3.5 rounded border-gray-300 text-primary focus:ring-primary"
-                  @change="toggleSelectAll"
-                >
-                全选
-              </label>
+            <div class="flex items-center justify-between text-xs">
+              <div class="flex items-center gap-2">
+                <label class="flex items-center gap-1.5 cursor-pointer">
+                  <input id="article-select-all-files"
+                    type="checkbox"
+                    :checked="selectedFileIds.size === articleFiles.length && articleFiles.length > 0"
+                    class="w-3.5 h-3.5 rounded border-gray-300 text-primary focus:ring-primary"
+                    @change="toggleSelectAll"
+                  >
+                  <span class="text-gray-700 dark:text-gray-300 font-medium">全选</span>
+                </label>
+                <span class="text-gray-400">|</span>
+                <span class="text-gray-500">{{ articleFiles.length }} 个文件</span>
+              </div>
               <button
-                v-if="selectedFileIds.size > 0"
-                class="px-2 py-1 text-xs bg-primary/10 text-primary hover:bg-primary/20 rounded transition-colors"
+                class="flex items-center justify-center gap-1 px-2 py-1 bg-primary/10 text-primary hover:bg-primary/20 rounded transition-colors min-w-[100px]"
+                :class="{ 'opacity-0 pointer-events-none': selectedFileIds.size === 0 }"
                 @click="handleBatchDownload"
               >
+                <svg
+                  class="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                  />
+                </svg>
                 下载选中 ({{ selectedFileIds.size }})
               </button>
             </div>

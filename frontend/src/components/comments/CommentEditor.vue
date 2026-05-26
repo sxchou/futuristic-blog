@@ -380,7 +380,7 @@ defineExpose({
     <!-- 非全屏模式下的工具栏 -->
     <div
       v-if="!isFullscreen"
-      class="flex flex-wrap items-center gap-1 mb-2"
+      class="flex flex-wrap items-center gap-1 mb-2 tooltip-below"
     >
       <button
         v-for="item in toolbarActions"
@@ -510,7 +510,7 @@ defineExpose({
     
     <!-- Markdown 语法帮助 -->
     <div 
-      v-if="showMarkdownHelp && !isFullscreen" 
+      v-if="showMarkdownHelp" 
       class="mb-2 p-3 bg-gray-50 dark:bg-dark-100/50 border border-gray-200 dark:border-white/10 rounded-lg text-xs text-gray-600 dark:text-gray-400"
     >
       <div class="flex justify-between items-center mb-3">
@@ -534,7 +534,7 @@ defineExpose({
           </svg>
         </button>
       </div>
-      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-2">
+      <div class="grid gap-x-4 gap-y-2" style="grid-template-columns: repeat(auto-fill, minmax(140px, 1fr))">
         <div class="flex items-center gap-1.5">
           <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">**粗体**</code>
           <span class="text-gray-400">→</span>
@@ -558,7 +558,7 @@ defineExpose({
         <div class="flex items-center gap-1.5">
           <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">[文字](url)</code>
           <span class="text-gray-400">→</span>
-          <span class="text-primary truncate">链接</span>
+          <span class="truncate">链接</span>
         </div>
         <div class="flex items-center gap-1.5">
           <code class="bg-gray-200 dark:bg-dark-100 px-1.5 py-0.5 rounded shrink-0">![图片](url)</code>
@@ -616,6 +616,29 @@ defineExpose({
           <span class="truncate">脚注</span>
         </div>
       </div>
+      <div class="mt-3 pt-2 border-t border-gray-200 dark:border-white/10">
+        <a 
+          href="https://markdown.com.cn/basic-syntax/" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-1 text-primary hover:underline"
+        >
+          <span>查看完整 Markdown 语法文档</span>
+          <svg
+            class="w-3 h-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+            />
+          </svg>
+        </a>
+      </div>
     </div>
     
     <!-- 全屏模式：左右分栏 -->
@@ -652,8 +675,7 @@ defineExpose({
       <div class="flex gap-3 flex-1 min-h-0">
         <!-- 编辑区 -->
         <div class="flex-1 flex flex-col border border-gray-200 dark:border-white/10 rounded-lg overflow-visible">
-          <div class="flex-shrink-0 min-h-8 px-3 py-1 bg-gray-50 dark:bg-dark-100 border-b border-gray-200 dark:border-white/10 rounded-t-lg flex justify-between items-center">
-            <span class="text-xs text-gray-500 dark:text-gray-400">编辑</span>
+          <div class="flex-shrink-0 min-h-8 px-3 py-1 bg-gray-50 dark:bg-dark-100 border-b border-gray-200 dark:border-white/10 rounded-t-lg flex items-center gap-2">
             <div class="flex flex-wrap items-center gap-0.5">
               <button
                 v-for="item in toolbarActions"
@@ -697,6 +719,53 @@ defineExpose({
                 position="bottom"
                 @select="insertEmoji"
               />
+              <button
+                type="button"
+                class="p-1 rounded transition-colors text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/10"
+                data-tooltip="Markdown 语法帮助"
+                @click="showMarkdownHelp = !showMarkdownHelp"
+              >
+                <svg
+                  class="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="p-1 rounded transition-colors"
+                :class="showPreview ? 'text-primary bg-primary/10' : 'text-gray-500 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/10'"
+                :data-tooltip="showPreview ? '隐藏预览' : '显示预览'"
+                @click="togglePreview"
+              >
+                <svg
+                  class="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                  />
+                </svg>
+              </button>
             </div>
           </div>
           <textarea :id="`${editorUid}-fullscreen`"
@@ -712,7 +781,10 @@ defineExpose({
         </div>
         
         <!-- 预览区 -->
-        <div class="flex-1 flex flex-col border border-gray-200 dark:border-white/10 rounded-lg overflow-hidden">
+        <div 
+          v-if="showPreview"
+          class="flex-1 flex flex-col border border-gray-200 dark:border-white/10 rounded-lg overflow-hidden"
+        >
           <div class="flex-shrink-0 h-8 px-3 bg-gray-50 dark:bg-dark-100 border-b border-gray-200 dark:border-white/10 rounded-t-lg flex items-center">
             <span class="text-xs text-gray-500 dark:text-gray-400">预览</span>
           </div>

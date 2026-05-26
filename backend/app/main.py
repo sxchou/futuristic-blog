@@ -8,6 +8,10 @@ from app.core.database import engine, Base, SessionLocal, is_sqlite
 from app.api import router as api_router
 from app.services.init_data import init_database
 from app.services.log_service import LogService
+import mimetypes
+
+mimetypes.add_type('image/svg+xml', '.svg')
+mimetypes.add_type('image/x-icon', '.ico')
 from app.services.scheduled_publish_service import scheduled_publish_service
 from app.utils import cleanup_expired_tokens
 from app.utils.cache import cache_manager

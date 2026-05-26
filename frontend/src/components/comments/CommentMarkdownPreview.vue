@@ -196,11 +196,14 @@ const handleCopyCode = (e: MouseEvent) => {
       if (!svg) return
       
       const originalSvg = svg.outerHTML
+      const originalTooltip = btn.getAttribute('data-tooltip')
       svg.outerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`
+      btn.setAttribute('data-tooltip', '已复制')
       
       setTimeout(() => {
         const newSvg = btn.querySelector('svg')
         if (newSvg) newSvg.outerHTML = originalSvg
+        if (originalTooltip) btn.setAttribute('data-tooltip', originalTooltip)
       }, 2000)
       
       navigator.clipboard.writeText(code)

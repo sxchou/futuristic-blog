@@ -24,8 +24,8 @@
 }
 
 .dark [data-tooltip]::after {
-  background: #0f0f1a;
-  color: #f1f5f9;
+  background: #bebec6;
+  color: #090a0a;
 }
 
 .tooltip-below [data-tooltip]::after,

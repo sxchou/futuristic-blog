@@ -2,11 +2,9 @@
   <div class="emoji-picker relative inline-block">
     <button
       type="button"
-      class="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-white/10 transition-colors relative"
-      data-tooltip-key="emoji"
+      class="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+      data-tooltip="选择表情"
       @click="showPicker = !showPicker"
-      @mouseenter="onEmojiHover"
-      @mouseleave="showTooltip = false"
     >
       <svg
         class="w-5 h-5 text-gray-500 dark:text-gray-400"
@@ -21,13 +19,6 @@
           d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
         />
       </svg>
-      <span
-        v-if="showTooltip && !showPicker"
-        class="action-tooltip"
-        :style="tooltipStyle"
-      >
-        选择表情
-      </span>
     </button>
     
     <div
@@ -90,7 +81,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 const props = withDefaults(defineProps<{
   position?: 'top' | 'bottom'
@@ -103,24 +94,7 @@ const emit = defineEmits<{
 }>()
 
 const showPicker = ref(false)
-const showTooltip = ref(false)
-const tooltipStyle = ref<Record<string, string>>({})
 const activeCategory = ref('smileys')
-
-const onEmojiHover = () => {
-  showTooltip.value = true
-  nextTick(() => {
-    const btn = document.querySelector('[data-tooltip-key="emoji"]') as HTMLElement
-    if (!btn) return
-    const rect = btn.getBoundingClientRect()
-    tooltipStyle.value = {
-      position: 'fixed',
-      bottom: `${window.innerHeight - rect.top + 8}px`,
-      left: `${rect.left + rect.width / 2}px`,
-      transform: 'translateX(-50%)',
-    }
-  })
-}
 
 const categories = [
   { name: 'smileys', icon: '😊', label: '表情' },
@@ -195,33 +169,3 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
 })
 </script>
-
-<style scoped>
-.action-tooltip {
-  padding: 4px 8px;
-  background: #ffffff;
-  color: #1a1a2e;
-  font-size: 12px;
-  font-weight: normal;
-  border-radius: 4px;
-  white-space: nowrap;
-  pointer-events: none;
-  z-index: 9999;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  animation: tooltip-fade-in 0.15s ease;
-}
-
-.dark .action-tooltip {
-  background: #0f0f1a;
-  color: #f1f5f9;
-}
-
-@keyframes tooltip-fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-</style>

@@ -1119,14 +1119,18 @@ const handleImageUpload = async (event: Event) => {
   const file = target.files?.[0]
   if (!file) return
   
-  if (file.size > 100 * 1024 * 1024) {
-    await dialog.showError('图片大小不能超过100MB', '文件大小超限')
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif']
+  const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'))
+  
+  if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
+    await dialog.showError('仅支持 JPG、PNG、WebP、GIF 格式的图片', '文件格式错误')
     target.value = ''
     return
   }
   
-  if (!file.type.startsWith('image/')) {
-    await dialog.showError('请选择图片文件', '文件格式错误')
+  if (file.size > 100 * 1024 * 1024) {
+    await dialog.showError('图片大小不能超过100MB', '文件大小超限')
     target.value = ''
     return
   }
@@ -1215,14 +1219,18 @@ const handleCoverUpload = async (event: Event) => {
   const file = target.files?.[0]
   if (!file) return
   
-  if (file.size > 100 * 1024 * 1024) {
-    await dialog.showError('图片大小不能超过100MB', '文件大小超限')
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif']
+  const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'))
+  
+  if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
+    await dialog.showError('仅支持 JPG、PNG、WebP、GIF 格式的图片', '文件格式错误')
     target.value = ''
     return
   }
   
-  if (!file.type.startsWith('image/')) {
-    await dialog.showError('请选择图片文件', '文件格式错误')
+  if (file.size > 100 * 1024 * 1024) {
+    await dialog.showError('图片大小不能超过100MB', '文件大小超限')
     target.value = ''
     return
   }
@@ -2260,7 +2268,7 @@ watch(form, () => {
                   <label :class="canUploadImage ? 'cursor-pointer' : 'cursor-not-allowed'">
                     <input id="article-cover-upload"
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
                       class="hidden"
                       :disabled="isUploading || !canUploadImage"
                       @change="handleCoverUpload"
@@ -2359,7 +2367,7 @@ watch(form, () => {
                 <label :class="canUploadImage ? 'cursor-pointer' : 'cursor-not-allowed'">
                   <input id="article-image-upload"
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
                     class="hidden"
                     :disabled="isUploading || !canUploadImage"
                     @change="handleImageUpload"

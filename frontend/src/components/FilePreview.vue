@@ -693,6 +693,7 @@ onUnmounted(() => {
             </button>
             <button
               class="p-1.5 text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded transition-colors"
+              data-tooltip="关闭"
               @click="emit('close')"
             >
               <svg
