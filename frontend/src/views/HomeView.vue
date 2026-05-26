@@ -332,7 +332,7 @@ const handlePageChange = (page: number) => {
           class="mb-6"
         >
           <div 
-            class="glass-card rounded-none select-none"
+            class="glass-card overflow-hidden select-none"
             @touchstart="handleTouchStart"
             @touchmove="handleTouchMove"
             @touchend="handleTouchEnd"
