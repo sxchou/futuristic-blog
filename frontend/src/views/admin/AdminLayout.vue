@@ -557,7 +557,7 @@ onMounted(async () => {
           <div class="flex items-center gap-2 sm:gap-4">
             <button
               class="p-1.5 rounded-lg bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 hover:border-primary/30 hover:text-primary transition-all"
-              title="切换主题"
+              data-tooltip="切换主题"
               @click="themeStore.toggleTheme"
             >
               <svg

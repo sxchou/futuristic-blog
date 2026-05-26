@@ -249,7 +249,7 @@ const handleCancel = () => {
                           <button
                             v-if="item.count > 0"
                             class="text-xs text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-400/10"
-                            :title="getDetailState(item).expanded ? '收起明细' : '查看明细'"
+                            :data-tooltip="getDetailState(item).expanded ? '收起明细' : '查看明细'"
                             @click="toggleDetails(item)"
                           >
                             <svg

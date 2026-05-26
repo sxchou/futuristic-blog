@@ -276,14 +276,14 @@ onMounted(fetchStorageInfo)
                 <div class="flex items-center gap-2">
                   <p
                     class="text-sm font-medium text-gray-900 dark:text-white truncate flex-1"
-                    :title="storageInfo.upload_dir"
+                    :data-tooltip="storageInfo.upload_dir"
                   >
                     {{ storageInfo.upload_dir }}
                   </p>
                   <button
                     type="button"
                     class="flex-shrink-0 p-1 rounded hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
-                    title="复制路径"
+                    data-tooltip="复制路径"
                     @click="copyToClipboard(storageInfo.upload_dir)"
                   >
                     <svg

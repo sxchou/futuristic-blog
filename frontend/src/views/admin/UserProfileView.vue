@@ -822,7 +822,7 @@ onMounted(fetchProfile)
               <button
                 class="w-5 h-5 bg-white dark:bg-gray-700 rounded-full shadow flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-primary transition-colors"
                 :disabled="isUploading"
-                title="更换头像"
+                data-tooltip="更换头像"
                 @click="triggerUpload"
               >
                 <svg

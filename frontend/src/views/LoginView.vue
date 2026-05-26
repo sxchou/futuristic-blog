@@ -28,18 +28,9 @@ const isCaptchaVerified = ref(false)
 const captchaRef = ref<InstanceType<typeof SliderCaptcha> | null>(null)
 const oauthProviders = ref<OAuthProviderResponse[]>([])
 const oauthLoading = ref<string | null>(null)
-const activeTooltip = ref<number | null>(null)
 
 const OAUTH_CACHE_KEY = 'oauth_providers_cache'
 const OAUTH_CACHE_EXPIRY = 24 * 60 * 60 * 1000 // 24小时
-
-const showTooltip = (id: number) => {
-  activeTooltip.value = id
-}
-
-const hideTooltip = () => {
-  activeTooltip.value = null
-}
 
 const getCachedProviders = (): OAuthProviderResponse[] | null => {
   try {
@@ -543,8 +534,7 @@ onMounted(fetchOAuthProviders)
                 v-for="provider in oauthProviders"
                 :key="provider.id"
                 class="relative"
-                @mouseenter="showTooltip(provider.id)"
-                @mouseleave="hideTooltip"
+                :data-tooltip="provider.display_name + (!provider.is_configured || !provider.is_enabled ? ' (当前不可用)' : '')"
               >
                 <button
                   type="button"
@@ -562,13 +552,6 @@ onMounted(fetchOAuthProviders)
                     v-html="getProviderIcon(provider.icon)"
                   />
                 </button>
-                <span
-                  v-if="activeTooltip === provider.id"
-                  class="oauth-btn-tooltip"
-                  role="tooltip"
-                >
-                  {{ provider.display_name }}{{ !provider.is_configured || !provider.is_enabled ? ' (当前不可用)' : '' }}
-                </span>
               </div>
             </div>
           </div>
@@ -578,27 +561,4 @@ onMounted(fetchOAuthProviders)
   </div>
 </template>
 
-<style>
-.oauth-btn-tooltip {
-  position: absolute !important;
-  bottom: calc(100% + 8px) !important;
-  left: 50% !important;
-  transform: translateX(-50%) !important;
-  padding: 4px 8px !important;
-  background: #ffffff !important;
-  color: #1a1a2e !important;
-  font-size: 12px !important;
-  font-weight: normal !important;
-  border-radius: 4px !important;
-  white-space: nowrap !important;
-  pointer-events: none !important;
-  z-index: 9999 !important;
-  opacity: 1 !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
-}
 
-html.dark .oauth-btn-tooltip {
-  background: #0f0f1a !important;
-  color: #f1f5f9 !important;
-}
-</style>

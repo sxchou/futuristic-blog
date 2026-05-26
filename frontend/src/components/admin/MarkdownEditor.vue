@@ -286,28 +286,6 @@ const markAsSaved = () => {
   clearDraft()
 }
 
-const activeTooltip = ref<string | null>(null)
-const tooltipStyle = ref<Record<string, string>>({})
-
-const showTooltip = (name: string) => {
-  activeTooltip.value = name
-  nextTick(() => {
-    const btn = document.querySelector(`[data-tooltip-key="${name}"]`) as HTMLElement
-    if (!btn) return
-    const rect = btn.getBoundingClientRect()
-    tooltipStyle.value = {
-      position: 'fixed',
-      bottom: `${window.innerHeight - rect.top + 8}px`,
-      left: `${rect.left + rect.width / 2}px`,
-      transform: 'translateX(-50%)',
-    }
-  })
-}
-
-const hideTooltip = () => {
-  activeTooltip.value = null
-}
-
 const toolbarActions = [
   { icon: 'B', title: '粗体', key: 'bold', action: () => insertText('**', '**') },
   { icon: 'I', title: '斜体', key: 'italic', action: () => insertText('*', '*') },
@@ -415,20 +393,11 @@ defineExpose({
         <button
           v-if="!item.divider"
           type="button"
-          class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/5 rounded transition-colors relative"
-          :data-tooltip-key="item.key"
+          class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/5 rounded transition-colors"
+          :data-tooltip="item.title"
           @click="item.action"
-          @mouseenter="item.key && showTooltip(item.key)"
-          @mouseleave="hideTooltip"
         >
           {{ item.icon }}
-          <span
-            v-if="activeTooltip === item.key"
-            class="action-tooltip"
-            :style="tooltipStyle"
-          >
-            {{ item.title }}
-          </span>
         </button>
         <div
           v-else
@@ -439,20 +408,11 @@ defineExpose({
       <div class="lang-selector-container relative">
         <button
           type="button"
-          class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/5 rounded transition-colors relative"
-          data-tooltip-key="codeblock"
+          class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/5 rounded transition-colors"
+          data-tooltip="代码块"
           @click="showLangSelector = !showLangSelector; if (showLangSelector) updateLangSelectorPosition()"
-          @mouseenter="showTooltip('codeblock')"
-          @mouseleave="hideTooltip"
         >
           { }
-          <span
-            v-if="activeTooltip === 'codeblock'"
-            class="action-tooltip"
-            :style="tooltipStyle"
-          >
-            代码块
-          </span>
         </button>
         
         <div
@@ -486,55 +446,28 @@ defineExpose({
       
       <button
         type="button"
-        class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/5 rounded transition-colors relative"
-        data-tooltip-key="help"
+        class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/5 rounded transition-colors"
+        data-tooltip="Markdown 语法帮助"
         @click="showMarkdownHelp = !showMarkdownHelp"
-        @mouseenter="showTooltip('help')"
-        @mouseleave="hideTooltip"
       >
         ?
-        <span
-          v-if="activeTooltip === 'help'"
-          class="action-tooltip"
-          :style="tooltipStyle"
-        >
-          Markdown 语法帮助
-        </span>
       </button>
       <button
         type="button"
-        class="px-2 py-1 text-xs font-medium rounded transition-colors relative"
+        class="px-2 py-1 text-xs font-medium rounded transition-colors"
         :class="showPreview ? 'text-primary bg-primary/10' : 'text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/5'"
-        data-tooltip-key="preview"
+        :data-tooltip="showPreview ? '隐藏预览' : '显示预览'"
         @click="togglePreview"
-        @mouseenter="showTooltip('preview')"
-        @mouseleave="hideTooltip"
       >
         👁
-        <span
-          v-if="activeTooltip === 'preview'"
-          class="action-tooltip"
-          :style="tooltipStyle"
-        >
-          {{ showPreview ? '隐藏预览' : '显示预览' }}
-        </span>
       </button>
       <button
         type="button"
-        class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/5 rounded transition-colors relative"
-        data-tooltip-key="fullscreen"
+        class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-gray-200 dark:hover:bg-white/5 rounded transition-colors"
+        :data-tooltip="isFullscreen ? '退出全屏' : '全屏'"
         @click="toggleFullscreen"
-        @mouseenter="showTooltip('fullscreen')"
-        @mouseleave="hideTooltip"
       >
         ⛶
-        <span
-          v-if="activeTooltip === 'fullscreen'"
-          class="action-tooltip"
-          :style="tooltipStyle"
-        >
-          {{ isFullscreen ? '退出全屏' : '全屏' }}
-        </span>
       </button>
     </div>
     
@@ -847,34 +780,6 @@ defineExpose({
   .markdown-editor-container .lang-selector-container .fixed {
     width: 100px;
     left: 0 !important;
-  }
-}
-
-.action-tooltip {
-  padding: 4px 8px;
-  background: #ffffff;
-  color: #1a1a2e;
-  font-size: 12px;
-  font-weight: normal;
-  border-radius: 4px;
-  white-space: nowrap;
-  pointer-events: none;
-  z-index: 9999;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  animation: tooltip-fade-in 0.15s ease;
-}
-
-.dark .action-tooltip {
-  background: #0f0f1a;
-  color: #f1f5f9;
-}
-
-@keyframes tooltip-fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
   }
 }
 </style>
