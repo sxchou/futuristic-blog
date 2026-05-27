@@ -97,9 +97,8 @@
           class="flex items-center gap-4 text-xs"
         >
           <button
-            v-if="authStore.isAuthenticated"
             class="text-gray-500 hover:text-primary transition-colors flex items-center gap-1"
-            @click="showReplyForm = !showReplyForm"
+            @click="handleReplyClick"
           >
             <svg
               class="w-4 h-4"
@@ -224,6 +223,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, inject, watch, nextTick, type Ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { initMermaid, renderMermaidDiagrams } from '@/utils/mermaid'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores'
@@ -247,6 +247,7 @@ const emit = defineEmits<{
 
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
+const router = useRouter()
 const showReplyForm = ref(false)
 const replyContent = ref('')
 const submittingReply = ref(false)
@@ -257,6 +258,14 @@ const commentItemRef = ref<HTMLElement | null>(null)
 const shouldShowExpand = ref(false)
 const showReplies = ref(false)
 let resizeObserver: ResizeObserver | null = null
+
+const handleReplyClick = () => {
+  if (!authStore.isAuthenticated) {
+    router.push('/login')
+    return
+  }
+  showReplyForm.value = !showReplyForm.value
+}
 
 const expandedCommentIds = inject<Ref<Record<number, boolean>>>('expandedCommentIds')
 

@@ -31,6 +31,7 @@
       <div class="flex items-center justify-between mb-2">
         <span class="text-xs text-gray-500 dark:text-gray-400">选择表情</span>
         <button
+          type="button"
           class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
           @click="showPicker = false"
         >
@@ -54,6 +55,7 @@
         <button
           v-for="cat in categories"
           :key="cat.name"
+          type="button"
           :class="[
             'px-2 py-1 text-xs rounded transition-colors',
             activeCategory === cat.name
@@ -70,6 +72,7 @@
         <button
           v-for="emoji in currentEmojis"
           :key="emoji"
+          type="button"
           class="w-7 h-7 flex items-center justify-center text-lg hover:bg-gray-100 dark:hover:bg-white/10 rounded transition-colors"
           @click="selectEmoji(emoji)"
         >
