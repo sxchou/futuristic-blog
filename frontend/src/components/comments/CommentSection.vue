@@ -1,7 +1,7 @@
 <template>
   <div
     id="comments"
-    class="comments-section mt-12"
+    class="comments-section mt-12 scroll-mt-20"
   >
     <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
       <svg

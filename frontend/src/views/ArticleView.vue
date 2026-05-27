@@ -632,12 +632,7 @@ onMounted(async () => {
       setTimeout(() => {
         const commentsSection = document.getElementById('comments')
         if (commentsSection) {
-          const rect = commentsSection.getBoundingClientRect()
-          const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-          window.scrollTo({
-            top: rect.top + scrollTop - 80,
-            behavior: 'smooth'
-          })
+          commentsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
         }
       }, 100)
     } else if (route.hash.startsWith('#comment-')) {
@@ -646,23 +641,13 @@ onMounted(async () => {
         setTimeout(() => {
           const commentElement = document.getElementById(`comment-${commentId}`)
           if (commentElement) {
-            const rect = commentElement.getBoundingClientRect()
-            const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-            window.scrollTo({
-              top: rect.top + scrollTop - 80,
-              behavior: 'smooth'
-            })
+            commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
             commentElement.classList.add('highlight-comment')
             setTimeout(() => { commentElement.classList.remove('highlight-comment') }, 3000)
           } else {
             const commentsSection = document.getElementById('comments')
             if (commentsSection) {
-              const rect = commentsSection.getBoundingClientRect()
-              const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-              window.scrollTo({
-                top: rect.top + scrollTop - 80,
-                behavior: 'smooth'
-              })
+              commentsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
             }
           }
         }, 100)
