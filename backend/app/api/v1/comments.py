@@ -16,7 +16,7 @@ from app.utils import get_current_user
 from app.utils.permissions import require_permission
 from app.services.permission_service import PermissionService
 from app.services.email_service import EmailService
-from app.utils.timezone import get_db_now
+from app.utils.timezone import get_db_now, to_utc
 
 COMMENT_RATE_LIMIT_PER_MINUTE = 3
 from app.services.log_service import LogService
@@ -607,11 +607,11 @@ async def get_admin_comments(
         query = query.filter(Comment.article_id == article_id)
     
     if start_date:
-        query = query.filter(Comment.created_at >= datetime.fromisoformat(start_date))
+        start_dt = datetime.fromisoformat(start_date)
+        query = query.filter(Comment.created_at >= to_utc(start_dt))
     if end_date:
-        end_datetime = datetime.fromisoformat(end_date)
-        end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
-        query = query.filter(Comment.created_at <= end_datetime)
+        end_dt = datetime.fromisoformat(end_date).replace(hour=23, minute=59, second=59)
+        query = query.filter(Comment.created_at <= to_utc(end_dt))
     
     total = query.count()
     total_pages = (total + page_size - 1) // page_size

@@ -485,11 +485,10 @@ async def get_admin_articles(
         date_field = Article.updated_at
     
     if start_date:
-        query = query.filter(date_field >= datetime.fromisoformat(start_date))
+        query = query.filter(date_field >= to_utc(datetime.fromisoformat(start_date)))
     if end_date:
-        end_datetime = datetime.fromisoformat(end_date)
-        end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
-        query = query.filter(date_field <= end_datetime)
+        end_dt = datetime.fromisoformat(end_date).replace(hour=23, minute=59, second=59)
+        query = query.filter(date_field <= to_utc(end_dt))
     
     total = query.count()
     total_pages = (total + page_size - 1) // page_size

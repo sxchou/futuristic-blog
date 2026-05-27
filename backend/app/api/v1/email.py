@@ -17,7 +17,7 @@ from app.schemas import (
 )
 from app.utils.permissions import require_permission
 from app.services.log_service import LogService
-from app.utils.timezone import get_now, get_db_now
+from app.utils.timezone import get_now, get_db_now, to_utc
 import smtplib
 import socket
 import logging
@@ -531,11 +531,10 @@ async def get_email_logs(
     if recipient_email:
         query = query.filter(EmailLog.recipient_email.ilike(f"%{recipient_email}%"))
     if start_date:
-        query = query.filter(EmailLog.created_at >= datetime.fromisoformat(start_date))
+        query = query.filter(EmailLog.created_at >= to_utc(datetime.fromisoformat(start_date)))
     if end_date:
-        end_datetime = datetime.fromisoformat(end_date)
-        end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
-        query = query.filter(EmailLog.created_at <= end_datetime)
+        end_dt = datetime.fromisoformat(end_date).replace(hour=23, minute=59, second=59)
+        query = query.filter(EmailLog.created_at <= to_utc(end_dt))
     
     total = query.count()
     total_pages = (total + page_size - 1) // page_size

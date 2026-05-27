@@ -12,7 +12,7 @@ from openpyxl.utils import get_column_letter
 from app.core.database import get_db, SessionLocal
 from app.models import OperationLog, LoginLog, AccessLog, UserProfile
 from app.utils.permissions import require_permission
-from app.utils.timezone import get_db_now, get_today_start, to_local
+from app.utils.timezone import get_db_now, get_today_start, to_local, to_utc
 from app.services.log_service import LogService
 from app.utils.cache import cache_manager
 from pydantic import BaseModel, field_validator
@@ -27,6 +27,16 @@ CACHE_TTL_STATS = 60
 export_progress: Dict[str, Dict] = {}
 active_exports = 0
 MAX_CONCURRENT_EXPORTS = 3
+
+
+def _parse_start_date(date_str: str) -> datetime:
+    local_dt = datetime.fromisoformat(date_str)
+    return to_utc(local_dt)
+
+
+def _parse_end_date(date_str: str) -> datetime:
+    local_dt = datetime.fromisoformat(date_str).replace(hour=23, minute=59, second=59)
+    return to_utc(local_dt)
 
 
 class OperationLogItem(BaseModel):
@@ -187,11 +197,9 @@ async def get_operation_logs(
     if ip_address:
         query = query.filter(OperationLog.ip_address.contains(ip_address))
     if start_date:
-        query = query.filter(OperationLog.created_at >= datetime.fromisoformat(start_date))
+        query = query.filter(OperationLog.created_at >= _parse_start_date(start_date))
     if end_date:
-        end_datetime = datetime.fromisoformat(end_date)
-        end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
-        query = query.filter(OperationLog.created_at <= end_datetime)
+        query = query.filter(OperationLog.created_at <= _parse_end_date(end_date))
     
     total = query.count()
     logs = query.order_by(desc(OperationLog.created_at)).offset((page - 1) * page_size).limit(page_size).all()
@@ -279,11 +287,9 @@ async def get_login_logs(
     if ip_address:
         query = query.filter(LoginLog.ip_address.contains(ip_address))
     if start_date:
-        query = query.filter(LoginLog.created_at >= datetime.fromisoformat(start_date))
+        query = query.filter(LoginLog.created_at >= _parse_start_date(start_date))
     if end_date:
-        end_datetime = datetime.fromisoformat(end_date)
-        end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
-        query = query.filter(LoginLog.created_at <= end_datetime)
+        query = query.filter(LoginLog.created_at <= _parse_end_date(end_date))
     
     total = query.count()
     logs = query.order_by(desc(LoginLog.created_at)).offset((page - 1) * page_size).limit(page_size).all()
@@ -379,11 +385,9 @@ async def get_access_logs(
     if max_status_code is not None:
         query = query.filter(AccessLog.response_status <= max_status_code)
     if start_date:
-        query = query.filter(AccessLog.created_at >= datetime.fromisoformat(start_date))
+        query = query.filter(AccessLog.created_at >= _parse_start_date(start_date))
     if end_date:
-        end_datetime = datetime.fromisoformat(end_date)
-        end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
-        query = query.filter(AccessLog.created_at <= end_datetime)
+        query = query.filter(AccessLog.created_at <= _parse_end_date(end_date))
     
     total = query.count()
     logs = query.order_by(desc(AccessLog.created_at)).offset((page - 1) * page_size).limit(page_size).all()
@@ -609,11 +613,9 @@ async def get_operation_logs_export_count(
     if username:
         query = query.filter(OperationLog.username.contains(username))
     if start_date:
-        query = query.filter(OperationLog.created_at >= datetime.fromisoformat(start_date))
+        query = query.filter(OperationLog.created_at >= _parse_start_date(start_date))
     if end_date:
-        end_datetime = datetime.fromisoformat(end_date)
-        end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
-        query = query.filter(OperationLog.created_at <= end_datetime)
+        query = query.filter(OperationLog.created_at <= _parse_end_date(end_date))
     
     total_count = query.count()
     
@@ -653,11 +655,9 @@ async def export_operation_logs(
     if username:
         query = query.filter(OperationLog.username.contains(username))
     if start_date:
-        query = query.filter(OperationLog.created_at >= datetime.fromisoformat(start_date))
+        query = query.filter(OperationLog.created_at >= _parse_start_date(start_date))
     if end_date:
-        end_datetime = datetime.fromisoformat(end_date)
-        end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
-        query = query.filter(OperationLog.created_at <= end_datetime)
+        query = query.filter(OperationLog.created_at <= _parse_end_date(end_date))
     
     if task_id and task_id in export_progress:
         total_count = export_progress[task_id]["total"]
@@ -701,11 +701,9 @@ async def export_operation_logs(
                     if username:
                         batch_query = batch_query.filter(OperationLog.username.contains(username))
                     if start_date:
-                        batch_query = batch_query.filter(OperationLog.created_at >= datetime.fromisoformat(start_date))
+                        batch_query = batch_query.filter(OperationLog.created_at >= _parse_start_date(start_date))
                     if end_date:
-                        end_datetime = datetime.fromisoformat(end_date)
-                        end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
-                        batch_query = batch_query.filter(OperationLog.created_at <= end_datetime)
+                        batch_query = batch_query.filter(OperationLog.created_at <= _parse_end_date(end_date))
                     
                     batch_logs = batch_query.order_by(desc(OperationLog.created_at)).offset(offset).limit(batch_size).all()
                     
@@ -791,11 +789,9 @@ async def get_login_logs_export_count(
     if ip_address:
         query = query.filter(LoginLog.ip_address.contains(ip_address))
     if start_date:
-        query = query.filter(LoginLog.created_at >= datetime.fromisoformat(start_date))
+        query = query.filter(LoginLog.created_at >= _parse_start_date(start_date))
     if end_date:
-        end_datetime = datetime.fromisoformat(end_date)
-        end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
-        query = query.filter(LoginLog.created_at <= end_datetime)
+        query = query.filter(LoginLog.created_at <= _parse_end_date(end_date))
     
     total_count = query.count()
     
@@ -828,11 +824,9 @@ async def export_login_logs(
     if ip_address:
         query = query.filter(LoginLog.ip_address.contains(ip_address))
     if start_date:
-        query = query.filter(LoginLog.created_at >= datetime.fromisoformat(start_date))
+        query = query.filter(LoginLog.created_at >= _parse_start_date(start_date))
     if end_date:
-        end_datetime = datetime.fromisoformat(end_date)
-        end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
-        query = query.filter(LoginLog.created_at <= end_datetime)
+        query = query.filter(LoginLog.created_at <= _parse_end_date(end_date))
     
     if task_id and task_id in export_progress:
         total_count = export_progress[task_id]["total"]
@@ -874,11 +868,9 @@ async def export_login_logs(
                 if ip_address:
                     batch_query = batch_query.filter(LoginLog.ip_address.contains(ip_address))
                 if start_date:
-                    batch_query = batch_query.filter(LoginLog.created_at >= datetime.fromisoformat(start_date))
+                    batch_query = batch_query.filter(LoginLog.created_at >= _parse_start_date(start_date))
                 if end_date:
-                    end_datetime = datetime.fromisoformat(end_date)
-                    end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
-                    batch_query = batch_query.filter(LoginLog.created_at <= end_datetime)
+                    batch_query = batch_query.filter(LoginLog.created_at <= _parse_end_date(end_date))
                 
                 batch_logs = batch_query.order_by(desc(LoginLog.created_at)).offset(offset).limit(batch_size).all()
                 
@@ -966,11 +958,9 @@ async def get_access_logs_export_count(
     if ip_address:
         query = query.filter(AccessLog.ip_address.contains(ip_address))
     if start_date:
-        query = query.filter(AccessLog.created_at >= datetime.fromisoformat(start_date))
+        query = query.filter(AccessLog.created_at >= _parse_start_date(start_date))
     if end_date:
-        end_datetime = datetime.fromisoformat(end_date)
-        end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
-        query = query.filter(AccessLog.created_at <= end_datetime)
+        query = query.filter(AccessLog.created_at <= _parse_end_date(end_date))
     
     total_count = query.count()
     
@@ -1006,11 +996,9 @@ async def export_access_logs(
     if ip_address:
         query = query.filter(AccessLog.ip_address.contains(ip_address))
     if start_date:
-        query = query.filter(AccessLog.created_at >= datetime.fromisoformat(start_date))
+        query = query.filter(AccessLog.created_at >= _parse_start_date(start_date))
     if end_date:
-        end_datetime = datetime.fromisoformat(end_date)
-        end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
-        query = query.filter(AccessLog.created_at <= end_datetime)
+        query = query.filter(AccessLog.created_at <= _parse_end_date(end_date))
     
     if task_id and task_id in export_progress:
         total_count = export_progress[task_id]["total"]
@@ -1055,11 +1043,9 @@ async def export_access_logs(
                 if ip_address:
                     batch_query = batch_query.filter(AccessLog.ip_address.contains(ip_address))
                 if start_date:
-                    batch_query = batch_query.filter(AccessLog.created_at >= datetime.fromisoformat(start_date))
+                    batch_query = batch_query.filter(AccessLog.created_at >= _parse_start_date(start_date))
                 if end_date:
-                    end_datetime = datetime.fromisoformat(end_date)
-                    end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
-                    batch_query = batch_query.filter(AccessLog.created_at <= end_datetime)
+                    batch_query = batch_query.filter(AccessLog.created_at <= _parse_end_date(end_date))
                 
                 batch_logs = batch_query.order_by(desc(AccessLog.created_at)).offset(offset).limit(batch_size).all()
                 
