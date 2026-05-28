@@ -46,7 +46,7 @@ def run_database_migrations():
                 print("Migration: Added unique index on articles.title")
             
             if 'is_pinned' not in article_columns:
-                cursor.execute("ALTER TABLE articles ADD COLUMN is_pinned BOOLEAN DEFAULT 0")
+                cursor.execute("ALTER TABLE articles ADD COLUMN is_pinned BOOLEAN DEFAULT FALSE")
                 cursor.execute("CREATE INDEX IF NOT EXISTS ix_articles_published_pinned ON articles(is_published, is_pinned)")
                 conn.commit()
                 print("Migration: Added 'is_pinned' column to articles table")
@@ -221,7 +221,7 @@ def run_database_migrations():
                         new_email VARCHAR(100) NOT NULL,
                         code VARCHAR(6) NOT NULL,
                         ip_address VARCHAR(50),
-                        is_used BOOLEAN DEFAULT 0,
+                        is_used BOOLEAN DEFAULT FALSE,
                         used_at TEXT,
                         expires_at TEXT NOT NULL,
                         created_at TEXT,

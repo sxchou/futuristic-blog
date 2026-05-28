@@ -1020,7 +1020,7 @@ def migrate_add_author_name_and_reply_to_user_name():
             logger.info("Migration: deleted_by column already exists in comments")
         
         if 'is_deleted' not in comment_columns:
-            db.execute(text('ALTER TABLE comments ADD COLUMN is_deleted BOOLEAN DEFAULT 0'))
+            db.execute(text('ALTER TABLE comments ADD COLUMN is_deleted BOOLEAN DEFAULT FALSE'))
             db.commit()
             logger.info("Migration: is_deleted column added to comments")
         else:
@@ -1091,7 +1091,7 @@ def migrate_add_pinned_order():
         columns = [col['name'] for col in inspector.get_columns('comments')]
         
         if 'is_pinned' not in columns:
-            db.execute(text('ALTER TABLE comments ADD COLUMN is_pinned BOOLEAN DEFAULT 0'))
+            db.execute(text('ALTER TABLE comments ADD COLUMN is_pinned BOOLEAN DEFAULT FALSE'))
             db.commit()
             logger.info("Migration: is_pinned column added to comments")
         else:
