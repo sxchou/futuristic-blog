@@ -350,6 +350,8 @@ class CommentResponse(CommentBase):
     author_avatar_gradient: Optional[List[str]] = None
     status: str = 'approved'
     is_deleted: bool = False
+    is_pinned: bool = False
+    pinned_order: int = 0
     deleted_by: Optional[str] = None
     reply_to_user_id: Optional[int] = None
     reply_to_user_name: Optional[str] = None
@@ -413,6 +415,8 @@ class AdminCommentResponse(CommentBase):
     author_avatar_gradient: Optional[List[str]] = None
     status: str = 'approved'
     is_deleted: bool = False
+    is_pinned: bool = False
+    pinned_order: int = 0
     deleted_by: Optional[str] = None
     reply_to_user_id: Optional[int] = None
     reply_to_user_name: Optional[str] = None

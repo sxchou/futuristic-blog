@@ -1,7 +1,19 @@
 <script setup lang="ts">
+import { ref, nextTick, watch } from 'vue'
 import { useDialogStore } from '@/stores'
 
 const dialogStore = useDialogStore()
+const promptValue = ref('')
+
+watch(() => dialogStore.isVisible.value, (val) => {
+  if (val && dialogStore.dialogOptions.value.type === 'prompt') {
+    promptValue.value = dialogStore.dialogOptions.value.inputValue || ''
+    nextTick(() => {
+      const input = document.querySelector<HTMLInputElement>('#dialog-prompt-input')
+      if (input) input.focus()
+    })
+  }
+})
 
 const handleConfirmClick = () => {
   dialogStore.confirm()
@@ -9,6 +21,20 @@ const handleConfirmClick = () => {
 
 const handleCancelClick = () => {
   dialogStore.cancel()
+}
+
+const handlePromptConfirm = () => {
+  dialogStore.confirmPrompt(promptValue.value)
+}
+
+const handlePromptCancel = () => {
+  dialogStore.cancelPrompt()
+}
+
+const handlePromptKeyup = (e: KeyboardEvent) => {
+  if (e.key === 'Enter') {
+    handlePromptConfirm()
+  }
 }
 
 const handleOverlayClick = () => {
@@ -29,6 +55,8 @@ const getIconClass = () => {
       return 'text-red-400'
     case 'warning':
       return 'text-amber-400'
+    case 'prompt':
+      return 'text-primary'
     default:
       return 'text-primary'
   }
@@ -45,6 +73,8 @@ const getIconPath = () => {
       return 'M6 18L18 6M6 6l12 12'
     case 'warning':
       return 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'
+    case 'prompt':
+      return 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'
     default:
       return 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
   }
@@ -52,6 +82,10 @@ const getIconPath = () => {
 
 const isConfirmType = () => {
   return dialogStore.dialogOptions.value.type === 'confirm'
+}
+
+const isPromptType = () => {
+  return dialogStore.dialogOptions.value.type === 'prompt'
 }
 </script>
 
@@ -115,6 +149,27 @@ const isConfirmType = () => {
                   >
                     {{ dialogStore.dialogOptions.value.message }}
                   </p>
+                  <div
+                    v-if="isPromptType()"
+                    class="mt-3"
+                  >
+                    <label
+                      v-if="dialogStore.dialogOptions.value.inputLabel"
+                      class="block text-sm text-gray-600 dark:text-gray-400 mb-1"
+                    >
+                      {{ dialogStore.dialogOptions.value.inputLabel }}
+                    </label>
+                    <input
+                      id="dialog-prompt-input"
+                      v-model="promptValue"
+                      :type="dialogStore.dialogOptions.value.inputType || 'text'"
+                      :placeholder="dialogStore.dialogOptions.value.inputPlaceholder || ''"
+                      :min="dialogStore.dialogOptions.value.inputMin"
+                      :max="dialogStore.dialogOptions.value.inputMax"
+                      class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
+                      @keyup="handlePromptKeyup"
+                    >
+                  </div>
                 </div>
               </div>
             </div>
@@ -136,8 +191,24 @@ const isConfirmType = () => {
               >
                 {{ dialogStore.dialogOptions.value.confirmText || '确定' }}
               </button>
+              <template v-if="isPromptType()">
+                <button
+                  type="button"
+                  class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  @click="handlePromptCancel"
+                >
+                  {{ dialogStore.dialogOptions.value.cancelText || '取消' }}
+                </button>
+                <button
+                  type="button"
+                  class="flex-1 px-4 py-3 text-sm font-medium text-primary hover:text-primary/80 hover:bg-primary/10 transition-colors"
+                  @click="handlePromptConfirm"
+                >
+                  {{ dialogStore.dialogOptions.value.confirmText || '确定' }}
+                </button>
+              </template>
               <button
-                v-if="!isConfirmType()"
+                v-if="!isConfirmType() && !isPromptType()"
                 type="button"
                 :class="[
                   'flex-1 px-4 py-3 text-sm font-medium transition-colors',

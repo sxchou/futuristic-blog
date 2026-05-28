@@ -88,6 +88,7 @@
         :article-id="articleId"
         @reply="handleReply"
         @delete="handleDelete"
+        @pin="handlePin"
       />
     </div>
 
@@ -160,6 +161,14 @@ const totalComments = computed(() => {
   return count
 })
 
+const sortComments = () => {
+  comments.value.sort((a, b) => {
+    if (a.is_pinned !== b.is_pinned) return a.is_pinned ? -1 : 1
+    if (a.is_pinned && b.is_pinned) return (a.pinned_order || 0) - (b.pinned_order || 0)
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  })
+}
+
 const totalPages = computed(() => {
   return Math.ceil(comments.value.length / pageSize)
 })
@@ -215,17 +224,14 @@ const fetchComments = async () => {
     const parentCommentId = findParentCommentId(commentId, comments.value)
     const targetCommentId = parentCommentId || commentId
     
-    const commentIndex = comments.value.findIndex(c => c.id === targetCommentId)
-    if (commentIndex !== -1) {
-      const targetPage = Math.floor(commentIndex / pageSize) + 1
+    const targetIndex = comments.value.findIndex(c => c.id === targetCommentId)
+    if (targetIndex !== -1) {
+      const targetPage = Math.floor(targetIndex / pageSize) + 1
       currentPage.value = targetPage
-      
-      if (parentCommentId) {
-        expandedCommentIds.value[parentCommentId] = true
-      }
-      
-      await nextTick()
-      await scrollToComment(commentId, 350)
+    }
+    
+    if (parentCommentId) {
+      expandedCommentIds.value[parentCommentId] = true
     }
   }
 }
@@ -241,8 +247,12 @@ const submitComment = async () => {
     })
     
     if (comment.status === 'approved') {
-      comments.value.unshift(comment)
-      currentPage.value = 1
+      comments.value.push(comment)
+      sortComments()
+      const targetIndex = comments.value.findIndex(c => c.id === comment.id)
+      if (targetIndex !== -1) {
+        currentPage.value = Math.floor(targetIndex / pageSize) + 1
+      }
       await dialog.showSuccess('评论发表成功', '成功')
       await scrollToComment(comment.id, 50)
     } else if (comment.status === 'pending') {
@@ -347,6 +357,30 @@ const handleDelete = async (commentId: number) => {
   } catch (error) {
     console.error('Failed to delete comment:', error)
     await dialog.showError('删除失败，请重试', '错误')
+  }
+}
+
+const handlePin = async (data: { commentId: number; isPinned: boolean; pinnedOrder: number }) => {
+  try {
+    await commentApi.togglePin(data.commentId, data.isPinned, data.pinnedOrder)
+    const comment = comments.value.find(c => c.id === data.commentId)
+    if (comment) {
+      comment.is_pinned = data.isPinned
+      comment.pinned_order = data.isPinned ? data.pinnedOrder : 0
+      sortComments()
+      const targetIndex = comments.value.findIndex(c => c.id === data.commentId)
+      if (targetIndex !== -1) {
+        currentPage.value = Math.floor(targetIndex / pageSize) + 1
+      }
+    }
+    if (currentPage.value > totalPages.value) {
+      currentPage.value = Math.max(1, totalPages.value)
+    }
+    await dialog.showSuccess(data.isPinned ? '评论已置顶' : '已取消置顶', '成功')
+  } catch (error: any) {
+    console.error('Failed to toggle pin:', error)
+    const errorMessage = error?.response?.data?.detail || '操作失败，请重试'
+    await dialog.showError(errorMessage, '错误')
   }
 }
 

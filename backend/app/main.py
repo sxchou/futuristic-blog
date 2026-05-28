@@ -66,6 +66,7 @@ async def lifespan(app: FastAPI):
             migrate_add_article_likes_indexes()
             migrate_add_author_name_and_reply_to_user_name()
             migrate_resources_category_nullable()
+            migrate_add_pinned_order()
             logger.info("Database tables created successfully")
             
             logger.info("Initializing database data...")
@@ -444,6 +445,7 @@ async def background_init():
         migrate_add_article_likes_indexes()
         migrate_add_author_name_and_reply_to_user_name()
         migrate_resources_category_nullable()
+        migrate_add_pinned_order()
         logger.info("Database tables created")
         
         logger.info("Initializing database data...")
@@ -1070,6 +1072,39 @@ def migrate_resources_category_nullable():
             logger.info("Migration: resources.category column already nullable or does not exist")
     except Exception as e:
         logger.error(f"Error migrating resources.category nullable: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+
+def migrate_add_pinned_order():
+    from sqlalchemy import text, inspect
+    
+    db = SessionLocal()
+    try:
+        inspector = inspect(db.get_bind())
+        
+        if 'comments' not in inspector.get_table_names():
+            logger.info("Migration: comments table does not exist, skipping")
+            return
+        
+        columns = [col['name'] for col in inspector.get_columns('comments')]
+        
+        if 'is_pinned' not in columns:
+            db.execute(text('ALTER TABLE comments ADD COLUMN is_pinned BOOLEAN DEFAULT 0'))
+            db.commit()
+            logger.info("Migration: is_pinned column added to comments")
+        else:
+            logger.info("Migration: is_pinned column already exists in comments")
+        
+        if 'pinned_order' not in columns:
+            db.execute(text('ALTER TABLE comments ADD COLUMN pinned_order INTEGER DEFAULT 0'))
+            db.commit()
+            logger.info("Migration: pinned_order column added to comments")
+        else:
+            logger.info("Migration: pinned_order column already exists in comments")
+    except Exception as e:
+        logger.error(f"Error migrating pinned columns: {e}")
         db.rollback()
     finally:
         db.close()

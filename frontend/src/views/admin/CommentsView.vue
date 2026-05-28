@@ -217,6 +217,42 @@ const submitBatchAudit = async () => {
 const showDeleteModal = ref(false)
 const deleteTargetComment = ref<AdminComment | null>(null)
 const deleteType = ref<'soft' | 'permanent'>('soft')
+const showPinModal = ref(false)
+const pinOrderValue = ref('0')
+
+const handleTogglePin = async (comment: AdminComment) => {
+  if (!await requirePermission('comment.audit', comment.is_pinned ? '取消置顶评论' : '置顶评论')) return
+  if (comment.is_pinned) {
+    try {
+      await commentApi.togglePin(comment.id, false, 0)
+      comment.is_pinned = false
+      comment.pinned_order = 0
+      await dialog.showSuccess('已取消置顶', '成功')
+    } catch (error: any) {
+      console.error('Failed to toggle pin:', error)
+      await dialog.showError(error.response?.data?.detail || '操作失败', '错误')
+    }
+  } else {
+    currentComment.value = comment
+    pinOrderValue.value = '0'
+    showPinModal.value = true
+  }
+}
+
+const submitPin = async () => {
+  if (!currentComment.value) return
+  const order = parseInt(pinOrderValue.value) || 0
+  try {
+    await commentApi.togglePin(currentComment.value.id, true, order)
+    currentComment.value.is_pinned = true
+    currentComment.value.pinned_order = order
+    showPinModal.value = false
+    await dialog.showSuccess('评论已置顶', '成功')
+  } catch (error: any) {
+    console.error('Failed to toggle pin:', error)
+    await dialog.showError(error.response?.data?.detail || '操作失败', '错误')
+  }
+}
 
 const openDeleteModal = async (comment: AdminComment) => {
   if (!await requirePermission('comment.delete', '删除评论')) return
@@ -670,12 +706,20 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                   :to="`/article/${comment.article_slug}#comment-${comment.id}`"
                   class="text-sm text-primary hover:underline block line-clamp-2"
                 >
+                  <span v-if="comment.is_pinned" class="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium rounded bg-amber-500/10 text-amber-600 mr-1">
+                    <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" /></svg>
+                    置顶
+                  </span>
                   <span v-if="comment.reply_to_user_name" class="text-gray-500 dark:text-gray-400">@{{ comment.reply_to_user_name }}</span> {{ comment.content }}
                 </router-link>
                 <div
                   v-else
                   class="text-sm text-gray-900 dark:text-white line-clamp-2"
                 >
+                  <span v-if="comment.is_pinned" class="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium rounded bg-amber-500/10 text-amber-600 mr-1">
+                    <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" /></svg>
+                    置顶
+                  </span>
                   <span v-if="comment.reply_to_user_name" class="text-gray-500 dark:text-gray-400">@{{ comment.reply_to_user_name }}</span> {{ comment.content }}
                 </div>
               </td>
@@ -711,32 +755,54 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                 {{ formatDate(comment.created_at) }}
               </td>
               <td class="px-4 py-3">
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1">
                   <button
-                    v-if="comment.status !== 'approved'"
-                    class="px-2 py-1 text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
-                    @click="openAuditModal(comment, 'approved')"
+                    v-if="!comment.parent_id && comment.status === 'approved' && !comment.is_deleted"
+                    class="p-1.5 rounded transition-colors"
+                    :class="comment.is_pinned 
+                      ? 'text-amber-500 hover:bg-amber-500/10' 
+                      : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-100'"
+                    :data-tooltip="comment.is_pinned ? '取消置顶' : '置顶'"
+                    @click="handleTogglePin(comment)"
                   >
-                    通过
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" />
+                    </svg>
+                  </button>
+                  <span
+                    v-else
+                    class="p-1.5 text-gray-300 dark:text-gray-600"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                    </svg>
+                  </span>
+                  <button
+                    class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-100 rounded transition-colors"
+                    data-tooltip="审核"
+                    @click="openAuditModal(comment, comment.status === 'pending' ? 'approved' : comment.status)"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                   </button>
                   <button
-                    v-if="comment.status !== 'rejected'"
-                    class="px-2 py-1 text-xs bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
-                    @click="openAuditModal(comment, 'rejected')"
-                  >
-                    拒绝
-                  </button>
-                  <button
-                    class="px-2 py-1 text-xs bg-gray-100 text-gray-700 dark:bg-dark-100 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-dark-50 transition-colors"
+                    class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-100 rounded transition-colors"
+                    data-tooltip="日志"
                     @click="openLogsModal(comment)"
                   >
-                    日志
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
                   </button>
                   <button
-                    class="px-2 py-1 text-xs bg-gray-100 text-red-600 dark:bg-dark-100 dark:text-red-400 rounded hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                    class="p-1.5 text-red-400 hover:text-red-500 hover:bg-red-500/10 rounded transition-colors"
+                    data-tooltip="删除"
                     @click="openDeleteModal(comment)"
                   >
-                    删除
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
                   </button>
                 </div>
               </td>
@@ -833,6 +899,51 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
             @click="submitAudit"
           >
             确认
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="showPinModal"
+      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      @click.self="showPinModal = false"
+    >
+      <div class="glass-card p-6 w-full max-w-sm mx-4">
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">
+          置顶评论
+        </h3>
+        <div class="space-y-3">
+          <div>
+            <label
+              for="admin-pin-order-input"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >排序数字</label>
+            <input
+              id="admin-pin-order-input"
+              v-model="pinOrderValue"
+              type="number"
+              min="0"
+              class="w-full px-3 py-2 bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:outline-none focus:border-gray-300 dark:focus:border-white/20 text-sm"
+              placeholder="数字越小越靠前"
+              @keyup.enter="submitPin"
+              @keyup.escape="showPinModal = false"
+            >
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">数字越小越靠前，默认为 0</p>
+          </div>
+        </div>
+        <div class="flex justify-end gap-3 mt-6">
+          <button
+            class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-100 rounded-lg transition-colors"
+            @click="showPinModal = false"
+          >
+            取消
+          </button>
+          <button
+            class="btn-primary text-sm px-4 py-1.5"
+            @click="submitPin"
+          >
+            置顶
           </button>
         </div>
       </div>

@@ -191,6 +191,8 @@ class Comment(Base):
     parent_id = Column(Integer, ForeignKey('comments.id', ondelete='SET NULL'), nullable=True, index=True)
     is_approved = Column(Boolean, default=True)
     is_deleted = Column(Boolean, default=False, index=True)
+    is_pinned = Column(Boolean, default=False, index=True)
+    pinned_order = Column(Integer, default=0, index=True)
     deleted_by = Column(String(20), nullable=True)
     reply_to_user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
     reply_to_user_name = Column(String(50), nullable=True)

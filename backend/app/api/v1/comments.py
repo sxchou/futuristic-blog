@@ -1,7 +1,7 @@
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
@@ -129,6 +129,8 @@ def build_comment_tree(comments: List[Comment], db: Session) -> List[dict]:
             'author_avatar_gradient': author_avatar['avatar_gradient'],
             'status': comment.status,
             'is_deleted': comment.is_deleted,
+            'is_pinned': comment.is_pinned,
+            'pinned_order': comment.pinned_order,
             'deleted_by': comment.deleted_by,
             'reply_to_user_id': comment.reply_to_user_id,
             'reply_to_user_name': reply_to_user_name,
@@ -313,7 +315,7 @@ async def get_article_comments(
         Comment.article_id == article_id,
         Comment.status == 'approved',
         Comment.is_deleted == False
-    ).order_by(Comment.created_at.desc()).all()
+    ).order_by(Comment.is_pinned.desc(), Comment.pinned_order.asc(), Comment.created_at.desc()).all()
     
     return build_comment_tree(comments, db)
 
@@ -458,6 +460,8 @@ async def create_comment(
         author_avatar_gradient=author_avatar['avatar_gradient'],
         status=new_comment.status,
         is_deleted=new_comment.is_deleted,
+        is_pinned=new_comment.is_pinned,
+        pinned_order=new_comment.pinned_order,
         reply_to_user_id=new_comment.reply_to_user_id,
         reply_to_user_name=reply_to_user_name,
         reply_to_user_avatar_type=reply_to_user_avatar['avatar_type'],
@@ -669,6 +673,8 @@ async def get_admin_comments(
             author_avatar_gradient=author_avatar['avatar_gradient'],
             status=comment.status,
             is_deleted=comment.is_deleted,
+            is_pinned=comment.is_pinned,
+            pinned_order=comment.pinned_order,
             reply_to_user_id=comment.reply_to_user_id,
             reply_to_user_name=reply_to_user_name,
             reply_to_user_avatar_type=reply_to_user_avatar['avatar_type'],
@@ -776,6 +782,7 @@ async def audit_comment(
         content=comment.content,
         article_id=comment.article_id,
         article_title=comment.article.title if comment.article else None,
+        article_slug=comment.article.slug if comment.article else None,
         parent_id=comment.parent_id,
         user_id=comment.user_id,
         author_name=comment.author_name,
@@ -786,6 +793,9 @@ async def audit_comment(
         author_avatar_gradient=author_avatar['avatar_gradient'],
         status=comment.status,
         is_deleted=comment.is_deleted,
+        is_pinned=comment.is_pinned,
+        pinned_order=comment.pinned_order,
+        deleted_by=comment.deleted_by,
         reply_to_user_id=comment.reply_to_user_id,
         reply_to_user_name=reply_to_user_name,
         reply_to_user_avatar_type=reply_to_user_avatar['avatar_type'],
@@ -1066,3 +1076,54 @@ async def sync_comment_counts(
         "updated_articles": updated_count,
         "total_articles": len(articles)
     }
+
+
+class PinRequest(BaseModel):
+    is_pinned: bool
+    pinned_order: Optional[int] = 0
+    
+    @field_validator('pinned_order')
+    @classmethod
+    def validate_pinned_order(cls, v):
+        if v is not None and v < 0:
+            raise ValueError('排序数字不能为负数')
+        return v
+
+
+@router.put("/admin/{comment_id}/pin")
+async def toggle_comment_pin(
+    comment_id: int,
+    pin_data: PinRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission("comment.audit"))
+):
+    comment = db.query(Comment).filter(Comment.id == comment_id).first()
+    if not comment:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    
+    if comment.is_deleted:
+        raise HTTPException(status_code=400, detail="已删除的评论无法置顶")
+    
+    if comment.parent_id is not None:
+        raise HTTPException(status_code=400, detail="回复评论无法置顶，仅支持置顶顶级评论")
+    
+    comment.is_pinned = pin_data.is_pinned
+    comment.pinned_order = pin_data.pinned_order if pin_data.is_pinned else 0
+    db.commit()
+    db.refresh(comment)
+    
+    action = "置顶" if pin_data.is_pinned else "取消置顶"
+    LogService.log_operation(
+        db=db,
+        user_id=current_user.id,
+        username=current_user.username,
+        action="pin" if pin_data.is_pinned else "unpin",
+        module="comment",
+        description=f"{action}评论 (ID: {comment_id}, 排序: {comment.pinned_order})",
+        target_type="comment",
+        target_id=comment_id,
+        request=request
+    )
+    
+    return {"message": f"Comment {'pinned' if pin_data.is_pinned else 'unpinned'} successfully", "is_pinned": pin_data.is_pinned, "pinned_order": comment.pinned_order}

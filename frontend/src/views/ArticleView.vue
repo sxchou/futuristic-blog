@@ -650,7 +650,7 @@ onMounted(async () => {
               commentsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
             }
           }
-        }, 100)
+        }, 500)
       }
     }
   }

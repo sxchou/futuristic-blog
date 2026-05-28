@@ -3,11 +3,17 @@ import { ref } from 'vue'
 export interface DialogOptions {
   title?: string
   message: string
-  type?: 'confirm' | 'alert' | 'success' | 'error' | 'warning'
+  type?: 'confirm' | 'alert' | 'success' | 'error' | 'warning' | 'prompt'
   confirmText?: string
   cancelText?: string
   autoClose?: boolean
   duration?: number
+  inputType?: string
+  inputValue?: string
+  inputPlaceholder?: string
+  inputLabel?: string
+  inputMin?: number
+  inputMax?: number
 }
 
 const isVisible = ref(false)
@@ -16,7 +22,7 @@ const dialogOptions = ref<DialogOptions>({
   type: 'alert'
 })
 
-let resolvePromise: ((value: boolean) => void) | null = null
+let resolvePromise: ((value: boolean | string) => void) | null = null
 let autoCloseTimer: ReturnType<typeof setTimeout> | null = null
 
 const clearAutoCloseTimer = () => {
@@ -26,7 +32,7 @@ const clearAutoCloseTimer = () => {
   }
 }
 
-const closeDialog = (result: boolean) => {
+const closeDialog = (result: boolean | string) => {
   clearAutoCloseTimer()
   isVisible.value = false
   if (resolvePromise) {
@@ -42,7 +48,7 @@ const showConfirm = (options: DialogOptions): Promise<boolean> => {
   isVisible.value = true
   
   return new Promise((resolve) => {
-    resolvePromise = resolve
+    resolvePromise = resolve as (value: boolean | string) => void
   })
 }
 
@@ -55,7 +61,7 @@ const showAlert = (options: DialogOptions): Promise<boolean> => {
   const autoClose = options.autoClose ?? true
   
   return new Promise((resolve) => {
-    resolvePromise = resolve
+    resolvePromise = resolve as (value: boolean | string) => void
     
     if (autoClose && (options.type === 'success' || options.type === 'error' || options.type === 'alert' || options.type === 'warning')) {
       autoCloseTimer = setTimeout(() => {
@@ -81,9 +87,27 @@ const showError = (message: string | DialogOptions, title?: string, autoClose: b
 
 const showWarning = (message: string | DialogOptions, title?: string, autoClose: boolean = true, duration: number = 3000): Promise<boolean> => {
   if (typeof message === 'object') {
-    return showAlert({ ...message, type: 'alert', autoClose: message.autoClose ?? true, duration: message.duration ?? 3000 })
+    return showAlert({ ...message, type: 'alert', autoClose: message.autoClose ?? true, duration: message.duration ?? 3000 }) as Promise<boolean>
   }
-  return showAlert({ message, title, type: 'alert', autoClose, duration })
+  return showAlert({ message, title, type: 'alert', autoClose, duration }) as Promise<boolean>
+}
+
+const showPrompt = (options: DialogOptions): Promise<string | null> => {
+  clearAutoCloseTimer()
+  dialogOptions.value = { ...options, type: 'prompt' }
+  isVisible.value = true
+  
+  return new Promise((resolve) => {
+    resolvePromise = resolve as (value: boolean | string) => void
+  })
+}
+
+const confirmPrompt = (value: string) => {
+  closeDialog(value)
+}
+
+const cancelPrompt = () => {
+  closeDialog('')
 }
 
 const confirm = () => {
@@ -103,6 +127,9 @@ export function useDialogStore() {
     showSuccess,
     showError,
     showWarning,
+    showPrompt,
+    confirmPrompt,
+    cancelPrompt,
     confirm,
     cancel
   }

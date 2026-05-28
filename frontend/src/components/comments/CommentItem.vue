@@ -15,6 +15,17 @@
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2 mb-2">
           <span class="font-medium text-gray-900 dark:text-white">{{ comment.author_name || '匿名用户' }}</span>
+          <span 
+            v-if="comment.is_pinned && depth === 0"
+            class="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium rounded bg-amber-500/10 text-amber-600"
+          >
+            <svg
+              class="w-2.5 h-2.5"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            ><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" /></svg>
+            置顶
+          </span>
           <span class="text-xs text-gray-500">{{ formatDate(comment.created_at) }}</span>
           <span 
             v-if="comment.status === 'pending'" 
@@ -114,6 +125,25 @@
               />
             </svg>
             回复
+          </button>
+          
+          <button
+            v-if="canPin"
+            class="text-gray-500 hover:text-primary transition-colors flex items-center gap-1"
+            @click="handleTogglePin"
+          >
+            <svg
+              class="w-4 h-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" />
+            </svg>
+            {{ comment.is_pinned ? '取消置顶' : '置顶' }}
           </button>
           
           <button
@@ -219,14 +249,58 @@
       </div>
     </div>
   </div>
+
+  <div
+    v-if="showPinModal"
+    class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+    @click.self="cancelPin"
+  >
+    <div class="glass-card p-6 w-full max-w-sm mx-4">
+      <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">
+        置顶评论
+      </h3>
+      <div class="space-y-3">
+        <div>
+          <label
+            for="pin-order-input"
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >排序数字</label>
+          <input
+            id="pin-order-input"
+            v-model="pinOrderValue"
+            type="number"
+            min="0"
+            class="w-full px-3 py-2 bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:outline-none focus:border-gray-300 dark:focus:border-white/20 text-sm"
+            placeholder="数字越小越靠前"
+            @keyup.enter="confirmPin"
+            @keyup.escape="cancelPin"
+          >
+          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">数字越小越靠前，默认为 0</p>
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 mt-6">
+        <button
+          class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-100 rounded-lg transition-colors"
+          @click="cancelPin"
+        >
+          取消
+        </button>
+        <button
+          class="btn-primary text-sm px-4 py-1.5"
+          @click="confirmPin"
+        >
+          置顶
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, inject, watch, nextTick, type Ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { initMermaid, renderMermaidDiagrams } from '@/utils/mermaid'
-import { useAuthStore } from '@/stores/auth'
-import { useThemeStore } from '@/stores'
+import { useAuthStore, useThemeStore } from '@/stores'
 import type { Comment } from '@/types'
 import CommentMarkdownPreview from './CommentMarkdownPreview.vue'
 import CommentEditor from './CommentEditor.vue'
@@ -243,6 +317,7 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   reply: [data: { content: string; parentId: number; replyToUserId?: number }]
   delete: [commentId: number]
+  pin: [data: { commentId: number; isPinned: boolean; pinnedOrder: number }]
 }>()
 
 const authStore = useAuthStore()
@@ -257,6 +332,8 @@ const contentRef = ref<HTMLElement | null>(null)
 const commentItemRef = ref<HTMLElement | null>(null)
 const shouldShowExpand = ref(false)
 const showReplies = ref(false)
+const showPinModal = ref(false)
+const pinOrderValue = ref('0')
 let resizeObserver: ResizeObserver | null = null
 
 const handleReplyClick = () => {
@@ -333,6 +410,33 @@ const canDelete = computed(() => {
          props.comment.user_id === authStore.user.id &&
          !props.comment.is_deleted
 })
+
+const canPin = computed(() => {
+  return authStore.isAuthenticated &&
+         authStore.user &&
+         authStore.user.is_admin &&
+         props.depth === 0 &&
+         !props.comment.is_deleted
+})
+
+const handleTogglePin = () => {
+  if (props.comment.is_pinned) {
+    emit('pin', { commentId: props.comment.id, isPinned: false, pinnedOrder: 0 })
+  } else {
+    pinOrderValue.value = '0'
+    showPinModal.value = true
+  }
+}
+
+const confirmPin = () => {
+  const order = parseInt(pinOrderValue.value) || 0
+  showPinModal.value = false
+  emit('pin', { commentId: props.comment.id, isPinned: true, pinnedOrder: order })
+}
+
+const cancelPin = () => {
+  showPinModal.value = false
+}
 
 const formatDate = (date: string) => formatDateTime(date)
 

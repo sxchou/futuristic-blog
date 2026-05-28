@@ -66,5 +66,10 @@ export const commentApi = {
       permanent
     })
     return response.data
+  },
+
+  togglePin: async (commentId: number, isPinned: boolean, pinnedOrder: number = 0): Promise<{ message: string; is_pinned: boolean; pinned_order: number }> => {
+    const response = await apiClient.put(`/comments/admin/${commentId}/pin`, { is_pinned: isPinned, pinned_order: pinnedOrder })
+    return response.data
   }
 }
