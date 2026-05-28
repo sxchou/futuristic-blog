@@ -192,19 +192,25 @@ const handlePageChange = (page: number) => {
   }
 }
 
-const scrollToComment = async (commentId: number, delay: number = 100) => {
-  await nextTick()
-  
-  setTimeout(() => {
+const scrollToComment = async (commentId: number, maxRetries: number = 10, retryInterval: number = 300) => {
+  for (let i = 0; i < maxRetries; i++) {
+    await nextTick()
+    await new Promise(resolve => setTimeout(resolve, retryInterval))
+    
     const element = document.getElementById(`comment-${commentId}`)
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      element.classList.add('highlight-comment')
-      setTimeout(() => {
-        element.classList.remove('highlight-comment')
-      }, 3000)
+      const mermaidElements = document.querySelectorAll('.mermaid[data-mermaid-code]')
+      const allRendered = Array.from(mermaidElements).every(el => el.querySelector('svg'))
+      if (allRendered || i >= 3) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        element.classList.add('highlight-comment')
+        setTimeout(() => {
+          element.classList.remove('highlight-comment')
+        }, 3000)
+        return
+      }
     }
-  }, delay)
+  }
 }
 
 const fetchComments = async () => {
@@ -233,6 +239,9 @@ const fetchComments = async () => {
     if (parentCommentId) {
       expandedCommentIds.value[parentCommentId] = true
     }
+    
+    await nextTick()
+    await scrollToComment(commentId)
   }
 }
 
@@ -254,7 +263,7 @@ const submitComment = async () => {
         currentPage.value = Math.floor(targetIndex / pageSize) + 1
       }
       await dialog.showSuccess('评论发表成功', '成功')
-      await scrollToComment(comment.id, 50)
+      await scrollToComment(comment.id)
     } else if (comment.status === 'pending') {
       await dialog.showAlert({
         message: '评论已提交，等待审核通过后将显示',
@@ -308,7 +317,7 @@ const handleReply = async (data: { content: string; parentId: number; replyToUse
         rootComment.replies.push(comment)
         expandedCommentIds.value[rootComment.id] = true
         await dialog.showSuccess('回复成功', '成功')
-        await scrollToComment(comment.id, 350)
+        await scrollToComment(comment.id)
       }
     } else if (comment.status === 'pending') {
       await dialog.showAlert({
