@@ -213,6 +213,26 @@ const scrollToComment = async (commentId: number, maxRetries: number = 10, retry
   }
 }
 
+const navigateToComment = async (commentId: number) => {
+  if (loading.value || comments.value.length === 0) return
+
+  const parentCommentId = findParentCommentId(commentId, comments.value)
+  const targetCommentId = parentCommentId || commentId
+
+  const targetIndex = comments.value.findIndex(c => c.id === targetCommentId)
+  if (targetIndex === -1) return
+
+  const targetPage = Math.floor(targetIndex / pageSize) + 1
+  currentPage.value = targetPage
+
+  if (parentCommentId) {
+    expandedCommentIds.value[parentCommentId] = true
+  }
+
+  await nextTick()
+  await scrollToComment(commentId)
+}
+
 const fetchComments = async () => {
   const hash = window.location.hash
   const commentIdStr = hash ? hash.substring(1) : null
@@ -227,21 +247,7 @@ const fetchComments = async () => {
   }
   
   if (commentId) {
-    const parentCommentId = findParentCommentId(commentId, comments.value)
-    const targetCommentId = parentCommentId || commentId
-    
-    const targetIndex = comments.value.findIndex(c => c.id === targetCommentId)
-    if (targetIndex !== -1) {
-      const targetPage = Math.floor(targetIndex / pageSize) + 1
-      currentPage.value = targetPage
-    }
-    
-    if (parentCommentId) {
-      expandedCommentIds.value[parentCommentId] = true
-    }
-    
-    await nextTick()
-    await scrollToComment(commentId)
+    await navigateToComment(commentId)
   }
 }
 
@@ -401,5 +407,9 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
   if (!loading.value) {
     fetchComments()
   }
+})
+
+defineExpose({
+  navigateToComment
 })
 </script>

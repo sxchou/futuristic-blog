@@ -28,6 +28,7 @@ const showCopySuccess = ref(false)
 const isLiked = ref(false)
 const likeCount = ref(0)
 const isLiking = ref(false)
+const commentSectionRef = ref<InstanceType<typeof CommentSection> | null>(null)
 const isBookmarked = ref(false)
 const bookmarkCount = ref(0)
 const mermaidFullscreen = ref<InstanceType<typeof MermaidFullscreen>>()
@@ -500,6 +501,32 @@ const handleFileLinkClick = (e: Event) => {
   }
 }
 
+const handleCommentLinkClick = (e: Event) => {
+  const target = e.target as HTMLElement
+  const link = target.closest('a') as HTMLAnchorElement | null
+  if (link) {
+    const href = link.getAttribute('href')
+    if (href && href.includes('#comment-')) {
+      const hashIndex = href.indexOf('#comment-')
+      const hash = href.substring(hashIndex)
+      const commentId = parseInt(hash.replace('#comment-', ''), 10)
+      if (!isNaN(commentId)) {
+        const currentPath = window.location.pathname
+        const linkPath = href.substring(0, hashIndex) || currentPath
+        const isSamePage = linkPath === currentPath || linkPath === ''
+        if (isSamePage) {
+          e.preventDefault()
+          e.stopPropagation()
+          if (commentSectionRef.value) {
+            commentSectionRef.value.navigateToComment(commentId)
+          }
+          history.pushState(null, '', hash)
+        }
+      }
+    }
+  }
+}
+
 const openMobileToc = () => {
   showMobileToc.value = true
   nextTick(() => {
@@ -618,6 +645,7 @@ onMounted(async () => {
   document.addEventListener('click', handleCopyCode)
   document.addEventListener('click', handleMermaidFullscreen)
   document.addEventListener('click', handleFileLinkClick)
+  document.addEventListener('click', handleCommentLinkClick)
   window.addEventListener('scroll', updateActiveHeading, { passive: true })
   window.addEventListener('resize', updateCoverHeight, { passive: true })
   
@@ -664,6 +692,23 @@ watch(() => route.params.slug, async (newSlug, oldSlug) => {
   }
 })
 
+watch(() => route.hash, async (newHash) => {
+  if (!article.value) return
+
+  if (newHash === '#comments') {
+    const commentsSection = document.getElementById('comments')
+    if (commentsSection) {
+      commentsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  } else if (newHash.startsWith('#comment-')) {
+    const commentId = parseInt(newHash.replace('#comment-', ''), 10)
+    if (!isNaN(commentId) && commentSectionRef.value) {
+      await nextTick()
+      commentSectionRef.value.navigateToComment(commentId)
+    }
+  }
+})
+
 watch(() => themeStore.isDark, async (isDark) => {
   const articleContent = document.querySelector('.article-content')
   if (articleContent) {
@@ -675,6 +720,7 @@ onUnmounted(() => {
   document.removeEventListener('click', handleCopyCode)
   document.removeEventListener('click', handleMermaidFullscreen)
   document.removeEventListener('click', handleFileLinkClick)
+  document.removeEventListener('click', handleCommentLinkClick)
   window.removeEventListener('scroll', updateActiveHeading)
   window.removeEventListener('resize', updateCoverHeight)
 })
@@ -1452,6 +1498,8 @@ watch(article, async (newVal) => {
 
         <CommentSection
           v-if="article"
+          ref="commentSectionRef"
+          :key="article.id"
           :article-id="article.id"
           :article-title="article.title"
         />
