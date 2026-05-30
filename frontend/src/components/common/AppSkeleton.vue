@@ -364,17 +364,17 @@ const skeletonType = computed(() => {
                     <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
                     <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-16" />
                   </h3>
-                  <div class="grid grid-cols-2 gap-2 py-1">
+                  <div class="space-y-0.5">
                     <div
                       v-for="i in 4"
                       :key="i"
-                      class="flex flex-col gap-0.5 pb-2 border-b-2 border-gray-200 dark:border-dark-300"
+                      class="flex items-center justify-between px-2 py-1.5 rounded-lg"
                     >
-                      <div class="h-6 bg-gray-200 dark:bg-dark-300 rounded w-10" />
-                      <div class="flex items-center gap-1">
+                      <div class="flex items-center gap-1.5">
                         <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-6" />
+                        <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
                       </div>
+                      <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
                     </div>
                   </div>
                 </div>
@@ -571,17 +571,17 @@ const skeletonType = computed(() => {
                     <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
                     <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-16" />
                   </h3>
-                  <div class="grid grid-cols-2 gap-2 py-1">
+                  <div class="space-y-0.5">
                     <div
                       v-for="i in 4"
                       :key="i"
-                      class="flex flex-col gap-0.5 pb-2 border-b-2 border-gray-200 dark:border-dark-300"
+                      class="flex items-center justify-between px-2 py-1.5 rounded-lg"
                     >
-                      <div class="h-6 bg-gray-200 dark:bg-dark-300 rounded w-10" />
-                      <div class="flex items-center gap-1">
+                      <div class="flex items-center gap-1.5">
                         <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-6" />
+                        <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
                       </div>
+                      <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
                     </div>
                   </div>
                 </div>
@@ -749,17 +749,17 @@ const skeletonType = computed(() => {
                     <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
                     <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-16" />
                   </h3>
-                  <div class="grid grid-cols-2 gap-2 py-1">
+                  <div class="space-y-0.5">
                     <div
                       v-for="i in 4"
                       :key="i"
-                      class="flex flex-col gap-0.5 pb-2 border-b-2 border-gray-200 dark:border-dark-300"
+                      class="flex items-center justify-between px-2 py-1.5 rounded-lg"
                     >
-                      <div class="h-6 bg-gray-200 dark:bg-dark-300 rounded w-10" />
-                      <div class="flex items-center gap-1">
+                      <div class="flex items-center gap-1.5">
                         <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-6" />
+                        <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
                       </div>
+                      <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
                     </div>
                   </div>
                 </div>
@@ -941,17 +941,17 @@ const skeletonType = computed(() => {
                     <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
                     <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-16" />
                   </h3>
-                  <div class="grid grid-cols-2 gap-2 py-1">
+                  <div class="space-y-0.5">
                     <div
                       v-for="i in 4"
                       :key="i"
-                      class="flex flex-col gap-0.5 pb-2 border-b-2 border-gray-200 dark:border-dark-300"
+                      class="flex items-center justify-between px-2 py-1.5 rounded-lg"
                     >
-                      <div class="h-6 bg-gray-200 dark:bg-dark-300 rounded w-10" />
-                      <div class="flex items-center gap-1">
+                      <div class="flex items-center gap-1.5">
                         <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-6" />
+                        <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
                       </div>
+                      <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
                     </div>
                   </div>
                 </div>
@@ -1174,17 +1174,17 @@ const skeletonType = computed(() => {
                     <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
                     <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-16" />
                   </h3>
-                  <div class="grid grid-cols-2 gap-2 py-1">
+                  <div class="space-y-0.5">
                     <div
                       v-for="i in 4"
                       :key="i"
-                      class="flex flex-col gap-0.5 pb-2 border-b-2 border-gray-200 dark:border-dark-300"
+                      class="flex items-center justify-between px-2 py-1.5 rounded-lg"
                     >
-                      <div class="h-6 bg-gray-200 dark:bg-dark-300 rounded w-10" />
-                      <div class="flex items-center gap-1">
+                      <div class="flex items-center gap-1.5">
                         <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-6" />
+                        <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
                       </div>
+                      <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
                     </div>
                   </div>
                 </div>
@@ -1474,17 +1474,17 @@ const skeletonType = computed(() => {
                     <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
                     <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-16" />
                   </h3>
-                  <div class="grid grid-cols-2 gap-2 py-1">
+                  <div class="space-y-0.5">
                     <div
                       v-for="i in 4"
                       :key="i"
-                      class="flex flex-col gap-0.5 pb-2 border-b-2 border-gray-200 dark:border-dark-300"
+                      class="flex items-center justify-between px-2 py-1.5 rounded-lg"
                     >
-                      <div class="h-6 bg-gray-200 dark:bg-dark-300 rounded w-10" />
-                      <div class="flex items-center gap-1">
+                      <div class="flex items-center gap-1.5">
                         <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-6" />
+                        <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
                       </div>
+                      <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
                     </div>
                   </div>
                 </div>
@@ -1723,17 +1723,17 @@ const skeletonType = computed(() => {
                     <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
                     <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-16" />
                   </h3>
-                  <div class="grid grid-cols-2 gap-2 py-1">
+                  <div class="space-y-0.5">
                     <div
                       v-for="i in 4"
                       :key="i"
-                      class="flex flex-col gap-0.5 pb-2 border-b-2 border-gray-200 dark:border-dark-300"
+                      class="flex items-center justify-between px-2 py-1.5 rounded-lg"
                     >
-                      <div class="h-6 bg-gray-200 dark:bg-dark-300 rounded w-10" />
-                      <div class="flex items-center gap-1">
+                      <div class="flex items-center gap-1.5">
                         <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-6" />
+                        <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
                       </div>
+                      <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
                     </div>
                   </div>
                 </div>
@@ -1961,17 +1961,17 @@ const skeletonType = computed(() => {
                     <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
                     <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-16" />
                   </h3>
-                  <div class="grid grid-cols-2 gap-2 py-1">
+                  <div class="space-y-0.5">
                     <div
                       v-for="i in 4"
                       :key="i"
-                      class="flex flex-col gap-0.5 pb-2 border-b-2 border-gray-200 dark:border-dark-300"
+                      class="flex items-center justify-between px-2 py-1.5 rounded-lg"
                     >
-                      <div class="h-6 bg-gray-200 dark:bg-dark-300 rounded w-10" />
-                      <div class="flex items-center gap-1">
+                      <div class="flex items-center gap-1.5">
                         <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-6" />
+                        <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
                       </div>
+                      <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
                     </div>
                   </div>
                 </div>
@@ -2212,17 +2212,17 @@ const skeletonType = computed(() => {
                     <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
                     <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-16" />
                   </h3>
-                  <div class="grid grid-cols-2 gap-2 py-1">
+                  <div class="space-y-0.5">
                     <div
                       v-for="i in 4"
                       :key="i"
-                      class="flex flex-col gap-0.5 pb-2 border-b-2 border-gray-200 dark:border-dark-300"
+                      class="flex items-center justify-between px-2 py-1.5 rounded-lg"
                     >
-                      <div class="h-6 bg-gray-200 dark:bg-dark-300 rounded w-10" />
-                      <div class="flex items-center gap-1">
+                      <div class="flex items-center gap-1.5">
                         <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-6" />
+                        <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
                       </div>
+                      <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
                     </div>
                   </div>
                 </div>
@@ -2487,17 +2487,17 @@ const skeletonType = computed(() => {
                     <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
                     <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-16" />
                   </h3>
-                  <div class="grid grid-cols-2 gap-2 py-1">
+                  <div class="space-y-0.5">
                     <div
                       v-for="i in 4"
                       :key="i"
-                      class="flex flex-col gap-0.5 pb-2 border-b-2 border-gray-200 dark:border-dark-300"
+                      class="flex items-center justify-between px-2 py-1.5 rounded-lg"
                     >
-                      <div class="h-6 bg-gray-200 dark:bg-dark-300 rounded w-10" />
-                      <div class="flex items-center gap-1">
+                      <div class="flex items-center gap-1.5">
                         <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-6" />
+                        <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
                       </div>
+                      <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
                     </div>
                   </div>
                 </div>
@@ -2621,17 +2621,17 @@ const skeletonType = computed(() => {
                     <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
                     <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-16" />
                   </h3>
-                  <div class="grid grid-cols-2 gap-2 py-1">
+                  <div class="space-y-0.5">
                     <div
                       v-for="i in 4"
                       :key="i"
-                      class="flex flex-col gap-0.5 pb-2 border-b-2 border-gray-200 dark:border-dark-300"
+                      class="flex items-center justify-between px-2 py-1.5 rounded-lg"
                     >
-                      <div class="h-6 bg-gray-200 dark:bg-dark-300 rounded w-10" />
-                      <div class="flex items-center gap-1">
+                      <div class="flex items-center gap-1.5">
                         <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-6" />
+                        <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
                       </div>
+                      <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
                     </div>
                   </div>
                 </div>
