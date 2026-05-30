@@ -342,7 +342,10 @@ const skeletonType = computed(() => {
                 </div>
                 
                 <div class="sidebar-widget sidebar-widget-compact animate-pulse">
-                  <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-10 mb-3" />
+                  <h3 class="sidebar-widget-title sidebar-widget-title-compact flex items-center gap-2">
+                    <div class="w-4 h-4 bg-gray-200 dark:bg-dark-300 rounded" />
+                    <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-10" />
+                  </h3>
                   <div class="space-y-3">
                     <div class="flex items-start gap-2">
                       <div class="w-4 h-4 bg-gray-200 dark:bg-dark-300 rounded mt-0.5" />
@@ -546,7 +549,10 @@ const skeletonType = computed(() => {
             <div class="lg:w-72 flex-shrink-0 hidden lg:block lg:order-3">
               <div class="lg:sticky lg:top-20 space-y-6">
                 <div class="sidebar-widget sidebar-widget-compact animate-pulse">
-                  <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-10 mb-3" />
+                  <h3 class="sidebar-widget-title sidebar-widget-title-compact flex items-center gap-2">
+                    <div class="w-4 h-4 bg-gray-200 dark:bg-dark-300 rounded" />
+                    <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-10" />
+                  </h3>
                   <div class="space-y-3">
                     <div class="flex items-start gap-2">
                       <div class="w-4 h-4 bg-gray-200 dark:bg-dark-300 rounded mt-0.5" />
