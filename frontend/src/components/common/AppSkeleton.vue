@@ -350,6 +350,7 @@ const skeletonType = computed(() => {
                         <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
+                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
                       </div>
                     </div>
                   </div>
@@ -553,6 +554,7 @@ const skeletonType = computed(() => {
                         <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
+                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
                       </div>
                     </div>
                   </div>
@@ -730,6 +732,7 @@ const skeletonType = computed(() => {
                         <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
+                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
                       </div>
                     </div>
                   </div>
@@ -921,6 +924,7 @@ const skeletonType = computed(() => {
                         <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
+                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
                       </div>
                     </div>
                   </div>
@@ -1153,6 +1157,7 @@ const skeletonType = computed(() => {
                         <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
+                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
                       </div>
                     </div>
                   </div>
@@ -1452,6 +1457,7 @@ const skeletonType = computed(() => {
                         <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
+                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
                       </div>
                     </div>
                   </div>
@@ -1700,6 +1706,7 @@ const skeletonType = computed(() => {
                         <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
+                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
                       </div>
                     </div>
                   </div>
@@ -1937,6 +1944,7 @@ const skeletonType = computed(() => {
                         <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
+                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
                       </div>
                     </div>
                   </div>
@@ -2187,6 +2195,7 @@ const skeletonType = computed(() => {
                         <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
+                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
                       </div>
                     </div>
                   </div>
@@ -2461,6 +2470,7 @@ const skeletonType = computed(() => {
                         <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
+                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
                       </div>
                     </div>
                   </div>
@@ -2594,6 +2604,7 @@ const skeletonType = computed(() => {
                         <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
+                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
                       </div>
                     </div>
                   </div>
