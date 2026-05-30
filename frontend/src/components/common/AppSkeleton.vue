@@ -350,10 +350,10 @@ const skeletonType = computed(() => {
                     <div class="flex items-start gap-2">
                       <div class="w-4 h-4 bg-gray-200 dark:bg-dark-300 rounded mt-0.5" />
                       <div class="flex-1">
-                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
+                        <div class="h-5 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
                       </div>
                     </div>
                   </div>
@@ -372,7 +372,7 @@ const skeletonType = computed(() => {
                     >
                       <div class="h-6 bg-gray-200 dark:bg-dark-300 rounded w-10" />
                       <div class="flex items-center gap-1">
-                        <div class="w-3 h-3 bg-gray-200 dark:bg-dark-300 rounded" />
+                        <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-6" />
                       </div>
                     </div>
@@ -557,10 +557,10 @@ const skeletonType = computed(() => {
                     <div class="flex items-start gap-2">
                       <div class="w-4 h-4 bg-gray-200 dark:bg-dark-300 rounded mt-0.5" />
                       <div class="flex-1">
-                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
+                        <div class="h-5 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
                       </div>
                     </div>
                   </div>
@@ -579,7 +579,7 @@ const skeletonType = computed(() => {
                     >
                       <div class="h-6 bg-gray-200 dark:bg-dark-300 rounded w-10" />
                       <div class="flex items-center gap-1">
-                        <div class="w-3 h-3 bg-gray-200 dark:bg-dark-300 rounded" />
+                        <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-6" />
                       </div>
                     </div>
@@ -735,10 +735,10 @@ const skeletonType = computed(() => {
                     <div class="flex items-start gap-2">
                       <div class="w-4 h-4 bg-gray-200 dark:bg-dark-300 rounded mt-0.5" />
                       <div class="flex-1">
-                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
+                        <div class="h-5 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
                       </div>
                     </div>
                   </div>
@@ -757,7 +757,7 @@ const skeletonType = computed(() => {
                     >
                       <div class="h-6 bg-gray-200 dark:bg-dark-300 rounded w-10" />
                       <div class="flex items-center gap-1">
-                        <div class="w-3 h-3 bg-gray-200 dark:bg-dark-300 rounded" />
+                        <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-6" />
                       </div>
                     </div>
@@ -927,10 +927,10 @@ const skeletonType = computed(() => {
                     <div class="flex items-start gap-2">
                       <div class="w-4 h-4 bg-gray-200 dark:bg-dark-300 rounded mt-0.5" />
                       <div class="flex-1">
-                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
+                        <div class="h-5 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
                       </div>
                     </div>
                   </div>
@@ -949,7 +949,7 @@ const skeletonType = computed(() => {
                     >
                       <div class="h-6 bg-gray-200 dark:bg-dark-300 rounded w-10" />
                       <div class="flex items-center gap-1">
-                        <div class="w-3 h-3 bg-gray-200 dark:bg-dark-300 rounded" />
+                        <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-6" />
                       </div>
                     </div>
@@ -1160,10 +1160,10 @@ const skeletonType = computed(() => {
                     <div class="flex items-start gap-2">
                       <div class="w-4 h-4 bg-gray-200 dark:bg-dark-300 rounded mt-0.5" />
                       <div class="flex-1">
-                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
+                        <div class="h-5 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
                       </div>
                     </div>
                   </div>
@@ -1182,7 +1182,7 @@ const skeletonType = computed(() => {
                     >
                       <div class="h-6 bg-gray-200 dark:bg-dark-300 rounded w-10" />
                       <div class="flex items-center gap-1">
-                        <div class="w-3 h-3 bg-gray-200 dark:bg-dark-300 rounded" />
+                        <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-6" />
                       </div>
                     </div>
@@ -1460,10 +1460,10 @@ const skeletonType = computed(() => {
                     <div class="flex items-start gap-2">
                       <div class="w-4 h-4 bg-gray-200 dark:bg-dark-300 rounded mt-0.5" />
                       <div class="flex-1">
-                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
+                        <div class="h-5 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
                       </div>
                     </div>
                   </div>
@@ -1482,7 +1482,7 @@ const skeletonType = computed(() => {
                     >
                       <div class="h-6 bg-gray-200 dark:bg-dark-300 rounded w-10" />
                       <div class="flex items-center gap-1">
-                        <div class="w-3 h-3 bg-gray-200 dark:bg-dark-300 rounded" />
+                        <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-6" />
                       </div>
                     </div>
@@ -1709,10 +1709,10 @@ const skeletonType = computed(() => {
                     <div class="flex items-start gap-2">
                       <div class="w-4 h-4 bg-gray-200 dark:bg-dark-300 rounded mt-0.5" />
                       <div class="flex-1">
-                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
+                        <div class="h-5 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
                       </div>
                     </div>
                   </div>
@@ -1731,7 +1731,7 @@ const skeletonType = computed(() => {
                     >
                       <div class="h-6 bg-gray-200 dark:bg-dark-300 rounded w-10" />
                       <div class="flex items-center gap-1">
-                        <div class="w-3 h-3 bg-gray-200 dark:bg-dark-300 rounded" />
+                        <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-6" />
                       </div>
                     </div>
@@ -1947,10 +1947,10 @@ const skeletonType = computed(() => {
                     <div class="flex items-start gap-2">
                       <div class="w-4 h-4 bg-gray-200 dark:bg-dark-300 rounded mt-0.5" />
                       <div class="flex-1">
-                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
+                        <div class="h-5 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
                       </div>
                     </div>
                   </div>
@@ -1969,7 +1969,7 @@ const skeletonType = computed(() => {
                     >
                       <div class="h-6 bg-gray-200 dark:bg-dark-300 rounded w-10" />
                       <div class="flex items-center gap-1">
-                        <div class="w-3 h-3 bg-gray-200 dark:bg-dark-300 rounded" />
+                        <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-6" />
                       </div>
                     </div>
@@ -2198,10 +2198,10 @@ const skeletonType = computed(() => {
                     <div class="flex items-start gap-2">
                       <div class="w-4 h-4 bg-gray-200 dark:bg-dark-300 rounded mt-0.5" />
                       <div class="flex-1">
-                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
+                        <div class="h-5 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
                       </div>
                     </div>
                   </div>
@@ -2220,7 +2220,7 @@ const skeletonType = computed(() => {
                     >
                       <div class="h-6 bg-gray-200 dark:bg-dark-300 rounded w-10" />
                       <div class="flex items-center gap-1">
-                        <div class="w-3 h-3 bg-gray-200 dark:bg-dark-300 rounded" />
+                        <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-6" />
                       </div>
                     </div>
@@ -2473,10 +2473,10 @@ const skeletonType = computed(() => {
                     <div class="flex items-start gap-2">
                       <div class="w-4 h-4 bg-gray-200 dark:bg-dark-300 rounded mt-0.5" />
                       <div class="flex-1">
-                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
+                        <div class="h-5 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
                       </div>
                     </div>
                   </div>
@@ -2495,7 +2495,7 @@ const skeletonType = computed(() => {
                     >
                       <div class="h-6 bg-gray-200 dark:bg-dark-300 rounded w-10" />
                       <div class="flex items-center gap-1">
-                        <div class="w-3 h-3 bg-gray-200 dark:bg-dark-300 rounded" />
+                        <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-6" />
                       </div>
                     </div>
@@ -2607,10 +2607,10 @@ const skeletonType = computed(() => {
                     <div class="flex items-start gap-2">
                       <div class="w-4 h-4 bg-gray-200 dark:bg-dark-300 rounded mt-0.5" />
                       <div class="flex-1">
-                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
-                        <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
+                        <div class="h-5 bg-gray-200 dark:bg-dark-300 rounded w-24 mb-2" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-full mb-1" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-3/4" />
+                        <div class="h-4 bg-gray-200 dark:bg-dark-300 rounded w-20 mt-1.5" />
                       </div>
                     </div>
                   </div>
@@ -2629,7 +2629,7 @@ const skeletonType = computed(() => {
                     >
                       <div class="h-6 bg-gray-200 dark:bg-dark-300 rounded w-10" />
                       <div class="flex items-center gap-1">
-                        <div class="w-3 h-3 bg-gray-200 dark:bg-dark-300 rounded" />
+                        <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
                         <div class="h-3 bg-gray-200 dark:bg-dark-300 rounded w-6" />
                       </div>
                     </div>

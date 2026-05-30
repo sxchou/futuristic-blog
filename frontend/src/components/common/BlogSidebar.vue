@@ -234,29 +234,29 @@ onMounted(() => {
       <div class="grid grid-cols-2 gap-2 py-1">
         <div class="flex flex-col gap-0.5 pb-2 border-b-2 border-primary/30">
           <span class="text-lg font-bold text-gray-800 dark:text-gray-100 tabular-nums">{{ stats.articles }}</span>
-          <span class="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
-            <svg class="w-3 h-3 text-primary/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+          <span class="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
+            <svg class="w-3.5 h-3.5 text-primary/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
             文章
           </span>
         </div>
         <div class="flex flex-col gap-0.5 pb-2 border-b-2 border-accent/30">
           <span class="text-lg font-bold text-gray-800 dark:text-gray-100 tabular-nums">{{ stats.views }}</span>
-          <span class="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
-            <svg class="w-3 h-3 text-accent/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+          <span class="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
+            <svg class="w-3.5 h-3.5 text-accent/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
             浏览
           </span>
         </div>
         <div class="flex flex-col gap-0.5 pb-2 border-b-2 border-cyber-pink/30">
           <span class="text-lg font-bold text-gray-800 dark:text-gray-100 tabular-nums">{{ stats.likes }}</span>
-          <span class="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
-            <svg class="w-3 h-3 text-cyber-pink/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>
+          <span class="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
+            <svg class="w-3.5 h-3.5 text-cyber-pink/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>
             点赞
           </span>
         </div>
         <div class="flex flex-col gap-0.5 pb-2 border-b-2 border-cyber-green/30">
           <span class="text-lg font-bold text-gray-800 dark:text-gray-100 tabular-nums">{{ stats.comments }}</span>
-          <span class="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
-            <svg class="w-3 h-3 text-cyber-green/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" /></svg>
+          <span class="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
+            <svg class="w-3.5 h-3.5 text-cyber-green/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" /></svg>
             评论
           </span>
         </div>
