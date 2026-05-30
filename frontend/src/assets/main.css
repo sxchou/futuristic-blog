@@ -163,7 +163,7 @@
   }
 
   .sidebar-widget {
-    @apply glass-card p-5;
+    @apply glass-card p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-gray-300/60 dark:hover:border-white/10;
   }
 
   .sidebar-widget-compact {
@@ -208,6 +208,19 @@
 
   .tag-badge {
     @apply inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full border transition-all duration-200;
+  }
+
+  .sidebar-link {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sidebar-link:hover {
+    transform: scale(1.05);
+    background-color: #f3f4f6;
+  }
+
+  .dark .sidebar-link:hover {
+    background-color: rgba(255, 255, 255, 0.05);
   }
 }
 

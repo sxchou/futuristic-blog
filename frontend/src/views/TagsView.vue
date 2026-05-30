@@ -51,7 +51,7 @@ const getTagSize = (count: number) => {
             v-for="tag in sortedTags"
             :key="tag.id"
             :to="`/tags/${tag.slug}`"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-300 hover:shadow-md"
+            class="sidebar-link inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-300 hover:shadow-md"
             :class="getTagSize(tag.article_count)"
             :style="{
               color: tag.color,

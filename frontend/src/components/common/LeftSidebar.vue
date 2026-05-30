@@ -132,7 +132,7 @@ onMounted(() => {
   <aside class="blog-sidebar">
     <div class="sidebar-widget sidebar-widget-compact">
       <template v-if="authStore.isAuthenticated && authStore.user">
-        <div class="p-4 bg-gray-50/50 dark:bg-white/[0.02] rounded-xl">
+        <div class="p-4 bg-gray-100/50 dark:bg-white/[0.02] rounded-xl">
           <div class="flex flex-col items-center">
             <div class="relative mb-3 group">
               <div class="absolute inset-0 bg-primary/10 dark:bg-primary/20 rounded-full blur-xl opacity-60" />
@@ -269,7 +269,7 @@ onMounted(() => {
         </div>
       </template>
       <template v-else>
-        <div class="p-4 bg-gray-50/50 dark:bg-white/[0.02] rounded-xl">
+        <div class="p-4 bg-gray-100/50 dark:bg-white/[0.02] rounded-xl">
           <div class="flex flex-col items-center">
             <div class="w-14 h-14 rounded-full bg-gray-200 dark:bg-dark-400 flex items-center justify-center mb-3">
               <svg
@@ -337,7 +337,7 @@ onMounted(() => {
         class="block group"
       >
         <div class="flex flex-col gap-3">
-          <div class="flex items-center justify-between p-2.5 bg-gray-50 dark:bg-white/[0.02] rounded-lg hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">
+          <div class="sidebar-link flex items-center justify-between p-2.5 bg-gray-50 dark:bg-white/[0.02] rounded-lg transition-colors">
             <div class="flex items-center gap-2">
               <svg
                 class="w-4 h-4 text-amber-500"
@@ -353,7 +353,7 @@ onMounted(() => {
             </span>
           </div>
           
-          <div class="flex items-center justify-between p-2.5 bg-gray-50 dark:bg-white/[0.02] rounded-lg hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">
+          <div class="sidebar-link flex items-center justify-between p-2.5 bg-gray-50 dark:bg-white/[0.02] rounded-lg transition-colors">
             <div class="flex items-center gap-2">
               <svg
                 class="w-4 h-4 text-blue-500"
@@ -375,7 +375,7 @@ onMounted(() => {
             </span>
           </div>
           
-          <div class="flex items-center justify-between p-2.5 bg-gray-50 dark:bg-white/[0.02] rounded-lg hover:bg-gray-100 dark:hover:bg-white/[0.05] transition-colors">
+          <div class="sidebar-link flex items-center justify-between p-2.5 bg-gray-50 dark:bg-white/[0.02] rounded-lg transition-colors">
             <div class="flex items-center gap-2">
               <svg
                 class="w-4 h-4 text-green-500"

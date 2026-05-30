@@ -199,7 +199,7 @@ onMounted(() => {
               />
             </svg>
             <div class="flex-1 min-w-0">
-              <h4 class="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-primary transition-colors mb-2">
+              <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-2">
                 {{ announcement.title }}
               </h4>
               <p class="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
@@ -231,96 +231,34 @@ onMounted(() => {
         </svg>
         博客统计
       </h3>
-      <div class="grid grid-cols-2 gap-2">
-        <div class="text-center p-2 bg-gray-50 dark:bg-dark-300/50 rounded-lg">
-          <svg
-            class="w-4 h-4 mx-auto mb-0.5 text-primary"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            />
-          </svg>
-          <div class="text-lg font-bold text-primary">
-            {{ stats.articles }}
-          </div>
-          <div class="text-xs text-gray-500">
+      <div class="grid grid-cols-2 gap-2 py-1">
+        <div class="flex flex-col gap-0.5 pb-2 border-b-2 border-primary/30">
+          <span class="text-lg font-bold text-gray-800 dark:text-gray-100 tabular-nums">{{ stats.articles }}</span>
+          <span class="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+            <svg class="w-3 h-3 text-primary/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
             文章
-          </div>
+          </span>
         </div>
-        <div class="text-center p-2 bg-gray-50 dark:bg-dark-300/50 rounded-lg">
-          <svg
-            class="w-4 h-4 mx-auto mb-0.5 text-accent"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-            />
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-            />
-          </svg>
-          <div class="text-lg font-bold text-accent">
-            {{ stats.views }}
-          </div>
-          <div class="text-xs text-gray-500">
+        <div class="flex flex-col gap-0.5 pb-2 border-b-2 border-accent/30">
+          <span class="text-lg font-bold text-gray-800 dark:text-gray-100 tabular-nums">{{ stats.views }}</span>
+          <span class="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+            <svg class="w-3 h-3 text-accent/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
             浏览
-          </div>
+          </span>
         </div>
-        <div class="text-center p-2 bg-gray-50 dark:bg-dark-300/50 rounded-lg">
-          <svg
-            class="w-4 h-4 mx-auto mb-0.5 text-cyber-pink"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-            />
-          </svg>
-          <div class="text-lg font-bold text-cyber-pink">
-            {{ stats.likes }}
-          </div>
-          <div class="text-xs text-gray-500">
+        <div class="flex flex-col gap-0.5 pb-2 border-b-2 border-cyber-pink/30">
+          <span class="text-lg font-bold text-gray-800 dark:text-gray-100 tabular-nums">{{ stats.likes }}</span>
+          <span class="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+            <svg class="w-3 h-3 text-cyber-pink/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>
             点赞
-          </div>
+          </span>
         </div>
-        <div class="text-center p-2 bg-gray-50 dark:bg-dark-300/50 rounded-lg">
-          <svg
-            class="w-4 h-4 mx-auto mb-0.5 text-cyber-green"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-            />
-          </svg>
-          <div class="text-lg font-bold text-cyber-green">
-            {{ stats.comments }}
-          </div>
-          <div class="text-xs text-gray-500">
+        <div class="flex flex-col gap-0.5 pb-2 border-b-2 border-cyber-green/30">
+          <span class="text-lg font-bold text-gray-800 dark:text-gray-100 tabular-nums">{{ stats.comments }}</span>
+          <span class="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+            <svg class="w-3 h-3 text-cyber-green/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" /></svg>
             评论
-          </div>
+          </span>
         </div>
       </div>
     </div>
@@ -350,7 +288,7 @@ onMounted(() => {
           v-for="category in blogStore.categories"
           :key="category.id"
           :to="`/categories/${category.slug}`"
-          class="flex items-center justify-between px-2 py-1.5 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-primary/5 transition-all group"
+          class="sidebar-link flex items-center justify-between px-2 py-1.5 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-primary transition-all group"
         >
           <div class="flex items-center gap-1.5">
             <span
@@ -389,7 +327,7 @@ onMounted(() => {
           v-for="tag in popularTags"
           :key="tag.id"
           :to="`/tags/${tag.slug}`"
-          class="tag-badge text-xs text-gray-500 dark:text-gray-400 hover:text-primary hover:border-primary/30"
+          class="sidebar-link tag-badge text-xs text-gray-500 dark:text-gray-400 hover:text-primary hover:border-primary/30"
           :style="{ 
             color: tag.color, 
             backgroundColor: tag.color + '10',
@@ -432,11 +370,11 @@ onMounted(() => {
           v-for="(article, index) in popularArticles"
           :key="article.id"
           :to="`/article/${article.slug}`"
-          class="flex gap-2 group"
+          class="sidebar-link flex gap-3 p-2 rounded-lg group"
         >
           <span
-            class="flex-shrink-0 w-5 h-5 rounded flex items-center justify-center text-xs font-bold"
-            :class="index < 3 ? 'bg-primary/10 text-primary' : 'bg-gray-100 dark:bg-dark-300 text-gray-400'"
+            class="flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold"
+            :class="index === 0 ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' : index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-white' : index === 2 ? 'bg-gradient-to-br from-amber-600 to-amber-700 text-white' : 'bg-gray-100 dark:bg-dark-300 text-gray-400'"
           >
             {{ index + 1 }}
           </span>
@@ -444,10 +382,10 @@ onMounted(() => {
             <h4 class="text-sm text-gray-700 dark:text-gray-300 group-hover:text-primary transition-colors line-clamp-2 leading-snug">
               {{ article.title }}
             </h4>
-            <div class="article-meta mt-0.5">
-              <span class="article-meta-item text-xs">
+            <div class="flex items-center gap-2 mt-1">
+              <span class="flex items-center gap-0.5 text-xs text-gray-400">
                 <svg
-                  class="w-2.5 h-2.5"
+                  class="w-3 h-3"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -466,6 +404,25 @@ onMounted(() => {
                   />
                 </svg>
                 {{ article.view_count }}
+              </span>
+              <span
+                v-if="article.like_count"
+                class="flex items-center gap-0.5 text-xs text-gray-400"
+              >
+                <svg
+                  class="w-3 h-3"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                  />
+                </svg>
+                {{ article.like_count }}
               </span>
             </div>
           </div>

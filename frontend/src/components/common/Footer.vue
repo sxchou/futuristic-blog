@@ -19,7 +19,7 @@ const getLogoUrl = (url: string) => {
 </script>
 
 <template>
-  <footer class="border-t border-gray-200/60 dark:border-white/5 bg-gray-50/50 dark:bg-dark-100/50">
+  <footer class="border-t border-gray-200/60 dark:border-white/5 bg-white dark:bg-dark-100/50">
     <div class="blog-container py-10">
       <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
         <div class="md:col-span-5">
@@ -151,7 +151,7 @@ const getLogoUrl = (url: string) => {
             <li>
               <router-link
                 to="/"
-                class="text-sm text-gray-500 dark:text-gray-400 hover:text-primary transition-colors"
+                class="sidebar-link inline-block text-sm text-gray-500 dark:text-gray-400 hover:text-primary px-2 py-1 rounded-md transition-colors"
               >
                 首页
               </router-link>
@@ -159,7 +159,7 @@ const getLogoUrl = (url: string) => {
             <li>
               <router-link
                 to="/categories"
-                class="text-sm text-gray-500 dark:text-gray-400 hover:text-primary transition-colors"
+                class="sidebar-link inline-block text-sm text-gray-500 dark:text-gray-400 hover:text-primary px-2 py-1 rounded-md transition-colors"
               >
                 分类
               </router-link>
@@ -167,7 +167,7 @@ const getLogoUrl = (url: string) => {
             <li>
               <router-link
                 to="/tags"
-                class="text-sm text-gray-500 dark:text-gray-400 hover:text-primary transition-colors"
+                class="sidebar-link inline-block text-sm text-gray-500 dark:text-gray-400 hover:text-primary px-2 py-1 rounded-md transition-colors"
               >
                 标签
               </router-link>
@@ -175,7 +175,7 @@ const getLogoUrl = (url: string) => {
             <li>
               <router-link
                 to="/archive"
-                class="text-sm text-gray-500 dark:text-gray-400 hover:text-primary transition-colors"
+                class="sidebar-link inline-block text-sm text-gray-500 dark:text-gray-400 hover:text-primary px-2 py-1 rounded-md transition-colors"
               >
                 归档
               </router-link>
@@ -183,7 +183,7 @@ const getLogoUrl = (url: string) => {
             <li>
               <router-link
                 to="/about"
-                class="text-sm text-gray-500 dark:text-gray-400 hover:text-primary transition-colors"
+                class="sidebar-link inline-block text-sm text-gray-500 dark:text-gray-400 hover:text-primary px-2 py-1 rounded-md transition-colors"
               >
                 关于
               </router-link>
@@ -196,12 +196,16 @@ const getLogoUrl = (url: string) => {
             技术栈
           </h4>
           <div class="flex flex-wrap gap-1.5">
-            <span class="tag text-xs">Vue 3</span>
-            <span class="tag text-xs">TypeScript</span>
-            <span class="tag text-xs">FastAPI</span>
-            <span class="tag text-xs">Python</span>
-            <span class="tag text-xs">TailwindCSS</span>
-            <span class="tag text-xs">PostgreSQL</span>
+            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-300 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">Vue 3</span>
+            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-300 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">TypeScript</span>
+            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-300 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">Vite</span>
+            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-300 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">Pinia</span>
+            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-300 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">TailwindCSS</span>
+            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-300 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">FastAPI</span>
+            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-300 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">Python</span>
+            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-300 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">SQLAlchemy</span>
+            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-300 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">PostgreSQL</span>
+            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-300 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">Redis</span>
           </div>
         </div>
       </div>
