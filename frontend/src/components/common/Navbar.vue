@@ -273,9 +273,9 @@ onMounted(() => {
             >
               <div
                 v-if="isDesktopDropdownOpen"
-                class="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50"
+                class="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-dark-200 rounded-xl shadow-xl border border-gray-200 dark:border-white/5 overflow-hidden z-50"
               >
-                <div class="p-3 border-b border-gray-200 dark:border-gray-700">
+                <div class="p-3 border-b border-gray-200 dark:border-white/5">
                   <div class="flex items-center gap-3">
                     <div
                       class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm overflow-hidden"
@@ -311,7 +311,7 @@ onMounted(() => {
                 <div class="p-2">
                   <router-link
                     to="/profile"
-                    class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2"
+                    class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-300 rounded-lg transition-colors flex items-center gap-2"
                     @click="isDesktopDropdownOpen = false"
                   >
                     <svg
@@ -332,7 +332,7 @@ onMounted(() => {
                   
                   <router-link
                     to="/admin/my-profile"
-                    class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2"
+                    class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-300 rounded-lg transition-colors flex items-center gap-2"
                     @click="isDesktopDropdownOpen = false"
                   >
                     <svg
@@ -353,7 +353,7 @@ onMounted(() => {
                   
                   <router-link
                     to="/admin"
-                    class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2"
+                    class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-300 rounded-lg transition-colors flex items-center gap-2"
                     @click="isDesktopDropdownOpen = false"
                   >
                     <svg
@@ -379,7 +379,7 @@ onMounted(() => {
                   </router-link>
                 </div>
                 
-                <div class="p-2 border-t border-gray-200 dark:border-gray-700">
+                <div class="p-2 border-t border-gray-200 dark:border-white/5">
                   <button
                     class="w-full px-3 py-2 text-left text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex items-center gap-2"
                     @click="handleLogout(); isDesktopDropdownOpen = false"

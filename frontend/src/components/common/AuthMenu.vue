@@ -84,11 +84,11 @@ onUnmounted(() => {
     >
       <div
         v-if="isDropdownOpen"
-        class="absolute right-0 mt-2 w-36 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-50"
+        class="absolute right-0 mt-2 w-36 bg-white dark:bg-dark-200 rounded-xl shadow-lg border border-gray-200 dark:border-white/5 overflow-hidden z-50"
       >
         <div class="p-1.5">
           <button
-            class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2"
+            class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-300 rounded-lg transition-colors flex items-center gap-2"
             @click="goToLogin"
           >
             <svg
@@ -107,7 +107,7 @@ onUnmounted(() => {
             登录
           </button>
           <button
-            class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2"
+            class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-300 rounded-lg transition-colors flex items-center gap-2"
             @click="goToRegister"
           >
             <svg
