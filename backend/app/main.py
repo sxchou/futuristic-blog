@@ -171,7 +171,6 @@ class SecurityHeadersMiddleware:
             '/api/site-config',
             '/api/profile',
             '/api/announcements',
-            '/api/dashboard/public-stats',
         ]
 
         method = scope.get("method", "")

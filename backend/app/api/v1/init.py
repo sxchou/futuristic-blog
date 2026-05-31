@@ -26,13 +26,6 @@ logger = logging.getLogger(__name__)
 executor = ThreadPoolExecutor(max_workers=8)
 
 
-class PublicStats(BaseModel):
-    total_articles: int
-    total_views: int
-    total_likes: int
-    total_comments: int
-
-
 class UserPermissions(BaseModel):
     permissions: List[str] = []
     roles: List[Dict[str, Any]] = []
@@ -46,7 +39,6 @@ class InitResponse(BaseModel):
     articles: PaginatedResponse
     featured_articles: PaginatedResponse
     github_stats: Optional[Dict[str, Any]] = None
-    public_stats: Optional[PublicStats] = None
     user_profile: Optional[UserProfileResponse] = None
     liked_article_ids: Optional[List[int]] = None
     bookmarked_article_ids: Optional[List[int]] = None
@@ -415,44 +407,6 @@ def _get_user_permissions_data(user_id: int) -> Dict[str, Any]:
         db.close()
 
 
-def _get_public_stats_cached() -> PublicStats:
-    db = SessionLocal()
-    try:
-        cache_key = "public_stats"
-        cached = cache_manager.get("dashboard", cache_key)
-        if cached:
-            if isinstance(cached, PublicStats):
-                return cached
-            elif isinstance(cached, dict):
-                return PublicStats(**cached)
-        
-        total_articles = db.query(func.count(Article.id)).filter(
-            Article.is_published == True
-        ).scalar() or 0
-        
-        total_views = db.query(func.sum(Article.view_count)).filter(
-            Article.is_published == True
-        ).scalar() or 0
-        
-        total_likes = db.query(func.count(ArticleLike.id)).scalar() or 0
-        
-        total_comments = db.query(func.count(Comment.id)).filter(
-            Comment.is_deleted == False,
-            Comment.status == 'approved'
-        ).scalar() or 0
-        
-        result = PublicStats(
-            total_articles=total_articles,
-            total_views=total_views,
-            total_likes=total_likes,
-            total_comments=total_comments
-        )
-        cache_manager.set("dashboard", cache_key, result.model_dump())
-        return result
-    finally:
-        db.close()
-
-
 @router.get("", response_model=InitResponse)
 async def get_init_data(
     page: int = Query(1, ge=1),
@@ -472,7 +426,6 @@ async def get_init_data(
             loop.run_in_executor(executor, _get_articles_list, page, page_size, None),
             loop.run_in_executor(executor, _get_articles_list, 1, featured_page_size, True),
             loop.run_in_executor(executor, _get_github_stats_cached),
-            loop.run_in_executor(executor, _get_public_stats_cached),
         ]
         
         if current_user:
@@ -496,7 +449,6 @@ async def get_init_data(
         articles = all_results[4]
         featured_articles = all_results[5]
         github_stats = all_results[6]
-        public_stats = all_results[7]
         
         if isinstance(github_stats, dict) and github_stats.get("pending"):
             repo_url = github_stats.get("repo_url", "")
@@ -510,20 +462,20 @@ async def get_init_data(
         user_permissions = None
         
         if current_user:
+            if len(all_results) > 7 and not isinstance(all_results[7], Exception):
+                user_profile = all_results[7]
+            elif len(all_results) > 7:
+                logger.error(f"User profile task failed: {all_results[7]}")
+            
             if len(all_results) > 8 and not isinstance(all_results[8], Exception):
-                user_profile = all_results[8]
+                liked_article_ids, bookmarked_article_ids = all_results[8]
             elif len(all_results) > 8:
-                logger.error(f"User profile task failed: {all_results[8]}")
+                logger.error(f"User interaction task failed: {all_results[8]}")
             
             if len(all_results) > 9 and not isinstance(all_results[9], Exception):
-                liked_article_ids, bookmarked_article_ids = all_results[9]
+                user_permissions = UserPermissions(**all_results[9])
             elif len(all_results) > 9:
-                logger.error(f"User interaction task failed: {all_results[9]}")
-            
-            if len(all_results) > 10 and not isinstance(all_results[10], Exception):
-                user_permissions = UserPermissions(**all_results[10])
-            elif len(all_results) > 10:
-                logger.error(f"User permissions task failed: {all_results[10]}")
+                logger.error(f"User permissions task failed: {all_results[9]}")
         
         return InitResponse(
             site_config=site_config,
@@ -533,7 +485,6 @@ async def get_init_data(
             articles=articles,
             featured_articles=featured_articles,
             github_stats=github_stats,
-            public_stats=public_stats,
             user_profile=user_profile,
             liked_article_ids=liked_article_ids,
             bookmarked_article_ids=bookmarked_article_ids,
@@ -549,7 +500,6 @@ async def get_init_data(
             articles=PaginatedResponse(items=[], total=0, page=1, page_size=page_size, total_pages=0),
             featured_articles=PaginatedResponse(items=[], total=0, page=1, page_size=featured_page_size, total_pages=0),
             github_stats={"enabled": False, "stars": 0, "forks": 0, "watchers": 0, "open_issues": 0},
-            public_stats=PublicStats(total_articles=0, total_views=0, total_likes=0, total_comments=0)
         )
 
 
@@ -562,7 +512,6 @@ def _get_default_for_task(task_index: int):
         PaginatedResponse(items=[], total=0, page=1, page_size=6, total_pages=0),  # articles
         PaginatedResponse(items=[], total=0, page=1, page_size=5, total_pages=0),  # featured_articles
         {"enabled": False, "stars": 0, "forks": 0, "watchers": 0, "open_issues": 0},  # github_stats
-        PublicStats(total_articles=0, total_views=0, total_likes=0, total_comments=0),  # public_stats
         None,  # user_profile
         ([], []),  # user_interaction (liked_ids, bookmarked_ids)
         {"permissions": [], "roles": []},  # user_permissions

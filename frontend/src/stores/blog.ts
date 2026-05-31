@@ -4,7 +4,6 @@ import { articleApi, categoryApi, tagApi, announcementApi } from '@/api'
 import { isCancelError } from '@/utils/error'
 import type { ArticleListItem, Category, Tag } from '@/types'
 import type { Announcement } from '@/api/announcements'
-import type { PublicStats } from '@/api/init'
 
 let fetchArticlesController: AbortController | null = null
 let fetchCategoriesPromise: Promise<void> | null = null
@@ -26,7 +25,6 @@ export const useBlogStore = defineStore('blog', () => {
     totalPages: 0
   })
   const featuredArticles = ref<ArticleListItem[]>([])
-  const publicStats = ref<PublicStats | null>(null)
   const currentFilter = ref<{
     category_id?: number
     tag_id?: number
@@ -213,7 +211,6 @@ export const useBlogStore = defineStore('blog', () => {
     loading,
     pagination,
     featuredArticles,
-    publicStats,
     currentFilter,
     fetchArticles,
     fetchCategories,

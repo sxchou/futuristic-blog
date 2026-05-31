@@ -600,7 +600,7 @@ async def get_operation_logs_export_count(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     db: Session = Depends(get_db),
-    _: dict = Depends(require_permission("log.view"))
+    _: dict = Depends(require_permission("log.export"))
 ):
     query = db.query(OperationLog)
     
@@ -635,7 +635,7 @@ async def export_operation_logs(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     db: Session = Depends(get_db),
-    _: dict = Depends(require_permission("log.view"))
+    _: dict = Depends(require_permission("log.export"))
 ):
     global active_exports
     
@@ -776,7 +776,7 @@ async def get_login_logs_export_count(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     db: Session = Depends(get_db),
-    _: dict = Depends(require_permission("log.view"))
+    _: dict = Depends(require_permission("log.export"))
 ):
     query = db.query(LoginLog)
     
@@ -811,7 +811,7 @@ async def export_login_logs(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     db: Session = Depends(get_db),
-    _: dict = Depends(require_permission("log.view"))
+    _: dict = Depends(require_permission("log.export"))
 ):
     query = db.query(LoginLog)
     
@@ -942,7 +942,7 @@ async def get_access_logs_export_count(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     db: Session = Depends(get_db),
-    _: dict = Depends(require_permission("log.view"))
+    _: dict = Depends(require_permission("log.export"))
 ):
     query = db.query(AccessLog)
     
@@ -980,7 +980,7 @@ async def export_access_logs(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     db: Session = Depends(get_db),
-    _: dict = Depends(require_permission("log.view"))
+    _: dict = Depends(require_permission("log.export"))
 ):
     query = db.query(AccessLog)
     

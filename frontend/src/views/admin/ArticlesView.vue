@@ -1849,7 +1849,7 @@ watch(form, () => {
               type="number"
               placeholder="最小浏览"
               min="0"
-              class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-20"
+              class="no-spinner px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-20"
               @keyup.enter="handleSearch"
             >
             <span class="text-xs text-gray-500">-</span>
@@ -1858,7 +1858,7 @@ watch(form, () => {
               type="number"
               placeholder="最大浏览"
               min="0"
-              class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-20"
+              class="no-spinner px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-20"
               @keyup.enter="handleSearch"
             >
           </div>
@@ -3498,3 +3498,14 @@ watch(form, () => {
     @cancel="fileDeletion.cancelDeletion()"
   />
 </template>
+
+<style scoped>
+.no-spinner::-webkit-inner-spin-button,
+.no-spinner::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.no-spinner {
+  -moz-appearance: textfield;
+}
+</style>

@@ -11,6 +11,7 @@ const userProfileStore = useUserProfileStore()
 const { hasPermission } = useAdminCheck()
 
 const canClearLogs = computed(() => hasPermission('log.clear'))
+const canExportLogs = computed(() => hasPermission('log.export'))
 
 const generateTaskId = () => {
   return 'export-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9)
@@ -252,6 +253,11 @@ const exportStates = ref<Record<string, ExportState>>({
 })
 
 const handleExport = async (logType: string) => {
+  if (!canExportLogs.value) {
+    dialog.showWarning('无导出日志权限，请联系管理员', '权限不足')
+    return
+  }
+
   const state = exportStates.value[logType]
   
   if (state.isExporting) {
@@ -1134,7 +1140,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                   type="number"
                   placeholder="最小响应"
                   min="0"
-                  class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-20"
+                  class="no-spinner px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-20"
                   @keyup.enter="handleSearch"
                 >
                 <span class="text-xs text-gray-500">-</span>
@@ -1143,7 +1149,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                   type="number"
                   placeholder="最大响应"
                   min="0"
-                  class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-20"
+                  class="no-spinner px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-20"
                   @keyup.enter="handleSearch"
                 >
                 <span class="text-xs text-gray-500">ms</span>
@@ -1171,7 +1177,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                   placeholder="最小状态码"
                   min="100"
                   max="599"
-                  class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-24"
+                  class="no-spinner px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-24"
                   @keyup.enter="handleSearch"
                 >
                 <span class="text-xs text-gray-500">-</span>
@@ -1181,7 +1187,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
                   placeholder="最大状态码"
                   min="100"
                   max="599"
-                  class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-24"
+                  class="no-spinner px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none w-24"
                   @keyup.enter="handleSearch"
                 >
               </div>
@@ -1540,3 +1546,14 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
       </div>
     </div>
 </template>
+
+<style scoped>
+.no-spinner::-webkit-inner-spin-button,
+.no-spinner::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.no-spinner {
+  -moz-appearance: textfield;
+}
+</style>

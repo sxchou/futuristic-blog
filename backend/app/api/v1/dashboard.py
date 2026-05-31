@@ -30,13 +30,6 @@ CACHE_TTL_ACCESS = 300
 executor = ThreadPoolExecutor(max_workers=4)
 
 
-class PublicStats(BaseModel):
-    total_articles: int
-    total_views: int
-    total_likes: int
-    total_comments: int
-
-
 class OverviewStats(BaseModel):
     total_articles: int
     published_articles: int
@@ -318,43 +311,6 @@ async def warmup_dashboard_cache():
         logger.warning(f"Dashboard cache warmup failed: {e}")
     finally:
         db.close()
-
-
-@router.get("/public-stats", response_model=PublicStats)
-async def get_public_stats(
-    db: Session = Depends(get_db)
-):
-    cache_key = "public_stats"
-    cached = cache_manager.get(CACHE_NAME, cache_key)
-    if cached:
-        if isinstance(cached, dict):
-            return PublicStats(**cached)
-        return cached
-    
-    total_articles = db.query(func.count(Article.id)).filter(
-        Article.is_published == True
-    ).scalar() or 0
-    
-    total_views = db.query(func.sum(Article.view_count)).filter(
-        Article.is_published == True
-    ).scalar() or 0
-    
-    total_likes = db.query(func.count(ArticleLike.id)).scalar() or 0
-    
-    total_comments = db.query(func.count(Comment.id)).filter(
-        Comment.is_deleted == False, 
-        Comment.status == 'approved'
-    ).scalar() or 0
-    
-    result = PublicStats(
-        total_articles=total_articles,
-        total_views=total_views,
-        total_likes=total_likes,
-        total_comments=total_comments
-    )
-    
-    cache_manager.set(CACHE_NAME, cache_key, result.model_dump(), ttl=CACHE_TTL_OVERVIEW)
-    return result
 
 
 @router.get("/overview", response_model=OverviewStats)

@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, watch } from 'vue'
-import { useBlogStore, useAuthStore, useUserProfileStore, useInitStore } from '@/stores'
-import { dashboardApi } from '@/api'
-import { isCancelError } from '@/utils/error'
+import { computed, onMounted, watch } from 'vue'
+import { useBlogStore, useAuthStore, useUserProfileStore } from '@/stores'
 
 const props = defineProps<{
   hideUserCard?: boolean
@@ -11,18 +9,6 @@ const props = defineProps<{
 const blogStore = useBlogStore()
 const authStore = useAuthStore()
 const userProfileStore = useUserProfileStore()
-const initStore = useInitStore()
-
-const stats = ref({
-  articles: 0,
-  views: 0,
-  likes: 0,
-  comments: 0
-})
-
-let statsFetchPromise: Promise<void> | null = null
-let statsLastFetchTime = 0
-const STATS_CACHE_TTL = 300000
 
 const announcements = computed(() => blogStore.announcements)
 
@@ -37,56 +23,6 @@ const popularTags = computed(() => {
     .sort((a, b) => b.article_count - a.article_count)
     .slice(0, 15)
 })
-
-const updateStatsFromStore = () => {
-  if (blogStore.publicStats) {
-    stats.value = {
-      articles: blogStore.publicStats.total_articles,
-      views: blogStore.publicStats.total_views,
-      likes: blogStore.publicStats.total_likes,
-      comments: blogStore.publicStats.total_comments
-    }
-    return true
-  }
-  return false
-}
-
-const fetchStats = async (force = false) => {
-  if (!force && updateStatsFromStore()) {
-    return
-  }
-  
-  const now = Date.now()
-  if (!force && now - statsLastFetchTime < STATS_CACHE_TTL) {
-    return
-  }
-  
-  if (statsFetchPromise) {
-    return statsFetchPromise
-  }
-  
-  statsFetchPromise = (async () => {
-    try {
-      const response = await dashboardApi.getPublicStats()
-      stats.value = {
-        articles: response.data.total_articles,
-        views: response.data.total_views,
-        likes: response.data.total_likes,
-        comments: response.data.total_comments
-      }
-      statsLastFetchTime = Date.now()
-    } catch (error: unknown) {
-      if (isCancelError(error)) {
-        return
-      }
-      console.error('Failed to fetch stats:', error)
-    } finally {
-      statsFetchPromise = null
-    }
-  })()
-  
-  return statsFetchPromise
-}
 
 const getTypeIcon = (type: string) => {
   const icons = {
@@ -125,30 +61,7 @@ watch(() => authStore.isAuthenticated, (isAuthenticated) => {
   }
 })
 
-watch(() => blogStore.publicStats, (newStats) => {
-  if (newStats) {
-    stats.value = {
-      articles: newStats.total_articles,
-      views: newStats.total_views,
-      likes: newStats.total_likes,
-      comments: newStats.total_comments
-    }
-  }
-})
-
-watch(() => initStore.isCoreInitialized, (initialized) => {
-  if (initialized && !blogStore.publicStats) {
-    fetchStats(true)
-  }
-})
-
 onMounted(() => {
-  if (!updateStatsFromStore()) {
-    if (initStore.isCoreInitialized) {
-      fetchStats()
-    }
-  }
-  
   if (authStore.isAuthenticated && !userProfileStore.profile) {
     userProfileStore.fetchProfile()
   }
@@ -210,55 +123,6 @@ onMounted(() => {
               </p>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="sidebar-widget sidebar-widget-compact">
-      <h3 class="sidebar-widget-title sidebar-widget-title-compact flex items-center gap-2">
-        <svg
-          class="w-3.5 h-3.5 text-primary"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-          />
-        </svg>
-        博客统计
-      </h3>
-      <div class="space-y-0.5">
-        <div class="flex items-center justify-between px-2 py-1.5 rounded-lg text-sm text-gray-600 dark:text-gray-400">
-          <div class="flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5 text-primary/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
-            <span>文章</span>
-          </div>
-          <span class="text-xs font-semibold text-gray-800 dark:text-gray-200 tabular-nums">{{ stats.articles }}</span>
-        </div>
-        <div class="flex items-center justify-between px-2 py-1.5 rounded-lg text-sm text-gray-600 dark:text-gray-400">
-          <div class="flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5 text-accent/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-            <span>浏览</span>
-          </div>
-          <span class="text-xs font-semibold text-gray-800 dark:text-gray-200 tabular-nums">{{ stats.views }}</span>
-        </div>
-        <div class="flex items-center justify-between px-2 py-1.5 rounded-lg text-sm text-gray-600 dark:text-gray-400">
-          <div class="flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5 text-cyber-pink/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>
-            <span>点赞</span>
-          </div>
-          <span class="text-xs font-semibold text-gray-800 dark:text-gray-200 tabular-nums">{{ stats.likes }}</span>
-        </div>
-        <div class="flex items-center justify-between px-2 py-1.5 rounded-lg text-sm text-gray-600 dark:text-gray-400">
-          <div class="flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5 text-cyber-green/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" /></svg>
-            <span>评论</span>
-          </div>
-          <span class="text-xs font-semibold text-gray-800 dark:text-gray-200 tabular-nums">{{ stats.comments }}</span>
         </div>
       </div>
     </div>

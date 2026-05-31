@@ -47,6 +47,8 @@ const PERMISSION_NAMES: Record<string, string> = {
   'settings.view': '查看设置',
   'settings.edit': '编辑设置',
   'log.view': '查看日志',
+  'log.clear': '清理日志',
+  'log.export': '导出日志',
   'dashboard.view': '查看仪表盘',
   'dashboard.export': '导出仪表盘图表',
   'email.view': '查看邮件配置',

@@ -142,7 +142,6 @@ DEFAULT_STRATEGIES: Dict[str, CacheStrategy] = {
     'site_config': CacheStrategy(ttl=1800, max_size=100, priority=0),
     'profile': CacheStrategy(ttl=1800, max_size=50, priority=0),
     'dashboard': CacheStrategy(ttl=120, max_size=200, priority=2),
-    'public_stats': CacheStrategy(ttl=300, max_size=50, priority=1),
     'search': CacheStrategy(ttl=120, max_size=300, priority=2),
     'user_interaction': CacheStrategy(ttl=300, max_size=500, priority=1),
     'user_permissions': CacheStrategy(ttl=60, max_size=500, priority=1),

@@ -1639,6 +1639,7 @@ def init_permissions_and_roles(db, admin):
         
         {"code": "log.view", "name": "查看系统日志", "module": "log", "action": "view", "description": "查看系统日志"},
         {"code": "log.clear", "name": "清理系统日志", "module": "log", "action": "clear", "description": "清理历史日志"},
+        {"code": "log.export", "name": "导出系统日志", "module": "log", "action": "export", "description": "导出系统日志为文件"},
         
         {"code": "dashboard.view", "name": "查看仪表盘", "module": "dashboard", "action": "view", "description": "查看仪表盘数据"},
         {"code": "dashboard.export", "name": "导出仪表盘图表", "module": "dashboard", "action": "export", "description": "导出仪表盘图表为图片或数据文件"},
@@ -1704,7 +1705,7 @@ def init_permissions_and_roles(db, admin):
                 "storage.view", "storage.delete",
                 "settings.view", "settings.edit",
                 "profile.view", "profile.edit",
-                "log.view", "log.clear",
+                "log.view", "log.clear", "log.export",
                 "dashboard.view", "dashboard.export",
                 "email.view", "email.create", "email.edit", "email.delete", "email.activate", "email.switch_provider", "email.test", "email.view_logs",
                 "notification.view", "notification.edit",

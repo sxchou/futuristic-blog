@@ -1,12 +1,5 @@
 import apiClient from './client'
 
-export interface PublicStats {
-  total_articles: number
-  total_views: number
-  total_likes: number
-  total_comments: number
-}
-
 export interface OverviewStats {
   total_articles: number
   published_articles: number
@@ -86,9 +79,6 @@ export interface DashboardInitParams {
 }
 
 export const dashboardApi = {
-  getPublicStats: () => 
-    apiClient.get<PublicStats>('/dashboard/public-stats'),
-  
   getOverview: () => 
     apiClient.get<OverviewStats>('/dashboard/overview'),
   

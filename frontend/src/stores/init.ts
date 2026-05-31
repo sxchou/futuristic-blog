@@ -71,10 +71,6 @@ export const useInitStore = defineStore('init', () => {
           siteConfigStore.setGithubStats(data.github_stats)
         }
         
-        if (data.public_stats) {
-          blogStore.publicStats = data.public_stats
-        }
-        
         if (authStore.isAuthenticated) {
           if (data.user_profile) {
             userProfileStore.profile = data.user_profile
@@ -161,10 +157,6 @@ export const useInitStore = defineStore('init', () => {
         
         if (data.github_stats && !siteConfigStore.githubStats) {
           siteConfigStore.setGithubStats(data.github_stats)
-        }
-        
-        if (data.public_stats && !blogStore.publicStats) {
-          blogStore.publicStats = data.public_stats
         }
         
         if (authStore.isAuthenticated) {

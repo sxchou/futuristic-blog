@@ -13,13 +13,6 @@ export interface GitHubStats {
   open_issues: number
 }
 
-export interface PublicStats {
-  total_articles: number
-  total_views: number
-  total_likes: number
-  total_comments: number
-}
-
 export interface UserPermissions {
   permissions: string[]
   roles: Array<{ id: number; name: string; code: string }>
@@ -33,7 +26,6 @@ export interface InitResponse {
   articles: PaginatedResponse<ArticleListItem>
   featured_articles: PaginatedResponse<ArticleListItem>
   github_stats: GitHubStats | null
-  public_stats: PublicStats | null
   user_profile: UserProfile | null
   liked_article_ids: number[] | null
   bookmarked_article_ids: number[] | null

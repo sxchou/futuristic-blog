@@ -4,29 +4,43 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const isDropdownOpen = ref(false)
+let closeTimer: ReturnType<typeof setTimeout> | null = null
 
-const toggleDropdown = () => {
-  isDropdownOpen.value = !isDropdownOpen.value
+const openDropdown = () => {
+  if (closeTimer) {
+    clearTimeout(closeTimer)
+    closeTimer = null
+  }
+  isDropdownOpen.value = true
 }
 
-const closeDropdown = () => {
-  isDropdownOpen.value = false
+const scheduleClose = () => {
+  closeTimer = setTimeout(() => {
+    isDropdownOpen.value = false
+  }, 150)
+}
+
+const cancelClose = () => {
+  if (closeTimer) {
+    clearTimeout(closeTimer)
+    closeTimer = null
+  }
 }
 
 const goToLogin = () => {
-  closeDropdown()
+  isDropdownOpen.value = false
   router.push('/login')
 }
 
 const goToRegister = () => {
-  closeDropdown()
+  isDropdownOpen.value = false
   router.push('/register')
 }
 
 const handleClickOutside = (event: MouseEvent) => {
   const target = event.target as HTMLElement
   if (!target.closest('.auth-menu-container')) {
-    closeDropdown()
+    isDropdownOpen.value = false
   }
 }
 
@@ -36,14 +50,19 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
+  if (closeTimer) clearTimeout(closeTimer)
 })
 </script>
 
 <template>
-  <div class="auth-menu-container relative">
+  <div
+    class="auth-menu-container relative"
+    @mouseenter="openDropdown"
+    @mouseleave="scheduleClose"
+  >
     <button
       class="flex items-center gap-1 p-1.5 bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 rounded-lg text-gray-600 dark:text-gray-400 hover:text-primary hover:border-primary/30 transition-all"
-      @click.stop="toggleDropdown"
+      @click.stop="isDropdownOpen = !isDropdownOpen"
     >
       <svg
         class="w-4 h-4"
@@ -85,6 +104,8 @@ onUnmounted(() => {
       <div
         v-if="isDropdownOpen"
         class="absolute right-0 mt-2 w-36 bg-white dark:bg-dark-200 rounded-xl shadow-lg border border-gray-200 dark:border-white/5 overflow-hidden z-50"
+        @mouseenter="cancelClose"
+        @mouseleave="scheduleClose"
       >
         <div class="p-1.5">
           <button
