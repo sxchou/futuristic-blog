@@ -952,7 +952,7 @@ onMounted(() => {
 }
 
 .dark .chart-modal {
-  background: #1f2937;
+  background: #141414;
 }
 
 .chart-modal-header {

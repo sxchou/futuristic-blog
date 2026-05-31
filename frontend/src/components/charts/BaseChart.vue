@@ -436,8 +436,8 @@ onUnmounted(() => {
 }
 
 .dark .export-menu {
-  background: #1f2937;
-  border-color: rgba(255, 255, 255, 0.1);
+  background: #141414;
+  border-color: rgba(255, 255, 255, 0.05);
 }
 
 .export-dropdown:hover .export-menu {
