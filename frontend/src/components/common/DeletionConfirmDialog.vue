@@ -163,7 +163,7 @@ const handleCancel = () => {
         >
           <div
             v-if="visible"
-            class="relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden"
+            class="relative bg-white dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden"
           >
             <div class="p-6">
               <div class="flex items-start gap-4">
@@ -216,7 +216,7 @@ const handleCancel = () => {
                     <div
                       v-for="item in items"
                       :key="`${item.type}-${item.name}`"
-                      class="rounded-lg bg-gray-50 dark:bg-gray-800/50 overflow-hidden"
+                      class="rounded-lg bg-gray-50 dark:bg-dark-200/50 overflow-hidden"
                     >
                       <div class="flex items-start gap-3 p-2.5">
                         <div
@@ -242,7 +242,7 @@ const handleCancel = () => {
                         <div class="flex items-center gap-2 flex-shrink-0">
                           <span
                             v-if="item.count > 1"
-                            class="text-xs text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-gray-700/50 px-1.5 py-0.5 rounded"
+                            class="text-xs text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-dark-300/50 px-1.5 py-0.5 rounded"
                           >
                             ×{{ item.count }}
                           </span>
@@ -349,7 +349,7 @@ const handleCancel = () => {
 
               <div
                 v-if="preview?.can_delete && !preview?.associated_items?.length"
-                class="mt-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50"
+                class="mt-4 p-3 rounded-lg bg-gray-50 dark:bg-dark-200/50"
               >
                 <p class="text-sm text-gray-500 dark:text-gray-400">此操作没有关联数据受影响，删除后无法恢复。</p>
               </div>
@@ -358,7 +358,7 @@ const handleCancel = () => {
             <div class="flex border-t border-gray-200 dark:border-white/10">
               <button
                 type="button"
-                class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-dark-200 transition-colors"
                 :disabled="loading"
                 @click="handleCancel"
               >

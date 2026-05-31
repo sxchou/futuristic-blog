@@ -223,8 +223,8 @@ defineExpose({ open })
 }
 
 :root.dark .mfs-toolbar {
-  background: #1a1a2e;
-  border-bottom-color: rgba(255, 255, 255, 0.1);
+  background: #141414;
+  border-bottom-color: rgba(255, 255, 255, 0.05);
 }
 
 .mfs-btn {
@@ -312,7 +312,7 @@ defineExpose({ open })
 }
 
 :root.dark .mfs-scroll {
-  background: #0f0f1a;
+  background: #0a0a0a;
 }
 
 .mfs-content {

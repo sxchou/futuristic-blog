@@ -657,7 +657,7 @@ onUnmounted(() => {
       class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm"
     >
       <div class="relative w-full h-full max-w-7xl max-h-[95vh] m-4 flex flex-col bg-white dark:bg-dark-300 rounded-xl overflow-hidden shadow-2xl border border-gray-200 dark:border-white/10">
-        <div class="flex items-center justify-between px-3 py-1 border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-gray-800/50">
+        <div class="flex items-center justify-between px-3 py-1 border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-dark-200/50">
           <div class="flex items-center gap-2 min-w-0 flex-1">
             <span 
               class="w-6 h-6 flex-shrink-0 flex items-center justify-center rounded"
@@ -673,7 +673,7 @@ onUnmounted(() => {
           </div>
           <div class="flex items-center gap-1 flex-shrink-0 ml-2 tooltip-below">
             <button
-              class="p-1.5 text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded transition-colors relative"
+              class="p-1.5 text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-dark-300/50 rounded transition-colors relative"
               data-tooltip="下载"
               @click="handleDownload"
             >
@@ -692,7 +692,7 @@ onUnmounted(() => {
               </svg>
             </button>
             <button
-              class="p-1.5 text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded transition-colors"
+              class="p-1.5 text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-dark-300/50 rounded transition-colors"
               data-tooltip="关闭"
               @click="emit('close')"
             >
@@ -716,7 +716,7 @@ onUnmounted(() => {
         <div class="flex-1 overflow-auto relative">
           <div
             v-if="loading"
-            class="absolute inset-0 flex items-center justify-center bg-white dark:bg-gray-900 z-10"
+            class="absolute inset-0 flex items-center justify-center bg-white dark:bg-dark-100 z-10"
           >
             <div class="flex flex-col items-center gap-4">
               <div class="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
@@ -736,7 +736,7 @@ onUnmounted(() => {
                 :class="{
                   'bg-red-100 dark:bg-red-900/30': errorType === 'fetch_failed' || errorType === 'unknown',
                   'bg-amber-100 dark:bg-amber-900/30': errorType === 'timeout',
-                  'bg-gray-100 dark:bg-gray-800': errorType === 'unsupported' || !errorType
+                  'bg-gray-100 dark:bg-dark-200': errorType === 'unsupported' || !errorType
                 }"
               >
                 <svg 
@@ -787,7 +787,7 @@ onUnmounted(() => {
               <div class="flex gap-3 justify-center">
                 <button
                   v-if="errorType === 'timeout' || errorType === 'unknown'"
-                  class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  class="px-4 py-2 bg-gray-100 dark:bg-dark-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-400 transition-colors"
                   @click="() => { error = ''; errorType = ''; loading = true; startOfficePreviewTimer() }"
                 >
                   重试
@@ -806,10 +806,10 @@ onUnmounted(() => {
             v-if="previewType === 'image'"
             class="relative h-full flex flex-col"
           >
-            <div class="absolute top-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg border border-gray-200 dark:border-gray-700 tooltip-below">
+            <div class="absolute top-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 bg-white/90 dark:bg-dark-200/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg border border-gray-200 dark:border-white/10 tooltip-below">
               <button
                 :disabled="imageScale <= 0.25"
-                class="p-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
+                class="p-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-dark-300 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
                 data-tooltip="缩小"
                 @click="zoomOut"
               >
@@ -851,7 +851,7 @@ onUnmounted(() => {
               </div>
               <button
                 :disabled="imageScale >= 5"
-                class="p-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
+                class="p-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-dark-300 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
                 data-tooltip="放大"
                 @click="zoomIn"
               >
@@ -912,7 +912,7 @@ onUnmounted(() => {
           >
             <div
               v-if="officePreviewLoading && !isLocalhost"
-              class="absolute inset-0 flex items-center justify-center bg-white dark:bg-gray-900 z-10"
+              class="absolute inset-0 flex items-center justify-center bg-white dark:bg-dark-100 z-10"
             >
               <div class="flex flex-col items-center gap-4 max-w-sm">
                 <div class="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
@@ -920,7 +920,7 @@ onUnmounted(() => {
                   <p class="text-gray-700 dark:text-gray-300 font-medium mb-2">
                     正在加载 {{ officeFileType }} 预览...
                   </p>
-                  <div class="w-48 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div class="w-48 h-2 bg-gray-200 dark:bg-dark-300 rounded-full overflow-hidden">
                     <div 
                       class="h-full bg-primary transition-all duration-300 rounded-full"
                       :style="{ width: `${officeLoadProgress}%` }"
@@ -935,7 +935,7 @@ onUnmounted(() => {
             
             <div
               v-if="officePreviewTimeout && !isLocalhost"
-              class="absolute inset-0 flex items-center justify-center bg-white dark:bg-gray-900 z-20"
+              class="absolute inset-0 flex items-center justify-center bg-white dark:bg-dark-100 z-20"
             >
               <div class="text-center max-w-md p-8">
                 <div class="w-16 h-16 mx-auto mb-4 flex items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
@@ -961,7 +961,7 @@ onUnmounted(() => {
                 </p>
                 <div class="flex gap-3 justify-center">
                   <button
-                    class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                    class="px-4 py-2 bg-gray-100 dark:bg-dark-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-400 transition-colors"
                     @click="startOfficePreviewTimer"
                   >
                     重试
@@ -1110,7 +1110,7 @@ onUnmounted(() => {
               v-else-if="archiveContent"
               class="flex-1 flex flex-col overflow-hidden"
             >
-              <div class="px-3 py-2 border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-gray-800/50 flex-shrink-0">
+              <div class="px-3 py-2 border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-dark-200/50 flex-shrink-0">
                 <div class="flex flex-col gap-1.5 mb-2">
                   <div class="flex items-center gap-2 flex-wrap">
                     <span class="px-1.5 py-0.5 text-[10px] font-medium bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded">
@@ -1158,7 +1158,7 @@ onUnmounted(() => {
                   <span class="text-[10px] text-gray-500 dark:text-gray-400">排序:</span>
                   <button
                     class="px-1.5 py-0.5 text-[10px] rounded transition-colors flex items-center gap-0.5"
-                    :class="sortField === 'name' ? 'bg-primary/20 text-primary' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'"
+                    :class="sortField === 'name' ? 'bg-primary/20 text-primary' : 'bg-gray-200 dark:bg-dark-300 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-dark-400'"
                     @click="toggleSort('name')"
                   >
                     名称
@@ -1187,7 +1187,7 @@ onUnmounted(() => {
                   </button>
                   <button
                     class="px-1.5 py-0.5 text-[10px] rounded transition-colors flex items-center gap-0.5"
-                    :class="sortField === 'size' ? 'bg-primary/20 text-primary' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'"
+                    :class="sortField === 'size' ? 'bg-primary/20 text-primary' : 'bg-gray-200 dark:bg-dark-300 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-dark-400'"
                     @click="toggleSort('size')"
                   >
                     大小
@@ -1216,7 +1216,7 @@ onUnmounted(() => {
                   </button>
                   <button
                     class="px-1.5 py-0.5 text-[10px] rounded transition-colors flex items-center gap-0.5"
-                    :class="sortField === 'type' ? 'bg-primary/20 text-primary' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'"
+                    :class="sortField === 'type' ? 'bg-primary/20 text-primary' : 'bg-gray-200 dark:bg-dark-300 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-dark-400'"
                     @click="toggleSort('type')"
                   >
                     类型

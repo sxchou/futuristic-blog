@@ -260,9 +260,9 @@ const handleClickOutside = (event: MouseEvent) => {
     >
       <div
         v-if="showDropdown && isDropdownOpen"
-        class="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50"
+        class="absolute right-0 mt-2 w-56 bg-white dark:bg-dark-200 rounded-xl shadow-xl border border-gray-200 dark:border-white/10 overflow-hidden z-50"
       >
-        <div class="p-3 border-b border-gray-200 dark:border-gray-700">
+        <div class="p-3 border-b border-gray-200 dark:border-white/10">
           <div class="flex items-center gap-3">
             <div
               class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm overflow-hidden"
@@ -286,7 +286,7 @@ const handleClickOutside = (event: MouseEvent) => {
         
         <div class="p-2">
           <button
-            class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2"
+            class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-300 rounded-lg transition-colors flex items-center gap-2"
             @click="goToProfile"
           >
             <svg
@@ -306,7 +306,7 @@ const handleClickOutside = (event: MouseEvent) => {
           </button>
           
           <button
-            class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2"
+            class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-300 rounded-lg transition-colors flex items-center gap-2"
             :disabled="isUploading"
             @click="triggerUpload"
           >
@@ -329,7 +329,7 @@ const handleClickOutside = (event: MouseEvent) => {
           
           <button
             v-if="profile?.oauth_avatar_url && profile?.avatar_type !== 'oauth'"
-            class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2"
+            class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-300 rounded-lg transition-colors flex items-center gap-2"
             @click="handleUseOAuthAvatar"
           >
             <svg
@@ -350,7 +350,7 @@ const handleClickOutside = (event: MouseEvent) => {
           
           <button
             v-if="profile?.avatar_type === 'custom' && !profile?.oauth_avatar_url"
-            class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2"
+            class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-300 rounded-lg transition-colors flex items-center gap-2"
             @click="handleReset"
           >
             <svg
@@ -370,10 +370,10 @@ const handleClickOutside = (event: MouseEvent) => {
           </button>
         </div>
         
-        <div class="p-2 border-t border-gray-200 dark:border-gray-700">
+        <div class="p-2 border-t border-gray-200 dark:border-white/10">
           <router-link
             to="/profile"
-            class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2"
+            class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-300 rounded-lg transition-colors flex items-center gap-2"
             @click="closeDropdown"
           >
             <svg
@@ -394,7 +394,7 @@ const handleClickOutside = (event: MouseEvent) => {
           
           <router-link
             to="/admin"
-            class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-2"
+            class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-300 rounded-lg transition-colors flex items-center gap-2"
             @click="closeDropdown"
           >
             <svg

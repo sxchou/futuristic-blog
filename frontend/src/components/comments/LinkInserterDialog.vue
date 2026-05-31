@@ -410,7 +410,7 @@ watch(activeTab, (newTab) => {
             'px-3 py-1.5 text-xs font-medium text-white rounded-lg transition-colors',
             canInsert
               ? 'bg-primary hover:bg-primary/90'
-              : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
+              : 'bg-gray-300 dark:bg-dark-300 cursor-not-allowed'
           ]"
           @click="insertLink"
         >
