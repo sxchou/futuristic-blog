@@ -360,26 +360,6 @@ const skeletonType = computed(() => {
                 </div>
                 
                 <div class="sidebar-widget sidebar-widget-compact animate-pulse">
-                  <h3 class="sidebar-widget-title sidebar-widget-title-compact flex items-center gap-2">
-                    <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                    <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-16" />
-                  </h3>
-                  <div class="space-y-0.5">
-                    <div
-                      v-for="i in 4"
-                      :key="i"
-                      class="flex items-center justify-between px-2 py-1.5 rounded-lg"
-                    >
-                      <div class="flex items-center gap-1.5">
-                        <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                        <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
-                      </div>
-                      <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="sidebar-widget sidebar-widget-compact animate-pulse">
                   <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-16 mb-3" />
                   <div class="space-y-0.5">
                     <div
@@ -400,7 +380,7 @@ const skeletonType = computed(() => {
                   <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-14 mb-3" />
                   <div class="flex flex-wrap gap-1">
                     <div
-                      v-for="i in 8"
+                      v-for="i in 16"
                       :key="i"
                       class="h-5 px-2 bg-gray-200 dark:bg-dark-300 rounded"
                       :style="{ width: `${40 + Math.random() * 30}px` }"
@@ -567,26 +547,6 @@ const skeletonType = computed(() => {
                 </div>
                 
                 <div class="sidebar-widget sidebar-widget-compact animate-pulse">
-                  <h3 class="sidebar-widget-title sidebar-widget-title-compact flex items-center gap-2">
-                    <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                    <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-16" />
-                  </h3>
-                  <div class="space-y-0.5">
-                    <div
-                      v-for="i in 4"
-                      :key="i"
-                      class="flex items-center justify-between px-2 py-1.5 rounded-lg"
-                    >
-                      <div class="flex items-center gap-1.5">
-                        <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                        <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
-                      </div>
-                      <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="sidebar-widget sidebar-widget-compact animate-pulse">
                   <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-16 mb-3" />
                   <div class="space-y-0.5">
                     <div
@@ -607,7 +567,7 @@ const skeletonType = computed(() => {
                   <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-14 mb-3" />
                   <div class="flex flex-wrap gap-1">
                     <div
-                      v-for="i in 8"
+                      v-for="i in 16"
                       :key="i"
                       class="h-5 px-2 bg-gray-200 dark:bg-dark-300 rounded"
                       :style="{ width: `${40 + Math.random() * 30}px` }"
@@ -751,26 +711,6 @@ const skeletonType = computed(() => {
                   </h3>
                   <div class="space-y-0.5">
                     <div
-                      v-for="i in 4"
-                      :key="i"
-                      class="flex items-center justify-between px-2 py-1.5 rounded-lg"
-                    >
-                      <div class="flex items-center gap-1.5">
-                        <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                        <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
-                      </div>
-                      <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="sidebar-widget sidebar-widget-compact animate-pulse">
-                  <h3 class="sidebar-widget-title sidebar-widget-title-compact flex items-center gap-2">
-                    <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                    <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-16" />
-                  </h3>
-                  <div class="space-y-0.5">
-                    <div
                       v-for="i in 5"
                       :key="i"
                       class="flex items-center justify-between px-2 py-1.5 rounded-lg"
@@ -791,7 +731,7 @@ const skeletonType = computed(() => {
                   </h3>
                   <div class="flex flex-wrap gap-1">
                     <div
-                      v-for="i in 8"
+                      v-for="i in 16"
                       :key="i"
                       class="h-5 px-2 bg-gray-200 dark:bg-dark-300 rounded"
                       :style="{ width: `${40 + Math.random() * 30}px` }"
@@ -943,26 +883,6 @@ const skeletonType = computed(() => {
                   </h3>
                   <div class="space-y-0.5">
                     <div
-                      v-for="i in 4"
-                      :key="i"
-                      class="flex items-center justify-between px-2 py-1.5 rounded-lg"
-                    >
-                      <div class="flex items-center gap-1.5">
-                        <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                        <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
-                      </div>
-                      <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="sidebar-widget sidebar-widget-compact animate-pulse">
-                  <h3 class="sidebar-widget-title sidebar-widget-title-compact flex items-center gap-2">
-                    <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                    <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-16" />
-                  </h3>
-                  <div class="space-y-0.5">
-                    <div
                       v-for="i in 5"
                       :key="i"
                       class="flex items-center justify-between px-2 py-1.5 rounded-lg"
@@ -983,7 +903,7 @@ const skeletonType = computed(() => {
                   </h3>
                   <div class="flex flex-wrap gap-1">
                     <div
-                      v-for="i in 8"
+                      v-for="i in 16"
                       :key="i"
                       class="h-5 px-2 bg-gray-200 dark:bg-dark-300 rounded"
                       :style="{ width: `${40 + Math.random() * 30}px` }"
@@ -1176,26 +1096,6 @@ const skeletonType = computed(() => {
                   </h3>
                   <div class="space-y-0.5">
                     <div
-                      v-for="i in 4"
-                      :key="i"
-                      class="flex items-center justify-between px-2 py-1.5 rounded-lg"
-                    >
-                      <div class="flex items-center gap-1.5">
-                        <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                        <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
-                      </div>
-                      <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="sidebar-widget sidebar-widget-compact animate-pulse">
-                  <h3 class="sidebar-widget-title sidebar-widget-title-compact flex items-center gap-2">
-                    <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                    <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-16" />
-                  </h3>
-                  <div class="space-y-0.5">
-                    <div
                       v-for="i in 5"
                       :key="i"
                       class="flex items-center justify-between px-2 py-1.5 rounded-lg"
@@ -1216,7 +1116,7 @@ const skeletonType = computed(() => {
                   </h3>
                   <div class="flex flex-wrap gap-1">
                     <div
-                      v-for="i in 8"
+                      v-for="i in 16"
                       :key="i"
                       class="h-5 px-2 bg-gray-200 dark:bg-dark-300 rounded"
                       :style="{ width: `${40 + Math.random() * 30}px` }"
@@ -1476,26 +1376,6 @@ const skeletonType = computed(() => {
                   </h3>
                   <div class="space-y-0.5">
                     <div
-                      v-for="i in 4"
-                      :key="i"
-                      class="flex items-center justify-between px-2 py-1.5 rounded-lg"
-                    >
-                      <div class="flex items-center gap-1.5">
-                        <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                        <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
-                      </div>
-                      <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="sidebar-widget sidebar-widget-compact animate-pulse">
-                  <h3 class="sidebar-widget-title sidebar-widget-title-compact flex items-center gap-2">
-                    <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                    <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-16" />
-                  </h3>
-                  <div class="space-y-0.5">
-                    <div
                       v-for="i in 5"
                       :key="i"
                       class="flex items-center justify-between px-2 py-1.5 rounded-lg"
@@ -1516,7 +1396,7 @@ const skeletonType = computed(() => {
                   </h3>
                   <div class="flex flex-wrap gap-1">
                     <div
-                      v-for="i in 8"
+                      v-for="i in 16"
                       :key="i"
                       class="h-5 px-2 bg-gray-200 dark:bg-dark-300 rounded"
                       :style="{ width: `${40 + Math.random() * 30}px` }"
@@ -1725,26 +1605,6 @@ const skeletonType = computed(() => {
                   </h3>
                   <div class="space-y-0.5">
                     <div
-                      v-for="i in 4"
-                      :key="i"
-                      class="flex items-center justify-between px-2 py-1.5 rounded-lg"
-                    >
-                      <div class="flex items-center gap-1.5">
-                        <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                        <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
-                      </div>
-                      <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="sidebar-widget sidebar-widget-compact animate-pulse">
-                  <h3 class="sidebar-widget-title sidebar-widget-title-compact flex items-center gap-2">
-                    <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                    <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-16" />
-                  </h3>
-                  <div class="space-y-0.5">
-                    <div
                       v-for="i in 5"
                       :key="i"
                       class="flex items-center justify-between px-2 py-1.5 rounded-lg"
@@ -1765,7 +1625,7 @@ const skeletonType = computed(() => {
                   </h3>
                   <div class="flex flex-wrap gap-1">
                     <div
-                      v-for="i in 8"
+                      v-for="i in 16"
                       :key="i"
                       class="h-5 px-2 bg-gray-200 dark:bg-dark-300 rounded"
                       :style="{ width: `${40 + Math.random() * 30}px` }"
@@ -1963,26 +1823,6 @@ const skeletonType = computed(() => {
                   </h3>
                   <div class="space-y-0.5">
                     <div
-                      v-for="i in 4"
-                      :key="i"
-                      class="flex items-center justify-between px-2 py-1.5 rounded-lg"
-                    >
-                      <div class="flex items-center gap-1.5">
-                        <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                        <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
-                      </div>
-                      <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="sidebar-widget sidebar-widget-compact animate-pulse">
-                  <h3 class="sidebar-widget-title sidebar-widget-title-compact flex items-center gap-2">
-                    <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                    <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-16" />
-                  </h3>
-                  <div class="space-y-0.5">
-                    <div
                       v-for="i in 5"
                       :key="i"
                       class="flex items-center justify-between px-2 py-1.5 rounded-lg"
@@ -2003,7 +1843,7 @@ const skeletonType = computed(() => {
                   </h3>
                   <div class="flex flex-wrap gap-1">
                     <div
-                      v-for="i in 8"
+                      v-for="i in 16"
                       :key="i"
                       class="h-5 px-2 bg-gray-200 dark:bg-dark-300 rounded"
                       :style="{ width: `${40 + Math.random() * 30}px` }"
@@ -2214,26 +2054,6 @@ const skeletonType = computed(() => {
                   </h3>
                   <div class="space-y-0.5">
                     <div
-                      v-for="i in 4"
-                      :key="i"
-                      class="flex items-center justify-between px-2 py-1.5 rounded-lg"
-                    >
-                      <div class="flex items-center gap-1.5">
-                        <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                        <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
-                      </div>
-                      <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="sidebar-widget sidebar-widget-compact animate-pulse">
-                  <h3 class="sidebar-widget-title sidebar-widget-title-compact flex items-center gap-2">
-                    <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                    <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-16" />
-                  </h3>
-                  <div class="space-y-0.5">
-                    <div
                       v-for="i in 5"
                       :key="i"
                       class="flex items-center justify-between px-2 py-1.5 rounded-lg"
@@ -2254,7 +2074,7 @@ const skeletonType = computed(() => {
                   </h3>
                   <div class="flex flex-wrap gap-1">
                     <div
-                      v-for="i in 8"
+                      v-for="i in 16"
                       :key="i"
                       class="h-5 px-2 bg-gray-200 dark:bg-dark-300 rounded"
                       :style="{ width: `${40 + Math.random() * 30}px` }"
@@ -2489,26 +2309,6 @@ const skeletonType = computed(() => {
                   </h3>
                   <div class="space-y-0.5">
                     <div
-                      v-for="i in 4"
-                      :key="i"
-                      class="flex items-center justify-between px-2 py-1.5 rounded-lg"
-                    >
-                      <div class="flex items-center gap-1.5">
-                        <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                        <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
-                      </div>
-                      <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="sidebar-widget sidebar-widget-compact animate-pulse">
-                  <h3 class="sidebar-widget-title sidebar-widget-title-compact flex items-center gap-2">
-                    <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                    <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-16" />
-                  </h3>
-                  <div class="space-y-0.5">
-                    <div
                       v-for="i in 5"
                       :key="i"
                       class="flex items-center justify-between px-2 py-1.5 rounded-lg"
@@ -2529,7 +2329,7 @@ const skeletonType = computed(() => {
                   </h3>
                   <div class="flex flex-wrap gap-1">
                     <div
-                      v-for="i in 8"
+                      v-for="i in 16"
                       :key="i"
                       class="h-5 px-2 bg-gray-200 dark:bg-dark-300 rounded"
                       :style="{ width: `${40 + Math.random() * 30}px` }"
@@ -2623,26 +2423,6 @@ const skeletonType = computed(() => {
                   </h3>
                   <div class="space-y-0.5">
                     <div
-                      v-for="i in 4"
-                      :key="i"
-                      class="flex items-center justify-between px-2 py-1.5 rounded-lg"
-                    >
-                      <div class="flex items-center gap-1.5">
-                        <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                        <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
-                      </div>
-                      <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-8" />
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="sidebar-widget sidebar-widget-compact animate-pulse">
-                  <h3 class="sidebar-widget-title sidebar-widget-title-compact flex items-center gap-2">
-                    <div class="w-3.5 h-3.5 bg-gray-200 dark:bg-dark-300 rounded" />
-                    <div class="h-3.5 bg-gray-200 dark:bg-dark-300 rounded w-16" />
-                  </h3>
-                  <div class="space-y-0.5">
-                    <div
                       v-for="i in 5"
                       :key="i"
                       class="flex items-center justify-between px-2 py-1.5 rounded-lg"
@@ -2663,7 +2443,7 @@ const skeletonType = computed(() => {
                   </h3>
                   <div class="flex flex-wrap gap-1">
                     <div
-                      v-for="i in 8"
+                      v-for="i in 16"
                       :key="i"
                       class="h-5 px-2 bg-gray-200 dark:bg-dark-300 rounded"
                       :style="{ width: `${40 + Math.random() * 30}px` }"
