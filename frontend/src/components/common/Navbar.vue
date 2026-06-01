@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useThemeStore, useAuthStore, useSiteConfigStore, useUserProfileStore, useDialogStore } from '@/stores'
 import UserAvatar from './UserAvatar.vue'
@@ -15,7 +15,6 @@ const dialog = useDialogStore()
 
 const isMenuOpen = ref(false)
 const isDesktopDropdownOpen = ref(false)
-let desktopDropdownCloseTimer: ReturnType<typeof setTimeout> | null = null
 
 const navLinks = computed(() => [
   { name: '首页', path: '/' },
@@ -87,34 +86,13 @@ const handleDesktopDropdownClickOutside = (event: MouseEvent) => {
 }
 
 const openDesktopDropdown = () => {
-  if (desktopDropdownCloseTimer) {
-    clearTimeout(desktopDropdownCloseTimer)
-    desktopDropdownCloseTimer = null
-  }
   isDesktopDropdownOpen.value = true
-}
-
-const scheduleDesktopDropdownClose = () => {
-  desktopDropdownCloseTimer = setTimeout(() => {
-    isDesktopDropdownOpen.value = false
-  }, 150)
-}
-
-const cancelDesktopDropdownClose = () => {
-  if (desktopDropdownCloseTimer) {
-    clearTimeout(desktopDropdownCloseTimer)
-    desktopDropdownCloseTimer = null
-  }
 }
 
 onMounted(() => {
   if (authStore.isAuthenticated) {
     userProfileStore.fetchProfile()
   }
-})
-
-onUnmounted(() => {
-  if (desktopDropdownCloseTimer) clearTimeout(desktopDropdownCloseTimer)
 })
 </script>
 
@@ -270,11 +248,11 @@ onUnmounted(() => {
             v-else
             class="hidden md:flex items-center relative desktop-dropdown-container"
             @mouseenter="openDesktopDropdown"
-            @mouseleave="scheduleDesktopDropdownClose"
+            @mouseleave="isDesktopDropdownOpen = false"
           >
             <button
               class="p-1.5 rounded-lg bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 hover:border-primary/30 hover:text-primary transition-all"
-              @click="isDesktopDropdownOpen = !isDesktopDropdownOpen"
+              @mouseenter="openDesktopDropdown"
             >
               <svg
                 class="w-5 h-5"
@@ -301,10 +279,10 @@ onUnmounted(() => {
             >
               <div
                 v-if="isDesktopDropdownOpen"
-                class="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-dark-200 rounded-xl shadow-xl border border-gray-200 dark:border-white/5 overflow-hidden z-50"
-                @mouseenter="cancelDesktopDropdownClose"
-                @mouseleave="scheduleDesktopDropdownClose"
+                class="absolute right-0 top-full w-56 z-50"
               >
+                <div class="h-2" />
+                <div class="bg-white dark:bg-dark-200 rounded-xl shadow-xl border border-gray-200 dark:border-white/5 overflow-hidden">
                 <div class="p-3 border-b border-gray-200 dark:border-white/5">
                   <div class="flex items-center gap-3">
                     <div
@@ -429,6 +407,7 @@ onUnmounted(() => {
                     </svg>
                     退出登录
                   </button>
+                </div>
                 </div>
               </div>
             </transition>

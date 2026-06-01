@@ -4,27 +4,9 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const isDropdownOpen = ref(false)
-let closeTimer: ReturnType<typeof setTimeout> | null = null
 
 const openDropdown = () => {
-  if (closeTimer) {
-    clearTimeout(closeTimer)
-    closeTimer = null
-  }
   isDropdownOpen.value = true
-}
-
-const scheduleClose = () => {
-  closeTimer = setTimeout(() => {
-    isDropdownOpen.value = false
-  }, 150)
-}
-
-const cancelClose = () => {
-  if (closeTimer) {
-    clearTimeout(closeTimer)
-    closeTimer = null
-  }
 }
 
 const goToLogin = () => {
@@ -50,7 +32,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
-  if (closeTimer) clearTimeout(closeTimer)
 })
 </script>
 
@@ -58,11 +39,11 @@ onUnmounted(() => {
   <div
     class="auth-menu-container relative"
     @mouseenter="openDropdown"
-    @mouseleave="scheduleClose"
+    @mouseleave="isDropdownOpen = false"
   >
     <button
       class="flex items-center gap-1 p-1.5 bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 rounded-lg text-gray-600 dark:text-gray-400 hover:text-primary hover:border-primary/30 transition-all"
-      @click.stop="isDropdownOpen = !isDropdownOpen"
+      @mouseenter="openDropdown"
     >
       <svg
         class="w-4 h-4"
@@ -103,10 +84,10 @@ onUnmounted(() => {
     >
       <div
         v-if="isDropdownOpen"
-        class="absolute right-0 mt-2 w-36 bg-white dark:bg-dark-200 rounded-xl shadow-lg border border-gray-200 dark:border-white/5 overflow-hidden z-50"
-        @mouseenter="cancelClose"
-        @mouseleave="scheduleClose"
+        class="absolute right-0 w-36 z-50"
       >
+        <div class="h-2" />
+        <div class="bg-white dark:bg-dark-200 rounded-xl shadow-lg border border-gray-200 dark:border-white/5 overflow-hidden">
         <div class="p-1.5">
           <button
             class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-300 rounded-lg transition-colors flex items-center gap-2"
@@ -146,6 +127,7 @@ onUnmounted(() => {
             </svg>
             注册
           </button>
+        </div>
         </div>
       </div>
     </transition>
