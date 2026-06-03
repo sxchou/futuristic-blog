@@ -556,7 +556,7 @@ def generate_set_password_code() -> str:
 
 
 def send_set_password_email_bg(email: str, username: str, code: str):
-    from app.core.database import SessionLocal
+    from app.core.database import SessionLocal, safe_db_close
     db = SessionLocal()
     try:
         EmailService.send_password_reset_email_db(
@@ -568,7 +568,7 @@ def send_set_password_email_bg(email: str, username: str, code: str):
     except Exception as e:
         print(f"Failed to send set password email: {e}")
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 @router.post("/set-password/request")
@@ -694,7 +694,7 @@ def get_client_ip(request: Request) -> str:
 
 
 def send_email_change_verification_bg(email: str, username: str, code: str, user_id: int):
-    from app.core.database import SessionLocal
+    from app.core.database import SessionLocal, safe_db_close
     db = SessionLocal()
     try:
         EmailService.send_email_change_verification_email_db(
@@ -707,7 +707,7 @@ def send_email_change_verification_bg(email: str, username: str, code: str, user
     except Exception as e:
         print(f"Failed to send email change verification: {e}")
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 @router.post("/email-change/send-to-old")

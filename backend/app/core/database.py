@@ -19,7 +19,13 @@ if is_sqlite:
 elif "planetscale.com" in database_url or "mysql" in database_url:
     connect_args = {"ssl": {"ssl_verify_cert": True}}
 elif "postgresql" in database_url:
-    connect_args = {"connect_timeout": 10}
+    connect_args = {
+        "connect_timeout": 10,
+        "keepalives": 1,
+        "keepalives_idle": 30,
+        "keepalives_interval": 10,
+        "keepalives_count": 5,
+    }
 
 logger.info(f"Database type: {'SQLite' if is_sqlite else 'PostgreSQL/MySQL'}")
 logger.info(f"Database URL: {database_url[:50]}...")
@@ -78,12 +84,26 @@ if is_sqlite:
         cursor.execute("PRAGMA page_size=4096")
         cursor.close()
 
+def safe_db_close(db):
+    try:
+        db.close()
+    except Exception as e:
+        logger.warning(f"Error closing database session, invalidating: {e}")
+        try:
+            db.connection().invalidate()
+        except Exception:
+            pass
+
+
 def get_db():
     db = SessionLocal()
     try:
         yield db
+    except Exception:
+        db.rollback()
+        raise
     finally:
-        db.close()
+        safe_db_close(db)
 
 def get_pool_stats():
     return {
@@ -111,4 +131,4 @@ def get_db_context():
         execution_time = (time.time() - start_time) * 1000
         if execution_time > 100:
             logger.warning(f"Slow database operation: {execution_time:.2f}ms")
-        db.close()
+        safe_db_close(db)

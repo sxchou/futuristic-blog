@@ -4,7 +4,7 @@ from datetime import datetime
 from fastapi import Request
 from sqlalchemy.orm import Session
 from app.models import OperationLog, LoginLog, AccessLog
-from app.core.database import SessionLocal
+from app.core.database import SessionLocal, safe_db_close
 from app.utils.timezone import get_now
 
 
@@ -182,7 +182,7 @@ def log_operation_sync(
             error_message=error_message
         )
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 def log_login_sync(
@@ -205,4 +205,4 @@ def log_login_sync(
             fail_reason=fail_reason
         )
     finally:
-        db.close()
+        safe_db_close(db)

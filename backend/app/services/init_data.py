@@ -1,4 +1,4 @@
-from app.core.database import SessionLocal, engine
+from app.core.database import SessionLocal, engine, safe_db_close
 from app.core.config import settings
 from app.models import User, Category, Tag, Article, Resource, SiteConfig, OAuthProvider
 from app.utils import get_password_hash
@@ -389,7 +389,7 @@ def run_database_migrations():
                 print(f"PostgreSQL migration error: {e}")
                 db.rollback()
             finally:
-                db.close()
+                safe_db_close(db)
         else:
             print(f"Migration: Unknown database type, skipping migrations")
     except Exception as e:
@@ -1575,7 +1575,7 @@ OpenAI API 为开发者提供了强大的 AI 能力，合理使用可以构建�
         print(f"Error initializing database: {e}")
         db.rollback()
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 def init_permissions_and_roles(db, admin):

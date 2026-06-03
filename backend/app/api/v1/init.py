@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import func
 from pydantic import BaseModel
-from app.core.database import get_db, SessionLocal
+from app.core.database import get_db, SessionLocal, safe_db_close
 from app.models import (
     Article, Category, Tag, Comment, ArticleLike, ArticleBookmark,
     SiteConfig, Announcement, UserProfile, AvatarType, User
@@ -58,7 +58,7 @@ def _get_site_configs_cached() -> List[SiteConfigResponse]:
         cache_manager.set("site_config", cache_key, [r.model_dump() for r in result])
         return result
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 def _get_categories_cached() -> List[CategoryResponse]:
@@ -101,7 +101,7 @@ def _get_categories_cached() -> List[CategoryResponse]:
         cache_manager.set("categories", cache_key, [r.model_dump() for r in result])
         return result
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 def _get_tags_cached() -> List[TagResponse]:
@@ -144,7 +144,7 @@ def _get_tags_cached() -> List[TagResponse]:
         cache_manager.set("tags", cache_key, [r.model_dump() for r in result])
         return result
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 def _get_announcements_cached(active_only: bool = True) -> List[AnnouncementResponse]:
@@ -173,7 +173,7 @@ def _get_announcements_cached(active_only: bool = True) -> List[AnnouncementResp
             cache_manager.set("announcements", cache_key, [r.model_dump() for r in result])
         return result
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 def _get_articles_list(page: int, page_size: int, is_featured: Optional[bool] = None) -> PaginatedResponse:
@@ -243,7 +243,7 @@ def _get_articles_list(page: int, page_size: int, is_featured: Optional[bool] = 
             total_pages=total_pages
         )
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 def _get_github_stats_cached() -> Dict[str, Any]:
@@ -272,7 +272,7 @@ def _get_github_stats_cached() -> Dict[str, Any]:
         
         return {"enabled": True, "stars": 0, "forks": 0, "watchers": 0, "open_issues": 0, "pending": True, "repo_url": repo_url}
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 def _fetch_github_stats_async(repo_url: str) -> None:
@@ -354,7 +354,7 @@ def _get_user_profile_data(user_id: int, username: str) -> Dict[str, Any]:
             "updated_at": profile.updated_at
         }
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 def _get_user_interaction_data(user_id: int) -> tuple:
@@ -382,7 +382,7 @@ def _get_user_interaction_data(user_id: int) -> tuple:
         
         return liked_article_ids, bookmarked_article_ids
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 def _get_user_permissions_data(user_id: int) -> Dict[str, Any]:
@@ -404,7 +404,7 @@ def _get_user_permissions_data(user_id: int) -> Dict[str, Any]:
         cache_manager.set("user_permissions", cache_key, result, ttl=60)
         return result
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 @router.get("", response_model=InitResponse)

@@ -22,7 +22,7 @@ def check_user_liked(db: Session, article_id: int, user_id: Optional[int]) -> bo
 
 
 def send_like_notification_bg(article_title: str, article_slug: str, liker_name: str, author_email: str = None, author_name: str = None):
-    from app.core.database import SessionLocal
+    from app.core.database import SessionLocal, safe_db_close
     db = SessionLocal()
     try:
         notification_settings = db.query(NotificationSettings).first()
@@ -38,7 +38,7 @@ def send_like_notification_bg(article_title: str, article_slug: str, liker_name:
     except Exception as e:
         print(f"Failed to send like notification: {e}")
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 @router.get("/user/liked", response_model=PaginatedResponse)

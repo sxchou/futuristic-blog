@@ -189,7 +189,7 @@ def build_comment_tree(comments: List[Comment], db: Session) -> List[dict]:
 
 
 def send_comment_notification_bg(article_title: str, article_slug: str, commenter_name: str, comment_content: str, author_email: str, author_name: str, comment_id: int = None):
-    from app.core.database import SessionLocal
+    from app.core.database import SessionLocal, safe_db_close
     db = SessionLocal()
     try:
         notification_settings = db.query(NotificationSettings).first()
@@ -207,11 +207,11 @@ def send_comment_notification_bg(article_title: str, article_slug: str, commente
     except Exception as e:
         print(f"Failed to send comment notification: {e}")
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 def send_pending_comment_notification_bg(article_title: str, article_slug: str, commenter_name: str, comment_content: str, author_email: str, author_name: str, comment_id: int = None):
-    from app.core.database import SessionLocal
+    from app.core.database import SessionLocal, safe_db_close
     db = SessionLocal()
     try:
         notification_settings = db.query(NotificationSettings).first()
@@ -227,11 +227,11 @@ def send_pending_comment_notification_bg(article_title: str, article_slug: str, 
     except Exception as e:
         print(f"Failed to send pending comment notification: {e}")
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 def send_comment_approved_notification_bg(recipient_email: str, recipient_name: str, article_title: str, article_slug: str, comment_content: str, comment_id: int = None):
-    from app.core.database import SessionLocal
+    from app.core.database import SessionLocal, safe_db_close
     db = SessionLocal()
     try:
         EmailService.send_comment_approved_notification_db(
@@ -246,11 +246,11 @@ def send_comment_approved_notification_bg(recipient_email: str, recipient_name: 
     except Exception as e:
         print(f"Failed to send comment approved notification: {e}")
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 def send_comment_rejected_notification_bg(recipient_email: str, recipient_name: str, article_title: str, comment_content: str, reason: str = None):
-    from app.core.database import SessionLocal
+    from app.core.database import SessionLocal, safe_db_close
     db = SessionLocal()
     try:
         EmailService.send_comment_rejected_notification_db(
@@ -264,7 +264,7 @@ def send_comment_rejected_notification_bg(recipient_email: str, recipient_name: 
     except Exception as e:
         print(f"Failed to send comment rejected notification: {e}")
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 def send_reply_notification_bg(
@@ -277,7 +277,7 @@ def send_reply_notification_bg(
     comment_id: int = None,
     parent_comment_id: int = None
 ):
-    from app.core.database import SessionLocal
+    from app.core.database import SessionLocal, safe_db_close
     db = SessionLocal()
     try:
         notification_settings = db.query(NotificationSettings).first()
@@ -296,7 +296,7 @@ def send_reply_notification_bg(
     except Exception as e:
         print(f"Failed to send reply notification: {e}")
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 @router.get("/article/{article_id}", response_model=List[CommentResponse])

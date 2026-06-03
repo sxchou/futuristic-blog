@@ -23,7 +23,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 def send_register_notification_bg(new_username: str, new_email: str):
-    from app.core.database import SessionLocal
+    from app.core.database import SessionLocal, safe_db_close
     db = SessionLocal()
     try:
         notification_settings = db.query(NotificationSettings).first()
@@ -36,11 +36,11 @@ def send_register_notification_bg(new_username: str, new_email: str):
     except Exception as e:
         print(f"Failed to send register notification: {e}")
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 def send_verification_email_bg(email: str, username: str, token: str, user_id: int):
-    from app.core.database import SessionLocal
+    from app.core.database import SessionLocal, safe_db_close
     db = SessionLocal()
     try:
         EmailService.send_verification_email_db(
@@ -53,11 +53,11 @@ def send_verification_email_bg(email: str, username: str, token: str, user_id: i
     except Exception as e:
         print(f"Failed to send verification email: {e}")
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 def send_password_reset_email_bg(email: str, username: str, code: str):
-    from app.core.database import SessionLocal
+    from app.core.database import SessionLocal, safe_db_close
     db = SessionLocal()
     try:
         EmailService.send_password_reset_email_db(
@@ -69,7 +69,7 @@ def send_password_reset_email_bg(email: str, username: str, code: str):
     except Exception as e:
         print(f"Failed to send password reset email: {e}")
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 @router.post("/login", response_model=Token)

@@ -126,7 +126,7 @@ class ErrorLogEmailHandler(logging.Handler):
     
     def _send_error_notification(self, logs: List[Dict[str, Any]]) -> None:
         try:
-            from app.core.database import SessionLocal
+            from app.core.database import SessionLocal, safe_db_close
             from app.services.email_service import EmailService
             import logging
             
@@ -157,7 +157,7 @@ class ErrorLogEmailHandler(logging.Handler):
             except Exception as inner_e:
                 error_logger.error(f"Exception during email send: {inner_e}", exc_info=True)
             finally:
-                db.close()
+                safe_db_close(db)
                 
         except Exception as e:
             import logging

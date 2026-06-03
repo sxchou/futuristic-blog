@@ -1,7 +1,7 @@
 import functools
 from typing import Optional, Callable
 from fastapi import Request
-from app.core.database import SessionLocal
+from app.core.database import SessionLocal, safe_db_close
 from app.services.log_service import LogService
 
 
@@ -59,7 +59,7 @@ def log_operation(
                 except Exception as log_error:
                     print(f"Failed to log operation: {log_error}")
                 finally:
-                    db.close()
+                    safe_db_close(db)
         
         return wrapper
     return decorator

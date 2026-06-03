@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse, Response
 from app.core.config import settings
-from app.core.database import engine, Base, SessionLocal, is_sqlite
+from app.core.database import engine, Base, SessionLocal, is_sqlite, safe_db_close
 from app.api import router as api_router
 from app.services.init_data import init_database
 from app.services.log_service import LogService
@@ -219,7 +219,7 @@ def get_db_session():
     try:
         yield db
     finally:
-        db.close()
+        safe_db_close(db)
 
 async def cleanup_expired_tokens_task():
     while True:
@@ -337,7 +337,7 @@ class AccessLogMiddleware:
                             if user:
                                 user_id = user.id
                         finally:
-                            db.close()
+                            safe_db_close(db)
             except Exception as e:
                 logger.debug(f"Failed to decode token for access log: {e}")
 
@@ -399,10 +399,7 @@ class AccessLogMiddleware:
         except Exception as e:
             logger.warning(f"Failed to log access: {e}")
         finally:
-            db.close()
-
-
-app.add_middleware(AccessLogMiddleware)
+            safe_db_close(db)
 
 app.include_router(api_router, prefix="/api")
 
@@ -584,7 +581,7 @@ def migrate_foreign_key_ondelete():
                 logger.warning(f"Foreign key migration skipped or partially applied: {e}")
                 break
         finally:
-            db.close()
+            safe_db_close(db)
 
 
 def _migrate_postgresql(db, inspector, migrations):
@@ -863,7 +860,7 @@ def sync_article_comment_counts():
     except Exception as e:
         logger.error(f"Error syncing comment counts: {e}")
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 def migrate_add_bookmark_count():
@@ -883,7 +880,7 @@ def migrate_add_bookmark_count():
         logger.error(f"Error migrating bookmark_count column: {e}")
         db.rollback()
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 def migrate_add_article_likes_indexes():
@@ -937,7 +934,7 @@ def migrate_add_article_likes_indexes():
         logger.error(f"Error migrating article_likes indexes: {e}")
         db.rollback()
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 def sync_article_bookmark_counts():
@@ -963,7 +960,7 @@ def sync_article_bookmark_counts():
     except Exception as e:
         logger.error(f"Error syncing bookmark counts: {e}")
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 def migrate_add_author_name_and_reply_to_user_name():
@@ -1042,7 +1039,7 @@ def migrate_add_author_name_and_reply_to_user_name():
         logger.error(f"Error migrating author_name/reply_to_user_name columns: {e}")
         db.rollback()
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 def migrate_resources_category_nullable():
@@ -1073,7 +1070,7 @@ def migrate_resources_category_nullable():
         logger.error(f"Error migrating resources.category nullable: {e}")
         db.rollback()
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 def migrate_add_pinned_order():
@@ -1106,7 +1103,7 @@ def migrate_add_pinned_order():
         logger.error(f"Error migrating pinned columns: {e}")
         db.rollback()
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 def sync_author_name_and_reply_to_user_name():
@@ -1135,7 +1132,7 @@ def sync_author_name_and_reply_to_user_name():
         logger.error(f"Error syncing author_name/reply_to_user_name: {e}")
         db.rollback()
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 def fix_database_sequences():
@@ -1174,7 +1171,7 @@ def fix_database_sequences():
         logger.error(f"Error fixing sequences: {e}")
         db.rollback()
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 @app.api_route("/", methods=["GET", "HEAD"])
@@ -1323,7 +1320,7 @@ async def get_sitemap():
             headers={"Cache-Control": "public, max-age=3600"}
         )
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 @app.get("/robots.txt")

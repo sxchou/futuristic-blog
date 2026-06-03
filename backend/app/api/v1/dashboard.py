@@ -6,7 +6,7 @@ from sqlalchemy import func, desc, case, text
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
-from app.core.database import get_db, SessionLocal
+from app.core.database import get_db, SessionLocal, safe_db_close
 from app.utils.permissions import require_permission
 from app.utils.timezone import get_now, get_today_start, to_local
 from app.utils.cache import cache_manager
@@ -310,7 +310,7 @@ async def warmup_dashboard_cache():
     except Exception as e:
         logger.warning(f"Dashboard cache warmup failed: {e}")
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 @router.get("/overview", response_model=OverviewStats)

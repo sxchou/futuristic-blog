@@ -2,7 +2,7 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
-from app.core.database import SessionLocal
+from app.core.database import SessionLocal, safe_db_close
 from app.models import Article, User
 from app.services.baidu_push_service import baidu_push_service
 from app.services.email_service import EmailService
@@ -110,7 +110,7 @@ class ScheduledPublishService:
                 await self._start_checker()
                 logger.info("Started checker service to monitor scheduled articles")
         finally:
-            db.close()
+            safe_db_close(db)
     
     async def _start_checker(self):
         """启动轻量级检查服务"""
@@ -214,7 +214,7 @@ class ScheduledPublishService:
                     
                     has_upcoming = self._has_upcoming_articles(db)
                 finally:
-                    db.close()
+                    safe_db_close(db)
                 
                 if has_upcoming:
                     await asyncio.sleep(1)
@@ -348,7 +348,7 @@ class ScheduledPublishService:
         except Exception as e:
             logger.error(f"Error checking scheduled articles: {e}", exc_info=True)
         finally:
-            db.close()
+            safe_db_close(db)
 
 
 scheduled_publish_service = ScheduledPublishService()

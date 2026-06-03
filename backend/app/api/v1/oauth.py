@@ -44,7 +44,7 @@ def _get_pkce_verifier(state: str) -> str | None:
 
 
 def send_oauth_email_verification_bg(email: str, username: str, temp_token: str, provider_name: str):
-    from app.core.database import SessionLocal
+    from app.core.database import SessionLocal, safe_db_close
     from app.services.email_service import EmailService
     db = SessionLocal()
     try:
@@ -58,7 +58,7 @@ def send_oauth_email_verification_bg(email: str, username: str, temp_token: str,
     except Exception as e:
         print(f"Failed to send OAuth email verification: {e}")
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 class OAuthProviderBase(BaseModel):

@@ -197,7 +197,7 @@ async def send_email_async(
     recipient_name: str = None,
     user_id: int = None
 ) -> dict:
-    from app.core.database import SessionLocal
+    from app.core.database import SessionLocal, safe_db_close
     
     log = EmailLog(
         email_type=email_type,
@@ -232,7 +232,7 @@ async def send_email_async(
         db.commit()
         return {'success': False, 'error': str(e)}
     finally:
-        db.close()
+        safe_db_close(db)
 
 
 @router.get("/providers")
