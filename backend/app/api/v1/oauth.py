@@ -12,10 +12,35 @@ from app.services.permission_service import PermissionService
 from app.services.log_service import LogService, log_login_sync
 import httpx
 import secrets
+import hashlib
+import base64
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode, quote
 
 router = APIRouter(prefix="/oauth", tags=["oauth"])
+
+
+# PKCE helpers
+def generate_code_verifier() -> str:
+    return secrets.token_urlsafe(64)[:128]
+
+
+def generate_code_challenge(code_verifier: str) -> str:
+    digest = hashlib.sha256(code_verifier.encode("ascii")).digest()
+    return base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
+
+
+def _store_pkce_verifier(state: str, code_verifier: str):
+    from app.utils.cache import cache_manager
+    cache_manager.set("oauth_pkce", state, {"code_verifier": code_verifier})
+
+
+def _get_pkce_verifier(state: str) -> str | None:
+    from app.utils.cache import cache_manager
+    data = cache_manager.get("oauth_pkce", state)
+    if data:
+        return data.get("code_verifier")
+    return None
 
 
 def send_oauth_email_verification_bg(email: str, username: str, temp_token: str, provider_name: str):
@@ -413,6 +438,14 @@ def oauth_login(provider_name: str, db: Session = Depends(get_db)):
         params["access_type"] = "offline"
         params["prompt"] = "consent"
     
+    # Twitter/X requires PKCE since Jan 2025
+    if provider_name in ("x", "twitter"):
+        code_verifier = generate_code_verifier()
+        code_challenge = generate_code_challenge(code_verifier)
+        params["code_challenge"] = code_challenge
+        params["code_challenge_method"] = "S256"
+        _store_pkce_verifier(state, code_verifier)
+    
     query_string = urlencode(params)
     authorize_url = f"{provider.authorize_url}?{query_string}"
     
@@ -449,15 +482,23 @@ async def oauth_callback(
         return RedirectResponse(url=f"{settings.FRONTEND_URL}/login?error=Provider not properly configured")
     
     async with httpx.AsyncClient() as client:
+        token_data_payload = {
+            "client_id": provider.client_id,
+            "client_secret": provider.client_secret,
+            "code": code,
+            "grant_type": "authorization_code",
+            "redirect_uri": provider.redirect_uri
+        }
+        
+        # Include code_verifier for PKCE (Twitter/X)
+        if provider_name in ("x", "twitter"):
+            code_verifier = _get_pkce_verifier(state)
+            if code_verifier:
+                token_data_payload["code_verifier"] = code_verifier
+        
         token_response = await client.post(
             provider.token_url,
-            data={
-                "client_id": provider.client_id,
-                "client_secret": provider.client_secret,
-                "code": code,
-                "grant_type": "authorization_code",
-                "redirect_uri": provider.redirect_uri
-            },
+            data=token_data_payload,
             headers={"Accept": "application/json"}
         )
         

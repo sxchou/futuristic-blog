@@ -148,6 +148,7 @@ DEFAULT_STRATEGIES: Dict[str, CacheStrategy] = {
     'logs': CacheStrategy(ttl=60, max_size=100, priority=2),
     'announcements': CacheStrategy(ttl=900, max_size=100, priority=1),
     'users': CacheStrategy(ttl=300, max_size=200, priority=1),
+    'oauth_pkce': CacheStrategy(ttl=600, max_size=200, priority=0),
 }
 
 
