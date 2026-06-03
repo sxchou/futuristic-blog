@@ -13,6 +13,7 @@ from app.services.log_service import LogService, log_login_sync
 import httpx
 import secrets
 from datetime import datetime, timedelta, timezone
+from urllib.parse import urlencode, quote
 
 router = APIRouter(prefix="/oauth", tags=["oauth"])
 
@@ -412,7 +413,7 @@ def oauth_login(provider_name: str, db: Session = Depends(get_db)):
         params["access_type"] = "offline"
         params["prompt"] = "consent"
     
-    query_string = "&".join(f"{k}={v}" for k, v in params.items())
+    query_string = urlencode(params)
     authorize_url = f"{provider.authorize_url}?{query_string}"
     
     return OAuthLoginResponse(authorize_url=authorize_url, state=state)
