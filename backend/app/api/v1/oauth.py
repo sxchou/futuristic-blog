@@ -483,23 +483,31 @@ async def oauth_callback(
     
     async with httpx.AsyncClient() as client:
         token_data_payload = {
-            "client_id": provider.client_id,
-            "client_secret": provider.client_secret,
             "code": code,
             "grant_type": "authorization_code",
             "redirect_uri": provider.redirect_uri
         }
         
-        # Include code_verifier for PKCE (Twitter/X)
+        token_headers = {"Accept": "application/json"}
+        
+        # Twitter/X: Confidential Client uses Basic Auth + PKCE code_verifier
         if provider_name in ("x", "twitter"):
             code_verifier = _get_pkce_verifier(state)
             if code_verifier:
                 token_data_payload["code_verifier"] = code_verifier
+            # Use HTTP Basic Auth for confidential client
+            credentials = base64.b64encode(
+                f"{provider.client_id}:{provider.client_secret}".encode()
+            ).decode()
+            token_headers["Authorization"] = f"Basic {credentials}"
+        else:
+            token_data_payload["client_id"] = provider.client_id
+            token_data_payload["client_secret"] = provider.client_secret
         
         token_response = await client.post(
             provider.token_url,
             data=token_data_payload,
-            headers={"Accept": "application/json"}
+            headers=token_headers
         )
         
         if token_response.status_code != 200:

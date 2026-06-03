@@ -1531,9 +1531,9 @@ OpenAI API 为开发者提供了强大的 AI 能力，合理使用可以构建�
                 "name": "x",
                 "display_name": "X (Twitter)",
                 "icon": "twitter",
-                "authorize_url": "https://twitter.com/i/oauth2/authorize",
-                "token_url": "https://api.twitter.com/2/oauth2/token",
-                "userinfo_url": "https://api.twitter.com/2/users/me",
+                "authorize_url": "https://x.com/i/oauth2/authorize",
+                "token_url": "https://api.x.com/2/oauth2/token",
+                "userinfo_url": "https://api.x.com/2/users/me",
                 "scope": "users.read tweet.read offline.access",
                 "order": 3
             },
@@ -1564,6 +1564,11 @@ OpenAI API 为开发者提供了强大的 AI 能力，合理使用可以构建�
             if not existing:
                 provider = OAuthProvider(**provider_data)
                 db.add(provider)
+            else:
+                # Update endpoint URLs for existing providers (e.g. Twitter → X migration)
+                for field in ("authorize_url", "token_url", "userinfo_url"):
+                    if field in provider_data and getattr(existing, field) != provider_data[field]:
+                        setattr(existing, field, provider_data[field])
         
         db.commit()
         
