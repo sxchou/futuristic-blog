@@ -401,6 +401,8 @@ class AccessLogMiddleware:
         finally:
             safe_db_close(db)
 
+app.add_middleware(AccessLogMiddleware)
+
 app.include_router(api_router, prefix="/api")
 
 
