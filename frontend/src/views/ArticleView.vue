@@ -1708,6 +1708,13 @@ watch(article, async (newVal) => {
   overflow-wrap: break-word;
 }
 
+/* Mermaid 节点内的 <p> 继承父节点标签颜色，避免被夜间模式浅色文字覆盖导致不可读 */
+.article-content :deep(.mermaid .nodeLabel p) {
+  color: inherit !important;
+  margin: 0 !important;
+  line-height: 1.5 !important;
+}
+
 .article-content :deep(a) { 
   @apply text-primary hover:underline;
   word-break: break-word;
