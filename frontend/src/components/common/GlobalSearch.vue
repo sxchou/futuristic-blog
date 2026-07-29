@@ -116,14 +116,14 @@ onUnmounted(() => {
         class="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] px-4"
       >
         <div
-          class="absolute inset-0 bg-dark/80 backdrop-blur-sm"
+          class="absolute inset-0 bg-black/50 dark:bg-dark/80 backdrop-blur-sm"
           @click="closeSearch"
         />
         
         <div class="relative w-full max-w-2xl glass-card p-4 shadow-2xl">
           <form class="flex items-center gap-4 mb-4" @submit.prevent="handleEnter">
             <svg
-              class="w-5 h-5 text-gray-400"
+              class="w-5 h-5 text-gray-500 dark:text-gray-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -140,25 +140,25 @@ onUnmounted(() => {
               data-search-input
               type="text"
               placeholder="搜索文章、标签、分类...（按回车查看全部结果）"
-              class="flex-1 bg-transparent text-white text-lg outline-none placeholder-gray-500"
+              class="flex-1 bg-transparent text-gray-900 dark:text-white text-lg outline-none placeholder-gray-400 dark:placeholder-gray-500"
               @input="performSearch"
               @keyup.enter="handleEnter"
             >
-            <kbd class="px-2 py-1 bg-dark-200 rounded text-xs text-gray-400">ESC</kbd>
+            <kbd class="px-2 py-1 bg-gray-100 dark:bg-dark-200 rounded text-xs text-gray-500 dark:text-gray-400">ESC</kbd>
           </form>
 
           <div
             v-if="searchQuery && filteredResults.length > 0"
-            class="border-t border-white/10 pt-4"
+            class="border-t border-gray-200 dark:border-white/10 pt-4"
           >
-            <div class="text-sm text-gray-400 mb-2">
+            <div class="text-sm text-gray-500 dark:text-gray-400 mb-2">
               搜索结果
             </div>
             <div class="space-y-2">
               <button
                 v-for="article in filteredResults"
                 :key="article.id"
-                class="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition-colors text-left"
+                class="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors text-left"
                 @click="goToArticle(article.slug)"
               >
                 <div class="w-10 h-10 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
@@ -178,16 +178,16 @@ onUnmounted(() => {
                 </div>
                 <div class="flex-1 min-w-0">
                   <div
-                    class="text-white font-medium truncate"
+                    class="text-gray-900 dark:text-white font-medium truncate"
                     v-html="highlightText(article.title, searchQuery)"
                   />
                   <div
-                    class="text-sm text-gray-400 truncate"
+                    class="text-sm text-gray-500 dark:text-gray-400 truncate"
                     v-html="highlightText(article.summary || '', searchQuery)"
                   />
                 </div>
                 <svg
-                  class="w-4 h-4 text-gray-400"
+                  class="w-4 h-4 text-gray-500 dark:text-gray-400"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -211,14 +211,14 @@ onUnmounted(() => {
 
           <div
             v-else-if="searchQuery && !isSearching"
-            class="border-t border-white/10 pt-4 text-center text-gray-400"
+            class="border-t border-gray-200 dark:border-white/10 pt-4 text-center text-gray-500 dark:text-gray-400"
           >
             未找到相关结果
           </div>
 
           <div
             v-if="isSearching"
-            class="border-t border-white/10 pt-4 text-center text-gray-400"
+            class="border-t border-gray-200 dark:border-white/10 pt-4 text-center text-gray-500 dark:text-gray-400"
           >
             <svg
               class="animate-spin w-5 h-5 mx-auto"
@@ -243,9 +243,9 @@ onUnmounted(() => {
 
           <div
             v-if="!searchQuery"
-            class="border-t border-white/10 pt-4"
+            class="border-t border-gray-200 dark:border-white/10 pt-4"
           >
-            <div class="text-sm text-gray-400 mb-3">
+            <div class="text-sm text-gray-500 dark:text-gray-400 mb-3">
               热门标签
             </div>
             <div class="flex flex-wrap gap-2">

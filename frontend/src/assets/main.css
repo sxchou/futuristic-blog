@@ -349,7 +349,7 @@ hr {
 
 .search-highlight {
   background-color: rgba(250, 204, 21, 0.4) !important;
-  color: #fbbf24 !important;
+  color: #92400e !important;
   padding: 2px 4px !important;
   border-radius: 3px !important;
   font-weight: 700 !important;
@@ -410,7 +410,7 @@ img[loading="lazy"] {
 
 mark.search-highlight {
   background-color: rgba(250, 204, 21, 0.4) !important;
-  color: #fbbf24 !important;
+  color: #92400e !important;
   padding: 2px 4px !important;
   border-radius: 3px !important;
   font-weight: 700 !important;
