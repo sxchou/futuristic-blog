@@ -2177,38 +2177,47 @@ const skeletonType = computed(() => {
             </div>
             
             <div class="flex-1 min-w-0 lg:order-2">
-              <section class="mb-8">
-                <div class="glass-card overflow-hidden animate-pulse">
-                  <div class="relative h-48 sm:h-56 md:h-64 lg:h-72 xl:h-80 bg-gray-200 dark:bg-dark-300">
-                    <div class="absolute bottom-0 left-0 right-0 px-2 py-4">
-                      <div class="flex items-center gap-1 mb-2">
-                        <div class="h-5 w-16 bg-gray-300/50 dark:bg-gray-600/50 rounded-full" />
-                        <div class="h-5 w-12 bg-gray-300/50 dark:bg-gray-600/50 rounded-full" />
-                      </div>
-                      <div class="h-6 bg-gray-300/50 dark:bg-gray-600/50 rounded w-3/4 mb-2" />
-                      <div class="h-4 bg-gray-300/50 dark:bg-gray-600/50 rounded w-2/3 mb-2" />
-                      <div class="flex items-center gap-2">
-                        <div class="h-3 w-20 bg-gray-300/50 dark:bg-gray-600/50 rounded" />
-                        <div class="h-3 w-12 bg-gray-300/50 dark:bg-gray-600/50 rounded" />
-                      </div>
-                    </div>
+              <section class="mb-6">
+                <div class="animate-pulse rounded-[0.9rem] overflow-hidden border border-gray-200/70 dark:border-white/8 bg-white dark:bg-[#0a0a0a]">
+                  <!-- titlebar -->
+                  <div class="flex items-center gap-1.5 px-3.5 py-2.5 bg-gray-50/80 dark:bg-[#141414] border-b border-gray-200/60 dark:border-white/5">
+                    <div class="w-3 h-3 rounded-full bg-gray-200 dark:bg-dark-300" />
+                    <div class="w-3 h-3 rounded-full bg-gray-200 dark:bg-dark-300" />
+                    <div class="w-3 h-3 rounded-full bg-gray-200 dark:bg-dark-300" />
+                    <div class="ml-2.5 h-3 bg-gray-200 dark:bg-dark-300 rounded w-16" />
+                    <div class="ml-auto h-3 bg-primary/15 dark:bg-primary/20 rounded-md w-7 border border-primary/30" />
                   </div>
-                  <div class="flex items-center justify-between px-2 py-1 border-t border-gray-100 dark:border-white/5">
-                    <div class="flex gap-1">
+                  <!-- editor body: gutter + code lines -->
+                  <div class="flex min-h-[300px]">
+                    <div class="flex flex-col py-4 pl-3.5 pr-2.5 border-r border-gray-200/60 dark:border-white/5">
                       <div
-                        v-for="i in 5"
+                        v-for="i in 11"
                         :key="i"
-                        class="h-1 rounded-full bg-gray-300 dark:bg-gray-600"
-                        :class="i === 1 ? 'w-3' : 'w-1'"
+                        class="h-3 w-3.5 bg-gray-100 dark:bg-white/5 rounded mb-2.5 last:mb-0"
                       />
                     </div>
-                    <div class="flex gap-0.5">
-                      <div class="p-0.5 rounded bg-gray-200 dark:bg-dark-300">
-                        <div class="w-3 h-3 bg-gray-300 dark:bg-gray-600 rounded" />
-                      </div>
-                      <div class="p-0.5 rounded bg-gray-200 dark:bg-dark-300">
-                        <div class="w-3 h-3 bg-gray-300 dark:bg-gray-600 rounded" />
-                      </div>
+                    <div class="flex-1 p-4 space-y-2.5">
+                      <div class="h-3 bg-gray-100 dark:bg-white/5 rounded w-1/3" />
+                      <div class="h-3 bg-gray-100 dark:bg-white/5 rounded w-2/3" />
+                      <div class="h-3 bg-gray-100 dark:bg-white/5 rounded w-1/2" />
+                      <div class="h-3 bg-gray-100 dark:bg-white/5 rounded w-3/5" />
+                      <div class="h-3 bg-gray-100 dark:bg-white/5 rounded w-4/5" />
+                      <div class="h-3 bg-gray-100 dark:bg-white/5 rounded w-2/5" />
+                      <div class="h-3 bg-gray-100 dark:bg-white/5 rounded w-1/2" />
+                      <div class="h-3 bg-gray-100 dark:bg-white/5 rounded w-3/4" />
+                      <div class="h-3 bg-gray-100 dark:bg-white/5 rounded w-1/3" />
+                      <div class="h-3 bg-gray-100 dark:bg-white/5 rounded w-2/5" />
+                      <div class="h-3 bg-gray-100 dark:bg-white/5 rounded w-1/4" />
+                    </div>
+                  </div>
+                  <!-- statusbar -->
+                  <div class="flex items-center gap-4 px-3.5 py-1.5 bg-gray-50/80 dark:bg-[#111111] border-t border-gray-200/60 dark:border-white/5">
+                    <div class="w-2 h-2 rounded-full bg-gray-200 dark:bg-dark-300" />
+                    <div class="h-2.5 bg-gray-200 dark:bg-dark-300 rounded w-12" />
+                    <div class="ml-auto flex items-center gap-4">
+                      <div class="h-2.5 bg-gray-200 dark:bg-dark-300 rounded w-14" />
+                      <div class="h-2.5 bg-gray-200 dark:bg-dark-300 rounded w-10" />
+                      <div class="h-2.5 bg-gray-200 dark:bg-dark-300 rounded w-20" />
                     </div>
                   </div>
                 </div>
