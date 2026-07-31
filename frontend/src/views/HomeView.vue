@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, watch, defineAsyncComponent } from 'vue'
+import { ref, onMounted, onUnmounted, watch, defineAsyncComponent } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBlogStore, useAuthStore, useUserInteractionStore, useInitStore } from '@/stores'
 import { prefetchAllCommonPages, prefetchArticleComponent } from '@/router'
 import { prefetchAllData, dataPrefetch } from '@/utils/prefetch'
 import Pagination from '@/components/common/Pagination.vue'
+import CodeHero from '@/components/common/CodeHero.vue'
 import { usePageSize } from '@/composables/usePageSize'
 import { formatDateShort } from '@/utils/date'
 import { getMediaUrl } from '@/utils/media'
@@ -23,100 +24,6 @@ const articlesSectionRef = ref<HTMLElement | null>(null)
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
 const { pageSize } = usePageSize()
-
-const featuredArticlesList = computed(() => blogStore.featuredArticles.slice(0, 5))
-
-const currentSlide = ref(0)
-let slideInterval: ReturnType<typeof setInterval> | null = null
-
-const featuredArticles = computed(() => featuredArticlesList.value)
-const currentFeatured = computed(() => featuredArticles.value[currentSlide.value])
-
-const nextSlide = () => {
-  if (featuredArticles.value.length > 0) {
-    currentSlide.value = (currentSlide.value + 1) % featuredArticles.value.length
-  }
-}
-
-const prevSlide = () => {
-  if (featuredArticles.value.length > 0) {
-    currentSlide.value = currentSlide.value === 0 ? featuredArticles.value.length - 1 : currentSlide.value - 1
-  }
-}
-
-const pauseAutoPlay = () => {
-  if (slideInterval) {
-    clearInterval(slideInterval)
-    slideInterval = null
-  }
-}
-
-const resumeAutoPlay = () => {
-  if (featuredArticles.value.length > 1 && !slideInterval) {
-    slideInterval = setInterval(nextSlide, 6000)
-  }
-}
-
-const touchStartX = ref(0)
-const touchEndX = ref(0)
-const isSwiping = ref(false)
-const hasSwiped = ref(false)
-const swipeEndTime = ref(0)
-const isTouching = ref(false)
-
-const handleTouchStart = (e: TouchEvent) => {
-  touchStartX.value = e.touches[0].clientX
-  touchEndX.value = e.touches[0].clientX
-  isSwiping.value = true
-  hasSwiped.value = false
-  isTouching.value = true
-  pauseAutoPlay()
-}
-
-const handleTouchMove = (e: TouchEvent) => {
-  if (!isSwiping.value) return
-  touchEndX.value = e.touches[0].clientX
-}
-
-const handleTouchEnd = () => {
-  if (!isSwiping.value) return
-  isSwiping.value = false
-  isTouching.value = false
-  
-  const swipeThreshold = 50
-  const diff = touchStartX.value - touchEndX.value
-  
-  if (Math.abs(diff) > swipeThreshold) {
-    hasSwiped.value = true
-    swipeEndTime.value = Date.now()
-    if (diff > 0) {
-      nextSlide()
-    } else {
-      prevSlide()
-    }
-  }
-  
-  touchStartX.value = 0
-  touchEndX.value = 0
-  
-  setTimeout(() => {
-    resumeAutoPlay()
-  }, 1000)
-}
-
-const handleCarouselClick = (e: MouseEvent) => {
-  if (hasSwiped.value || isTouching.value || Date.now() - swipeEndTime.value < 500) {
-    e.preventDefault()
-    e.stopPropagation()
-    return
-  }
-  
-  if (currentFeatured.value?.slug) {
-    router.push(`/article/${currentFeatured.value.slug}`)
-  }
-  
-  hasSwiped.value = false
-}
 
 const formatDate = (date: string) => formatDateShort(date)
 
@@ -298,17 +205,12 @@ onMounted(async () => {
   
   applyInteractionState(blogStore.articles)
   
-  if (featuredArticles.value.length > 1) {
-    slideInterval = setInterval(nextSlide, 6000)
-  }
-
   prefetchAllCommonPages()
   prefetchAllData()
 })
 
 onUnmounted(() => {
   if (searchTimeout) clearTimeout(searchTimeout)
-  if (slideInterval) clearInterval(slideInterval)
 })
 
 const handlePageChange = (page: number) => {
@@ -327,155 +229,7 @@ const handlePageChange = (page: number) => {
       </div>
       
       <main class="flex-1 min-w-0 lg:order-2">
-        <section
-          v-if="featuredArticles.length > 0"
-          class="mb-6"
-        >
-          <div 
-            class="glass-card overflow-hidden select-none"
-            @touchstart="handleTouchStart"
-            @touchmove="handleTouchMove"
-            @touchend="handleTouchEnd"
-            @mouseenter="pauseAutoPlay"
-            @mouseleave="resumeAutoPlay"
-          >
-            <div
-              class="block group cursor-pointer"
-              @click="handleCarouselClick"
-              @mouseenter="handleArticleHover(currentFeatured?.slug || '')"
-            >
-              <Transition
-                name="carousel-fade"
-                mode="out-in"
-              >
-                <div
-                  :key="currentSlide"
-                  class="relative"
-                >
-                  <div
-                    v-if="currentFeatured?.cover_image"
-                    class="relative h-48 sm:h-56 md:h-64 lg:h-72 xl:h-80 overflow-hidden"
-                  >
-                      <img
-                        :src="getMediaUrl(currentFeatured.cover_image)"
-                        :alt="currentFeatured.title"
-                        class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 rounded-none"
-                        loading="eager"
-                        decoding="async"
-                      >
-                      <div class="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent dark:from-black/70 dark:via-black/40 dark:to-transparent" />
-                      <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent dark:from-black/60 dark:to-transparent" />
-                    </div>
-                    <div
-                      v-else
-                      class="relative h-48 sm:h-56 md:h-64 lg:h-72 xl:h-80 overflow-hidden"
-                    >
-                      <div class="absolute inset-0 bg-gradient-to-br from-primary/10 via-accent/5 to-primary/10 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-500" />
-                      <div class="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/20 dark:from-black/50 dark:via-black/30 dark:to-black/40 transition-colors duration-500" />
-                      <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent dark:from-black/60 dark:to-transparent transition-colors duration-500" />
-                    </div>
-                    
-                    <div class="absolute bottom-0 left-0 right-0 px-2 py-4">
-                      <div class="flex items-center gap-1 mb-2">
-                        <span class="px-1.5 py-0.5 bg-primary text-white text-xs font-medium rounded-full shadow-lg">
-                          精选推荐
-                        </span>
-                        <span
-                          v-if="currentFeatured?.category"
-                          class="px-1.5 py-0.5 bg-white/20 dark:bg-white/25 backdrop-blur-sm text-white text-xs rounded-full shadow-sm"
-                        >
-                          {{ currentFeatured.category.name }}
-                        </span>
-                      </div>
-                      <h2 class="text-lg font-bold text-white group-hover:text-primary transition-colors overflow-hidden text-ellipsis whitespace-nowrap drop-shadow-lg mb-1">
-                        {{ currentFeatured?.title }}
-                      </h2>
-                      <p
-                        v-if="currentFeatured?.summary"
-                        class="text-white/70 dark:text-white/75 text-sm truncate max-w-xl drop-shadow-md mb-2"
-                      >
-                        {{ currentFeatured.summary }}
-                      </p>
-                      <div class="flex items-center gap-2 text-white/50 dark:text-white/60 text-xs">
-                        <span class="drop-shadow-sm">{{ formatDate(currentFeatured?.created_at) }}</span>
-                        <span class="flex items-center gap-0.5 drop-shadow-sm">
-                          <svg
-                            class="w-3 h-3"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                            />
-                          </svg>
-                          {{ currentFeatured?.view_count }}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </Transition>
-            </div>
-            
-            <div
-              v-if="featuredArticles.length > 1"
-              class="flex items-center justify-between px-2 py-1 border-t border-gray-100 dark:border-white/5"
-            >
-              <div class="flex gap-1">
-                <button
-                  v-for="(_, index) in featuredArticles"
-                  :key="index"
-                  class="h-1 rounded-full transition-all duration-300"
-                  :class="currentSlide === index ? 'bg-primary w-3' : 'bg-gray-300 dark:bg-gray-600 w-1 hover:bg-primary/50'"
-                  @click="currentSlide = index"
-                />
-              </div>
-              <div class="flex gap-0.5">
-                <button
-                  class="p-0.5 rounded hover:bg-gray-100 dark:hover:bg-dark-300 text-gray-400 hover:text-primary transition-colors"
-                  @click="prevSlide"
-                >
-                  <svg
-                    class="w-3 h-3"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  ><path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M15 19l-7-7 7-7"
-                  /></svg>
-                </button>
-                <button
-                  class="p-0.5 rounded hover:bg-gray-100 dark:hover:bg-dark-300 text-gray-400 hover:text-primary transition-colors"
-                  @click="nextSlide"
-                >
-                  <svg
-                    class="w-3 h-3"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  ><path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 5l7 7-7 7"
-                  /></svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
+        <CodeHero />
 
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -759,16 +513,6 @@ const handlePageChange = (page: number) => {
 </template>
 
 <style scoped>
-.carousel-fade-enter-active,
-.carousel-fade-leave-active {
-  transition: opacity 0.4s ease;
-}
-
-.carousel-fade-enter-from,
-.carousel-fade-leave-to {
-  opacity: 0;
-}
-
 .article-card {
   padding: 0 !important;
   display: block !important;
