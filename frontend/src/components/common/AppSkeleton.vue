@@ -2180,7 +2180,7 @@ const skeletonType = computed(() => {
               <section class="mb-6">
                 <div class="animate-pulse rounded-[0.9rem] overflow-hidden border border-gray-200/70 dark:border-white/8 bg-white dark:bg-[#0a0a0a]">
                   <!-- titlebar -->
-                  <div class="flex items-center gap-1.5 px-3.5 py-2.5 bg-gray-50/80 dark:bg-[#141414] border-b border-gray-200/60 dark:border-white/5">
+                  <div class="flex items-center gap-1.5 px-3.5 py-3 bg-gray-50/80 dark:bg-[#141414] border-b border-gray-200/60 dark:border-white/5">
                     <div class="w-3 h-3 rounded-full bg-gray-200 dark:bg-dark-300" />
                     <div class="w-3 h-3 rounded-full bg-gray-200 dark:bg-dark-300" />
                     <div class="w-3 h-3 rounded-full bg-gray-200 dark:bg-dark-300" />
@@ -2188,7 +2188,7 @@ const skeletonType = computed(() => {
                     <div class="ml-auto h-3 bg-primary/15 dark:bg-primary/20 rounded-md w-7 border border-primary/30" />
                   </div>
                   <!-- editor body: gutter + code lines -->
-                  <div class="flex min-h-[300px]">
+                  <div class="flex min-h-[264px] sm:min-h-[300px]">
                     <div class="flex flex-col py-4 pl-3.5 pr-2.5 border-r border-gray-200/60 dark:border-white/5">
                       <div
                         v-for="i in 11"
@@ -2211,7 +2211,7 @@ const skeletonType = computed(() => {
                     </div>
                   </div>
                   <!-- statusbar -->
-                  <div class="flex items-center gap-4 px-3.5 py-1.5 bg-gray-50/80 dark:bg-[#111111] border-t border-gray-200/60 dark:border-white/5">
+                  <div class="flex items-center gap-4 px-3.5 py-2 bg-gray-50/80 dark:bg-[#111111] border-t border-gray-200/60 dark:border-white/5">
                     <div class="w-2 h-2 rounded-full bg-gray-200 dark:bg-dark-300" />
                     <div class="h-2.5 bg-gray-200 dark:bg-dark-300 rounded w-12" />
                     <div class="ml-auto flex items-center gap-4">
