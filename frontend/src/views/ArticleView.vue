@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { marked } from 'marked'
+import { KATEX_MATHML_TAGS, KATEX_MATHML_ATTR } from '@/utils/katex'
 import hljs from '@/utils/hljs'
 import DOMPurify from 'dompurify'
 import { initMermaid, renderMermaidDiagrams, rerenderMermaidOnThemeChange } from '@/utils/mermaid'
@@ -130,8 +131,8 @@ const renderedContent = computed(() => {
   if (!article.value?.content) return ''
   const rawHtml = marked.parse(article.value.content, { async: false }) as string
   let sanitizedHtml = DOMPurify.sanitize(rawHtml, {
-    ADD_ATTR: ['target', 'rel', 'loading', 'class', 'id', 'data-mermaid', 'data-mermaid-code'],
-    ADD_TAGS: ['iframe', 'mark']
+    ADD_ATTR: [...KATEX_MATHML_ATTR, 'target', 'rel', 'loading', 'class', 'id', 'data-mermaid', 'data-mermaid-code'],
+    ADD_TAGS: [...KATEX_MATHML_TAGS, 'iframe', 'mark']
   })
   
   const { html: htmlWithIds, items } = extractToc(sanitizedHtml)

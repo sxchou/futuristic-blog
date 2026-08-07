@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { marked } from 'marked'
+import { KATEX_MATHML_TAGS, KATEX_MATHML_ATTR } from '@/utils/katex'
 import hljs from '@/utils/hljs'
 import DOMPurify from 'dompurify'
 import { initMermaid, renderMermaidDiagrams, rerenderMermaidOnThemeChange, debounce } from '@/utils/mermaid'
@@ -144,8 +145,8 @@ const renderMarkdown = () => {
   try {
     const rawHtml = marked.parse(props.content, { async: false }) as string
     renderedHtml.value = DOMPurify.sanitize(rawHtml, {
-      ADD_ATTR: ['target', 'rel', 'loading', 'class', 'data-mermaid', 'data-mermaid-code'],
-      ADD_TAGS: ['iframe']
+      ADD_ATTR: [...KATEX_MATHML_ATTR, 'target', 'rel', 'loading', 'class', 'data-mermaid', 'data-mermaid-code'],
+      ADD_TAGS: [...KATEX_MATHML_TAGS, 'iframe']
     })
   } catch (error) {
     console.error('Markdown render error:', error)

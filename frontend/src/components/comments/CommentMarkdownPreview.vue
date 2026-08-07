@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { marked } from 'marked'
+import { KATEX_MATHML_TAGS, KATEX_MATHML_ATTR } from '@/utils/katex'
 import hljs from '@/utils/hljs'
 import DOMPurify from 'dompurify'
 import { initMermaid, renderMermaidDiagrams, rerenderMermaidOnThemeChange } from '@/utils/mermaid'
@@ -177,8 +178,8 @@ const renderedContent = computed(() => {
   const rawHtml = marked.parse(props.content, { renderer, gfm: true, breaks: true, async: false }) as string
   
   const html = DOMPurify.sanitize(rawHtml, {
-    ADD_ATTR: ['target', 'rel', 'loading', 'class', 'data-mermaid', 'data-mermaid-code'],
-    ADD_TAGS: ['iframe'],
+    ADD_ATTR: [...KATEX_MATHML_ATTR, 'target', 'rel', 'loading', 'class', 'data-mermaid', 'data-mermaid-code'],
+    ADD_TAGS: [...KATEX_MATHML_TAGS, 'iframe'],
   })
   
   return html.replace(/@([^\s<]+)/g, '<span class="mention text-primary font-medium hover:underline cursor-pointer">@$1</span>')
