@@ -49,10 +49,9 @@ const katexExtension = {
         while (indexSrc) {
           const index = indexSrc.indexOf('$')
           if (index === -1) return undefined
-          if (index === 0 || indexSrc.charAt(index - 1) === ' ') {
-            const possibleKatex = indexSrc.substring(index)
-            if (possibleKatex.match(inlineRule)) return index
-          }
+          // nonStandard 模式：任意位置的 $ 都尝试匹配（中文文本中 $ 前面常是中文标点）
+          const possibleKatex = indexSrc.substring(index)
+          if (possibleKatex.match(inlineRule)) return index
           indexSrc = indexSrc.substring(index + 1).replace(/^\$+/, '')
         }
         return undefined
