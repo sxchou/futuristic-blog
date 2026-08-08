@@ -649,7 +649,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
         v-else
         class="overflow-x-auto"
       >
-        <table class="w-full table-fixed">
+        <table v-resizable-table class="w-full table-fixed">
           <thead class="bg-gray-50 dark:bg-dark-100">
             <tr>
               <th class="w-12 px-4 py-3 text-left">

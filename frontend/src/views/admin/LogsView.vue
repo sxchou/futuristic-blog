@@ -1289,7 +1289,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
         </div>
 
         <div class="overflow-x-auto" v-if="activeTab === 'operations'">
-          <table class="w-full text-sm table-fixed">
+          <table v-resizable-table class="w-full text-sm table-fixed">
             <thead>
               <tr class="border-b border-gray-200 dark:border-white/10">
                 <th class="w-32 text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
@@ -1360,7 +1360,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
         </div>
 
         <div class="overflow-x-auto" v-if="activeTab === 'logins'">
-          <table class="w-full text-sm table-fixed">
+          <table v-resizable-table class="w-full text-sm table-fixed">
             <thead>
               <tr class="border-b border-gray-200 dark:border-white/10">
                 <th class="w-32 text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">
@@ -1431,7 +1431,7 @@ watch(() => userProfileStore.avatarUpdatedAt, () => {
         </div>
 
         <div class="overflow-x-auto" v-if="activeTab === 'access'">
-          <table class="w-full text-sm table-fixed">
+          <table v-resizable-table class="w-full text-sm table-fixed">
             <thead>
               <tr class="border-b border-gray-200 dark:border-white/10">
                 <th class="w-32 text-left py-2 px-3 text-gray-500 dark:text-gray-400 font-medium">

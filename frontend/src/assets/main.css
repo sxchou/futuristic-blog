@@ -279,6 +279,39 @@ pre code {
   @apply bg-transparent;
 }
 
+/* 表格列宽拖拽手柄 */
+.col-resize-handle {
+  position: absolute;
+  right: -3px;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 5;
+}
+
+.col-resize-handle::after {
+  content: '';
+  position: absolute;
+  right: 2px;
+  top: 25%;
+  bottom: 25%;
+  width: 2px;
+  border-radius: 1px;
+  background: transparent;
+  transition: background 0.15s;
+}
+
+.col-resize-handle:hover::after,
+.col-resize-handle.active::after {
+  background: #3b82f6;
+}
+
+.col-resize-handle.active::after {
+  top: 0;
+  bottom: 0;
+}
+
 .hljs-keyword { @apply text-accent; }
 .hljs-string { @apply text-cyber-green; }
 .hljs-number { @apply text-cyber-yellow; }

@@ -769,7 +769,7 @@ const clearEditError = (field: string) => {
         </form>
       </div>
       <div class="overflow-x-auto">
-        <table class="w-full text-sm table-fixed">
+        <table v-resizable-table class="w-full text-sm table-fixed">
           <thead class="bg-gray-100 dark:bg-dark-100">
             <tr>
               <th class="w-48 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">

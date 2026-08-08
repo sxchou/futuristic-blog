@@ -395,7 +395,7 @@ onMounted(fetchProviders)
       class="glass-card overflow-hidden"
     >
       <div class="overflow-x-auto">
-        <table class="w-full">
+        <table v-resizable-table class="w-full">
           <thead>
             <tr class="border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-dark-100/50">
               <th class="text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-4 py-2.5 w-48">
