@@ -34,18 +34,6 @@ function renderKatex(text: string, displayMode: boolean): string {
   }
 }
 
-/**
- * 渲染 LaTeX 代码块（```latex ... ```）：
- * 用 KaTeX 渲染为块级公式，失败时降级为代码块（保留 hljs 语法高亮）
- */
-function renderLatexBlock(text: string): string {
-  try {
-    return katex.renderToString(text, { ...KATEX_OPTIONS, displayMode: true }) + '\n'
-  } catch {
-    return `<pre><code class="language-latex">${escapeHtml(text)}</code></pre>\n`
-  }
-}
-
 // 行内公式：$...$ 或 $$...$$
 // 后置条件：闭合$后必须是标点/空格/行尾，字符类包含中英文标点（含顿号、分号、括号）
 const inlineRule = /^(\${1,2})(?!\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n\$]))\1(?=[\s?!\.,:？！。，：、；（）]|$)/
@@ -107,21 +95,8 @@ const katexExtension = {
   ],
 }
 
-// LaTeX 代码块语言标识
-const LATEX_LANGS = ['latex', 'tex', 'math']
-
 // 模块加载时注册到 marked 全局单例（ES 模块只执行一次，注册幂等安全）
-marked.use({
-  ...katexExtension,
-  renderer: {
-    code(code: string, infostring: string | undefined): string | false {
-      if (infostring && LATEX_LANGS.includes(infostring)) {
-        return renderLatexBlock(code)
-      }
-      return false
-    },
-  },
-})
+marked.use(katexExtension)
 
 // 重新导出 marked，便于统一入口（已注册 katex 扩展）
 export { marked }
