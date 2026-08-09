@@ -216,7 +216,7 @@ const formatDate = (date: string) => {
             type="text"
             name="search-query"
             placeholder="输入关键词搜索（支持 * 和 ? 通配符）..."
-            class="w-full px-4 py-3.5 pl-11 bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/10 rounded-xl text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
+            class="w-full px-4 py-3.5 pl-11 bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-xl text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
             @keyup.enter="handleSearch"
           >
           <svg

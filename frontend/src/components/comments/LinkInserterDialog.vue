@@ -199,7 +199,7 @@ watch(activeTab, (newTab) => {
               'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
               activeTab === tab.key
                 ? 'bg-primary text-white'
-                : 'bg-gray-100 dark:bg-dark-200 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-300'
+                : 'bg-gray-100 dark:bg-dark-100 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-dark-300'
             ]"
             @click="activeTab = tab.key as any"
           >
@@ -270,7 +270,7 @@ watch(activeTab, (newTab) => {
                 'w-full p-2 rounded-lg text-left transition-colors',
                 selectedArticle?.id === article.id
                   ? 'bg-primary/10 border-2 border-primary'
-                  : 'bg-gray-50 dark:bg-dark-200 hover:bg-gray-100 dark:hover:bg-dark-300 border-2 border-transparent'
+                  : 'bg-gray-50 dark:bg-dark-100 hover:bg-gray-100 dark:hover:bg-dark-300 border-2 border-transparent'
               ]"
               @click="selectedArticle = article"
             >
@@ -341,7 +341,7 @@ watch(activeTab, (newTab) => {
                 'w-full p-2 rounded-lg text-left transition-colors',
                 selectedFile?.id === file.id
                   ? 'bg-primary/10 border-2 border-primary'
-                  : 'bg-gray-50 dark:bg-dark-200 hover:bg-gray-100 dark:hover:bg-dark-300 border-2 border-transparent'
+                  : 'bg-gray-50 dark:bg-dark-100 hover:bg-gray-100 dark:hover:bg-dark-300 border-2 border-transparent'
               ]"
               @click="selectedFile = file"
             >
@@ -398,7 +398,7 @@ watch(activeTab, (newTab) => {
       <div class="flex justify-end gap-2 p-3 border-t border-gray-200 dark:border-white/10 flex-shrink-0">
         <button
           type="button"
-          class="px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-dark-200 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
+          class="px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-dark-100 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
           @click="close"
         >
           取消
@@ -410,7 +410,7 @@ watch(activeTab, (newTab) => {
             'px-3 py-1.5 text-xs font-medium text-white rounded-lg transition-colors',
             canInsert
               ? 'bg-primary hover:bg-primary/90'
-              : 'bg-gray-300 dark:bg-dark-300 cursor-not-allowed'
+              : 'bg-gray-300 dark:bg-dark-100 cursor-not-allowed'
           ]"
           @click="insertLink"
         >

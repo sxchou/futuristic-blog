@@ -293,7 +293,7 @@ defineExpose({
 
 <style scoped>
 .markdown-preview-container {
-  @apply bg-white dark:bg-dark-200;
+  @apply bg-white dark:bg-dark-100;
 }
 
 .preview-content {
@@ -363,7 +363,7 @@ defineExpose({
 }
 
 .preview-content :deep(pre) {
-  @apply bg-gray-50 dark:bg-dark-300;
+  @apply bg-gray-50 dark:bg-dark-100;
   border-radius: 0.75rem;
   padding: 1rem;
   overflow-x: auto;
@@ -384,7 +384,7 @@ defineExpose({
 }
 
 .preview-content :deep(.code-block-wrapper pre) {
-  @apply bg-gray-50 dark:bg-dark-300 rounded-xl overflow-x-auto overflow-y-hidden border border-gray-200 dark:border-white/5;
+  @apply bg-gray-50 dark:bg-dark-100 rounded-xl overflow-x-auto overflow-y-hidden border border-gray-200 dark:border-white/5;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
   padding: 1rem;
@@ -393,7 +393,7 @@ defineExpose({
 }
 
 .preview-content :deep(.code-block-wrapper pre.mermaid) {
-  @apply bg-gray-50 dark:bg-dark-300 rounded-xl overflow-x-auto overflow-y-hidden border border-gray-200 dark:border-white/5;
+  @apply bg-gray-50 dark:bg-dark-100 rounded-xl overflow-x-auto overflow-y-hidden border border-gray-200 dark:border-white/5;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
   padding: 1rem;
@@ -407,7 +407,7 @@ defineExpose({
 }
 
 .preview-content :deep(.mermaid) {
-  @apply bg-gray-50 dark:bg-dark-300 rounded-xl overflow-x-auto overflow-y-hidden border border-gray-200 dark:border-white/5;
+  @apply bg-gray-50 dark:bg-dark-100 rounded-xl overflow-x-auto overflow-y-hidden border border-gray-200 dark:border-white/5;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
 }

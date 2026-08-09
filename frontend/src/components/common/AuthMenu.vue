@@ -42,7 +42,7 @@ onUnmounted(() => {
     @mouseleave="isDropdownOpen = false"
   >
     <button
-      class="flex items-center gap-1 p-1.5 bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 rounded-lg text-gray-600 dark:text-gray-400 hover:text-primary hover:border-primary/30 transition-all"
+      class="flex items-center gap-1 p-1.5 bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/5 rounded-lg text-gray-600 dark:text-gray-400 hover:text-primary hover:border-primary/30 transition-all"
       @mouseenter="openDropdown"
     >
       <svg
@@ -87,7 +87,7 @@ onUnmounted(() => {
         class="absolute right-0 w-36 z-50"
       >
         <div class="h-2" />
-        <div class="bg-white dark:bg-dark-200 rounded-xl shadow-lg border border-gray-200 dark:border-white/5 overflow-hidden">
+        <div class="bg-white dark:bg-dark-100 rounded-xl shadow-lg border border-gray-200 dark:border-white/5 overflow-hidden">
         <div class="p-1.5">
           <button
             class="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-300 rounded-lg transition-colors flex items-center gap-2"

@@ -1213,7 +1213,7 @@ const clearEditError = (field: string) => {
                 'px-3 py-1.5 text-xs rounded-full border transition-all',
                 selectedRoleIds.includes(role.id)
                   ? getRoleColorClasses(role.code, 'badge')
-                  : 'bg-gray-200 dark:bg-dark-300 text-gray-600 dark:text-gray-400 border-transparent hover:bg-gray-300 dark:hover:bg-dark-400'
+                  : 'bg-gray-200 dark:bg-dark-100 text-gray-600 dark:text-gray-400 border-transparent hover:bg-gray-300 dark:hover:bg-dark-400'
               ]"
               @click="toggleRole(role.id)"
             >
@@ -1363,7 +1363,7 @@ const clearEditError = (field: string) => {
                   'px-3 py-1.5 text-xs rounded-full border transition-all',
                   createForm.roleIds.includes(role.id)
                     ? getRoleColorClasses(role.code, 'badge')
-                    : 'bg-gray-200 dark:bg-dark-300 text-gray-600 dark:text-gray-400 border-transparent hover:bg-gray-300 dark:hover:bg-dark-400'
+                    : 'bg-gray-200 dark:bg-dark-100 text-gray-600 dark:text-gray-400 border-transparent hover:bg-gray-300 dark:hover:bg-dark-400'
                 ]"
                 @click="toggleCreateRole(role.id); clearCreateError('roleIds')"
               >

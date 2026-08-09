@@ -387,10 +387,10 @@ watch(() => form.value.slug, (newSlug) => {
                 {{ tag.name }}
               </h3>
               <div class="flex items-center justify-between mt-1">
-                <code class="text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-dark-200 rounded text-gray-600 dark:text-gray-400 whitespace-nowrap shrink-0">
+                <code class="text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-dark-100 rounded text-gray-600 dark:text-gray-400 whitespace-nowrap shrink-0">
                   {{ tag.slug }}
                 </code>
-                <span class="text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-dark-200 text-gray-600 dark:text-gray-400 rounded whitespace-nowrap shrink-0">
+                <span class="text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-dark-100 text-gray-600 dark:text-gray-400 rounded whitespace-nowrap shrink-0">
                   {{ tag.article_count }} 篇文章
                 </span>
               </div>

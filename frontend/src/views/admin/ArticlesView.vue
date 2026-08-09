@@ -2277,7 +2277,7 @@ watch(form, () => {
                       class="inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg transition-all shadow-sm"
                       :class="canUploadImage 
                         ? 'bg-primary text-white hover:bg-primary/90' 
-                        : 'bg-gray-200 dark:bg-dark-300 text-gray-400 dark:text-gray-500 cursor-not-allowed'"
+                        : 'bg-gray-200 dark:bg-dark-100 text-gray-400 dark:text-gray-500 cursor-not-allowed'"
                     >
                       <svg
                         class="w-3.5 h-3.5"
@@ -2298,7 +2298,7 @@ watch(form, () => {
                   <button
                     v-if="articleFiles.some(f => f.file_type === 'image')"
                     type="button"
-                    class="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-gray-100 dark:bg-dark-200 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-300 transition-all border border-gray-200 dark:border-white/10"
+                    class="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-gray-100 dark:bg-dark-100 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-300 transition-all border border-gray-200 dark:border-white/10"
                     @click="showCoverSelector = true"
                   >
                     <svg
@@ -2376,7 +2376,7 @@ watch(form, () => {
                     class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg transition-all shadow-sm"
                     :class="canUploadImage 
                       ? 'bg-green-500 text-white hover:bg-green-600' 
-                      : 'bg-gray-200 dark:bg-dark-300 text-gray-400 dark:text-gray-500 cursor-not-allowed'"
+                      : 'bg-gray-200 dark:bg-dark-100 text-gray-400 dark:text-gray-500 cursor-not-allowed'"
                   >
                     <span class="w-4 h-4">
                       <svg
@@ -2416,7 +2416,7 @@ watch(form, () => {
                     class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg transition-all shadow-sm"
                     :class="canUploadFile && editingArticle 
                       ? 'bg-blue-500 text-white hover:bg-blue-600' 
-                      : 'bg-gray-200 dark:bg-dark-300 text-gray-400 dark:text-gray-500 cursor-not-allowed'"
+                      : 'bg-gray-200 dark:bg-dark-100 text-gray-400 dark:text-gray-500 cursor-not-allowed'"
                   >
                     <span class="w-4 h-4">
                       <svg

@@ -122,7 +122,7 @@ renderer.link = (href: string, title: string | null | undefined, text: string) =
 }
 
 renderer.table = (header: string, body: string) => {
-  return `<div class="overflow-x-auto my-4"><table class="min-w-full border-collapse border border-gray-200 dark:border-white/10"><thead class="bg-gray-50 dark:bg-dark-300">${header}</thead><tbody>${body}</tbody></table></div>`
+  return `<div class="overflow-x-auto my-4"><table class="min-w-full border-collapse border border-gray-200 dark:border-white/10"><thead class="bg-gray-50 dark:bg-dark-100">${header}</thead><tbody>${body}</tbody></table></div>`
 }
 
 marked.setOptions({ renderer, gfm: true, breaks: true })
@@ -944,7 +944,7 @@ watch(article, async (newVal) => {
 
             <div
               v-if="article.summary"
-              class="p-3 bg-gray-50 dark:bg-dark-200/50 rounded-xl border border-gray-100 dark:border-white/5"
+              class="p-3 bg-gray-50 dark:bg-dark-100/50 rounded-xl border border-gray-100 dark:border-white/5"
             >
               <p class="text-gray-500 dark:text-gray-400 text-xs leading-relaxed">
                 {{ article.summary }}
@@ -1087,7 +1087,7 @@ watch(article, async (newVal) => {
 
             <div
               v-if="article.summary"
-              class="mt-4 p-4 bg-gray-50 dark:bg-dark-200/50 rounded-xl border border-gray-100 dark:border-white/5"
+              class="mt-4 p-4 bg-gray-50 dark:bg-dark-100/50 rounded-xl border border-gray-100 dark:border-white/5"
             >
               <p class="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
                 {{ article.summary }}
@@ -1207,7 +1207,7 @@ watch(article, async (newVal) => {
 
             <div
               v-if="article.summary"
-              class="p-4 bg-gray-50 dark:bg-dark-200/50 rounded-xl border border-gray-100 dark:border-white/5 mb-6"
+              class="p-4 bg-gray-50 dark:bg-dark-100/50 rounded-xl border border-gray-100 dark:border-white/5 mb-6"
             >
               <p class="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
                 {{ article.summary }}
@@ -1281,7 +1281,7 @@ watch(article, async (newVal) => {
               v-for="file in articleFiles"
               :id="`file-${file.id}`"
               :key="file.id"
-              class="flex items-center justify-between p-2.5 bg-gray-50 dark:bg-dark-300/50 rounded-lg border transition-colors scroll-mt-20"
+              class="flex items-center justify-between p-2.5 bg-gray-50 dark:bg-dark-100/50 rounded-lg border transition-colors scroll-mt-20"
               :class="[selectedFileIds.has(file.id) ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-white/5 hover:border-primary/30']"
             >
               <div class="flex items-center gap-2 min-w-0 flex-1">
@@ -1363,7 +1363,7 @@ watch(article, async (newVal) => {
               class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all duration-200 relative"
               :class="isLiked 
                 ? 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-500 hover:bg-red-100 dark:hover:bg-red-500/20' 
-                : 'bg-gray-50 dark:bg-dark-300 border-gray-200 dark:border-white/5 text-gray-500 hover:text-red-500 hover:border-red-200 hover:bg-red-50 dark:hover:bg-red-500/10'"
+                : 'bg-gray-50 dark:bg-dark-100 border-gray-200 dark:border-white/5 text-gray-500 hover:text-red-500 hover:border-red-200 hover:bg-red-50 dark:hover:bg-red-500/10'"
               :data-tooltip="isLiked ? '取消点赞' : '点赞'"
               @click="handleLike"
             >
@@ -1386,7 +1386,7 @@ watch(article, async (newVal) => {
               class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all duration-200 relative"
               :class="isBookmarked 
                 ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20 text-amber-500 hover:bg-amber-100 dark:hover:bg-amber-500/20' 
-                : 'bg-gray-50 dark:bg-dark-300 border-gray-200 dark:border-white/5 text-gray-500 hover:text-amber-500 hover:border-amber-200 hover:bg-amber-50 dark:hover:bg-amber-500/10'"
+                : 'bg-gray-50 dark:bg-dark-100 border-gray-200 dark:border-white/5 text-gray-500 hover:text-amber-500 hover:border-amber-200 hover:bg-amber-50 dark:hover:bg-amber-500/10'"
               :data-tooltip="isBookmarked ? '取消收藏' : '收藏'"
               @click="handleBookmark"
             >
@@ -1406,7 +1406,7 @@ watch(article, async (newVal) => {
               <span class="text-sm ml-0.5">{{ bookmarkCount }}</span>
             </button>
             <button
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 text-gray-500 hover:text-primary hover:border-primary/30 transition-colors relative"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/5 text-gray-500 hover:text-primary hover:border-primary/30 transition-colors relative"
               data-tooltip="复制链接"
               @click="copyLink"
             >
@@ -1428,7 +1428,7 @@ watch(article, async (newVal) => {
               >已复制!</span>
             </button>
             <button
-              class="p-1.5 rounded-lg bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 text-gray-400 hover:text-primary hover:border-primary/30 transition-colors relative"
+              class="p-1.5 rounded-lg bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/5 text-gray-400 hover:text-primary hover:border-primary/30 transition-colors relative"
               data-tooltip="分享到 X"
               @click="shareArticle('twitter')"
             >
@@ -1439,7 +1439,7 @@ watch(article, async (newVal) => {
               ><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
             </button>
             <button
-              class="p-1.5 rounded-lg bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 text-gray-400 hover:text-[#E6162D] hover:border-[#E6162D]/30 hover:bg-[#E6162D]/5 dark:hover:bg-[#E6162D]/10 transition-all duration-200 relative"
+              class="p-1.5 rounded-lg bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/5 text-gray-400 hover:text-[#E6162D] hover:border-[#E6162D]/30 hover:bg-[#E6162D]/5 dark:hover:bg-[#E6162D]/10 transition-all duration-200 relative"
               data-tooltip="分享到微博"
               @click="shareArticle('weibo')"
             >
@@ -1592,7 +1592,7 @@ watch(article, async (newVal) => {
             class="absolute inset-0 bg-black/50 backdrop-blur-sm"
             @click="showMobileToc = false"
           />
-          <div class="mobile-toc-drawer absolute bottom-0 left-0 right-0 bg-white dark:bg-dark-200 rounded-t-2xl max-h-[70vh] flex flex-col">
+          <div class="mobile-toc-drawer absolute bottom-0 left-0 right-0 bg-white dark:bg-dark-100 rounded-t-2xl max-h-[70vh] flex flex-col">
             <div class="flex items-center justify-between px-5 py-3 border-b border-gray-200 dark:border-white/10 flex-shrink-0">
               <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200">
                 目录
@@ -1736,7 +1736,7 @@ watch(article, async (newVal) => {
 }
 
 .article-content :deep(pre:not(.code-block-wrapper pre)) {
-  @apply bg-gray-50 dark:bg-dark-300 rounded-xl p-4 overflow-x-auto overflow-y-hidden my-4 border border-gray-200 dark:border-white/5;
+  @apply bg-gray-50 dark:bg-dark-100 rounded-xl p-4 overflow-x-auto overflow-y-hidden my-4 border border-gray-200 dark:border-white/5;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
 }
@@ -1747,7 +1747,7 @@ watch(article, async (newVal) => {
 }
 
 .article-content :deep(.code-block-wrapper pre) {
-  @apply bg-gray-50 dark:bg-dark-300 rounded-xl overflow-x-auto overflow-y-hidden border border-gray-200 dark:border-white/5;
+  @apply bg-gray-50 dark:bg-dark-100 rounded-xl overflow-x-auto overflow-y-hidden border border-gray-200 dark:border-white/5;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
   padding: 1rem;
@@ -1756,7 +1756,7 @@ watch(article, async (newVal) => {
 }
 
 .article-content :deep(.code-block-wrapper pre.mermaid) {
-  @apply bg-gray-50 dark:bg-dark-300 rounded-xl overflow-x-auto overflow-y-hidden border border-gray-200 dark:border-white/5;
+  @apply bg-gray-50 dark:bg-dark-100 rounded-xl overflow-x-auto overflow-y-hidden border border-gray-200 dark:border-white/5;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
   padding: 1rem;
@@ -1773,7 +1773,7 @@ watch(article, async (newVal) => {
 }
 
 .article-content :deep(p code) {
-  @apply px-1.5 py-0.5 bg-gray-100 dark:bg-dark-300 rounded text-sm text-primary;
+  @apply px-1.5 py-0.5 bg-gray-100 dark:bg-dark-100 rounded text-sm text-primary;
 }
 
 .article-content :deep(.overflow-x-auto:not(.mermaid)) {
@@ -1798,7 +1798,7 @@ watch(article, async (newVal) => {
 }
 
 .article-content :deep(th) {
-  @apply bg-gray-50 dark:bg-dark-300 font-semibold text-gray-900 dark:text-white;
+  @apply bg-gray-50 dark:bg-dark-100 font-semibold text-gray-900 dark:text-white;
 }
 
 .article-content :deep(img) {
@@ -1839,7 +1839,7 @@ watch(article, async (newVal) => {
 }
 
 .article-content :deep(.mermaid) {
-  @apply bg-gray-50 dark:bg-dark-300 rounded-xl overflow-x-auto overflow-y-hidden border border-gray-200 dark:border-white/5;
+  @apply bg-gray-50 dark:bg-dark-100 rounded-xl overflow-x-auto overflow-y-hidden border border-gray-200 dark:border-white/5;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
 }

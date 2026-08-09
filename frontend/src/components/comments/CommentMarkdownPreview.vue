@@ -279,7 +279,7 @@ watch(() => themeStore.isDark, async (isDark) => {
 
 <style scoped>
 .comment-markdown-preview :deep(pre) {
-  @apply bg-gray-50 dark:bg-dark-300;
+  @apply bg-gray-50 dark:bg-dark-100;
   border-radius: 0.75rem;
   padding: 0.75rem;
   overflow-x: auto;
@@ -300,7 +300,7 @@ watch(() => themeStore.isDark, async (isDark) => {
 }
 
 .comment-markdown-preview :deep(.code-block-wrapper pre) {
-  @apply bg-gray-50 dark:bg-dark-300 rounded-xl overflow-x-auto overflow-y-hidden border border-gray-200 dark:border-white/5;
+  @apply bg-gray-50 dark:bg-dark-100 rounded-xl overflow-x-auto overflow-y-hidden border border-gray-200 dark:border-white/5;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
   padding: 0.75rem;
@@ -309,7 +309,7 @@ watch(() => themeStore.isDark, async (isDark) => {
 }
 
 .comment-markdown-preview :deep(.code-block-wrapper pre.mermaid) {
-  @apply bg-gray-50 dark:bg-dark-300 rounded-xl overflow-x-auto overflow-y-hidden border border-gray-200 dark:border-white/5;
+  @apply bg-gray-50 dark:bg-dark-100 rounded-xl overflow-x-auto overflow-y-hidden border border-gray-200 dark:border-white/5;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
   padding: 0.75rem;
@@ -324,7 +324,7 @@ watch(() => themeStore.isDark, async (isDark) => {
 }
 
 .comment-markdown-preview :deep(code:not(.hljs)) {
-  @apply bg-gray-200 dark:bg-dark-200 text-primary;
+  @apply bg-gray-200 dark:bg-dark-100 text-primary;
   padding: 0.125rem 0.375rem;
   border-radius: 0.25rem;
   font-size: 0.875em;
@@ -358,7 +358,7 @@ watch(() => themeStore.isDark, async (isDark) => {
 }
 
 .comment-markdown-preview :deep(.mermaid) {
-  @apply bg-gray-50 dark:bg-dark-300 rounded-xl overflow-x-auto overflow-y-hidden border border-gray-200 dark:border-white/5;
+  @apply bg-gray-50 dark:bg-dark-100 rounded-xl overflow-x-auto overflow-y-hidden border border-gray-200 dark:border-white/5;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
 }

@@ -350,8 +350,8 @@ onUnmounted(() => {
 /* 暗黑模式覆盖 */
 .dark .editor-window {
   --ed-bg: #0a0a0a;
-  --ed-bg-alt: #141414;
-  --ed-bg-status: #111111;
+  --ed-bg-alt: #0a0a0a;
+  --ed-bg-status: #0a0a0a;
   --ed-border: rgba(255, 255, 255, 0.08);
   --ed-border-soft: rgba(255, 255, 255, 0.06);
   --ed-text: #d4d4d4;

@@ -9,6 +9,7 @@ import GlobalSearch from '@/components/common/GlobalSearch.vue'
 import ModalDialog from '@/components/common/ModalDialog.vue'
 import AppSkeleton from '@/components/common/AppSkeleton.vue'
 import BackToTop from '@/components/common/BackToTop.vue'
+import TechBackground from '@/components/common/TechBackground.vue'
 
 const route = useRoute()
 const initStore = useInitStore()
@@ -42,12 +43,13 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-dark-100 flex flex-col transition-colors duration-300">
+  <div class="app-root min-h-screen flex flex-col transition-colors duration-300">
+    <TechBackground v-if="!isAdminPage" />
     <template v-if="!isAdminPage">
       <Navbar />
     </template>
     <main
-      class="flex-1"
+      class="flex-1 app-content"
       :class="{ 'pt-16': !isAdminPage }"
     >
       <div
@@ -79,7 +81,7 @@ onUnmounted(() => {
     <GlobalSearch v-if="!isAdminPage" />
     <BackToTop v-if="!isAdminPage" />
     <ModalDialog />
-    
+
     <Transition name="skeleton-fade">
       <AppSkeleton v-if="!isAppReady && !isAdminPage" />
     </Transition>
@@ -87,6 +89,16 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+.app-root {
+  position: relative;
+  background: transparent;
+}
+
+.app-content {
+  position: relative;
+  z-index: 1;
+}
+
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;

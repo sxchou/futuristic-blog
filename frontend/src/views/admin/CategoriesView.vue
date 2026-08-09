@@ -405,7 +405,7 @@ watch(() => form.value.slug, (newSlug) => {
                 >
                   {{ category.description }}
                 </p>
-                <span class="text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-dark-200 text-gray-600 dark:text-gray-400 rounded whitespace-nowrap shrink-0">
+                <span class="text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-dark-100 text-gray-600 dark:text-gray-400 rounded whitespace-nowrap shrink-0">
                   {{ category.article_count }} 篇文章
                 </span>
               </div>

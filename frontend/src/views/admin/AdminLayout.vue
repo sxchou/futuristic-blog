@@ -168,7 +168,7 @@ onMounted(async () => {
           >
             <div
               v-if="siteConfigStore.siteLogoUrl"
-              class="w-7 h-7 rounded-full overflow-hidden bg-gray-100 dark:bg-dark-200 shrink-0"
+              class="w-7 h-7 rounded-full overflow-hidden bg-gray-100 dark:bg-dark-100 shrink-0"
             >
               <img
                 :src="getLogoUrl(siteConfigStore.siteLogoUrl)"
@@ -652,7 +652,7 @@ onMounted(async () => {
               无此页面访问权限，请联系管理员
             </p>
 
-            <div class="bg-gray-50 dark:bg-dark-200 rounded-xl p-4 mb-6">
+            <div class="bg-gray-50 dark:bg-dark-100 rounded-xl p-4 mb-6">
               <div class="flex items-center gap-3 mb-3">
                 <div
                   class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden"
@@ -704,7 +704,7 @@ onMounted(async () => {
             <div class="flex flex-col sm:flex-row gap-3">
               <router-link
                 to="/"
-                class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-dark-200 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
+                class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-dark-100 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
               >
                 <svg
                   class="w-4 h-4"
@@ -723,7 +723,7 @@ onMounted(async () => {
               </router-link>
               <router-link
                 to="/admin/my-profile"
-                class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-dark-200 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
+                class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-dark-100 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-dark-300 transition-colors"
               >
                 <svg
                   class="w-4 h-4"

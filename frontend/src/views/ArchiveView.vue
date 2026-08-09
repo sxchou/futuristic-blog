@@ -232,7 +232,7 @@ onUnmounted(() => {
             type="text"
             name="archive-search"
             placeholder="搜索文章..."
-            class="w-48 px-3 py-1.5 pl-8 text-sm bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none transition-colors"
+            class="w-48 px-3 py-1.5 pl-8 text-sm bg-white dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none transition-colors"
           >
           <svg
             class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
@@ -251,7 +251,7 @@ onUnmounted(() => {
         <select id="select-selectedYear"
           v-model="selectedYear"
           name="archive-year"
-          class="px-3 py-1.5 text-sm bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none transition-colors"
+          class="px-3 py-1.5 text-sm bg-white dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none transition-colors"
         >
           <option :value="null">
             全部年份

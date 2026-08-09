@@ -7,7 +7,12 @@ let loadingPromise: Promise<typeof MermaidAPI> | null = null
 const getMermaidConfig = (isDark: boolean): MermaidConfig => ({
   startOnLoad: false,
   theme: isDark ? 'dark' : 'default',
-  securityLevel: 'loose'
+  securityLevel: 'loose',
+  themeVariables: isDark ? {
+    mainBkg: '#141414',
+    secondBkg: '#141414',
+    background: '#0a0a0a',
+  } : {}
 })
 
 /**

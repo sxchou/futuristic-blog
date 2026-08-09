@@ -106,7 +106,7 @@ onMounted(() => {
         >
           <div
             v-if="siteConfigStore.siteLogoUrl"
-            class="w-8 h-8 rounded-full overflow-hidden bg-gray-100 dark:bg-dark-200"
+            class="w-8 h-8 rounded-full overflow-hidden bg-gray-100 dark:bg-dark-100"
           >
             <img
               :src="getLogoUrl(siteConfigStore.siteLogoUrl)"
@@ -183,7 +183,7 @@ onMounted(() => {
         <div class="flex items-center gap-2">
           <button
             data-search-modal
-            class="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 rounded-lg text-gray-400 hover:text-primary hover:border-primary/30 transition-all"
+            class="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/5 rounded-lg text-gray-400 hover:text-primary hover:border-primary/30 transition-all"
             @click="openSearch"
           >
             <svg
@@ -200,11 +200,11 @@ onMounted(() => {
               />
             </svg>
             <span class="text-xs hidden sm:inline">搜索</span>
-            <kbd class="px-1 py-0.5 bg-gray-200 dark:bg-dark-400 rounded text-[10px] hidden sm:inline">⌘K</kbd>
+            <kbd class="px-1 py-0.5 bg-gray-200 dark:bg-dark-200 rounded text-[10px] hidden sm:inline">⌘K</kbd>
           </button>
 
           <button
-            class="p-1.5 rounded-lg bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 hover:border-primary/30 hover:text-primary transition-all"
+            class="p-1.5 rounded-lg bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/5 hover:border-primary/30 hover:text-primary transition-all"
             @click="themeStore.toggleTheme"
           >
             <svg
@@ -251,7 +251,7 @@ onMounted(() => {
             @mouseleave="isDesktopDropdownOpen = false"
           >
             <button
-              class="p-1.5 rounded-lg bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 hover:border-primary/30 hover:text-primary transition-all"
+              class="p-1.5 rounded-lg bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/5 hover:border-primary/30 hover:text-primary transition-all"
               @mouseenter="openDesktopDropdown"
             >
               <svg
@@ -282,7 +282,7 @@ onMounted(() => {
                 class="absolute right-0 top-full w-56 z-50"
               >
                 <div class="h-2" />
-                <div class="bg-white dark:bg-dark-200 rounded-xl shadow-xl border border-gray-200 dark:border-white/5 overflow-hidden">
+                <div class="bg-white dark:bg-dark-100 rounded-xl shadow-xl border border-gray-200 dark:border-white/5 overflow-hidden">
                 <div class="p-3 border-b border-gray-200 dark:border-white/5">
                   <div class="flex items-center gap-3">
                     <div
@@ -414,7 +414,7 @@ onMounted(() => {
           </div>
 
           <button
-            class="md:hidden p-1.5 rounded-lg bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/5 hover:border-primary/30 transition-all"
+            class="md:hidden p-1.5 rounded-lg bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/5 hover:border-primary/30 transition-all"
             @click="isMenuOpen = !isMenuOpen"
           >
             <svg
@@ -491,7 +491,7 @@ onMounted(() => {
                 </router-link>
               </template>
               <template v-else>
-                <div class="flex items-center gap-3 px-3 py-2 mb-1 bg-gray-50 dark:bg-dark-300 rounded-lg">
+                <div class="flex items-center gap-3 px-3 py-2 mb-1 bg-gray-50 dark:bg-dark-100 rounded-lg">
                   <UserAvatar 
                     :profile="userProfileStore.profile" 
                     :show-dropdown="false"

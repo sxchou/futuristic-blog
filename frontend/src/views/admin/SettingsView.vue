@@ -257,7 +257,7 @@ const handleLogoReset = () => {
               </p>
             </div>
             
-            <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-dark-200 rounded-lg border border-gray-200 dark:border-white/5">
+            <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/5">
               <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
                   <svg
@@ -296,7 +296,7 @@ const handleLogoReset = () => {
                 :class="[
                   'relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
                   'cursor-pointer',
-                  formData.showGithubStats ? 'bg-primary' : 'bg-gray-200 dark:bg-dark-400'
+                  formData.showGithubStats ? 'bg-primary' : 'bg-gray-200 dark:bg-dark-100'
                 ]"
                 @click="canEdit ? (formData.showGithubStats = !formData.showGithubStats) : warnReadonly('修改系统设置')"
               >
@@ -359,7 +359,7 @@ const handleLogoReset = () => {
             </div>
           </div>
           <div class="p-4 sm:p-6 space-y-3 sm:space-y-4">
-            <div class="p-3 sm:p-4 bg-gray-50 dark:bg-dark-200 rounded-lg border border-gray-200 dark:border-white/5">
+            <div class="p-3 sm:p-4 bg-gray-50 dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/5">
               <p class="text-xs text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
                 <svg
                   class="w-3 h-3"
@@ -381,7 +381,7 @@ const handleLogoReset = () => {
               </p>
             </div>
             
-            <div class="p-3 sm:p-4 bg-gray-50 dark:bg-dark-200 rounded-lg border border-gray-200 dark:border-white/5">
+            <div class="p-3 sm:p-4 bg-gray-50 dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/5">
               <p class="text-xs text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
                 <svg
                   class="w-3 h-3"
@@ -403,7 +403,7 @@ const handleLogoReset = () => {
               </p>
             </div>
             
-            <div class="p-3 sm:p-4 bg-gray-50 dark:bg-dark-200 rounded-lg border border-gray-200 dark:border-white/5">
+            <div class="p-3 sm:p-4 bg-gray-50 dark:bg-dark-100 rounded-lg border border-gray-200 dark:border-white/5">
               <p class="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1">
                 <svg
                   class="w-3 h-3"

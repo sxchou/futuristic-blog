@@ -372,7 +372,7 @@ const getTypeStyles = (type: string) => {
           v-if="showEditor"
           class="glass-card shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden"
         >
-          <div class="px-4 py-3 border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-dark-200">
+          <div class="px-4 py-3 border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-dark-100">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
@@ -425,7 +425,7 @@ const getTypeStyles = (type: string) => {
                 v-model="formData.title"
                 type="text"
                 :disabled="!canEdit"
-                class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border rounded-xl text-gray-900 dark:text-white outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-100 border rounded-xl text-gray-900 dark:text-white outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 :class="hasError('title') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
                 placeholder="请输入公告标题"
                 @input="clearValidationError('title')"
@@ -446,7 +446,7 @@ const getTypeStyles = (type: string) => {
                 v-model="formData.content"
                 rows="4"
                 :disabled="!canEdit"
-                class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border rounded-xl text-gray-900 dark:text-white outline-none transition-all resize-none disabled:opacity-50 disabled:cursor-not-allowed"
+                class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-100 border rounded-xl text-gray-900 dark:text-white outline-none transition-all resize-none disabled:opacity-50 disabled:cursor-not-allowed"
                 :class="hasError('content') ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
                 placeholder="请输入公告内容"
                 @input="clearValidationError('content')"
@@ -513,7 +513,7 @@ const getTypeStyles = (type: string) => {
                   type="number"
                   min="0"
                   :disabled="!canEdit"
-                  class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   placeholder="数字越小越靠前"
                 >
                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -522,7 +522,7 @@ const getTypeStyles = (type: string) => {
               </div>
             </div>
 
-            <div class="flex items-center gap-2 p-3 bg-gray-50 dark:bg-dark-200 rounded-xl">
+            <div class="flex items-center gap-2 p-3 bg-gray-50 dark:bg-dark-100 rounded-xl">
               <input
                 id="announcement-active"
                 v-model="formData.is_active"

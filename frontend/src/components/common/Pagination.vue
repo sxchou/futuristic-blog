@@ -242,7 +242,7 @@ watch(() => props.currentPage, () => {
 }
 
 .pagination-page {
-  @apply bg-white dark:bg-white/5
+  @apply bg-white dark:bg-dark-100
          text-gray-700 dark:text-gray-300
          border border-gray-200 dark:border-white/10
          hover:border-primary dark:hover:border-primary
@@ -258,7 +258,7 @@ watch(() => props.currentPage, () => {
 }
 
 .pagination-nav {
-  @apply bg-white dark:bg-white/5
+  @apply bg-white dark:bg-dark-100
          text-gray-700 dark:text-gray-300
          border border-gray-200 dark:border-white/10
          hover:border-primary dark:hover:border-primary
@@ -275,7 +275,7 @@ watch(() => props.currentPage, () => {
 .pagination-input {
   @apply w-16 h-8 px-2 py-1
          text-center text-sm
-         bg-white dark:bg-white/5
+         bg-white dark:bg-dark-100
          border border-gray-200 dark:border-white/10
          rounded-lg
          text-gray-700 dark:text-gray-300
@@ -298,7 +298,7 @@ watch(() => props.currentPage, () => {
 .pagination-jump-btn {
   @apply px-4 h-8
          text-sm font-medium
-         bg-gray-100 dark:bg-white/10
+         bg-gray-100 dark:bg-dark-100
          text-gray-700 dark:text-gray-300
          border border-gray-200 dark:border-white/10
          rounded-lg

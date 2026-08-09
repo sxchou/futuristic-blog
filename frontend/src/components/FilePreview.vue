@@ -656,7 +656,7 @@ onUnmounted(() => {
     <div
       class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm"
     >
-      <div class="relative w-full h-full max-w-7xl max-h-[95vh] m-4 flex flex-col bg-white dark:bg-dark-300 rounded-xl overflow-hidden shadow-2xl border border-gray-200 dark:border-white/10">
+      <div class="relative w-full h-full max-w-7xl max-h-[95vh] m-4 flex flex-col bg-white dark:bg-dark-100 rounded-xl overflow-hidden shadow-2xl border border-gray-200 dark:border-white/10">
         <div class="flex items-center justify-between px-3 py-1 border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-dark-200/50">
           <div class="flex items-center gap-2 min-w-0 flex-1">
             <span 
@@ -787,7 +787,7 @@ onUnmounted(() => {
               <div class="flex gap-3 justify-center">
                 <button
                   v-if="errorType === 'timeout' || errorType === 'unknown'"
-                  class="px-4 py-2 bg-gray-100 dark:bg-dark-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-400 transition-colors"
+                  class="px-4 py-2 bg-gray-100 dark:bg-dark-100 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-400 transition-colors"
                   @click="() => { error = ''; errorType = ''; loading = true; startOfficePreviewTimer() }"
                 >
                   重试
@@ -920,7 +920,7 @@ onUnmounted(() => {
                   <p class="text-gray-700 dark:text-gray-300 font-medium mb-2">
                     正在加载 {{ officeFileType }} 预览...
                   </p>
-                  <div class="w-48 h-2 bg-gray-200 dark:bg-dark-300 rounded-full overflow-hidden">
+                  <div class="w-48 h-2 bg-gray-200 dark:bg-dark-100 rounded-full overflow-hidden">
                     <div 
                       class="h-full bg-primary transition-all duration-300 rounded-full"
                       :style="{ width: `${officeLoadProgress}%` }"
@@ -961,7 +961,7 @@ onUnmounted(() => {
                 </p>
                 <div class="flex gap-3 justify-center">
                   <button
-                    class="px-4 py-2 bg-gray-100 dark:bg-dark-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-400 transition-colors"
+                    class="px-4 py-2 bg-gray-100 dark:bg-dark-100 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-400 transition-colors"
                     @click="startOfficePreviewTimer"
                   >
                     重试
@@ -1002,7 +1002,7 @@ onUnmounted(() => {
                 <h4 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                   {{ file.original_filename }}
                 </h4>
-                <div class="bg-gray-100 dark:bg-dark-400 rounded-lg p-6 mt-4">
+                <div class="bg-gray-100 dark:bg-dark-200 rounded-lg p-6 mt-4">
                   <div class="flex items-center justify-between mb-3">
                     <span class="text-gray-500 dark:text-gray-400">类型:</span>
                     <span class="text-gray-900 dark:text-white font-medium">{{ officeFileType }} 文档</span>
@@ -1029,7 +1029,7 @@ onUnmounted(() => {
             v-else-if="previewType === 'text'"
             class="h-full p-6"
           >
-            <pre class="h-full overflow-auto p-4 bg-gray-100 dark:bg-dark-400 rounded-lg text-gray-800 dark:text-gray-100 text-sm font-mono whitespace-pre-wrap break-words border border-gray-200 dark:border-white/10">{{ textContent }}</pre>
+            <pre class="h-full overflow-auto p-4 bg-gray-100 dark:bg-dark-200 rounded-lg text-gray-800 dark:text-gray-100 text-sm font-mono whitespace-pre-wrap break-words border border-gray-200 dark:border-white/10">{{ textContent }}</pre>
           </div>
 
           <div
@@ -1137,7 +1137,7 @@ onUnmounted(() => {
                     type="text"
                     name="file-search"
                     placeholder="搜索文件（支持 * 和 ? 通配符）..."
-                    class="w-full px-2 py-1 text-xs bg-white dark:bg-dark-400 border border-gray-300 dark:border-white/10 rounded text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:outline-none"
+                    class="w-full px-2 py-1 text-xs bg-white dark:bg-dark-200 border border-gray-300 dark:border-white/10 rounded text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:outline-none"
                   >
                   <svg
                     class="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"
@@ -1158,7 +1158,7 @@ onUnmounted(() => {
                   <span class="text-[10px] text-gray-500 dark:text-gray-400">排序:</span>
                   <button
                     class="px-1.5 py-0.5 text-[10px] rounded transition-colors flex items-center gap-0.5"
-                    :class="sortField === 'name' ? 'bg-primary/20 text-primary' : 'bg-gray-200 dark:bg-dark-300 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-dark-400'"
+                    :class="sortField === 'name' ? 'bg-primary/20 text-primary' : 'bg-gray-200 dark:bg-dark-100 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-dark-400'"
                     @click="toggleSort('name')"
                   >
                     名称
@@ -1187,7 +1187,7 @@ onUnmounted(() => {
                   </button>
                   <button
                     class="px-1.5 py-0.5 text-[10px] rounded transition-colors flex items-center gap-0.5"
-                    :class="sortField === 'size' ? 'bg-primary/20 text-primary' : 'bg-gray-200 dark:bg-dark-300 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-dark-400'"
+                    :class="sortField === 'size' ? 'bg-primary/20 text-primary' : 'bg-gray-200 dark:bg-dark-100 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-dark-400'"
                     @click="toggleSort('size')"
                   >
                     大小
@@ -1216,7 +1216,7 @@ onUnmounted(() => {
                   </button>
                   <button
                     class="px-1.5 py-0.5 text-[10px] rounded transition-colors flex items-center gap-0.5"
-                    :class="sortField === 'type' ? 'bg-primary/20 text-primary' : 'bg-gray-200 dark:bg-dark-300 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-dark-400'"
+                    :class="sortField === 'type' ? 'bg-primary/20 text-primary' : 'bg-gray-200 dark:bg-dark-100 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-dark-400'"
                     @click="toggleSort('type')"
                   >
                     类型
@@ -1328,7 +1328,7 @@ onUnmounted(() => {
                 <h4 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                   {{ file.original_filename }}
                 </h4>
-                <div class="bg-gray-100 dark:bg-dark-400 rounded-lg p-6 mt-4">
+                <div class="bg-gray-100 dark:bg-dark-200 rounded-lg p-6 mt-4">
                   <div class="flex items-center justify-between mb-3">
                     <span class="text-gray-500 dark:text-gray-400">类型:</span>
                     <span class="text-gray-900 dark:text-white font-medium">{{ getArchiveInfo().type }}</span>

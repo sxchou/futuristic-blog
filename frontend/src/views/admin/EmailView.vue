@@ -727,7 +727,7 @@ function getProviderBgColor(provider: string) {
               name="test-email"
               placeholder="输入测试邮箱"
               :disabled="!canTest"
-              :class="['flex-1 px-2.5 py-1.5 text-sm bg-gray-50 dark:bg-dark-200 border rounded-md text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none disabled:opacity-50', testEmailError ? 'border-red-300 dark:border-red-500' : 'border-gray-200 dark:border-white/10']"
+              :class="['flex-1 px-2.5 py-1.5 text-sm bg-gray-50 dark:bg-dark-100 border rounded-md text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none disabled:opacity-50', testEmailError ? 'border-red-300 dark:border-red-500' : 'border-gray-200 dark:border-white/10']"
               @input="testEmailError = ''"
             >
             <button
@@ -762,7 +762,7 @@ function getProviderBgColor(provider: string) {
               name="test-resend-email"
               placeholder="输入测试邮箱"
               :disabled="!canTest"
-              :class="['flex-1 px-2.5 py-1.5 text-sm bg-gray-50 dark:bg-dark-200 border rounded-md text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none disabled:opacity-50', testResendEmailError ? 'border-red-300 dark:border-red-500' : 'border-gray-200 dark:border-white/10']"
+              :class="['flex-1 px-2.5 py-1.5 text-sm bg-gray-50 dark:bg-dark-100 border rounded-md text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none disabled:opacity-50', testResendEmailError ? 'border-red-300 dark:border-red-500' : 'border-gray-200 dark:border-white/10']"
               @input="testResendEmailError = ''"
             >
             <button
@@ -1015,24 +1015,24 @@ function getProviderBgColor(provider: string) {
               </div>
             </div>
             <div class="grid grid-cols-2 gap-2 text-xs">
-              <div class="p-2 bg-gray-50 dark:bg-dark-200 rounded">
+              <div class="p-2 bg-gray-50 dark:bg-dark-100 rounded">
                 <span class="text-gray-500">收件人名称：</span>
                 <span class="text-gray-700 dark:text-gray-300">{{ log.recipient_name || '-' }}</span>
               </div>
-              <div class="p-2 bg-gray-50 dark:bg-dark-200 rounded">
+              <div class="p-2 bg-gray-50 dark:bg-dark-100 rounded">
                 <span class="text-gray-500">验证状态：</span>
                 <span class="text-gray-700 dark:text-gray-300">{{ log.is_verified ? '已验证' : '未验证' }}</span>
               </div>
               <div
                 v-if="log.verified_at"
-                class="p-2 bg-gray-50 dark:bg-dark-200 rounded"
+                class="p-2 bg-gray-50 dark:bg-dark-100 rounded"
               >
                 <span class="text-gray-500">验证时间：</span>
                 <span class="text-gray-700 dark:text-gray-300">{{ formatDate(log.verified_at) }}</span>
               </div>
               <div
                 v-if="log.user_id"
-                class="p-2 bg-gray-50 dark:bg-dark-200 rounded"
+                class="p-2 bg-gray-50 dark:bg-dark-100 rounded"
               >
                 <span class="text-gray-500">用户ID：</span>
                 <span class="text-gray-700 dark:text-gray-300">{{ log.user_id }}</span>
@@ -1057,7 +1057,7 @@ function getProviderBgColor(provider: string) {
               'px-2 py-1 text-xs rounded transition-colors',
               logsPage === page
                 ? 'bg-primary text-white'
-                : 'bg-gray-100 dark:bg-dark-200 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-300'
+                : 'bg-gray-100 dark:bg-dark-100 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-dark-300'
             ]"
             @click="changePage(page)"
           >
@@ -1218,7 +1218,7 @@ function getProviderBgColor(provider: string) {
                     name="smtp-user"
                     autocomplete="email"
                     :placeholder="configForm.provider === 'qq' ? 'QQ邮箱' : '邮箱地址'"
-                    class="w-full px-2.5 py-1.5 text-sm rounded-md border bg-white dark:bg-dark-200 text-gray-900 dark:text-white outline-none"
+                    class="w-full px-2.5 py-1.5 text-sm rounded-md border bg-white dark:bg-dark-100 text-gray-900 dark:text-white outline-none"
                     :class="configFormErrors.smtp_user ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
                     @input="delete configFormErrors.smtp_user"
                   >
@@ -1246,7 +1246,7 @@ function getProviderBgColor(provider: string) {
                     name="smtp-password"
                     autocomplete="new-password"
                     :placeholder="editingConfig ? '留空保持原值' : '授权码/密码'"
-                    class="w-full px-2.5 py-1.5 text-sm rounded-md border bg-white dark:bg-dark-200 text-gray-900 dark:text-white outline-none"
+                    class="w-full px-2.5 py-1.5 text-sm rounded-md border bg-white dark:bg-dark-100 text-gray-900 dark:text-white outline-none"
                     :class="configFormErrors.smtp_password ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
                     @input="delete configFormErrors.smtp_password"
                   >
@@ -1274,7 +1274,7 @@ function getProviderBgColor(provider: string) {
                     name="from-email"
                     autocomplete="email"
                     placeholder="发件人邮箱"
-                    class="w-full px-2.5 py-1.5 text-sm rounded-md border bg-white dark:bg-dark-200 text-gray-900 dark:text-white outline-none"
+                    class="w-full px-2.5 py-1.5 text-sm rounded-md border bg-white dark:bg-dark-100 text-gray-900 dark:text-white outline-none"
                     :class="configFormErrors.from_email ? 'border-red-500 dark:border-red-500' : 'border-gray-200 dark:border-white/10'"
                     @input="delete configFormErrors.from_email"
                   >
@@ -1298,7 +1298,7 @@ function getProviderBgColor(provider: string) {
                     type="text"
                     name="from-name"
                     placeholder="显示名称"
-                    class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-200 text-gray-900 dark:text-white outline-none"
+                    class="w-full px-2.5 py-1.5 text-sm rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-dark-100 text-gray-900 dark:text-white outline-none"
                   >
                 </div>
               </div>

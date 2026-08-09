@@ -242,7 +242,7 @@ const handleCancel = () => {
                         <div class="flex items-center gap-2 flex-shrink-0">
                           <span
                             v-if="item.count > 1"
-                            class="text-xs text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-dark-300/50 px-1.5 py-0.5 rounded"
+                            class="text-xs text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-dark-100/50 px-1.5 py-0.5 rounded"
                           >
                             ×{{ item.count }}
                           </span>

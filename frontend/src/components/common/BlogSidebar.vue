@@ -238,7 +238,7 @@ onMounted(() => {
         >
           <span
             class="flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold"
-            :class="index === 0 ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' : index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-white' : index === 2 ? 'bg-gradient-to-br from-amber-600 to-amber-700 text-white' : 'bg-gray-100 dark:bg-dark-300 text-gray-400'"
+            :class="index === 0 ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' : index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-white' : index === 2 ? 'bg-gradient-to-br from-amber-600 to-amber-700 text-white' : 'bg-gray-100 dark:bg-dark-100 text-gray-400'"
           >
             {{ index + 1 }}
           </span>

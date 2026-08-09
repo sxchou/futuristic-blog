@@ -94,7 +94,7 @@
 
 @layer components {
   .glass-card {
-    @apply bg-white dark:bg-dark-200 border border-gray-200/60 dark:border-white/5 rounded-2xl;
+    @apply bg-white dark:bg-dark-100 border border-gray-200/60 dark:border-white/10 rounded-2xl;
   }
 
   .glass-card-hover {
@@ -131,14 +131,14 @@
   }
 
   .btn-secondary {
-    @apply px-5 py-2.5 bg-gray-100 dark:bg-dark-300 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 font-medium rounded-lg;
+    @apply px-5 py-2.5 bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 font-medium rounded-lg;
     @apply transition-all duration-300 hover:bg-gray-200 dark:hover:bg-dark-400 hover:border-gray-300 dark:hover:border-white/20;
     @apply focus:outline-none focus:ring-2 focus:ring-primary/20;
     font-size: 15px;
   }
 
   .input-cyber {
-    @apply w-full px-4 py-3 bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-white/10 rounded-lg;
+    @apply w-full px-4 py-3 bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg;
     @apply text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500;
     @apply focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10;
     @apply transition-all duration-300;
@@ -146,7 +146,7 @@
 
   .tag {
     @apply inline-flex items-center px-3 py-1 text-sm font-medium rounded-full;
-    @apply bg-gray-100 dark:bg-dark-300 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400;
+    @apply bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400;
     @apply transition-all duration-200 hover:border-primary/30 hover:text-primary;
   }
 
@@ -261,7 +261,7 @@
 }
 
 pre {
-  @apply bg-gray-50 dark:bg-dark-300 rounded-lg p-4 border border-gray-200 dark:border-white/5;
+  @apply bg-gray-50 dark:bg-dark-100 rounded-lg p-4 border border-gray-200 dark:border-white/5;
   overflow-x: auto;
   overflow-y: hidden;
   overscroll-behavior-x: contain;
@@ -358,7 +358,7 @@ th, td {
 }
 
 th {
-  @apply bg-gray-50 dark:bg-dark-300 font-semibold;
+  @apply bg-gray-50 dark:bg-dark-100 font-semibold;
 }
 
 tr:hover {

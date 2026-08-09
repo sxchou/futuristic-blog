@@ -19,14 +19,14 @@ const getLogoUrl = (url: string) => {
 </script>
 
 <template>
-  <footer class="border-t border-gray-200/60 dark:border-white/5 bg-white dark:bg-dark-100/50">
+  <footer class="border-t border-gray-200/60 dark:border-white/5 bg-white/30 dark:bg-dark-100/50">
     <div class="blog-container py-10">
       <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
         <div class="md:col-span-5">
           <div class="flex items-center gap-2.5 mb-3">
             <div
               v-if="siteConfigStore.siteLogoUrl"
-              class="w-7 h-7 rounded-full overflow-hidden bg-gray-100 dark:bg-dark-200"
+              class="w-7 h-7 rounded-full overflow-hidden bg-gray-100 dark:bg-dark-100"
             >
               <img
                 :src="getLogoUrl(siteConfigStore.siteLogoUrl)"
@@ -100,7 +100,7 @@ const getLogoUrl = (url: string) => {
               :href="link.url"
               :target="link.type === 'link' ? '_blank' : undefined"
               :rel="link.type === 'link' ? 'noopener noreferrer' : undefined"
-              class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-dark-300 border border-gray-200 dark:border-white/5 flex items-center justify-center text-gray-400 hover:text-primary hover:border-primary/30 transition-all relative"
+              class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/5 flex items-center justify-center text-gray-400 hover:text-primary hover:border-primary/30 transition-all relative"
               :data-tooltip="link.name"
             >
               <svg
@@ -196,16 +196,16 @@ const getLogoUrl = (url: string) => {
             技术栈
           </h4>
           <div class="flex flex-wrap gap-1.5">
-            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-300 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">Vue 3</span>
-            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-300 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">TypeScript</span>
-            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-300 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">Vite</span>
-            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-300 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">Pinia</span>
-            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-300 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">TailwindCSS</span>
-            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-300 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">FastAPI</span>
-            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-300 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">Python</span>
-            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-300 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">SQLAlchemy</span>
-            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-300 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">PostgreSQL</span>
-            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-300 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">Redis</span>
+            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">Vue 3</span>
+            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">TypeScript</span>
+            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">Vite</span>
+            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">Pinia</span>
+            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">TailwindCSS</span>
+            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">FastAPI</span>
+            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">Python</span>
+            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">SQLAlchemy</span>
+            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">PostgreSQL</span>
+            <span class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400">Redis</span>
           </div>
         </div>
       </div>

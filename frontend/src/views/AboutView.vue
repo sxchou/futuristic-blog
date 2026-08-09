@@ -199,7 +199,7 @@ onActivated(() => {
             <div
               v-for="stack in profile.tech_stack"
               :key="stack.category"
-              class="p-4 bg-gray-50 dark:bg-dark-300/50 rounded-xl border border-gray-100 dark:border-white/5"
+              class="p-4 bg-gray-50 dark:bg-dark-100 rounded-xl border border-gray-100 dark:border-white/5"
             >
               <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2.5">
                 {{ stack.category }}
@@ -208,7 +208,7 @@ onActivated(() => {
                 <span
                   v-for="item in stack.items"
                   :key="item"
-                  class="tag-badge bg-gray-100 dark:bg-dark-200 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10"
+                  class="tag-badge bg-gray-100 dark:bg-dark-100 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10"
                 >
                   {{ item }}
                 </span>
@@ -320,7 +320,7 @@ onActivated(() => {
             <div
               v-for="area in profile.exploration_areas"
               :key="area"
-              class="flex items-start gap-2.5 p-3 bg-gray-50 dark:bg-dark-300/50 rounded-lg border border-gray-100 dark:border-white/5 hover:border-primary/30 transition-colors"
+              class="flex items-start gap-2.5 p-3 bg-gray-50 dark:bg-dark-100 rounded-lg border border-gray-100 dark:border-white/5 hover:border-primary/30 transition-colors"
             >
               <svg
                 class="w-4 h-4 text-primary flex-shrink-0 mt-0.5"
@@ -367,7 +367,7 @@ onActivated(() => {
               :href="link.url"
               :target="link.type === 'link' ? '_blank' : undefined"
               :rel="link.type === 'link' ? 'noopener noreferrer' : undefined"
-              :class="['flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-dark-300/50 border border-gray-200 dark:border-white/10 rounded-lg transition-colors text-sm', link.color, link.hoverColor]"
+              :class="['flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg transition-colors text-sm', link.color, link.hoverColor]"
             >
               <svg
                 v-if="link.icon === 'github'"

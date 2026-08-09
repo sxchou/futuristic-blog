@@ -504,7 +504,7 @@ watch(() => form.value.code, (newCode) => {
                 </span>
               </div>
               <div class="flex items-center gap-2 mt-1">
-                <code class="text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-dark-200 rounded text-gray-600 dark:text-gray-400">
+                <code class="text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-dark-100 rounded text-gray-600 dark:text-gray-400">
                   {{ role.code }}
                 </code>
                 <span class="text-xs text-gray-400 dark:text-gray-500">
@@ -526,7 +526,7 @@ watch(() => form.value.code, (newCode) => {
               <span
                 v-for="perm in role.permissions.slice(0, 3)"
                 :key="perm.id"
-                class="px-1.5 py-0.5 text-xs bg-gray-50 dark:bg-dark-200 text-gray-600 dark:text-gray-400 rounded"
+                class="px-1.5 py-0.5 text-xs bg-gray-50 dark:bg-dark-100 text-gray-600 dark:text-gray-400 rounded"
               >
                 {{ perm.name }}
               </span>
@@ -630,7 +630,7 @@ watch(() => form.value.code, (newCode) => {
               v-model="form.name"
               type="text"
               name="role-name"
-              class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border rounded-lg outline-none transition-all text-gray-900 dark:text-white"
+              class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-100 border rounded-lg outline-none transition-all text-gray-900 dark:text-white"
               :class="hasError('name') || nameExists ? 'border-red-500 dark:border-red-500' : nameChecking ? 'border-yellow-500 dark:border-yellow-500' : 'border-gray-200 dark:border-dark-300'"
               placeholder="请输入角色名称"
               @input="clearValidationError('name')"
@@ -654,7 +654,7 @@ watch(() => form.value.code, (newCode) => {
               type="text"
               name="role-code"
               :disabled="!isCreating"
-              class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border rounded-lg outline-none transition-all text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-100 border rounded-lg outline-none transition-all text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
               :class="hasError('code') || codeExists ? 'border-red-500 dark:border-red-500' : codeChecking ? 'border-yellow-500 dark:border-yellow-500' : 'border-gray-200 dark:border-dark-300'"
               placeholder="请输入角色代码（英文）"
               @input="clearValidationError('code')"
@@ -675,7 +675,7 @@ watch(() => form.value.code, (newCode) => {
               v-model="form.description"
               rows="3"
               name="role-description"
-              class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-dark-300 rounded-lg outline-none transition-all text-gray-900 dark:text-white resize-none"
+              class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-dark-300 rounded-lg outline-none transition-all text-gray-900 dark:text-white resize-none"
               placeholder="请输入角色描述"
             ></textarea>
           </div>
@@ -687,7 +687,7 @@ watch(() => form.value.code, (newCode) => {
             <input id="role-is-default"
               v-model.number="form.priority"
               type="number"
-              class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-200 border border-gray-200 dark:border-dark-300 rounded-lg outline-none transition-all text-gray-900 dark:text-white"
+              class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-dark-300 rounded-lg outline-none transition-all text-gray-900 dark:text-white"
               placeholder="数字越大优先级越高"
             />
           </div>
@@ -766,7 +766,7 @@ watch(() => form.value.code, (newCode) => {
         </div>
 
         <div v-if="permissionTree" class="flex-1 flex overflow-hidden">
-          <div class="w-32 shrink-0 border-r border-gray-200 dark:border-dark-300 bg-gray-50/50 dark:bg-dark-200/50 overflow-y-auto">
+          <div class="w-32 shrink-0 border-r border-gray-200 dark:border-dark-300 bg-gray-50/50 dark:bg-dark-100/50 overflow-y-auto">
             <div class="p-1 space-y-0.5">
               <button
                 v-for="module in permissionTree.modules"
@@ -812,7 +812,7 @@ watch(() => form.value.code, (newCode) => {
               class="border border-gray-200 dark:border-dark-300 rounded-lg sm:rounded-xl overflow-hidden"
             >
               <div
-                class="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 bg-gray-50 dark:bg-dark-200 transition-colors"
+                class="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 bg-gray-50 dark:bg-dark-100 transition-colors"
                 :class="isViewOnly ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-300'"
                 @click="!isViewOnly && toggleModulePermissions(module.module, module.permissions)"
               >
