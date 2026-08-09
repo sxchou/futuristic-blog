@@ -511,7 +511,7 @@ defineExpose({
     <!-- Markdown 语法帮助 -->
     <div 
       v-if="showMarkdownHelp" 
-      class="mb-2 p-3 bg-gray-50 dark:bg-dark-100/50 border border-gray-200 dark:border-white/10 rounded-lg text-xs text-gray-600 dark:text-gray-400"
+      class="mb-2 p-3 bg-white/50 dark:bg-dark-100/50 border border-gray-200 dark:border-white/10 rounded-lg text-xs text-gray-600 dark:text-gray-400"
     >
       <div class="flex justify-between items-center mb-3">
         <span class="font-medium text-gray-700 dark:text-gray-300">Markdown 语法参考</span>
@@ -648,7 +648,7 @@ defineExpose({
       style="height: calc(100vh - 32px);"
     >
       <!-- 上下文信息区域 -->
-      <div class="flex-shrink-0 mb-2 p-2 bg-gray-100 dark:bg-dark-100/50 rounded-lg border border-gray-200 dark:border-white/10">
+      <div class="flex-shrink-0 mb-2 p-2 bg-white/50 dark:bg-dark-100/50 rounded-lg border border-gray-200 dark:border-white/10">
         <div
           v-if="replyTo"
           class="text-sm"
@@ -838,7 +838,7 @@ defineExpose({
       
       <div 
         v-if="showPreview && modelValue" 
-        class="mt-3 p-3 bg-gray-50 dark:bg-dark-100/50 rounded-lg border border-gray-200 dark:border-white/5"
+        class="mt-3 p-3 bg-white/50 dark:bg-dark-100/50 rounded-lg border border-gray-200 dark:border-white/5"
       >
         <div class="text-xs text-gray-500 dark:text-gray-400 mb-2">
           预览

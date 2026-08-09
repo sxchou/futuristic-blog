@@ -2,7 +2,7 @@
   <div 
     :id="`comment-${comment.id}`"
     ref="commentItemRef"
-    class="comment-item bg-gray-100 dark:bg-dark-100/30 border border-gray-200 dark:border-white/5 rounded-lg p-4 transition-all duration-300"
+    class="comment-item bg-white/50 dark:bg-dark-100/30 border border-gray-200 dark:border-white/5 rounded-lg p-4 transition-all duration-300"
   >
     <div class="flex gap-3">
       <div 
@@ -77,7 +77,7 @@
             <CommentMarkdownPreview :content="comment.content" />
             <div 
               v-if="!isExpanded && shouldShowExpand" 
-              class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-gray-100 dark:from-dark-100/30 to-transparent pointer-events-none"
+              class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white/50 dark:from-dark-100/30 to-transparent pointer-events-none"
             />
           </div>
           <button
@@ -172,7 +172,7 @@
           v-if="showReplyForm"
           class="mt-3"
         >
-          <div class="bg-gray-200 dark:bg-dark-100/50 border border-gray-300 dark:border-white/10 rounded-lg p-3">
+          <div class="bg-white/50 dark:bg-dark-100/50 border border-gray-300 dark:border-white/10 rounded-lg p-3">
             <CommentEditor
               ref="replyEditorRef"
               v-model="replyContent"

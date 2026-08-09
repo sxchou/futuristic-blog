@@ -22,7 +22,7 @@
 
     <div
       v-if="!authStore.isAuthenticated"
-      class="bg-gray-100 dark:bg-dark-100/50 border border-gray-200 dark:border-white/10 rounded-lg p-6 text-center mb-8"
+      class="bg-white/50 dark:bg-dark-100/50 border border-gray-200 dark:border-white/10 rounded-lg p-6 text-center mb-8"
     >
       <p class="text-gray-500 dark:text-gray-400 mb-4">
         登录后才能发表评论
@@ -39,7 +39,7 @@
       v-else
       class="comment-form mb-8"
     >
-      <div class="bg-gray-100 dark:bg-dark-100/50 border border-gray-200 dark:border-white/10 rounded-lg p-4">
+      <div class="bg-white/50 dark:bg-dark-100/50 border border-gray-200 dark:border-white/10 rounded-lg p-4">
         <CommentEditor
           ref="commentEditorRef"
           v-model="newComment"
