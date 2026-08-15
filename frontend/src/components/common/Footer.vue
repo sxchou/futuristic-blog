@@ -85,7 +85,7 @@ const getLogoUrl = (url: string) => {
                 />
               </svg>
             </div>
-            <span class="text-base font-bold text-gray-900 dark:text-white">{{ siteConfigStore.siteName }}</span>
+            <span class="text-base font-bold tracking-tight text-gray-900 dark:text-white">{{ siteConfigStore.siteName }}</span>
           </div>
           <p class="text-sm text-gray-500 dark:text-gray-400 mb-4 max-w-sm leading-relaxed">
             {{ siteConfigStore.siteDescription || 'Code for Future, Share for Growth. 一个充满未来感的个人技术博客，分享全栈开发、AI应用、架构设计等技术探索。' }}
@@ -100,7 +100,7 @@ const getLogoUrl = (url: string) => {
               :href="link.url"
               :target="link.type === 'link' ? '_blank' : undefined"
               :rel="link.type === 'link' ? 'noopener noreferrer' : undefined"
-              class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/5 flex items-center justify-center text-gray-400 hover:text-primary hover:border-primary/30 transition-all relative"
+              class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/5 flex items-center justify-center text-gray-400 hover:text-primary hover:border-primary/30 hover:-translate-y-0.5 hover:shadow-sm transition-all duration-300 ease-out relative"
               :data-tooltip="link.name"
             >
               <svg

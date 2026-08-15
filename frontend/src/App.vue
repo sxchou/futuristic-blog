@@ -58,7 +58,7 @@ onUnmounted(() => {
       >
         <router-view v-slot="{ Component }">
           <transition
-            name="fade"
+            name="page"
             mode="out-in"
           >
             <component :is="Component" />
@@ -70,7 +70,7 @@ onUnmounted(() => {
         v-slot="{ Component }"
       >
         <transition
-          name="fade"
+          name="page"
           mode="out-in"
         >
           <component :is="Component" />
@@ -97,16 +97,6 @@ onUnmounted(() => {
 .app-content {
   position: relative;
   z-index: 1;
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
 }
 
 .skeleton-fade-enter-active,

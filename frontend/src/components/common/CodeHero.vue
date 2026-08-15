@@ -254,6 +254,8 @@ onUnmounted(() => {
     <div class="hero-grid">
       <!-- 代码编辑器窗口 -->
       <div class="editor-wrap">
+        <div class="hero-aurora" aria-hidden="true" />
+        <div class="hero-dotgrid" aria-hidden="true" />
         <div class="editor-window" role="img" :aria-label="`代码编辑器演示：${statusLabel}`">
           <div class="editor-titlebar">
             <span class="dot dot-red" />
@@ -305,13 +307,63 @@ onUnmounted(() => {
   min-width: 0;
 }
 
+/* 极光光晕 —— 编辑器背后的品牌色弥散
+   水平方向严格约束在本列宽度内（inset 左右为 0），
+   避免光晕横向渗入相邻侧边栏卡片造成"漏光" */
+.hero-aurora {
+  position: absolute;
+  inset: -10% 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(42% 55% at 22% 28%, rgba(0, 212, 255, 0.14) 0%, transparent 100%),
+    radial-gradient(38% 50% at 78% 68%, rgba(124, 58, 237, 0.11) 0%, transparent 100%);
+  filter: blur(12px);
+  -webkit-mask-image: radial-gradient(75% 82% at 50% 45%, #000 42%, transparent 96%);
+  mask-image: radial-gradient(75% 82% at 50% 45%, #000 42%, transparent 96%);
+  animation: heroAuroraDrift 12s ease-in-out infinite alternate;
+}
+
+.dark .hero-aurora {
+  background:
+    radial-gradient(42% 55% at 22% 28%, rgba(0, 212, 255, 0.17) 0%, transparent 100%),
+    radial-gradient(38% 50% at 78% 68%, rgba(124, 58, 237, 0.15) 0%, transparent 100%);
+}
+
+@keyframes heroAuroraDrift {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.85; }
+  50% { transform: translate(1.5%, -2%) scale(1.04); opacity: 1; }
+}
+
+/* 点阵网格 —— Vercel 式工程质感（水平方向同样约束在本列内） */
+.hero-dotgrid {
+  position: absolute;
+  inset: -6% 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, rgba(15, 23, 42, 0.09) 1px, transparent 1px);
+  background-size: 22px 22px;
+  -webkit-mask-image: radial-gradient(65% 65% at 50% 45%, #000 30%, transparent 100%);
+  mask-image: radial-gradient(65% 65% at 50% 45%, #000 30%, transparent 100%);
+}
+
+.dark .hero-dotgrid {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.09) 1px, transparent 1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-aurora { animation: none; }
+}
+
 .editor-window {
   position: relative;
+  z-index: 1;
   border-radius: 0.9rem;
   overflow: hidden;
   background: var(--ed-bg);
   border: 1px solid var(--ed-border);
   box-shadow: var(--ed-shadow);
+  transition: box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 
   /* 主题变量 —— 日间模式（默认） */
   --ed-bg: #ffffff;
@@ -325,7 +377,7 @@ onUnmounted(() => {
   --ed-accent: #00aacc;
   --ed-accent-soft: rgba(0, 170, 204, 0.12);
   --ed-accent-border: rgba(0, 170, 204, 0.35);
-  --ed-shadow: 0 18px 40px -20px rgba(15, 23, 42, 0.22), 0 0 0 1px rgba(15, 23, 42, 0.02);
+  --ed-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 20px -6px rgba(15, 23, 42, 0.08), 0 24px 48px -16px rgba(15, 23, 42, 0.12);
   --ed-scrollbar: rgba(15, 23, 42, 0.18);
   --ed-scrollbar-hover: rgba(15, 23, 42, 0.32);
   --tok-comment: #94a3b8;
@@ -347,6 +399,15 @@ onUnmounted(() => {
   --ed-led-idle-glow: rgba(21, 128, 61, 0.4);
 }
 
+.editor-window:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 12px 28px -8px rgba(15, 23, 42, 0.10), 0 32px 56px -16px rgba(15, 23, 42, 0.14);
+}
+
+.dark .editor-window:hover {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 14px 32px -8px rgba(0, 0, 0, 0.55), 0 36px 64px -16px rgba(0, 0, 0, 0.6), 0 2px 0 0 rgba(0, 212, 255, 0.28) inset;
+}
+
 /* 暗黑模式覆盖 */
 .dark .editor-window {
   --ed-bg: #0a0a0a;
@@ -360,7 +421,7 @@ onUnmounted(() => {
   --ed-accent: #00d4ff;
   --ed-accent-soft: rgba(0, 212, 255, 0.1);
   --ed-accent-border: rgba(0, 212, 255, 0.25);
-  --ed-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.45), 0 2px 0 0 rgba(0, 212, 255, 0.25) inset;
+  --ed-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 24px -8px rgba(0, 0, 0, 0.5), 0 28px 56px -16px rgba(0, 0, 0, 0.55), 0 2px 0 0 rgba(0, 212, 255, 0.2) inset;
   --ed-scrollbar: rgba(0, 212, 255, 0.25);
   --ed-scrollbar-hover: rgba(0, 212, 255, 0.45);
   --tok-comment: #64748b;

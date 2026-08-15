@@ -51,8 +51,8 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+        sans: ['Geist', 'Geist Latin', 'Inter', 'system-ui', '-apple-system', 'PingFang SC', 'Microsoft YaHei', 'sans-serif'],
+        mono: ['JetBrains Mono', 'Geist Mono', 'Fira Code', 'monospace'],
       },
       fontSize: {
         'xs': ['var(--font-size-xs)', { lineHeight: '1rem' }],
@@ -65,14 +65,34 @@ export default {
         '4xl': ['var(--font-size-4xl)', { lineHeight: '2.5rem' }],
         '5xl': ['var(--font-size-5xl)', { lineHeight: '1' }],
       },
+      /* Vercel/Linear 式多层柔和阴影 —— 精细的深度层次 */
+      boxShadow: {
+        'hairline': '0 0 0 1px rgba(0, 0, 0, 0.04)',
+        'xs': '0 1px 2px rgba(0, 0, 0, 0.04)',
+        'sm': '0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.03)',
+        'md': '0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 8px -2px rgba(0, 0, 0, 0.06), 0 12px 20px -6px rgba(0, 0, 0, 0.05)',
+        'lg': '0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 16px -4px rgba(0, 0, 0, 0.08), 0 20px 32px -8px rgba(0, 0, 0, 0.06)',
+        'xl': '0 1px 2px rgba(0, 0, 0, 0.04), 0 12px 24px -6px rgba(0, 0, 0, 0.10), 0 32px 48px -12px rgba(0, 0, 0, 0.10)',
+        'glow': '0 0 0 1px rgba(0, 212, 255, 0.15), 0 4px 24px -4px rgba(0, 212, 255, 0.25)',
+        'glow-lg': '0 0 0 1px rgba(0, 212, 255, 0.2), 0 8px 40px -4px rgba(0, 212, 255, 0.35)',
+      },
+      /* 现代缓动曲线 */
+      transitionTimingFunction: {
+        'smooth': 'cubic-bezier(0.4, 0, 0.2, 1)',
+        'out-expo': 'cubic-bezier(0.16, 1, 0.3, 1)',
+        'out-back': 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+        'spring': 'cubic-bezier(0.34, 1.3, 0.64, 1)',
+      },
       animation: {
         'glow': 'glow 2s ease-in-out infinite alternate',
         'float': 'float 6s ease-in-out infinite',
         'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'gradient': 'gradient 8s ease infinite',
-        'slide-up': 'slideUp 0.5s ease-out',
-        'slide-down': 'slideDown 0.5s ease-out',
+        'slide-up': 'slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+        'slide-down': 'slideDown 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
         'fade-in': 'fadeIn 0.5s ease-out',
+        'reveal-up': 'revealUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both',
+        'aurora': 'aurora 14s ease-in-out infinite alternate',
       },
       keyframes: {
         glow: {
@@ -99,10 +119,22 @@ export default {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
         },
+        revealUp: {
+          '0%': { transform: 'translateY(16px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        aurora: {
+          '0%, 100%': { transform: 'translate(0, 0) scale(1)', opacity: '0.7' },
+          '50%': { transform: 'translate(4%, -3%) scale(1.08)', opacity: '1' },
+        },
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'cyber-grid': 'linear-gradient(rgba(0, 212, 255, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 212, 255, 0.1) 1px, transparent 1px)',
+        'dot-grid': 'radial-gradient(circle, rgba(0, 0, 0, 0.08) 1px, transparent 1px)',
+      },
+      backgroundSize: {
+        'dot-grid': '24px 24px',
       },
       backdropBlur: {
         xs: '2px',

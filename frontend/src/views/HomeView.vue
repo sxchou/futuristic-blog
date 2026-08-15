@@ -232,7 +232,7 @@ const handlePageChange = (page: number) => {
         <CodeHero />
 
         <div class="flex items-center justify-between mb-6">
-          <h2 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <h2 class="text-lg font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-2">
             <svg
               class="w-5 h-5 text-primary"
               fill="none"
@@ -255,7 +255,7 @@ const handlePageChange = (page: number) => {
           v-if="isLoading && blogStore.articles.length === 0"
           class="flex justify-center py-16"
         >
-          <div class="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+          <div class="w-10 h-10 border-[3px] border-primary/20 border-t-primary rounded-full animate-spin" />
         </div>
 
         <div
@@ -264,16 +264,17 @@ const handlePageChange = (page: number) => {
           class="space-y-4"
         >
           <article
-            v-for="article in blogStore.articles"
+            v-for="(article, index) in blogStore.articles"
             :key="article.id"
-            class="article-card group relative"
+            class="article-card group relative reveal-item"
+            :style="{ '--stagger': Math.min(index, 7) }"
           >
             <router-link
               :to="`/article/${article.slug}`"
               class="block p-2"
               @mouseenter="handleArticleHover(article.slug)"
             >
-              <div 
+              <div
                 class="flex flex-col gap-3 sm:grid sm:grid-cols-[auto_1fr] sm:gap-4"
               >
                 <div
@@ -283,9 +284,10 @@ const handlePageChange = (page: number) => {
                   <img
                     :src="getMediaUrl(article.cover_image)"
                     :alt="article.title"
-                    class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 rounded-t-lg sm:rounded-lg"
+                    class="w-full h-full object-cover transition-transform duration-700 ease-out-expo group-hover:scale-[1.06] rounded-t-lg sm:rounded-lg"
                     loading="lazy"
                   >
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-t-lg sm:rounded-lg" />
                 </div>
 
                 <div 
@@ -327,7 +329,7 @@ const handlePageChange = (page: number) => {
                     </span>
                   </div>
 
-                  <h3 class="text-base font-bold leading-snug mb-2 group-hover:text-primary transition-colors line-clamp-2 text-gray-900 dark:text-white">
+                  <h3 class="text-base font-bold tracking-tight leading-snug mb-2 group-hover:text-primary transition-colors duration-300 line-clamp-2 text-gray-900 dark:text-white">
                     {{ article.title }}
                   </h3>
                   <p

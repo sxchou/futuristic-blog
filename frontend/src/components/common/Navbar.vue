@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useThemeStore, useAuthStore, useSiteConfigStore, useUserProfileStore, useDialogStore } from '@/stores'
 import UserAvatar from './UserAvatar.vue'
@@ -15,6 +15,11 @@ const dialog = useDialogStore()
 
 const isMenuOpen = ref(false)
 const isDesktopDropdownOpen = ref(false)
+const isScrolled = ref(false)
+
+const handleScroll = () => {
+  isScrolled.value = window.scrollY > 8
+}
 
 const navLinks = computed(() => [
   { name: '首页', path: '/' },
@@ -93,11 +98,22 @@ onMounted(() => {
   if (authStore.isAuthenticated) {
     userProfileStore.fetchProfile()
   }
+  window.addEventListener('scroll', handleScroll, { passive: true })
+  handleScroll()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
 })
 </script>
 
 <template>
-  <header class="fixed top-0 left-0 right-0 z-50 bg-white/90 dark:bg-dark-100/90 backdrop-blur-xl border-b border-gray-200/60 dark:border-white/5">
+  <header
+    class="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-dark-100/80 backdrop-blur-xl border-b transition-[box-shadow,border-color,background-color] duration-300 ease-out"
+    :class="isScrolled
+      ? 'border-gray-200/80 dark:border-white/[0.07] shadow-[0_1px_2px_rgba(0,0,0,0.03),0_8px_24px_-12px_rgba(0,0,0,0.08)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.3),0_8px_24px_-12px_rgba(0,0,0,0.5)]'
+      : 'border-transparent'"
+  >
     <nav class="blog-container py-3">
       <div class="flex items-center justify-between">
         <router-link
@@ -106,7 +122,7 @@ onMounted(() => {
         >
           <div
             v-if="siteConfigStore.siteLogoUrl"
-            class="w-8 h-8 rounded-full overflow-hidden bg-gray-100 dark:bg-dark-100"
+            class="w-8 h-8 rounded-full overflow-hidden bg-gray-100 dark:bg-dark-100 ring-1 ring-black/5 dark:ring-white/10"
           >
             <img
               :src="getLogoUrl(siteConfigStore.siteLogoUrl)"
@@ -116,7 +132,7 @@ onMounted(() => {
           </div>
           <div
             v-else
-            class="w-8 h-8 rounded-full bg-black flex items-center justify-center relative overflow-hidden"
+            class="w-8 h-8 rounded-full bg-black flex items-center justify-center relative overflow-hidden ring-1 ring-black/10 transition-transform duration-300 ease-out-expo group-hover:scale-105"
           >
             <svg
               viewBox="0 0 100 100"
@@ -165,25 +181,30 @@ onMounted(() => {
               />
             </svg>
           </div>
-          <span class="text-lg font-bold text-gray-900 dark:text-white group-hover:text-primary transition-colors">{{ siteConfigStore.siteName }}</span>
+          <span class="text-lg font-bold tracking-tight text-gray-900 dark:text-white group-hover:text-primary transition-colors">{{ siteConfigStore.siteName }}</span>
         </router-link>
 
-        <div class="hidden md:flex items-center gap-1">
+        <div class="hidden md:flex items-center gap-0.5 p-1 rounded-full bg-gray-100/60 dark:bg-white/[0.04] border border-gray-200/50 dark:border-white/[0.06]">
           <router-link
             v-for="link in navLinks"
             :key="link.path"
             :to="link.path"
-            class="px-3 py-1.5 rounded-md text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-primary/5 transition-all"
-            :class="{ 'text-primary bg-primary/5': isActive(link.path) }"
+            class="relative px-3 py-1.5 rounded-full text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"
+            :class="{ 'text-primary': isActive(link.path) }"
           >
-            {{ link.name }}
+            <span
+              v-if="isActive(link.path)"
+              class="absolute inset-0 rounded-full bg-primary/10 ring-1 ring-primary/20"
+              aria-hidden="true"
+            />
+            <span class="relative">{{ link.name }}</span>
           </router-link>
         </div>
 
         <div class="flex items-center gap-2">
           <button
             data-search-modal
-            class="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/5 rounded-lg text-gray-400 hover:text-primary hover:border-primary/30 transition-all"
+            class="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/5 rounded-lg text-gray-400 hover:text-primary hover:border-primary/30 hover:shadow-sm transition-all duration-200 active:scale-[0.97]"
             @click="openSearch"
           >
             <svg
@@ -200,11 +221,11 @@ onMounted(() => {
               />
             </svg>
             <span class="text-xs hidden sm:inline">搜索</span>
-            <kbd class="px-1 py-0.5 bg-gray-200 dark:bg-dark-200 rounded text-[10px] hidden sm:inline">⌘K</kbd>
+            <kbd class="px-1.5 py-0.5 bg-white dark:bg-dark-200 border border-gray-200 dark:border-white/10 rounded text-[10px] font-mono hidden sm:inline shadow-xs">⌘K</kbd>
           </button>
 
           <button
-            class="p-1.5 rounded-lg bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/5 hover:border-primary/30 hover:text-primary transition-all"
+            class="p-1.5 rounded-lg bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/5 hover:border-primary/30 hover:text-primary hover:shadow-sm transition-all duration-200 active:scale-[0.94]"
             @click="themeStore.toggleTheme"
           >
             <svg
@@ -251,7 +272,7 @@ onMounted(() => {
             @mouseleave="isDesktopDropdownOpen = false"
           >
             <button
-              class="p-1.5 rounded-lg bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/5 hover:border-primary/30 hover:text-primary transition-all"
+              class="p-1.5 rounded-lg bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/5 hover:border-primary/30 hover:text-primary hover:shadow-sm transition-all duration-200 active:scale-[0.94]"
               @mouseenter="openDesktopDropdown"
             >
               <svg
@@ -282,7 +303,7 @@ onMounted(() => {
                 class="absolute right-0 top-full w-56 z-50"
               >
                 <div class="h-2" />
-                <div class="bg-white dark:bg-dark-100 rounded-xl shadow-xl border border-gray-200 dark:border-white/5 overflow-hidden">
+                <div class="bg-white dark:bg-dark-100 rounded-xl border border-gray-200/80 dark:border-white/10 overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.04),0_12px_32px_-8px_rgba(0,0,0,0.12)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.4),0_12px_32px_-8px_rgba(0,0,0,0.6)]">
                 <div class="p-3 border-b border-gray-200 dark:border-white/5">
                   <div class="flex items-center gap-3">
                     <div
@@ -414,7 +435,7 @@ onMounted(() => {
           </div>
 
           <button
-            class="md:hidden p-1.5 rounded-lg bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/5 hover:border-primary/30 transition-all"
+            class="md:hidden p-1.5 rounded-lg bg-gray-50 dark:bg-dark-100 border border-gray-200 dark:border-white/5 hover:border-primary/30 hover:shadow-sm transition-all duration-200 active:scale-[0.94]"
             @click="isMenuOpen = !isMenuOpen"
           >
             <svg

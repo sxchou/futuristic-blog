@@ -269,7 +269,7 @@ onMounted(() => {
         </div>
       </template>
       <template v-else>
-        <div class="p-4 bg-white dark:bg-dark-100 rounded-xl">
+        <div class="p-4 bg-white dark:bg-dark-100 rounded-xl overflow-hidden relative">
           <div class="flex flex-col items-center">
             <div class="w-14 h-14 rounded-full bg-gray-200 dark:bg-dark-200 flex items-center justify-center mb-3">
               <svg

@@ -48,13 +48,13 @@ const getColors = (): ColorScheme => {
     return {
       particles: ['#00d4ff', '#7c3aed'],
       linkRGB: '0, 212, 255',
-      linkAlpha: 0.18
+      linkAlpha: 0.13
     }
   }
   return {
     particles: ['#0284c7', '#6d28d9'],
     linkRGB: '2, 132, 199',
-    linkAlpha: 0.1
+    linkAlpha: 0.08
   }
 }
 
@@ -237,11 +237,19 @@ onUnmounted(() => {
 }
 
 .tech-bg-dark {
-  background: radial-gradient(ellipse at 20% 0%, #0d1117 0%, #0a0a0a 40%, #000000 100%);
+  background:
+    radial-gradient(52% 38% at 18% -4%, rgba(0, 170, 204, 0.10) 0%, transparent 100%),
+    radial-gradient(40% 32% at 82% 8%, rgba(124, 58, 237, 0.09) 0%, transparent 100%),
+    radial-gradient(ellipse at 50% 120%, rgba(0, 212, 255, 0.05) 0%, transparent 60%),
+    linear-gradient(180deg, #0b0f14 0%, #0a0a0a 45%, #000000 100%);
 }
 
 .tech-bg-light {
-  background: radial-gradient(ellipse at 20% 0%, #f0f9ff 0%, #e0f2fe 40%, #f8fafc 100%);
+  background:
+    radial-gradient(52% 38% at 18% -4%, rgba(0, 170, 204, 0.09) 0%, transparent 100%),
+    radial-gradient(40% 32% at 82% 8%, rgba(109, 40, 217, 0.06) 0%, transparent 100%),
+    radial-gradient(ellipse at 50% 120%, rgba(0, 212, 255, 0.04) 0%, transparent 60%),
+    linear-gradient(180deg, #f4fafd 0%, #f2f7fb 45%, #f8fafc 100%);
 }
 
 .tech-canvas {

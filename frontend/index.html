@@ -46,12 +46,28 @@
         pointer-events: none;
       }
       .loading-spinner {
-        width: 40px;
-        height: 40px;
-        border: 3px solid rgba(0, 212, 255, 0.2);
-        border-top-color: #00d4ff;
+        position: relative;
+        width: 44px;
+        height: 44px;
+      }
+      .loading-spinner::before,
+      .loading-spinner::after {
+        content: '';
+        position: absolute;
+        inset: 0;
         border-radius: 50%;
-        animation: spin 1s linear infinite;
+        border: 2px solid transparent;
+      }
+      .loading-spinner::before {
+        border-top-color: #00d4ff;
+        border-right-color: rgba(0, 212, 255, 0.4);
+        animation: spin 0.9s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+      }
+      .loading-spinner::after {
+        inset: 8px;
+        border-bottom-color: #7c3aed;
+        border-left-color: rgba(124, 58, 237, 0.4);
+        animation: spin 1.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite reverse;
       }
       @keyframes spin {
         to { transform: rotate(360deg); }
@@ -82,7 +98,7 @@
         });
       })();
     </script>
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"></noscript>
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"></noscript>
   </body>
 </html>
