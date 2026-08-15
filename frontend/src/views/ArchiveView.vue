@@ -128,6 +128,20 @@ const collapseAll = () => {
   expandedMonths.value = new Set()
 }
 
+/* 当前可见月份是否全部展开（与筛选后的列表实际状态同步） */
+const allExpanded = computed(() => {
+  const months = filteredData.value.flatMap(y => y.months.map(m => ({ year: y.year, month: m.month })))
+  return months.length > 0 && months.every(({ year, month }) => expandedMonths.value.has(getMonthKey(year, month)))
+})
+
+const toggleAll = () => {
+  if (allExpanded.value) {
+    collapseAll()
+  } else {
+    expandAll()
+  }
+}
+
 const clearFilters = () => {
   searchQuery.value = ''
   selectedYear.value = null
@@ -264,56 +278,44 @@ onUnmounted(() => {
             {{ year }}年
           </option>
         </select>
-        <div class="flex items-center gap-1">
-          <button
-            class="px-2 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-primary/10 rounded transition-colors relative"
-            @click="expandAll"
-            @mouseenter="showTooltip('expand')"
-            @mouseleave="hideTooltip"
+        <button
+          class="px-2 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-primary/10 rounded transition-colors relative"
+          :aria-label="allExpanded ? '收起全部' : '展开全部'"
+          @click="toggleAll"
+          @mouseenter="showTooltip('toggleAll')"
+          @mouseleave="hideTooltip"
+        >
+          <svg
+            v-if="!allExpanded"
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          ><path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
+          /></svg>
+          <svg
+            v-else
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          ><path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25"
+          /></svg>
+          <span
+            v-if="activeTooltip === 'toggleAll'"
+            class="action-tooltip"
           >
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            ><path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
-            /></svg>
-            <span
-              v-if="activeTooltip === 'expand'"
-              class="action-tooltip"
-            >
-              展开全部
-            </span>
-          </button>
-          <button
-            class="px-2 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:text-primary hover:bg-primary/10 rounded transition-colors relative"
-            @click="collapseAll"
-            @mouseenter="showTooltip('collapse')"
-            @mouseleave="hideTooltip"
-          >
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            ><path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25"
-            /></svg>
-            <span
-              v-if="activeTooltip === 'collapse'"
-              class="action-tooltip"
-            >
-              收起全部
-            </span>
-          </button>
-        </div>
+            {{ allExpanded ? '收起全部' : '展开全部' }}
+          </span>
+        </button>
       </form>
 
       <div
