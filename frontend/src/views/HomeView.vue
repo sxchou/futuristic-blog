@@ -20,8 +20,11 @@ const authStore = useAuthStore()
 const userInteractionStore = useUserInteractionStore()
 const initStore = useInitStore()
 const isLoading = ref(false)
+const fetchError = ref(false)
 const articlesSectionRef = ref<HTMLElement | null>(null)
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
+/** 视图级请求令牌：防止被取消的旧请求复位加载状态或更新 URL */
+let fetchToken = 0
 
 const { pageSize } = usePageSize()
 
@@ -133,44 +136,50 @@ const scrollToArticlesSection = () => {
   })
 }
 
-const debouncedFetch = (page: number, updateUrl: boolean = true, shouldScroll: boolean = false) => {
-  if (searchTimeout) clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(async () => {
-    isLoading.value = true
-    try {
-      await blogStore.fetchArticles({ page, page_size: pageSize.value })
-      applyInteractionState(blogStore.articles)
-      if (updateUrl && page !== 1) {
+const runFetch = async (page: number, updateUrl: boolean = true, shouldScroll: boolean = false) => {
+  const token = ++fetchToken
+  isLoading.value = true
+  fetchError.value = false
+  try {
+    await blogStore.fetchArticles({ page, page_size: pageSize.value })
+    // 旧请求已被更新的操作取代，丢弃后续处理
+    if (token !== fetchToken) return
+    fetchError.value = !!blogStore.error
+    applyInteractionState(blogStore.articles)
+    if (updateUrl && !fetchError.value) {
+      if (page !== 1) {
         router.replace({ query: { ...route.query, page: page.toString() } })
-      } else if (updateUrl && page === 1 && route.query.page) {
+      } else if (route.query.page) {
         const newQuery = { ...route.query }
         delete newQuery.page
         router.replace({ query: newQuery })
       }
-      if (shouldScroll) scrollToArticlesSection()
-    } finally {
+    }
+    if (shouldScroll && !fetchError.value) scrollToArticlesSection()
+  } finally {
+    if (token === fetchToken) {
       isLoading.value = false
     }
+  }
+}
+
+const debouncedFetch = (page: number, updateUrl: boolean = true, shouldScroll: boolean = false) => {
+  // 立即显示加载状态，让用户点击分页后马上得到反馈
+  isLoading.value = true
+  fetchError.value = false
+  if (searchTimeout) clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    runFetch(page, updateUrl, shouldScroll)
   }, 100)
 }
 
 watch(pageSize, async (newSize, oldSize) => {
   if (newSize !== oldSize && blogStore.articles.length > 0) {
     const currentPage = parseInt(route.query.page as string) || 1
-    await blogStore.fetchArticles({ page: currentPage, page_size: newSize })
-    applyInteractionState(blogStore.articles)
+    await runFetch(currentPage, false, false)
     const totalPages = blogStore.pagination.totalPages
     if (currentPage > totalPages && totalPages > 0) {
-      const newPage = totalPages
-      await blogStore.fetchArticles({ page: newPage, page_size: newSize })
-      applyInteractionState(blogStore.articles)
-      if (newPage === 1) {
-        const newQuery = { ...route.query }
-        delete newQuery.page
-        router.replace({ query: newQuery })
-      } else {
-        router.replace({ query: { ...route.query, page: newPage.toString() } })
-      }
+      await runFetch(totalPages, true, false)
     }
   }
 })
@@ -178,33 +187,32 @@ watch(pageSize, async (newSize, oldSize) => {
 watch(() => route.path, async (newPath) => {
   if (newPath === '/') {
     const pageFromUrl = parseInt(route.query.page as string) || 1
-    await blogStore.fetchArticles({ page: pageFromUrl, page_size: pageSize.value })
-    applyInteractionState(blogStore.articles)
+    await runFetch(pageFromUrl, false, false)
   }
 })
 
 onMounted(async () => {
   const pageFromUrl = parseInt(route.query.page as string) || 1
-  
+
   if (!initStore.isCoreInitialized) {
     await initStore.initializeCore()
   }
-  
-  const hasFilter = blogStore.currentFilter.category_id || 
-                    blogStore.currentFilter.tag_id || 
+
+  const hasFilter = blogStore.currentFilter.category_id ||
+                    blogStore.currentFilter.tag_id ||
                     blogStore.currentFilter.search
-  
-  const needsFetch = hasFilter || 
+
+  const needsFetch = hasFilter ||
                      blogStore.articles.length === 0 ||
-                     blogStore.pagination.page !== pageFromUrl || 
+                     blogStore.pagination.page !== pageFromUrl ||
                      blogStore.pagination.pageSize !== pageSize.value
-  
+
   if (needsFetch) {
-    await blogStore.fetchArticles({ page: pageFromUrl, page_size: pageSize.value })
+    await runFetch(pageFromUrl, false, false)
+  } else {
+    applyInteractionState(blogStore.articles)
   }
-  
-  applyInteractionState(blogStore.articles)
-  
+
   prefetchAllCommonPages()
   prefetchAllData()
 })
@@ -216,50 +224,142 @@ onUnmounted(() => {
 const handlePageChange = (page: number) => {
   debouncedFetch(page, true, true)
 }
+
+const retryFetch = () => {
+  const pageFromUrl = parseInt(route.query.page as string) || 1
+  runFetch(pageFromUrl, false, false)
+}
 </script>
 
 <template>
   <div
     class="flex flex-col lg:flex-row gap-6"
   >
-      <div class="lg:w-72 flex-shrink-0 hidden lg:block lg:order-1">
-        <div class="lg:sticky lg:top-20">
-          <LeftSidebar />
-        </div>
+    <div class="lg:w-72 flex-shrink-0 hidden lg:block lg:order-1">
+      <div class="lg:sticky lg:top-20">
+        <LeftSidebar />
       </div>
+    </div>
       
-      <main class="flex-1 min-w-0 lg:order-2">
-        <CodeHero />
+    <main class="flex-1 min-w-0 lg:order-2">
+      <CodeHero />
 
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-lg font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-2">
-            <svg
-              class="w-5 h-5 text-primary"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"
-              />
-            </svg>
-            最新文章
-          </h2>
-          <span class="text-sm text-gray-400">共 {{ blogStore.pagination.total }} 篇</span>
-        </div>
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-lg font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-2">
+          <svg
+            class="w-5 h-5 text-primary"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"
+            />
+          </svg>
+          最新文章
+          <span
+            v-if="isLoading"
+            class="inline-block w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin"
+            aria-hidden="true"
+          />
+        </h2>
+        <span class="text-sm text-gray-400">共 {{ blogStore.pagination.total }} 篇</span>
+      </div>
 
+      <transition
+        name="content-fade"
+        mode="out-in"
+      >
+        <!-- 加载骨架屏：请求进行中立即替换旧内容，杜绝新旧内容混合显示 -->
         <div
-          v-if="isLoading && blogStore.articles.length === 0"
-          class="flex justify-center py-16"
+          v-if="isLoading"
+          key="loading"
+          class="space-y-4"
+          aria-busy="true"
+          aria-label="文章加载中"
         >
-          <div class="w-10 h-10 border-[3px] border-primary/20 border-t-primary rounded-full animate-spin" />
+          <div
+            v-for="i in 4"
+            :key="i"
+            class="article-card"
+          >
+            <div class="p-2 flex flex-col gap-3 sm:grid sm:grid-cols-[auto_1fr] sm:gap-4 animate-pulse">
+              <div class="w-full h-52 sm:w-56 md:w-64 sm:h-36 bg-gray-200 dark:bg-dark-200 rounded-t-lg sm:rounded-lg" />
+              <div class="flex-1 flex flex-col gap-2.5 py-1">
+                <div class="h-3 w-16 rounded bg-gray-200 dark:bg-dark-200" />
+                <div class="h-5 w-3/4 rounded bg-gray-200 dark:bg-dark-200" />
+                <div class="h-3 w-full rounded bg-gray-200 dark:bg-dark-200" />
+                <div class="h-3 w-5/6 rounded bg-gray-200 dark:bg-dark-200" />
+                <div class="mt-auto pt-3 border-t border-gray-100 dark:border-white/5">
+                  <div class="h-3 w-32 rounded bg-gray-200 dark:bg-dark-200" />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
+        <!-- 错误状态：网络异常时明确提示并提供重试 -->
+        <div
+          v-else-if="fetchError"
+          key="error"
+          class="text-center py-16"
+        >
+          <svg
+            class="w-12 h-12 mx-auto mb-3 text-red-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+          <p class="text-gray-500 dark:text-gray-400 mb-4">
+            {{ blogStore.error || '文章加载失败，请检查网络后重试' }}
+          </p>
+          <button
+            type="button"
+            class="px-5 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
+            @click="retryFetch"
+          >
+            重新加载
+          </button>
+        </div>
+
+        <!-- 空状态 -->
+        <div
+          v-else-if="blogStore.articles.length === 0"
+          key="empty"
+          class="text-center py-16"
+        >
+          <svg
+            class="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
+          <p class="text-gray-400">
+            暂无文章
+          </p>
+        </div>
+
+        <!-- 文章列表 -->
         <div
           v-else
+          key="list"
           ref="articlesSectionRef"
           class="space-y-4"
         >
@@ -486,32 +586,36 @@ const handlePageChange = (page: number) => {
             </router-link>
           </article>
         </div>
+      </transition>
 
-        <div
-          v-if="blogStore.pagination.totalPages > 1"
-          class="mt-8"
-        >
-          <Pagination
-            :current-page="blogStore.pagination.page"
-            :total-pages="blogStore.pagination.totalPages"
-            :total-items="blogStore.pagination.total"
-            :page-size="pageSize"
-            @page-change="handlePageChange"
-          />
-        </div>
-      </main>
-
-      <div class="lg:w-72 flex-shrink-0 hidden lg:block lg:order-3">
-        <div class="lg:sticky lg:top-20">
-          <BlogSidebar />
-        </div>
+      <div
+        v-if="blogStore.pagination.totalPages > 1"
+        class="mt-8"
+      >
+        <Pagination
+          :current-page="blogStore.pagination.page"
+          :total-pages="blogStore.pagination.totalPages"
+          :total-items="blogStore.pagination.total"
+          :page-size="pageSize"
+          @page-change="handlePageChange"
+        />
       </div>
+    </main>
 
-      <aside class="lg:hidden mt-8 space-y-4" aria-label="侧边栏内容">
-        <LeftSidebar />
+    <div class="lg:w-72 flex-shrink-0 hidden lg:block lg:order-3">
+      <div class="lg:sticky lg:top-20">
         <BlogSidebar />
-      </aside>
+      </div>
     </div>
+
+    <aside
+      class="lg:hidden mt-8 space-y-4"
+      aria-label="侧边栏内容"
+    >
+      <LeftSidebar />
+      <BlogSidebar />
+    </aside>
+  </div>
 </template>
 
 <style scoped>

@@ -2,13 +2,25 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { articleApi, categoryApi, tagApi, announcementApi } from '@/api'
 import { isCancelError } from '@/utils/error'
+import { performanceMonitor } from '@/utils/performance'
 import type { ArticleListItem, Category, Tag } from '@/types'
 import type { Announcement } from '@/api/announcements'
 
 let fetchArticlesController: AbortController | null = null
+/** 请求序号：只有最新一次请求允许更新状态，防止过期响应覆盖新数据 */
+let fetchArticlesSeq = 0
 let fetchCategoriesPromise: Promise<void> | null = null
 let fetchTagsPromise: Promise<void> | null = null
 let fetchAnnouncementsPromise: Promise<void> | null = null
+
+interface ArticleFilter {
+  category_id?: number
+  tag_id?: number
+  search?: string
+}
+
+const filterKeyOf = (filter: ArticleFilter): string =>
+  `${filter.category_id ?? ''}-${filter.tag_id ?? ''}-${filter.search ?? ''}`
 
 export const useBlogStore = defineStore('blog', () => {
   const articles = ref<ArticleListItem[]>([])
@@ -17,6 +29,7 @@ export const useBlogStore = defineStore('blog', () => {
   const announcements = ref<Announcement[]>([])
   const currentArticle = ref<ArticleListItem | null>(null)
   const loading = ref(false)
+  const error = ref<string | null>(null)
   const lastFetchTime = ref(0)
   const pagination = ref({
     page: 1,
@@ -25,11 +38,7 @@ export const useBlogStore = defineStore('blog', () => {
     totalPages: 0
   })
   const featuredArticles = ref<ArticleListItem[]>([])
-  const currentFilter = ref<{
-    category_id?: number
-    tag_id?: number
-    search?: string
-  }>({})
+  const currentFilter = ref<ArticleFilter>({})
 
   const fetchArticles = async (params?: {
     page?: number
@@ -39,18 +48,52 @@ export const useBlogStore = defineStore('blog', () => {
     is_featured?: boolean
     search?: string
   }) => {
+    // 请求序号守卫：仅最新请求可以更新状态
+    const seq = ++fetchArticlesSeq
+
+    // 取消上一个未完成的请求（如用户快速切换分类/标签）
     if (fetchArticlesController) {
       fetchArticlesController.abort()
     }
-    fetchArticlesController = new AbortController()
-    
+    const controller = new AbortController()
+    fetchArticlesController = controller
+
+    // 筛选条件立即同步，确保界面状态与请求一致
+    const nextFilter: ArticleFilter = {
+      category_id: params?.category_id,
+      tag_id: params?.tag_id,
+      search: params?.search
+    }
+    const filterChanged = filterKeyOf(nextFilter) !== filterKeyOf(currentFilter.value)
+    currentFilter.value = nextFilter
+    error.value = null
     loading.value = true
+
+    // 筛选条件变化时立即清空旧内容，杜绝新旧内容混合显示
+    if (filterChanged) {
+      articles.value = []
+      pagination.value = {
+        page: 1,
+        pageSize: pagination.value.pageSize,
+        total: 0,
+        totalPages: 0
+      }
+    }
+
+    const startTime = performance.now()
     try {
-      const response = await articleApi.getArticles({
-        page: params?.page ?? pagination.value.page,
-        page_size: params?.page_size ?? pagination.value.pageSize,
-        ...params
-      })
+      const response = await articleApi.getArticles(
+        {
+          page: params?.page ?? pagination.value.page,
+          page_size: params?.page_size ?? pagination.value.pageSize,
+          ...params
+        },
+        { signal: controller.signal }
+      )
+
+      // 过期响应守卫：用户已发起更新的请求，丢弃本次结果
+      if (seq !== fetchArticlesSeq) return
+
       articles.value = response.items
       pagination.value = {
         page: response.page,
@@ -59,19 +102,21 @@ export const useBlogStore = defineStore('blog', () => {
         totalPages: response.total_pages
       }
       lastFetchTime.value = Date.now()
-      currentFilter.value = {
-        category_id: params?.category_id,
-        tag_id: params?.tag_id,
-        search: params?.search
-      }
-    } catch (error: unknown) {
-      if (error instanceof Error && (error.message === '请求已取消' || (error as unknown as Record<string, unknown>)?.isCancel)) {
-        return
-      }
-      console.error('Failed to fetch articles:', error)
+      performanceMonitor.recordOperation('fetchArticles', performance.now() - startTime, true)
+    } catch (err: unknown) {
+      if (seq !== fetchArticlesSeq) return
+      if (isCancelError(err)) return
+      console.error('Failed to fetch articles:', err)
+      error.value = '文章加载失败，请检查网络后重试'
+      performanceMonitor.recordOperation('fetchArticles', performance.now() - startTime, false)
     } finally {
-      loading.value = false
-      fetchArticlesController = null
+      // 仅最新请求负责复位加载状态，避免被取消的旧请求提前关闭加载指示
+      if (seq === fetchArticlesSeq) {
+        loading.value = false
+        if (fetchArticlesController === controller) {
+          fetchArticlesController = null
+        }
+      }
     }
   }
 
@@ -209,6 +254,7 @@ export const useBlogStore = defineStore('blog', () => {
     announcements,
     currentArticle,
     loading,
+    error,
     pagination,
     featuredArticles,
     currentFilter,

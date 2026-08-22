@@ -2,6 +2,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useBlogStore } from '@/stores'
+import { articleApi } from '@/api'
+import { isCancelError } from '@/utils/error'
 
 const router = useRouter()
 const blogStore = useBlogStore()
@@ -9,29 +11,27 @@ const blogStore = useBlogStore()
 const isOpen = ref(false)
 const searchQuery = ref('')
 const searchResults = ref<any[]>([])
+const totalCount = ref(0)
 const isSearching = ref(false)
+/** 搜索请求令牌与取消控制器：防止快速输入时的请求竞态 */
+let searchToken = 0
+let searchController: AbortController | null = null
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
 const highlightText = (text: string, keyword: string): string => {
   if (!keyword || !text) return text
-  
+
   const escapeRegExp = (str: string) => {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   }
-  
+
   const pattern = escapeRegExp(keyword)
   const regex = new RegExp(`(${pattern})`, 'gi')
-  
+
   return text.replace(regex, '<mark class="search-highlight">$1</mark>')
 }
 
-const filteredResults = computed(() => {
-  if (!searchQuery.value) return []
-  const query = searchQuery.value.toLowerCase()
-  return blogStore.articles.filter(article => 
-    article.title.toLowerCase().includes(query) ||
-    article.summary?.toLowerCase().includes(query)
-  ).slice(0, 5)
-})
+const filteredResults = computed(() => searchResults.value.slice(0, 5))
 
 const openSearch = () => {
   isOpen.value = true
@@ -41,9 +41,24 @@ const openSearch = () => {
   }, 100)
 }
 
+const cancelPendingSearch = () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+    searchTimeout = null
+  }
+  if (searchController) {
+    searchController.abort()
+    searchController = null
+  }
+}
+
 const closeSearch = () => {
   isOpen.value = false
   searchQuery.value = ''
+  cancelPendingSearch()
+  searchResults.value = []
+  totalCount.value = 0
+  isSearching.value = false
 }
 
 const handleKeydown = (e: KeyboardEvent) => {
@@ -74,20 +89,51 @@ const goToArticle = (slug: string) => {
   }
 }
 
-const performSearch = async () => {
-  if (!searchQuery.value.trim()) return
-  
-  isSearching.value = true
-  try {
-    await blogStore.fetchArticles({ 
-      search: searchQuery.value,
-      page: 1,
-      page_size: 8
-    })
-    searchResults.value = blogStore.articles
-  } finally {
+/**
+ * 输入防抖 + 请求取消的即时搜索。
+ * 直接请求接口并写入本地状态，不污染全局博客 store 的文章列表，
+ * 避免搜索时当前页面（首页/分类/标签）显示错误的文章卡片。
+ */
+const performSearch = () => {
+  const keyword = searchQuery.value.trim()
+
+  if (searchTimeout) clearTimeout(searchTimeout)
+
+  if (!keyword) {
+    cancelPendingSearch()
+    searchResults.value = []
+    totalCount.value = 0
     isSearching.value = false
+    return
   }
+
+  // 立即显示搜索中的反馈
+  isSearching.value = true
+  searchTimeout = setTimeout(async () => {
+    const token = ++searchToken
+    if (searchController) searchController.abort()
+    const controller = new AbortController()
+    searchController = controller
+
+    try {
+      const response = await articleApi.getArticles(
+        { search: keyword, page: 1, page_size: 8 },
+        { signal: controller.signal }
+      )
+      if (token !== searchToken) return
+      searchResults.value = response.items
+      totalCount.value = response.total
+    } catch (error) {
+      if (token !== searchToken) return
+      if (isCancelError(error)) return
+      searchResults.value = []
+      totalCount.value = 0
+    } finally {
+      if (token === searchToken) {
+        isSearching.value = false
+      }
+    }
+  }, 300)
 }
 
 onMounted(() => {
@@ -98,6 +144,7 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown)
   window.removeEventListener('open-search', openSearch)
+  cancelPendingSearch()
 })
 </script>
 
@@ -121,7 +168,10 @@ onUnmounted(() => {
         />
         
         <div class="relative w-full max-w-2xl glass-card p-4 shadow-2xl">
-          <form class="flex items-center gap-4 mb-4" @submit.prevent="handleEnter">
+          <form
+            class="flex items-center gap-4 mb-4"
+            @submit.prevent="handleEnter"
+          >
             <svg
               class="w-5 h-5 text-gray-500 dark:text-gray-400"
               fill="none"
@@ -135,7 +185,8 @@ onUnmounted(() => {
                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
               />
             </svg>
-            <input id="input-global-search"
+            <input
+              id="input-global-search"
               v-model="searchQuery"
               data-search-input
               type="text"
@@ -205,7 +256,7 @@ onUnmounted(() => {
               class="w-full mt-3 py-2 text-center text-primary hover:text-primary/80 transition-colors text-sm font-medium"
               @click="handleEnter"
             >
-              查看全部 {{ blogStore.pagination.total }} 个结果 →
+              查看全部 {{ totalCount }} 个结果 →
             </button>
           </div>
 

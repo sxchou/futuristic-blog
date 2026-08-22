@@ -34,6 +34,10 @@ const onTokenRefreshed = (token: string) => {
 
 const pendingRequests = new Map<string, { controller: AbortController; timestamp: number }>()
 
+interface PendingRequestConfig extends InternalAxiosRequestConfig {
+  _pendingController?: AbortController
+}
+
 const generateRequestKey = (config: InternalAxiosRequestConfig): string => {
   const { method, url, params } = config
   return [method, url, JSON.stringify(params)].join('&')
@@ -44,17 +48,16 @@ const PENDING_REQUEST_TTL = 500
 const removePendingRequest = (config: InternalAxiosRequestConfig) => {
   const key = generateRequestKey(config)
   const pending = pendingRequests.get(key)
-  if (pending) {
-    if (Date.now() - pending.timestamp > PENDING_REQUEST_TTL) {
-      pendingRequests.delete(key)
-    }
+  // 仅移除当前请求自身注册的控制器，避免误删同 key 的更新请求
+  if (pending && pending.controller === (config as PendingRequestConfig)._pendingController) {
+    pendingRequests.delete(key)
   }
 }
 
 const addPendingRequest = (config: InternalAxiosRequestConfig) => {
   const key = generateRequestKey(config)
   const pending = pendingRequests.get(key)
-  
+
   if (pending && Date.now() - pending.timestamp < PENDING_REQUEST_TTL) {
     if (config.headers['X-Allow-Duplicate'] !== 'true') {
       pending.controller.abort()
@@ -63,9 +66,19 @@ const addPendingRequest = (config: InternalAxiosRequestConfig) => {
   } else if (pending) {
     pendingRequests.delete(key)
   }
-  
+
   const controller = new AbortController()
+  // 透传外部传入的 signal（如切换分类/标签时取消未完成的请求）
+  const externalSignal = config.signal
+  if (externalSignal instanceof AbortSignal) {
+    if (externalSignal.aborted) {
+      controller.abort()
+    } else {
+      externalSignal.addEventListener('abort', () => controller.abort(), { once: true })
+    }
+  }
   config.signal = controller.signal
+  ;(config as PendingRequestConfig)._pendingController = controller
   pendingRequests.set(key, { controller, timestamp: Date.now() })
 }
 

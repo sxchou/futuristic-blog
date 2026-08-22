@@ -15,6 +15,21 @@ interface ResourceTiming {
   type: string
 }
 
+interface OperationRecord {
+  name: string
+  duration: number
+  timestamp: number
+  success: boolean
+}
+
+interface OperationStats {
+  count: number
+  avg: number
+  max: number
+  min: number
+  successRate: number
+}
+
 class PerformanceMonitor {
   private metrics: PerformanceMetrics = {
     fcp: null,
@@ -29,6 +44,11 @@ class PerformanceMonitor {
   private observer: PerformanceObserver | null = null
   private clsValue = 0
   private clsEntries: PerformanceEntry[] = []
+
+  /** 记录用户操作（如切换分类、标签筛选）的接口耗时与成败 */
+  private operations: OperationRecord[] = []
+  private static readonly MAX_OPERATION_RECORDS = 100
+  private static readonly SLOW_OPERATION_THRESHOLD = 2000
 
   constructor() {
     this.initObservers()
@@ -92,6 +112,35 @@ class PerformanceMonitor {
 
   getMetrics(): PerformanceMetrics {
     return { ...this.metrics }
+  }
+
+  recordOperation(name: string, duration: number, success = true): void {
+    this.operations.push({ name, duration, timestamp: Date.now(), success })
+    if (this.operations.length > PerformanceMonitor.MAX_OPERATION_RECORDS) {
+      this.operations.shift()
+    }
+    if (import.meta.env.DEV && duration > PerformanceMonitor.SLOW_OPERATION_THRESHOLD) {
+      console.warn(`[Performance] 操作 "${name}" 耗时 ${Math.round(duration)}ms，超过 ${PerformanceMonitor.SLOW_OPERATION_THRESHOLD}ms 阈值`)
+    }
+  }
+
+  getRecentOperations(limit = 20): OperationRecord[] {
+    return this.operations.slice(-limit)
+  }
+
+  getOperationStats(name: string): OperationStats | null {
+    const records = this.operations.filter(op => op.name === name)
+    if (records.length === 0) return null
+
+    const durations = records.map(op => op.duration)
+    const successCount = records.filter(op => op.success).length
+    return {
+      count: records.length,
+      avg: Math.round(durations.reduce((sum, d) => sum + d, 0) / durations.length),
+      max: Math.round(Math.max(...durations)),
+      min: Math.round(Math.min(...durations)),
+      successRate: Math.round((successCount / records.length) * 10000) / 100
+    }
   }
 
   getResourceTimings(): ResourceTiming[] {
@@ -200,6 +249,18 @@ class PerformanceMonitor {
     console.log(`Accessibility: ${score.accessibility}/100`)
     console.log(`Best Practices: ${score.bestPractices}/100`)
     console.groupEnd()
+
+    const operationNames = Array.from(new Set(this.operations.map(op => op.name)))
+    if (operationNames.length > 0) {
+      console.group('操作耗时统计')
+      operationNames.forEach(name => {
+        const stats = this.getOperationStats(name)
+        if (stats) {
+          console.log(`${name}: 平均 ${stats.avg}ms / 最大 ${stats.max}ms / 成功率 ${stats.successRate}% (${stats.count} 次)`)
+        }
+      })
+      console.groupEnd()
+    }
 
     console.groupEnd()
   }

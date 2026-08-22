@@ -7,6 +7,15 @@ export interface UniqueCheckResult {
   value: string
 }
 
+export interface ArticleListRequestOptions {
+  /** 外部取消信号：切换筛选条件时取消未完成的请求 */
+  signal?: AbortSignal
+  /** 允许与进行中的同参数请求并存（预取场景使用，不中断用户请求） */
+  allowDuplicate?: boolean
+}
+
+const ARTICLE_LIST_TIMEOUT = 15000
+
 export const articleApi = {
   checkUnique: async (field: 'slug' | 'title', value: string, excludeId?: number): Promise<UniqueCheckResult> => {
     const params: Record<string, string | number> = { field, value }
@@ -24,8 +33,14 @@ export const articleApi = {
     tag_id?: number
     is_featured?: boolean
     search?: string
-  }): Promise<PaginatedResponse<ArticleListItem>> => {
-    const response = await apiClient.get('/articles', { params })
+  }, options?: ArticleListRequestOptions): Promise<PaginatedResponse<ArticleListItem>> => {
+    const response = await apiClient.get('/articles', {
+      params,
+      signal: options?.signal,
+      // 列表请求使用更短的超时，避免用户长时间等待无反馈
+      timeout: ARTICLE_LIST_TIMEOUT,
+      headers: options?.allowDuplicate ? { 'X-Allow-Duplicate': 'true' } : undefined
+    })
     return response.data
   },
 
