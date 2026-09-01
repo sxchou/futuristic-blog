@@ -2178,7 +2178,7 @@ const skeletonType = computed(() => {
             
             <div class="flex-1 min-w-0 lg:order-2">
               <section class="mb-6">
-                <div class="animate-pulse rounded-[0.9rem] overflow-hidden border border-gray-200/70 dark:border-white/8 bg-white dark:bg-[#0a0a0a]">
+                <div class="animate-pulse rounded-[0.9rem] overflow-hidden border border-gray-200/70 dark:border-white/[0.08] bg-white dark:bg-[#0a0a0a]">
                   <!-- titlebar -->
                   <div class="flex items-center gap-1.5 px-3.5 py-3 bg-gray-50/80 dark:bg-[#141414] border-b border-gray-200/60 dark:border-white/5">
                     <div class="w-3 h-3 rounded-full bg-gray-200 dark:bg-dark-200" />
