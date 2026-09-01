@@ -125,7 +125,8 @@ export default defineConfig({
         }
       }
     },
-    chunkSizeWarningLimit: 2000,
+    // mermaid 库体积约 2.2MB（已单独分包且懒加载），无法再拆分，调高阈值消除误报警告
+    chunkSizeWarningLimit: 2500,
     cssCodeSplit: true,
     sourcemap: false,
     reportCompressedSize: true,
