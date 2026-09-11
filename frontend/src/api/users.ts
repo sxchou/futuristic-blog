@@ -69,6 +69,7 @@ export const userApi = {
     email?: string
     role?: string
     status?: string
+    registration_type?: string
     start_date?: string
     end_date?: string
   }): Promise<PaginatedResponse<User>> => {

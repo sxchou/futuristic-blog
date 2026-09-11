@@ -26,6 +26,7 @@ export interface User {
   bio?: string
   is_admin: boolean
   is_verified: boolean
+  registration_type?: string
   has_password: boolean
   created_at: string
   verification_token_expires?: string

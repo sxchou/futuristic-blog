@@ -325,7 +325,7 @@ class OperationLog(Base):
     user_agent = Column(String(500), nullable=True)
     status = Column(String(20), default='success')
     error_message = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=get_db_now, index=True)
+    created_at = Column(DateTime, default=get_db_now)
     
     user = relationship("User")
     
@@ -352,7 +352,7 @@ class LoginLog(Base):
     user_agent = Column(String(500), nullable=True)
     status = Column(String(20), default='success')
     fail_reason = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=get_db_now, index=True)
+    created_at = Column(DateTime, default=get_db_now)
     
     user = relationship("User")
     
@@ -378,7 +378,7 @@ class AccessLog(Base):
     ip_address = Column(String(50), nullable=True)
     user_agent = Column(String(500), nullable=True)
     referer = Column(String(500), nullable=True)
-    created_at = Column(DateTime, default=get_db_now, index=True)
+    created_at = Column(DateTime, default=get_db_now)
     
     user = relationship("User")
     

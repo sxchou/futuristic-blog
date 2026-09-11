@@ -29,6 +29,7 @@ const usernameFilter = ref<string>('')
 const emailFilter = ref<string>('')
 const roleFilter = ref<string>('')
 const statusFilter = ref<string>('')
+const registrationTypeFilter = ref<string>('')
 
 const startDateFilter = ref<string>('')
 const endDateFilter = ref<string>('')
@@ -162,6 +163,9 @@ const fetchUsers = async () => {
     }
     if (statusFilter.value) {
       params.status = statusFilter.value
+    }
+    if (registrationTypeFilter.value) {
+      params.registration_type = registrationTypeFilter.value
     }
     if (startDateFilter.value) {
       params.start_date = startDateFilter.value
@@ -495,6 +499,21 @@ const openPasswordModal = async (user: User) => {
 
 const formatDate = (date: string) => formatDateTime(date)
 
+// 注册类型展示元数据：颜色与现有状态徽章风格一致
+const REGISTRATION_TYPE_META: Record<string, { label: string; classes: string }> = {
+  email: { label: '邮箱注册', classes: 'bg-blue-500/20 text-blue-400' },
+  github: { label: 'GitHub', classes: 'bg-gray-500/20 text-gray-600 dark:text-gray-300' },
+  google: { label: 'Google', classes: 'bg-red-500/20 text-red-400' },
+  x: { label: 'X', classes: 'bg-zinc-500/20 text-zinc-600 dark:text-zinc-200' },
+  wechat: { label: '微信', classes: 'bg-green-500/20 text-green-400' },
+  qq: { label: 'QQ', classes: 'bg-sky-500/20 text-sky-400' }
+}
+
+const getRegistrationTypeMeta = (type?: string) => {
+  if (!type) return { label: '未知', classes: 'bg-gray-500/20 text-gray-500 dark:text-gray-400' }
+  return REGISTRATION_TYPE_META[type] || { label: type, classes: 'bg-gray-500/20 text-gray-500 dark:text-gray-400' }
+}
+
 const getUserAvatarStyle = (user: User) => {
   if (user.avatar_type === 'custom' && user.avatar_url) {
     return {
@@ -547,6 +566,7 @@ const clearFilters = () => {
   emailFilter.value = ''
   roleFilter.value = ''
   statusFilter.value = ''
+  registrationTypeFilter.value = ''
   startDateFilter.value = ''
   endDateFilter.value = ''
   currentPage.value = 1
@@ -722,6 +742,33 @@ const clearEditError = (field: string) => {
               未验证
             </option>
           </select>
+          <select
+            v-model="registrationTypeFilter"
+            class="px-2.5 py-1 text-xs bg-gray-100 dark:bg-dark-100 border border-gray-200 dark:border-white/10 rounded-lg focus:border-primary focus:outline-none"
+            @change="handleSearch"
+          >
+            <option value="">
+              全部类型
+            </option>
+            <option value="email">
+              邮箱注册
+            </option>
+            <option value="github">
+              GitHub
+            </option>
+            <option value="google">
+              Google
+            </option>
+            <option value="x">
+              X
+            </option>
+            <option value="wechat">
+              微信
+            </option>
+            <option value="qq">
+              QQ
+            </option>
+          </select>
           <DateRangePicker
             v-model:start-date="startDateFilter"
             v-model:end-date="endDateFilter"
@@ -781,6 +828,9 @@ const clearEditError = (field: string) => {
               <th class="w-32 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                 角色
               </th>
+              <th class="w-28 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                注册类型
+              </th>
               <th class="w-20 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                 状态
               </th>
@@ -838,6 +888,14 @@ const clearEditError = (field: string) => {
                     未分配角色
                   </span>
                 </div>
+              </td>
+              <td class="px-4 py-3">
+                <span
+                  :class="getRegistrationTypeMeta(user.registration_type).classes"
+                  class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded whitespace-nowrap"
+                >
+                  {{ getRegistrationTypeMeta(user.registration_type).label }}
+                </span>
               </td>
               <td class="px-4 py-3">
                 <span

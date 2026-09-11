@@ -91,6 +91,7 @@ class UserListItem(BaseModel):
     bio: Optional[str] = None
     is_admin: bool = False
     is_verified: bool = False
+    registration_type: Optional[str] = None
     created_at: Optional[str] = None
     roles: Optional[List[dict]] = None
     

@@ -1,6 +1,6 @@
 from app.core.database import SessionLocal, engine, safe_db_close
 from app.core.config import settings
-from app.models import User, Category, Tag, Article, Resource, SiteConfig, OAuthProvider
+from app.models import User, Category, Tag, Article, Resource, ResourceCategory, SiteConfig, OAuthProvider
 from app.utils import get_password_hash
 from app.utils.timezone import get_db_now
 from datetime import datetime
@@ -476,7 +476,25 @@ def init_database():
                 db.add(tag)
         
         db.commit()
-        
+
+        # 资源分类初始化：显式指定 id 1~6，与下方 resources_data 中硬编码的 category_id 严格对应，
+        # 避免全新库首次部署时 resources 外键约束失败（已存在同 id 记录则跳过，幂等）
+        resource_categories_data = [
+            {"id": 1, "name": "部署平台", "slug": "deploy-platform", "icon": "🚀", "order": 1},
+            {"id": 2, "name": "常用工具", "slug": "common-tools", "icon": "🧰", "order": 2},
+            {"id": 3, "name": "学习网站", "slug": "learning-sites", "icon": "📚", "order": 3},
+            {"id": 4, "name": "开发工具", "slug": "dev-tools", "icon": "🛠️", "order": 4},
+            {"id": 5, "name": "设计灵感", "slug": "design-inspiration", "icon": "🎨", "order": 5},
+            {"id": 6, "name": "API服务", "slug": "api-services", "icon": "🔌", "order": 6},
+        ]
+
+        for rc_data in resource_categories_data:
+            existing = db.query(ResourceCategory).filter(ResourceCategory.id == rc_data["id"]).first()
+            if not existing:
+                db.add(ResourceCategory(**rc_data))
+
+        db.commit()
+
         resources_data = [
             {"title": "MDN Web Docs", "description": "Mozilla开发者网络文档", "url": "https://developer.mozilla.org", "icon": "📖", "category_id": 3, "category": "学习网站", "order": 1},
             {"title": "Vue.js 官方文档", "description": "Vue 3 官方中文文档", "url": "https://cn.vuejs.org", "icon": "💚", "category_id": 3, "category": "学习网站", "order": 2},

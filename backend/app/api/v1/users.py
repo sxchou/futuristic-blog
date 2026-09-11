@@ -7,7 +7,7 @@ import random
 import string
 from app.core.database import get_db
 from app.core.config import settings
-from app.models import User, UserProfile, AvatarType, OAuthConnection, OAuthTempToken, Article, Comment, ArticleFile, ArticleLike, ArticleBookmark, EmailLog, OperationLog, LoginLog, AccessLog, CommentAuditLog, RefreshToken, EmailChangeVerification, Role, PasswordReset, user_roles
+from app.models import User, UserProfile, AvatarType, OAuthConnection, OAuthProvider, OAuthTempToken, Article, Comment, ArticleFile, ArticleLike, ArticleBookmark, EmailLog, OperationLog, LoginLog, AccessLog, CommentAuditLog, RefreshToken, EmailChangeVerification, Role, PasswordReset, user_roles
 from app.schemas import UserListItem, UserAdminUpdate, UserAdminCreate, PaginatedResponse
 from app.utils import get_current_user, get_password_hash, verify_password
 from app.utils.permissions import require_permission
@@ -23,6 +23,21 @@ router = APIRouter(prefix="/users", tags=["Users"])
 CACHE_NAME = "users"
 CACHE_TTL_UNIQUE = 60
 CACHE_TTL_LIST = 300
+
+# 注册类型筛选支持值：邮箱注册 + 各 OAuth 提供商（twitter 为遗留名称，归一化为 x）
+REGISTRATION_TYPE_FILTERS = {"email", "github", "google", "x", "wechat", "qq"}
+
+
+def normalize_provider_name(name: str) -> str:
+    return "x" if name == "twitter" else name
+
+
+def get_registration_type_map(db: Session, user_ids: list[int]) -> dict[int, str]:
+    """批量查询用户注册类型：有 OAuthConnection 即为对应 Provider 注册，否则为邮箱注册。"""
+    rows = db.query(OAuthConnection.user_id, OAuthProvider.name).join(
+        OAuthProvider, OAuthConnection.provider_id == OAuthProvider.id
+    ).filter(OAuthConnection.user_id.in_(user_ids)).all()
+    return {user_id: normalize_provider_name(name) for user_id, name in rows}
 
 
 def invalidate_users_cache():
@@ -68,6 +83,7 @@ async def get_users(
     email: Optional[str] = Query(None, description="Filter by email (fuzzy search)"),
     role: Optional[str] = Query(None, description="Filter by role name (fuzzy search)"),
     status: Optional[str] = Query(None, description="Filter by status: 'verified' or 'unverified'"),
+    registration_type: Optional[str] = Query(None, description="Filter by registration type: 'email', 'github', 'google', 'x', 'wechat' or 'qq'"),
     start_date: Optional[str] = Query(None, description="Filter by start date (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="Filter by end date (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
@@ -93,6 +109,17 @@ async def get_users(
             query = query.filter(User.is_verified == True)
         elif status == "unverified":
             query = query.filter(User.is_verified == False)
+    
+    if registration_type:
+        if registration_type == "email":
+            oauth_user_ids = db.query(OAuthConnection.user_id).subquery()
+            query = query.filter(~User.id.in_(oauth_user_ids))
+        elif registration_type in REGISTRATION_TYPE_FILTERS:
+            provider_names = [registration_type, "twitter"] if registration_type == "x" else [registration_type]
+            oauth_user_ids = db.query(OAuthConnection.user_id).join(
+                OAuthProvider, OAuthConnection.provider_id == OAuthProvider.id
+            ).filter(OAuthProvider.name.in_(provider_names)).subquery()
+            query = query.filter(User.id.in_(oauth_user_ids))
     
     if start_date:
         try:
@@ -127,6 +154,8 @@ async def get_users(
     
     profiles = db.query(UserProfile).filter(UserProfile.user_id.in_(user_ids)).all()
     profile_map = {p.user_id: p for p in profiles}
+    
+    registration_type_map = get_registration_type_map(db, user_ids)
     
     user_role_records = db.query(user_roles).filter(user_roles.c.user_id.in_(user_ids)).all()
     role_ids = list(set([r.role_id for r in user_role_records]))
@@ -183,6 +212,7 @@ async def get_users(
             bio=user.bio,
             is_admin=user.id in admin_user_ids,
             is_verified=user.is_verified,
+            registration_type=registration_type_map.get(user.id, "email"),
             created_at=user.created_at,
             roles=user_roles_list
         )
@@ -278,6 +308,7 @@ async def create_user(
         bio=user.bio,
         is_admin=PermissionService.is_admin_user(db, user.id),
         is_verified=user.is_verified,
+        registration_type="email",
         created_at=user.created_at,
         roles=roles_data
     )
@@ -293,7 +324,9 @@ async def get_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    return UserListItem.model_validate(user)
+    item = UserListItem.model_validate(user)
+    item.registration_type = get_registration_type_map(db, [user.id]).get(user.id, "email")
+    return item
 
 
 @router.put("/{user_id}", response_model=UserListItem)
@@ -358,7 +391,9 @@ async def update_user(
         status="success"
     )
     
-    return UserListItem.model_validate(user)
+    item = UserListItem.model_validate(user)
+    item.registration_type = get_registration_type_map(db, [user.id]).get(user.id, "email")
+    return item
 
 
 @router.delete("/{user_id}")
