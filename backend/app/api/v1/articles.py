@@ -620,6 +620,7 @@ async def get_admin_article(
 async def get_article(
     slug: str, 
     request: Request,
+    track_view: bool = Query(True, description="是否累计浏览量；服务端 OG 元数据预取传 false 避免虚增"),
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user_optional)
 ):
@@ -632,8 +633,9 @@ async def get_article(
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
     
-    article.view_count += 1
-    db.commit()
+    if track_view:
+        article.view_count += 1
+        db.commit()
     
     user_id = current_user.id if current_user else None
     is_liked = check_user_liked(db, article.id, user_id)
